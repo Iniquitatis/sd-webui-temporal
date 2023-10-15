@@ -1,5 +1,5 @@
 # Stable Diffusion Web UI Temporal Extension
-Basically, it's a loopback on steroids that allows doing something like [this](https://youtu.be/Q4gowAKcDNo) (requires `ffmpeg` to be installed globally).
+Basically, it's a loopback on steroids that allows doing something like [this](https://youtu.be/Q4gowAKcDNo) (requires `ffmpeg` to be installed globally), testing how models behave in a large loop, and generating pictures that can't be generated easily under normal circumstances.
 
 **IMPORTANT:** This extension is still at its early stage, so no backwards compatibility is guaranteed as of now.
 
