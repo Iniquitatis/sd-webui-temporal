@@ -5,6 +5,17 @@ Basically, it's a loopback on steroids that allows doing something like [this](h
 
 
 
+## Usage
+1. Go to the **img2img** tab.
+2. Select **Temporal** in the **Script** dropdown menu.
+3. Set sampler, steps, resolution, etc. as usual.
+4. Change the extension settings to your own liking (should be self-descriptive).
+5. Hit **Generate**.
+6. Grab yourself some coffee and get ready to wait.
+    * While waiting, you can go to the extension's **Video Rendering** tab and hit **Render draft/final** that will start rendering a video simultaneously with the usual SD generation process. Be sure to note that doing that simultaneously might stress your system quite a lot.
+
+
+
 ## Roadmap
 Nothing in particular, aside from fixing bugs and adding a feature here and there. I'm using this extension almost all the time, so it can be considered—contrary to the note above—feature-complete. At least until I find something I'm missing, that is.
 
