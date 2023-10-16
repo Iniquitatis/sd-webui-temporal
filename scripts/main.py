@@ -295,78 +295,73 @@ class TemporalScript(scripts.Script):
 
     def show(self, is_img2img):
         return is_img2img
-        # FIXME: Doesn't trigger the `run` method
-        #return scripts.AlwaysVisible if is_img2img else False
 
     def ui(self, is_img2img):
         ue = SimpleNamespace()
         ue_dict = vars(ue)
 
-        with gr.Accordion("Temporal", open = False):
-            ue.enable = gr.Checkbox(label = "Enable", value = False, elem_id = self.elem_id("enable"))
+        with gr.Tab("General"):
+            ue.output_dir = gr.Textbox(label = "Output directory", value = "outputs/temporal", elem_id = self.elem_id("output_dir"))
+            ue.project_subdir = gr.Textbox(label = "Project subdirectory", value = "untitled", elem_id = self.elem_id("project_subdir"))
+            ue.frame_count = gr.Number(label = "Frame count", precision = 0, minimum = 1, step = 1, value = 100, elem_id = self.elem_id("frame_count"))
+            ue.save_every_nth_frame = gr.Number(label = "Save every N-th frame", precision = 0, minimum = 1, step = 1, value = 1, elem_id = self.elem_id("save_every_nth_frame"))
+            ue.archive_mode = gr.Checkbox(label = "Archive mode", value = False, elem_id = self.elem_id("archive_mode"))
+            ue.start_from_scratch = gr.Checkbox(label = "Start from scratch", value = False, elem_id = self.elem_id("start_from_scratch"))
+            ue.load_session = gr.Checkbox(label = "Load session", value = True, elem_id = self.elem_id("load_session"))
+            ue.save_session = gr.Checkbox(label = "Save session", value = True, elem_id = self.elem_id("save_session"))
 
-            with gr.Tab("General"):
-                ue.output_dir = gr.Textbox(label = "Output directory", value = "outputs/temporal", elem_id = self.elem_id("output_dir"))
-                ue.project_subdir = gr.Textbox(label = "Project subdirectory", value = "untitled", elem_id = self.elem_id("project_subdir"))
-                ue.frame_count = gr.Number(label = "Frame count", precision = 0, minimum = 1, step = 1, value = 100, elem_id = self.elem_id("frame_count"))
-                ue.save_every_nth_frame = gr.Number(label = "Save every N-th frame", precision = 0, minimum = 1, step = 1, value = 1, elem_id = self.elem_id("save_every_nth_frame"))
-                ue.archive_mode = gr.Checkbox(label = "Archive mode", value = False, elem_id = self.elem_id("archive_mode"))
-                ue.start_from_scratch = gr.Checkbox(label = "Start from scratch", value = False, elem_id = self.elem_id("start_from_scratch"))
-                ue.load_session = gr.Checkbox(label = "Load session", value = True, elem_id = self.elem_id("load_session"))
-                ue.save_session = gr.Checkbox(label = "Save session", value = True, elem_id = self.elem_id("save_session"))
+        with gr.Tab("Frame Preprocessing"):
+            ue.normalize_contrast = gr.Checkbox(label = "Normalize contrast", value = False, elem_id = self.elem_id("normalize_contrast"))
+            ue.brightness = gr.Slider(label = "Brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, elem_id = self.elem_id("brightness"))
+            ue.contrast = gr.Slider(label = "Contrast", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, elem_id = self.elem_id("contrast"))
+            ue.saturation = gr.Slider(label = "Saturation", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, elem_id = self.elem_id("saturation"))
+            ue.modulator_image = gr.Pil(label = "Modulator image", elem_id = self.elem_id("modulator_image"))
+            ue.modulator_blurring = gr.Slider(label = "Modulator blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, elem_id = self.elem_id("modulator_blurring"))
+            # FIXME: Pairs (name, value) don't work for some reason
+            ue.modulator_mode = gr.Dropdown(label = "Modulator mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)), elem_id = self.elem_id("modulator_mode"))
+            ue.modulator_amount = gr.Slider(label = "Modulator amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("modulator_amount"))
+            ue.modulator_relative = gr.Checkbox(label = "Modulator relative", value = False, elem_id = self.elem_id("modulator_relative"))
+            ue.contour_image = gr.Pil(label = "Contour image", elem_id = self.elem_id("contour_image"))
+            ue.contour_blurring = gr.Slider(label = "Contour blurring", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0, elem_id = self.elem_id("contour_blurring"))
+            ue.contour_amount = gr.Slider(label = "Contour amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("contour_amount"))
+            ue.contour_relative = gr.Checkbox(label = "Contour relative", value = False, elem_id = self.elem_id("contour_relative"))
+            ue.tinting_color = gr.ColorPicker(label = "Tinting color", value = "#ffffff", elem_id = self.elem_id("tinting_color"))
+            # FIXME: Pairs (name, value) don't work for some reason
+            ue.tinting_mode = gr.Dropdown(label = "Tinting mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)), elem_id = self.elem_id("tinting_mode"))
+            ue.tinting_amount = gr.Slider(label = "Tinting amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("tinting_amount"))
+            ue.tinting_relative = gr.Checkbox(label = "Tinting relative", value = False, elem_id = self.elem_id("tinting_relative"))
+            ue.sharpening_radius = gr.Slider(label = "Sharpening radius", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0, elem_id = self.elem_id("sharpening_radius"))
+            ue.sharpening_amount = gr.Slider(label = "Sharpening amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("sharpening_amount"))
+            ue.sharpening_relative = gr.Checkbox(label = "Sharpening relative", value = False, elem_id = self.elem_id("sharpening_relative"))
+            ue.zooming = gr.Slider(label = "Zooming", minimum = 0, maximum = 10, step = 1, value = 0, elem_id = self.elem_id("zooming"))
 
-            with gr.Tab("Frame Preprocessing"):
-                ue.normalize_contrast = gr.Checkbox(label = "Normalize contrast", value = False, elem_id = self.elem_id("normalize_contrast"))
-                ue.brightness = gr.Slider(label = "Brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, elem_id = self.elem_id("brightness"))
-                ue.contrast = gr.Slider(label = "Contrast", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, elem_id = self.elem_id("contrast"))
-                ue.saturation = gr.Slider(label = "Saturation", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, elem_id = self.elem_id("saturation"))
-                ue.modulator_image = gr.Pil(label = "Modulator image", elem_id = self.elem_id("modulator_image"))
-                ue.modulator_blurring = gr.Slider(label = "Modulator blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, elem_id = self.elem_id("modulator_blurring"))
-                # FIXME: Pairs (name, value) don't work for some reason
-                ue.modulator_mode = gr.Dropdown(label = "Modulator mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)), elem_id = self.elem_id("modulator_mode"))
-                ue.modulator_amount = gr.Slider(label = "Modulator amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("modulator_amount"))
-                ue.modulator_relative = gr.Checkbox(label = "Modulator relative", value = False, elem_id = self.elem_id("modulator_relative"))
-                ue.contour_image = gr.Pil(label = "Contour image", elem_id = self.elem_id("contour_image"))
-                ue.contour_blurring = gr.Slider(label = "Contour blurring", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0, elem_id = self.elem_id("contour_blurring"))
-                ue.contour_amount = gr.Slider(label = "Contour amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("contour_amount"))
-                ue.contour_relative = gr.Checkbox(label = "Contour relative", value = False, elem_id = self.elem_id("contour_relative"))
-                ue.tinting_color = gr.ColorPicker(label = "Tinting color", value = "#ffffff", elem_id = self.elem_id("tinting_color"))
-                # FIXME: Pairs (name, value) don't work for some reason
-                ue.tinting_mode = gr.Dropdown(label = "Tinting mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)), elem_id = self.elem_id("tinting_mode"))
-                ue.tinting_amount = gr.Slider(label = "Tinting amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("tinting_amount"))
-                ue.tinting_relative = gr.Checkbox(label = "Tinting relative", value = False, elem_id = self.elem_id("tinting_relative"))
-                ue.sharpening_radius = gr.Slider(label = "Sharpening radius", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0, elem_id = self.elem_id("sharpening_radius"))
-                ue.sharpening_amount = gr.Slider(label = "Sharpening amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("sharpening_amount"))
-                ue.sharpening_relative = gr.Checkbox(label = "Sharpening relative", value = False, elem_id = self.elem_id("sharpening_relative"))
-                ue.zooming = gr.Slider(label = "Zooming", minimum = 0, maximum = 10, step = 1, value = 0, elem_id = self.elem_id("zooming"))
+            with gr.Row():
+                ue.shifting_x = gr.Number(label = "Shifting X", precision = 0, step = 1, value = 0, elem_id = self.elem_id("shifting_x"))
+                ue.shifting_y = gr.Number(label = "Shifting Y", precision = 0, step = 1, value = 0, elem_id = self.elem_id("shifting_y"))
 
-                with gr.Row():
-                    ue.shifting_x = gr.Number(label = "Shifting X", precision = 0, step = 1, value = 0, elem_id = self.elem_id("shifting_x"))
-                    ue.shifting_y = gr.Number(label = "Shifting Y", precision = 0, step = 1, value = 0, elem_id = self.elem_id("shifting_y"))
+            ue.symmetry = gr.Checkbox(label = "Symmetry", value = False, elem_id = self.elem_id("symmetry"))
+            ue.blurring = gr.Slider(label = "Blurring", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0, elem_id = self.elem_id("blurring"))
+            ue.spreading = gr.Slider(label = "Spreading", minimum = 0, maximum = 10, step = 1, value = 0, elem_id = self.elem_id("spreading"))
 
-                ue.symmetry = gr.Checkbox(label = "Symmetry", value = False, elem_id = self.elem_id("symmetry"))
-                ue.blurring = gr.Slider(label = "Blurring", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0, elem_id = self.elem_id("blurring"))
-                ue.spreading = gr.Slider(label = "Spreading", minimum = 0, maximum = 10, step = 1, value = 0, elem_id = self.elem_id("spreading"))
+        with gr.Tab("Video Rendering"):
+            with gr.Row():
+                ue.video_width = gr.Slider(label = "Width", minimum = 16, maximum = 2560, step = 16, value = 1024, elem_id = self.elem_id("video_width"))
+                ue.video_height = gr.Slider(label = "Height", minimum = 16, maximum = 2560, step = 16, value = 576, elem_id = self.elem_id("video_height"))
 
-            with gr.Tab("Video Rendering"):
-                with gr.Row():
-                    ue.video_width = gr.Slider(label = "Width", minimum = 16, maximum = 2560, step = 16, value = 1024, elem_id = self.elem_id("video_width"))
-                    ue.video_height = gr.Slider(label = "Height", minimum = 16, maximum = 2560, step = 16, value = 576, elem_id = self.elem_id("video_height"))
+            ue.video_fps = gr.Slider(label = "Frames per second", minimum = 1, maximum = 60, step = 1, value = 30, elem_id = self.elem_id("video_fps"))
+            ue.video_interpolation = gr.Checkbox(label = "Interpolation", value = False, elem_id = self.elem_id("video_interpolation"))
+            ue.video_mb_subframes = gr.Slider(label = "Motion blur subframes", minimum = 0, maximum = 15, step = 1, value = 0, elem_id = self.elem_id("video_mb_subframes"))
+            ue.video_deflickering = gr.Checkbox(label = "Deflickering", value = True, elem_id = self.elem_id("video_deflickering"))
+            ue.video_looping = gr.Checkbox(label = "Looping", value = False, elem_id = self.elem_id("video_looping"))
+            ue.video_frame_num_overlay = gr.Checkbox(label = "Frame number overlay", value = False, elem_id = self.elem_id("video_frame_num_overlay"))
 
-                ue.video_fps = gr.Slider(label = "Frames per second", minimum = 1, maximum = 60, step = 1, value = 30, elem_id = self.elem_id("video_fps"))
-                ue.video_interpolation = gr.Checkbox(label = "Interpolation", value = False, elem_id = self.elem_id("video_interpolation"))
-                ue.video_mb_subframes = gr.Slider(label = "Motion blur subframes", minimum = 0, maximum = 15, step = 1, value = 0, elem_id = self.elem_id("video_mb_subframes"))
-                ue.video_deflickering = gr.Checkbox(label = "Deflickering", value = True, elem_id = self.elem_id("video_deflickering"))
-                ue.video_looping = gr.Checkbox(label = "Looping", value = False, elem_id = self.elem_id("video_looping"))
-                ue.video_frame_num_overlay = gr.Checkbox(label = "Frame number overlay", value = False, elem_id = self.elem_id("video_frame_num_overlay"))
+            with gr.Row():
+                ue.render_draft_on_finish = gr.Checkbox(label = "Render draft when finished", value = False, elem_id = self.elem_id("render_draft_on_finish"))
+                ue.render_final_on_finish = gr.Checkbox(label = "Render final when finished", value = False, elem_id = self.elem_id("render_final_on_finish"))
 
-                with gr.Row():
-                    ue.render_draft_on_finish = gr.Checkbox(label = "Render draft when finished", value = False, elem_id = self.elem_id("render_draft_on_finish"))
-                    ue.render_final_on_finish = gr.Checkbox(label = "Render final when finished", value = False, elem_id = self.elem_id("render_final_on_finish"))
-
-                with gr.Row():
-                    ue.render_draft = gr.Button(value = "Render draft", elem_id = self.elem_id("render_draft"))
-                    ue.render_final = gr.Button(value = "Render final", elem_id = self.elem_id("render_final"))
+            with gr.Row():
+                ue.render_draft = gr.Button(value = "Render draft", elem_id = self.elem_id("render_draft"))
+                ue.render_final = gr.Button(value = "Render final", elem_id = self.elem_id("render_final"))
 
         ue.render_draft.click(lambda *args: self._start_video_render(False, *args), inputs = list(ue_dict.values()), outputs = [])
         ue.render_final.click(lambda *args: self._start_video_render(True, *args), inputs = list(ue_dict.values()), outputs = [])
@@ -377,9 +372,6 @@ class TemporalScript(scripts.Script):
 
     def run(self, p, *args):
         uv = self._get_ui_values(*args)
-
-        if not uv.enable:
-            return p
 
         project_dir = safe_get_directory(Path(uv.output_dir) / uv.project_subdir)
         session_dir = safe_get_directory(project_dir / "session")
