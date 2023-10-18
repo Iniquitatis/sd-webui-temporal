@@ -1,5 +1,6 @@
 import json
 from copy import copy
+from importlib import import_module
 from itertools import count
 from os import system
 from pathlib import Path
@@ -7,10 +8,13 @@ from threading import Lock, Thread
 from types import SimpleNamespace
 
 import gradio as gr
+import numpy as np
 from PIL import Image, ImageChops, ImageEnhance, ImageFilter, ImageOps
 
 from modules import images, processing, scripts
 from modules.shared import opts, prompt_styles, state
+
+external_code = import_module("extensions.sd-webui-controlnet.scripts.external_code", "external_code")
 
 #===============================================================================
 
@@ -196,6 +200,55 @@ def get_last_frame_index(frame_dir):
 
     return max((get_index(path) for path in frame_dir.glob("*.png")), default = 0)
 
+def load_object(obj, data, data_dir):
+    def load_value(value):
+        if isinstance(value, bool | int | float | str | None):
+            return value
+
+        elif isinstance(value, list):
+            return [load_value(x) for x in value]
+
+        elif isinstance(value, dict):
+            im_type = value.get("im_type", "")
+            im_path = data_dir / value.get("filename", "")
+
+            if im_type == "pil":
+                return load_image(im_path)
+            elif im_type == "np":
+                return np.array(load_image(im_path))
+            else:
+                return {k: load_value(v) for k, v in value.items()}
+
+    for key, value in data.items():
+        if hasattr(obj, key):
+            setattr(obj, key, load_value(value))
+
+def save_object(obj, data_dir, filter = None):
+    def save_value(value):
+        if isinstance(value, bool | int | float | str | None):
+            return value
+
+        elif isinstance(value, tuple):
+            return tuple(save_value(x) for x in value)
+
+        elif isinstance(value, list):
+            return [save_value(x) for x in value]
+
+        elif isinstance(value, dict):
+            return {k: save_value(v) for k, v in value.items()}
+
+        elif isinstance(value, Image.Image):
+            filename = f"{id(value)}.png"
+            value.save(data_dir / filename)
+            return {"im_type": "pil", "filename": filename}
+
+        elif isinstance(value, np.ndarray):
+            filename = f"{id(value)}.png"
+            Image.fromarray(value).save(data_dir / filename)
+            return {"im_type": "np", "filename": filename}
+
+    return {k: save_value(v) for k, v in vars(obj).items() if not filter or k in filter}
+
 def load_session(p, uv, project_dir, session_dir, params_path, last_index):
     if not params_path.is_file():
         return
@@ -203,19 +256,14 @@ def load_session(p, uv, project_dir, session_dir, params_path, last_index):
     with open(params_path, "r", encoding = "utf-8") as params_file:
         data = json.load(params_file)
 
-        for key, value in data.get("generation_params", {}).items():
-            if hasattr(p, key):
-                setattr(p, key, value)
+    load_object(p, data.get("generation_params", {}), session_dir)
 
-        for key, value in data.get("extension_params", {}).items():
-            if hasattr(uv, key):
-                setattr(uv, key, value)
+    for unit_data, cn_unit in zip(data.get("controlnet_params", []), external_code.get_all_units_in_processing(p)):
+        load_object(cn_unit, unit_data, session_dir)
 
-        for im_path in session_dir.glob("*.png"):
-            if (key := im_path.stem) and hasattr(uv, key):
-                setattr(uv, key, load_image(im_path))
+    load_object(uv, data.get("extension_params", {}), session_dir)
 
-    if (im_path := (project_dir / f"{last_index:05d}.png")).is_file() or (im_path := (session_dir / "init_image.png")).is_file():
+    if (im_path := (project_dir / f"{last_index:05d}.png")).is_file():
         p.init_images = [load_image(im_path)]
 
     # FIXME: Unreliable; works properly only on first generation, but not on the subsequent ones
@@ -223,64 +271,72 @@ def load_session(p, uv, project_dir, session_dir, params_path, last_index):
         p.seed = p.seed + last_index
 
 def save_session(p, uv, project_dir, session_dir, params_path, last_index):
-    with open(params_path, "w", encoding = "utf-8") as params_file:
-        json.dump(dict(
-            generation_params = dict(
-                (key, getattr(p, key))
-                for key in [
-                    "prompt",
-                    "negative_prompt",
-                    "resize_mode",
-                    "sampler_name",
-                    "steps",
-                    "width",
-                    "height",
-                    "cfg_scale",
-                    "denoising_strength",
-                    "seed",
-                ]
-            ),
-            extension_params = dict(
-                (key, getattr(uv, key))
-                for key in [
-                    "save_every_nth_frame",
-                    "normalize_contrast",
-                    "brightness",
-                    "contrast",
-                    "saturation",
-                    "modulator_blurring",
-                    "modulator_mode",
-                    "modulator_amount",
-                    "modulator_relative",
-                    "contour_blurring",
-                    "contour_amount",
-                    "contour_relative",
-                    "tinting_color",
-                    "tinting_mode",
-                    "tinting_amount",
-                    "tinting_relative",
-                    "sharpening_radius",
-                    "sharpening_amount",
-                    "sharpening_relative",
-                    "zooming",
-                    "shifting_x",
-                    "shifting_y",
-                    "symmetry",
-                    "blurring",
-                    "spreading",
-                ]
-            ),
-        ), params_file, indent = 4)
-
-        if p.init_images and (im := p.init_images[0]) and not (init_path := (session_dir / "init_image.png")).is_file():
-            im.save(init_path)
-
-        for key in [
+    data = dict(
+        generation_params = save_object(p, session_dir, [
+            "prompt",
+            "negative_prompt",
+            "init_images",
+            "resize_mode",
+            "sampler_name",
+            "steps",
+            "width",
+            "height",
+            "cfg_scale",
+            "denoising_strength",
+            "seed",
+        ]),
+        controlnet_params = list(
+            save_object(cn_unit, session_dir, [
+                "enabled",
+                "module",
+                "model",
+                "weight",
+                "image",
+                "resize_mode",
+                "low_vram",
+                "processor_res",
+                "threshold_a",
+                "threshold_b",
+                "guidance_start",
+                "guidance_end",
+                "pixel_perfect",
+                "control_mode",
+            ])
+            for cn_unit in external_code.get_all_units_in_processing(p)
+        ),
+        extension_params = save_object(uv, session_dir, [
+            "save_every_nth_frame",
+            "normalize_contrast",
+            "brightness",
+            "contrast",
+            "saturation",
             "modulator_image",
+            "modulator_blurring",
+            "modulator_mode",
+            "modulator_amount",
+            "modulator_relative",
             "contour_image",
-        ]:
-            if (im := getattr(uv, key, None)) and isinstance(im, Image.Image):
-                im.save(session_dir / f"{key}.png")
+            "contour_blurring",
+            "contour_amount",
+            "contour_relative",
+            "tinting_color",
+            "tinting_mode",
+            "tinting_amount",
+            "tinting_relative",
+            "sharpening_radius",
+            "sharpening_amount",
+            "sharpening_relative",
+            "zooming",
+            "shifting_x",
+            "shifting_y",
+            "symmetry",
+            "blurring",
+            "spreading",
+        ]),
+    )
+
+    with open(params_path, "w", encoding = "utf-8") as params_file:
+        json.dump(data, params_file, indent = 4)
 
 #===============================================================================
 
