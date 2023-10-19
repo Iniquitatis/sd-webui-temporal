@@ -66,12 +66,15 @@ def blend_images(im, modulator, mode, amount):
 
     return BLEND_MODES[mode]["func"](im, modulator, amount)
 
+def generate_noise_image(size, seed):
+    return Image.fromarray(np.random.default_rng(seed).integers(0, 256, size = (size[1], size[0], 3), dtype = "uint8"))
+
 def load_image(path):
     im = Image.open(path)
     im.load()
     return im
 
-def preprocess_image(im, uv):
+def preprocess_image(im, uv, seed):
     if uv.normalize_contrast:
         im = ImageOps.autocontrast(im.convert("RGB"), preserve_tone = True)
 
@@ -83,6 +86,9 @@ def preprocess_image(im, uv):
 
     if uv.saturation != 1.0:
         im = ImageEnhance.Color(im).enhance(uv.saturation)
+
+    if uv.noise_amount > 0.0:
+        im = blend_images(im, generate_noise_image(im.size, seed), uv.noise_mode, uv.noise_amount)
 
     if uv.modulator_image is not None and uv.modulator_amount > 0.0:
         im = blend_images(im, (
@@ -125,6 +131,7 @@ def preprocess_image(im, uv):
         im = im.filter(ImageFilter.GaussianBlur(uv.blurring))
 
     if uv.spreading > 0:
+        # TODO: Make deterministic by making use of the provided seed
         im = im.effect_spread(uv.spreading)
 
     return im
@@ -310,6 +317,9 @@ def save_session(p, uv, project_dir, session_dir, params_path, last_index):
             "brightness",
             "contrast",
             "saturation",
+            "noise_mode",
+            "noise_amount",
+            "noise_relative",
             "modulator_image",
             "modulator_blurring",
             "modulator_mode",
@@ -371,6 +381,10 @@ class TemporalScript(scripts.Script):
             ue.brightness = gr.Slider(label = "Brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, elem_id = self.elem_id("brightness"))
             ue.contrast = gr.Slider(label = "Contrast", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, elem_id = self.elem_id("contrast"))
             ue.saturation = gr.Slider(label = "Saturation", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, elem_id = self.elem_id("saturation"))
+            # FIXME: Pairs (name, value) don't work for some reason
+            ue.noise_mode = gr.Dropdown(label = "Noise mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)), elem_id = self.elem_id("noise_mode"))
+            ue.noise_amount = gr.Slider(label = "Noise amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("noise_amount"))
+            ue.noise_relative = gr.Checkbox(label = "Noise relative", value = False, elem_id = self.elem_id("noise_relative"))
             ue.modulator_image = gr.Pil(label = "Modulator image", elem_id = self.elem_id("modulator_image"))
             ue.modulator_blurring = gr.Slider(label = "Modulator blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, elem_id = self.elem_id("modulator_blurring"))
             # FIXME: Pairs (name, value) don't work for some reason
@@ -451,6 +465,9 @@ class TemporalScript(scripts.Script):
         if uv.save_session:
             save_session(p, uv, project_dir, session_dir, params_path, last_index)
 
+        if uv.noise_relative:
+            uv.noise_amount *= p.denoising_strength
+
         if uv.modulator_relative:
             uv.modulator_amount *= p.denoising_strength
 
@@ -482,8 +499,8 @@ class TemporalScript(scripts.Script):
         for i, frame_index in zip(range(uv.frame_count), count(last_index + 1)):
             state.job = f"Frame {i + 1} / {uv.frame_count}"
 
-            p.init_images[0] = preprocess_image(p.init_images[0], uv)
             p.seed = default_p.seed + i
+            p.init_images[0] = preprocess_image(p.init_images[0], uv, p.seed)
 
             processed = processing.process_images(p)
 
