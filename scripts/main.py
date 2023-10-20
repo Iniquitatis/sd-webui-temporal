@@ -282,6 +282,9 @@ def load_session(p, uv, project_dir, session_dir, params_path, last_index):
         p.seed = p.seed + last_index
 
 def save_session(p, uv, project_dir, session_dir, params_path, last_index):
+    for path in session_dir.glob("*.*"):
+        path.unlink()
+
     data = dict(
         generation_params = save_object(p, session_dir, [
             "prompt",
@@ -472,7 +475,7 @@ class TemporalScript(scripts.Script):
         params_path = session_dir / "parameters.json"
 
         if uv.start_from_scratch:
-            for path in project_dir.rglob("*.png"):
+            for path in project_dir.glob("*.png"):
                 path.unlink()
 
         last_index = get_last_frame_index(project_dir)
