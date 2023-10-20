@@ -10,6 +10,7 @@ from types import SimpleNamespace
 import gradio as gr
 import numpy as np
 from PIL import Image, ImageChops, ImageEnhance, ImageFilter, ImageOps
+from skimage.exposure import match_histograms
 
 from modules import images, processing, scripts
 from modules.shared import opts, prompt_styles, state
@@ -75,6 +76,9 @@ def load_image(path):
     return im
 
 def preprocess_image(im, uv, seed):
+    if uv.color_correction_image is not None:
+        im = Image.fromarray(match_histograms(np.array(im), np.array(uv.color_correction_image.convert(im.mode)), channel_axis = 2).astype("uint8"))
+
     if uv.normalize_contrast:
         im = ImageOps.autocontrast(im.convert("RGB"), preserve_tone = True)
 
@@ -313,6 +317,7 @@ def save_session(p, uv, project_dir, session_dir, params_path, last_index):
         ),
         extension_params = save_object(uv, session_dir, [
             "save_every_nth_frame",
+            "color_correction_image",
             "normalize_contrast",
             "brightness",
             "contrast",
@@ -348,6 +353,24 @@ def save_session(p, uv, project_dir, session_dir, params_path, last_index):
     with open(params_path, "w", encoding = "utf-8") as params_file:
         json.dump(data, params_file, indent = 4)
 
+def generate_image(job_title, p, **p_overrides):
+    state.job = job_title
+
+    p_instance = copy(p)
+
+    for key, value in p_overrides.items():
+        if hasattr(p_instance, key):
+            setattr(p_instance, key, value)
+        else:
+            print(f"WARNING: Key {key} doesn't exist in {p_instance.__class__.__name__}")
+
+    processed = processing.process_images(p_instance)
+
+    if state.interrupted or state.skipped:
+        return None
+
+    return processed
+
 #===============================================================================
 
 class TemporalScript(scripts.Script):
@@ -377,6 +400,7 @@ class TemporalScript(scripts.Script):
             ue.save_session = gr.Checkbox(label = "Save session", value = True, elem_id = self.elem_id("save_session"))
 
         with gr.Tab("Frame Preprocessing"):
+            ue.color_correction_image = gr.Pil(label = "Color correction image", elem_id = self.elem_id("color_correction_image"))
             ue.normalize_contrast = gr.Checkbox(label = "Normalize contrast", value = False, elem_id = self.elem_id("normalize_contrast"))
             ue.brightness = gr.Slider(label = "Brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, elem_id = self.elem_id("brightness"))
             ue.contrast = gr.Slider(label = "Contrast", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, elem_id = self.elem_id("contrast"))
@@ -460,7 +484,26 @@ class TemporalScript(scripts.Script):
         if uv.load_session:
             load_session(p, uv, project_dir, session_dir, params_path, last_index)
 
+        p.n_iter = 1
+        p.batch_size = 1
+        p.do_not_save_samples = True
+        p.do_not_save_grid = True
         processing.fix_seed(p)
+
+        if not p.init_images or not isinstance(p.init_images[0], Image.Image):
+            if processed := generate_image(
+                "Initial image",
+                p,
+                init_images = [generate_noise_image((p.width, p.height), p.seed)],
+                denoising_strength = 1.0,
+            ):
+                p.init_images = [processed.images[0]]
+                p.seed += 1
+            else:
+                return processed
+
+        if opts.img2img_color_correction:
+            p.color_corrections = [processing.setup_color_correction(p.init_images[0])]
 
         if uv.save_session:
             save_session(p, uv, project_dir, session_dir, params_path, last_index)
@@ -482,44 +525,42 @@ class TemporalScript(scripts.Script):
 
         state.job_count = uv.frame_count
 
-        p.n_iter = 1
-        p.batch_size = 1
-        p.do_not_save_samples = True
-        p.do_not_save_grid = True
-
-        if opts.img2img_color_correction and p.init_images:
-            p.color_corrections = [processing.setup_color_correction(p.init_images[0])]
-
-        default_p = copy(p)
-
-        if not p.init_images or not isinstance(p.init_images[0], Image.Image):
-            p.init_images = [Image.new("RGB", (p.width, p.height), (128, 128, 128))]
-            p.denoising_strength = 1.0
+        last_image = p.init_images[0]
+        last_seed = p.seed
 
         for i, frame_index in zip(range(uv.frame_count), count(last_index + 1)):
-            state.job = f"Frame {i + 1} / {uv.frame_count}"
-
-            p.seed = default_p.seed + i
-            p.init_images[0] = preprocess_image(p.init_images[0], uv, p.seed)
-
-            processed = processing.process_images(p)
-
-            if state.interrupted or state.skipped:
-                break
-
-            generated_frame = processed.images[0]
+            if not (processed := generate_image(
+                f"Frame {i + 1} / {uv.frame_count}",
+                p,
+                init_images = [preprocess_image(last_image, uv, last_seed)],
+                seed = last_seed,
+            )):
+                return processed
 
             if frame_index % uv.save_every_nth_frame == 0:
                 if uv.archive_mode:
-                    self._image_save_tq.enqueue(Image.Image.save, generated_frame, project_dir / f"{frame_index:05d}.png", optimize = True, compress_level = 9)
+                    self._image_save_tq.enqueue(
+                        Image.Image.save,
+                        processed.images[0],
+                        project_dir / f"{frame_index:05d}.png",
+                        optimize = True,
+                        compress_level = 9,
+                    )
                 else:
-                    images.save_image(generated_frame, project_dir, "", processed.seed, p.prompt, opts.samples_format, info = processed.info, p = p, forced_filename = f"{frame_index:05d}")
+                    images.save_image(
+                        processed.images[0],
+                        project_dir,
+                        "",
+                        processed.seed,
+                        p.prompt,
+                        opts.samples_format,
+                        info = processed.info,
+                        p = p,
+                        forced_filename = f"{frame_index:05d}",
+                    )
 
-            if opts.img2img_color_correction and default_p.color_corrections is None:
-                default_p.color_corrections = [processing.setup_color_correction(generated_frame)]
-
-            p = copy(default_p)
-            p.init_images[0] = generated_frame
+            last_image = processed.images[0]
+            last_seed += 1
 
         if uv.render_draft_on_finish:
             self._start_video_render(False, *args)
