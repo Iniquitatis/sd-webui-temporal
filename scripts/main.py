@@ -1,6 +1,8 @@
 import json
+from contextlib import contextmanager
 from copy import copy
 from importlib import import_module
+from io import BytesIO
 from itertools import count
 from os import system
 from pathlib import Path
@@ -8,9 +10,11 @@ from threading import Lock, Thread
 from types import SimpleNamespace
 
 import gradio as gr
+import matplotlib.pyplot as plt
 import numpy as np
+import scipy
+import skimage
 from PIL import Image, ImageChops, ImageEnhance, ImageFilter, ImageOps
-from skimage.exposure import match_histograms
 
 from modules import images, processing, scripts
 from modules.shared import opts, prompt_styles, state
@@ -77,7 +81,7 @@ def load_image(path):
 
 def preprocess_image(im, uv, seed):
     if uv.color_correction_image is not None:
-        im = Image.fromarray(match_histograms(np.array(im), np.array(uv.color_correction_image.convert(im.mode)), channel_axis = 2).astype("uint8"))
+        im = Image.fromarray(skimage.img_as_ubyte(skimage.exposure.match_histograms(np.array(im), np.array(uv.color_correction_image.convert(im.mode)), channel_axis = 2)))
 
     if uv.normalize_contrast:
         im = ImageOps.autocontrast(im.convert("RGB"), preserve_tone = True)
@@ -260,8 +264,8 @@ def save_object(obj, data_dir, filter = None):
 
     return {k: save_value(v) for k, v in vars(obj).items() if not filter or k in filter}
 
-def load_session(p, uv, project_dir, session_dir, params_path, last_index):
-    if not params_path.is_file():
+def load_session(p, uv, project_dir, session_dir, last_index):
+    if not (params_path := (session_dir / "parameters.json")).is_file():
         return
 
     with open(params_path, "r", encoding = "utf-8") as params_file:
@@ -281,7 +285,7 @@ def load_session(p, uv, project_dir, session_dir, params_path, last_index):
     if p.seed != -1:
         p.seed = p.seed + last_index
 
-def save_session(p, uv, project_dir, session_dir, params_path, last_index):
+def save_session(p, uv, project_dir, session_dir, last_index):
     for path in session_dir.glob("*.*"):
         path.unlink()
 
@@ -353,7 +357,7 @@ def save_session(p, uv, project_dir, session_dir, params_path, last_index):
         ]),
     )
 
-    with open(params_path, "w", encoding = "utf-8") as params_file:
+    with open(session_dir / "parameters.json", "w", encoding = "utf-8") as params_file:
         json.dump(data, params_file, indent = 4)
 
 def generate_image(job_title, p, **p_overrides):
@@ -373,6 +377,83 @@ def generate_image(job_title, p, **p_overrides):
         return None
 
     return processed
+
+#===============================================================================
+
+def measure_image(im, metrics):
+    npim = skimage.img_as_float(np.array(im))
+    grayscale = skimage.color.rgb2gray(npim[..., :3], channel_axis = 2)
+    red, green, blue = npim[..., 0], npim[..., 1], npim[..., 2]
+
+    metrics.luminance_mean.append(np.mean(grayscale))
+    metrics.luminance_std.append(np.std(grayscale))
+    metrics.color_level_mean.append([np.mean(red), np.mean(green), np.mean(blue)])
+    metrics.color_level_std.append([np.std(red), np.std(green), np.std(blue)])
+    metrics.noise_sigma.append(skimage.restoration.estimate_sigma(npim, average_sigmas = True, channel_axis = 2))
+
+def load_metrics(metrics, session_dir):
+    if (metrics_path := (session_dir / "metrics.json")).is_file():
+        with open(metrics_path, "r", encoding = "utf-8") as metrics_file:
+            load_object(metrics, json.load(metrics_file), session_dir)
+
+def save_metrics(metrics, session_dir):
+    with open(session_dir / "metrics.json", "w", encoding = "utf-8") as metrics_file:
+        json.dump(save_object(metrics, session_dir), metrics_file, indent = 4)
+
+def plot_metrics(metrics, session_dir):
+    result = []
+
+    @contextmanager
+    def figure(title, path):
+        plt.title(title)
+        plt.xlabel("Frame")
+        plt.ylabel("Level")
+        plt.grid()
+
+        try:
+            yield
+        finally:
+            plt.legend()
+
+            buffer = BytesIO()
+            plt.savefig(buffer, format = "png")
+            buffer.seek(0)
+
+            im = Image.open(buffer)
+            im.load()
+            im.save(path)
+            result.append(im)
+
+            plt.close()
+
+    def plot_noise_graph(data, label, color):
+        plt.axhline(data[0], color = color, linestyle = ":", linewidth = 0.5)
+        plt.axhline(np.mean(data), color = color, linestyle = "--", linewidth = 1.0)
+        plt.plot(data, color = color, label = label, linestyle = "--", linewidth = 0.5, marker = "+", markersize = 3)
+
+        if data.size > 3:
+            plt.plot(scipy.signal.savgol_filter(data, min(data.size, 51), 3), color = color, label = f"{label} (smoothed)", linestyle = "-")
+
+    with figure("Luminance mean", session_dir / "luminance_mean.png"):
+        plot_noise_graph(np.array(metrics.luminance_mean), "Luminance", "gray")
+
+    with figure("Luminance standard deviation", session_dir / "luminance_std.png"):
+        plot_noise_graph(np.array(metrics.luminance_std), "Luminance", "gray")
+
+    with figure("Color level mean", session_dir / "color_level_mean.png"):
+        plot_noise_graph(np.array(metrics.color_level_mean)[..., 0], "Red", "darkred")
+        plot_noise_graph(np.array(metrics.color_level_mean)[..., 1], "Green", "darkgreen")
+        plot_noise_graph(np.array(metrics.color_level_mean)[..., 2], "Blue", "darkblue")
+
+    with figure("Color level standard deviation", session_dir / "color_level_std.png"):
+        plot_noise_graph(np.array(metrics.color_level_std)[..., 0], "Red", "darkred")
+        plot_noise_graph(np.array(metrics.color_level_std)[..., 1], "Green", "darkgreen")
+        plot_noise_graph(np.array(metrics.color_level_std)[..., 2], "Blue", "darkblue")
+
+    with figure("Noise sigma", session_dir / "noise_sigma.png"):
+        plot_noise_graph(np.array(metrics.noise_sigma), "Noise sigma", "royalblue")
+
+    return result
 
 #===============================================================================
 
@@ -460,6 +541,10 @@ class TemporalScript(scripts.Script):
                 ue.render_draft = gr.Button(value = "Render draft", elem_id = self.elem_id("render_draft"))
                 ue.render_final = gr.Button(value = "Render final", elem_id = self.elem_id("render_final"))
 
+        with gr.Tab("Metrics"):
+            ue.metrics_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("metrics_enabled"))
+            ue.metrics_plot_every_nth_frame = gr.Number(label = "Plot every N-th frame", precision = 0, minimum = 1, step = 1, value = 10, elem_id = self.elem_id("metrics_plot_every_nth_frame"))
+
         ue.render_draft.click(lambda *args: self._start_video_render(False, *args), inputs = list(ue_dict.values()), outputs = [])
         ue.render_final.click(lambda *args: self._start_video_render(True, *args), inputs = list(ue_dict.values()), outputs = [])
 
@@ -469,13 +554,22 @@ class TemporalScript(scripts.Script):
 
     def run(self, p, *args):
         uv = self._get_ui_values(*args)
+        metrics = SimpleNamespace(
+            luminance_mean = [],
+            luminance_std = [],
+            color_level_mean = [],
+            color_level_std = [],
+            noise_sigma = [],
+        )
 
         project_dir = safe_get_directory(Path(uv.output_dir) / uv.project_subdir)
         session_dir = safe_get_directory(project_dir / "session")
-        params_path = session_dir / "parameters.json"
 
         if uv.start_from_scratch:
             for path in project_dir.glob("*.png"):
+                path.unlink()
+
+            if (path := (session_dir / "metrics.json")).is_file():
                 path.unlink()
 
         last_index = get_last_frame_index(project_dir)
@@ -485,7 +579,10 @@ class TemporalScript(scripts.Script):
         p.styles.clear()
 
         if uv.load_session:
-            load_session(p, uv, project_dir, session_dir, params_path, last_index)
+            load_session(p, uv, project_dir, session_dir, last_index)
+
+        if uv.metrics_enabled:
+            load_metrics(metrics, session_dir)
 
         p.n_iter = 1
         p.batch_size = 1
@@ -505,11 +602,14 @@ class TemporalScript(scripts.Script):
             else:
                 return processed
 
+        if uv.metrics_enabled and last_index == 0:
+            measure_image(p.init_images[0], metrics)
+
         if opts.img2img_color_correction:
             p.color_corrections = [processing.setup_color_correction(p.init_images[0])]
 
         if uv.save_session:
-            save_session(p, uv, project_dir, session_dir, params_path, last_index)
+            save_session(p, uv, project_dir, session_dir, last_index)
 
         if uv.noise_relative:
             uv.noise_amount *= p.denoising_strength
@@ -540,18 +640,21 @@ class TemporalScript(scripts.Script):
             )):
                 return processed
 
+            last_image = processed.images[0]
+            last_seed += 1
+
             if frame_index % uv.save_every_nth_frame == 0:
                 if uv.archive_mode:
                     self._image_save_tq.enqueue(
                         Image.Image.save,
-                        processed.images[0],
+                        last_image,
                         project_dir / f"{frame_index:05d}.png",
                         optimize = True,
                         compress_level = 9,
                     )
                 else:
                     images.save_image(
-                        processed.images[0],
+                        last_image,
                         project_dir,
                         "",
                         processed.seed,
@@ -562,8 +665,12 @@ class TemporalScript(scripts.Script):
                         forced_filename = f"{frame_index:05d}",
                     )
 
-            last_image = processed.images[0]
-            last_seed += 1
+            if uv.metrics_enabled:
+                measure_image(last_image, metrics)
+
+                if frame_index % uv.metrics_plot_every_nth_frame == 0:
+                    save_metrics(metrics, session_dir)
+                    plot_metrics(metrics, session_dir)
 
         if uv.render_draft_on_finish:
             self._start_video_render(False, *args)
