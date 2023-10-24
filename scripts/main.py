@@ -80,6 +80,19 @@ def load_image(path):
     return im
 
 def preprocess_image(im, uv, seed):
+    if uv.noise_compression_constant > 0.0 or uv.noise_compression_adaptive > 0.0:
+        npim = skimage.img_as_float(np.array(im))
+
+        weight = 0.0
+
+        if uv.noise_compression_constant > 0.0:
+            weight += uv.noise_compression_constant
+
+        if uv.noise_compression_adaptive > 0.0:
+            weight += skimage.restoration.estimate_sigma(npim, average_sigmas = True, channel_axis = 2) * uv.noise_compression_adaptive
+
+        im = Image.fromarray(skimage.img_as_ubyte(skimage.restoration.denoise_tv_chambolle(npim, weight = max(weight, 1e-5), channel_axis = 2)))
+
     if uv.color_correction_image is not None:
         im = Image.fromarray(skimage.img_as_ubyte(skimage.exposure.match_histograms(np.array(im), np.array(uv.color_correction_image.convert(im.mode)), channel_axis = 2)))
 
@@ -324,6 +337,8 @@ def save_session(p, uv, project_dir, session_dir, last_index):
         ),
         extension_params = save_object(uv, session_dir, [
             "save_every_nth_frame",
+            "noise_compression_constant",
+            "noise_compression_adaptive",
             "color_correction_image",
             "normalize_contrast",
             "brightness",
@@ -484,6 +499,8 @@ class TemporalScript(scripts.Script):
             ue.save_session = gr.Checkbox(label = "Save session", value = True, elem_id = self.elem_id("save_session"))
 
         with gr.Tab("Frame Preprocessing"):
+            ue.noise_compression_constant = gr.Slider(label = "Noise compression constant", minimum = 0.0, maximum = 1.0, step = 1e-5, value = 0.0, elem_id = self.elem_id("noise_compression_constant"))
+            ue.noise_compression_adaptive = gr.Slider(label = "Noise compression adaptive", minimum = 0.0, maximum = 2.0, step = 0.01, value = 0.0, elem_id = self.elem_id("noise_compression_adaptive"))
             ue.color_correction_image = gr.Pil(label = "Color correction image", elem_id = self.elem_id("color_correction_image"))
             ue.normalize_contrast = gr.Checkbox(label = "Normalize contrast", value = False, elem_id = self.elem_id("normalize_contrast"))
             ue.brightness = gr.Slider(label = "Brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, elem_id = self.elem_id("brightness"))
