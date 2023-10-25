@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 import skimage
-from PIL import Image, ImageChops, ImageEnhance, ImageFilter, ImageOps
+from PIL import Image, ImageColor
 
 from modules import images, processing, scripts
 from modules.shared import opts, prompt_styles, state
@@ -50,26 +50,145 @@ class ThreadQueue:
 
 #===============================================================================
 
-BLEND_MODES = dict(
-    normal     = dict(name = "Normal",     func = lambda im, mod, amt: Image.blend(im, mod, amt)),
-    add        = dict(name = "Add",        func = lambda im, mod, amt: Image.blend(im, ImageChops.add(im, mod), amt)),
-    subtract   = dict(name = "Subtract",   func = lambda im, mod, amt: Image.blend(im, ImageChops.subtract(im, mod), amt)),
-    multiply   = dict(name = "Multiply",   func = lambda im, mod, amt: Image.blend(im, ImageChops.multiply(im, mod), amt)),
-    lighten    = dict(name = "Lighten",    func = lambda im, mod, amt: Image.blend(im, ImageChops.lighter(im, mod), amt)),
-    darken     = dict(name = "Darken",     func = lambda im, mod, amt: Image.blend(im, ImageChops.darker(im, mod), amt)),
-    hard_light = dict(name = "Hard light", func = lambda im, mod, amt: Image.blend(im, ImageChops.hard_light(im, mod), amt)),
-    soft_light = dict(name = "Soft light", func = lambda im, mod, amt: Image.blend(im, ImageChops.soft_light(im, mod), amt)),
-    overlay    = dict(name = "Overlay",    func = lambda im, mod, amt: Image.blend(im, ImageChops.overlay(im, mod), amt)),
-    screen     = dict(name = "Screen",     func = lambda im, mod, amt: Image.blend(im, ImageChops.screen(im, mod), amt)),
-    # TODO: Rename to monochrome/color/whatever
-    tint       = dict(name = "Tint",       func = lambda im, mod, amt: Image.blend(im, ImageChops.multiply(ImageOps.grayscale(im).convert(im.mode), mod), amt)),
-)
+def lerp(a, b, x):
+    return a * (1.0 - x) + b * x
 
-def blend_images(im, modulator, mode, amount):
+def remap_range(value, old_min, old_max, new_min, new_max):
+    return new_min + (value - old_min) / (old_max - old_min) * (new_max - new_min)
+
+#===============================================================================
+
+BLEND_MODES = dict()
+
+def blend_mode(key, name):
+    def decorator(func):
+        BLEND_MODES[key] = dict(name = name, func = func)
+        return func
+    return decorator
+
+@blend_mode("normal", "Normal")
+def _(b, s):
+    return s
+
+@blend_mode("add", "Add")
+def _(b, s):
+    return b + s
+
+@blend_mode("subtract", "Subtract")
+def _(b, s):
+    return b - s
+
+@blend_mode("multiply", "Multiply")
+def _(b, s):
+    return b * s
+
+@blend_mode("divide", "Divide")
+def _(b, s):
+    return b / np.clip(s, 1e-6, 1.0)
+
+@blend_mode("lighten", "Lighten")
+def _(b, s):
+    return np.maximum(b, s)
+
+@blend_mode("darken", "Darken")
+def _(b, s):
+    return np.minimum(b, s)
+
+@blend_mode("hard_light", "Hard light")
+def _(b, s):
+    result = np.zeros_like(s)
+    less_idx = np.where(s <= 0.5)
+    more_idx = np.where(s >  0.5)
+    result[less_idx] = BLEND_MODES["multiply"]["func"](b[less_idx], 2.0 * s[less_idx])
+    result[more_idx] = BLEND_MODES["screen"]["func"](b[more_idx], 2.0 * s[more_idx] - 1.0)
+    return result
+
+@blend_mode("soft_light", "Soft light")
+def _(b, s):
+    def D(b):
+        result = np.zeros_like(b)
+        less_idx = np.where(b <= 0.25)
+        more_idx = np.where(b >  0.25)
+        result[less_idx] = ((16.0 * b[less_idx] - 12.0) * b[less_idx] + 4.0) * b[less_idx]
+        result[more_idx] = np.sqrt(b[more_idx])
+        return result
+
+    result = np.zeros_like(s)
+    less_idx = np.where(s <= 0.5)
+    more_idx = np.where(s >  0.5)
+    result[less_idx] = b[less_idx] - (1.0 - 2.0 * s[less_idx]) * b[less_idx] * (1.0 - b[less_idx])
+    result[more_idx] = b[more_idx] + (2.0 * s[more_idx] - 1.0) * (D(b[more_idx]) - b[more_idx])
+    return result
+
+@blend_mode("color_dodge", "Color dodge")
+def _(b, s):
+    result = np.zeros_like(s)
+    b0_mask = b == 0.0
+    s1_mask = s == 1.0
+    else_mask = np.logical_not(np.logical_or(b0_mask, s1_mask))
+    else_idx = np.where(else_mask)
+    result[np.where(b0_mask)] = 0.0
+    result[np.where(s1_mask)] = 1.0
+    result[else_idx] = np.minimum(1.0, b[else_idx] / (1.0 - s[else_idx]))
+    return result
+
+@blend_mode("color_burn", "Color burn")
+def _(b, s):
+    result = np.zeros_like(s)
+    b1_mask = b == 1.0
+    s0_mask = s == 0.0
+    else_mask = np.logical_not(np.logical_or(b1_mask, s0_mask))
+    else_idx = np.where(else_mask)
+    result[np.where(b1_mask)] = 1.0
+    result[np.where(s0_mask)] = 0.0
+    result[else_idx] = 1.0 - np.minimum(1.0, (1.0 - b[else_idx]) / s[else_idx])
+    return result
+
+@blend_mode("overlay", "Overlay")
+def _(b, s):
+    return BLEND_MODES["hard_light"]["func"](s, b)
+
+@blend_mode("screen", "Screen")
+def _(b, s):
+    return b + s - (b * s)
+
+@blend_mode("difference", "Difference")
+def _(b, s):
+    return np.abs(b - s)
+
+@blend_mode("exclusion", "Exclusion")
+def _(b, s):
+    return b + s - 2.0 * b * s
+
+@blend_mode("hue", "Hue")
+def _(b, s):
+    b_hsv = skimage.color.rgb2hsv(b)
+    s_hsv = skimage.color.rgb2hsv(s)
+    return skimage.color.hsv2rgb(np.stack((s_hsv[..., 0], b_hsv[..., 1], b_hsv[..., 2]), axis = 2))
+
+@blend_mode("saturation", "Saturation")
+def _(b, s):
+    b_hsv = skimage.color.rgb2hsv(b)
+    s_hsv = skimage.color.rgb2hsv(s)
+    return skimage.color.hsv2rgb(np.stack((b_hsv[..., 0], s_hsv[..., 1], b_hsv[..., 2]), axis = 2))
+
+@blend_mode("value", "Value")
+def _(b, s):
+    b_hsv = skimage.color.rgb2hsv(b)
+    s_hsv = skimage.color.rgb2hsv(s)
+    return skimage.color.hsv2rgb(np.stack((b_hsv[..., 0], b_hsv[..., 1], s_hsv[..., 2]), axis = 2))
+
+@blend_mode("color", "Color")
+def _(b, s):
+    b_hsv = skimage.color.rgb2hsv(b)
+    s_hsv = skimage.color.rgb2hsv(s)
+    return skimage.color.hsv2rgb(np.stack((s_hsv[..., 0], s_hsv[..., 1], b_hsv[..., 2]), axis = 2))
+
+def blend_images(npim, modulator, mode, amount):
     if modulator is None or amount <= 0.0:
-        return im
+        return npim
 
-    return BLEND_MODES[mode]["func"](im, modulator, amount)
+    return lerp(npim, BLEND_MODES[mode]["func"](npim, modulator), amount)
 
 def generate_noise_image(size, seed):
     return Image.fromarray(np.random.default_rng(seed).integers(0, 256, size = (size[1], size[0], 3), dtype = "uint8"))
@@ -79,10 +198,21 @@ def load_image(path):
     im.load()
     return im
 
-def preprocess_image(im, uv, seed):
-    if uv.noise_compression_constant > 0.0 or uv.noise_compression_adaptive > 0.0:
-        npim = skimage.img_as_float(np.array(im))
+def match_image(im, reference, mode = True, size = True):
+    if mode and im.mode != reference.mode:
+        im = im.convert(reference.mode)
 
+    if size and im.size != reference.size:
+        im = im.resize(reference.size, Image.Resampling.LANCZOS)
+
+    return im
+
+def preprocess_image(im, uv, seed):
+    im = im.convert("RGB")
+    npim = skimage.img_as_float(im)
+    height, width = npim.shape[:2]
+
+    if uv.noise_compression_enabled:
         weight = 0.0
 
         if uv.noise_compression_constant > 0.0:
@@ -91,71 +221,61 @@ def preprocess_image(im, uv, seed):
         if uv.noise_compression_adaptive > 0.0:
             weight += skimage.restoration.estimate_sigma(npim, average_sigmas = True, channel_axis = 2) * uv.noise_compression_adaptive
 
-        im = Image.fromarray(skimage.img_as_ubyte(skimage.restoration.denoise_tv_chambolle(npim, weight = max(weight, 1e-5), channel_axis = 2)))
+        npim = skimage.restoration.denoise_tv_chambolle(npim, weight = max(weight, 1e-5), channel_axis = 2)
 
-    if uv.color_correction_image is not None:
-        im = Image.fromarray(skimage.img_as_ubyte(skimage.exposure.match_histograms(np.array(im), np.array(uv.color_correction_image.convert(im.mode)), channel_axis = 2)))
+    if uv.color_correction_enabled:
+        if uv.color_correction_image is not None:
+            npim = skimage.exposure.match_histograms(npim, skimage.img_as_float(match_image(uv.color_correction_image, im, size = False)), channel_axis = 2)
 
-    if uv.normalize_contrast:
-        im = ImageOps.autocontrast(im.convert("RGB"), preserve_tone = True)
+        if uv.normalize_contrast:
+            npim = skimage.exposure.rescale_intensity(npim)
 
-    if uv.brightness != 1.0:
-        im = ImageEnhance.Brightness(im).enhance(uv.brightness)
+    if uv.color_balancing_enabled:
+        hsv = skimage.color.rgb2hsv(npim, channel_axis = 2)
+        s = hsv[..., 1]
+        s[:] = remap_range(s, s.min(), s.max(), s.min(), uv.saturation)
+        npim = skimage.color.hsv2rgb(hsv)
 
-    if uv.contrast != 1.0:
-        im = ImageEnhance.Contrast(im).enhance(uv.contrast)
+        npim = remap_range(npim, npim.min(), npim.max(), 0.5 - uv.contrast / 2, 0.5 + uv.contrast / 2)
 
-    if uv.saturation != 1.0:
-        im = ImageEnhance.Color(im).enhance(uv.saturation)
+        npim = remap_range(npim, npim.min(), npim.max(), 0.0, uv.brightness)
 
-    if uv.noise_amount > 0.0:
-        im = blend_images(im, generate_noise_image(im.size, seed), uv.noise_mode, uv.noise_amount)
+    if uv.noise_enabled:
+        npim = blend_images(npim, np.random.default_rng(seed).uniform(high = 1.0 + np.finfo(npim.dtype).eps, size = npim.shape), uv.noise_mode, uv.noise_amount)
 
-    if uv.modulator_image is not None and uv.modulator_amount > 0.0:
-        im = blend_images(im, (
-            uv.modulator_image
-            .convert(im.mode)
-            .resize(im.size, Image.Resampling.LANCZOS)
-            .filter(ImageFilter.GaussianBlur(uv.modulator_blurring))
-        ), uv.modulator_mode, uv.modulator_amount)
+    if uv.modulation_enabled and uv.modulation_image is not None:
+        npim = blend_images(npim, skimage.filters.gaussian(skimage.img_as_float(match_image(uv.modulation_image, im)), uv.modulation_blurring, channel_axis = 2), uv.modulation_mode, uv.modulation_amount)
 
-    if uv.contour_image is not None and uv.contour_amount > 0.0:
-        im = blend_images(im, ImageOps.grayscale((
-            uv.contour_image
-            .convert(im.mode)
-            .resize(im.size, Image.Resampling.LANCZOS)
-            .filter(ImageFilter.CONTOUR)
-            .filter(ImageFilter.GaussianBlur(uv.contour_blurring))
-        )).convert(im.mode), "multiply", uv.contour_amount)
+    if uv.tinting_enabled:
+        npim = blend_images(npim, np.full_like(npim, np.array(ImageColor.getrgb(uv.tinting_color)) / 255.0), uv.tinting_mode, uv.tinting_amount)
 
-    if uv.tinting_color != "#ffffff" and uv.tinting_amount > 0.0:
-        im = blend_images(im, Image.new(im.mode, im.size, uv.tinting_color), uv.tinting_mode, uv.tinting_amount)
+    if uv.sharpening_enabled:
+        npim = skimage.filters.unsharp_mask(npim, uv.sharpening_radius, uv.sharpening_amount, channel_axis = 2)
 
-    if uv.sharpening_amount > 0.0:
-        im = im.filter(ImageFilter.UnsharpMask(uv.sharpening_radius, int(uv.sharpening_amount * 100.0), 0))
+    if uv.transformation_enabled:
+        o_transform = skimage.transform.AffineTransform(translation = (-width / 2, -height / 2))
+        t_transform = skimage.transform.AffineTransform(translation = (-uv.translation_x * width, -uv.translation_y * height))
+        r_transform = skimage.transform.AffineTransform(rotation = np.deg2rad(uv.rotation))
+        s_transform = skimage.transform.AffineTransform(scale = uv.scaling)
+        npim = skimage.transform.warp(npim, skimage.transform.AffineTransform(t_transform.params @ np.linalg.inv(o_transform.params) @ s_transform.params @ r_transform.params @ o_transform.params).inverse, mode = "symmetric")
 
-    if uv.zooming > 0:
-        pixel_size = 1.0 / (im.width if im.width > im.height else im.height)
-        zoom_factor = 1.0 - pixel_size * uv.zooming
-        im = im.transform(im.size, Image.AFFINE, (
-            zoom_factor, 0.0, -((im.width  * zoom_factor) - im.width)  / 2.0,
-            0.0, zoom_factor, -((im.height * zoom_factor) - im.height) / 2.0,
-        ), Image.Resampling.BILINEAR)
+    if uv.symmetrize:
+        npim[:, width // 2:] = np.flip(npim[:, :width // 2], axis = 1)
 
-    if uv.shifting_x > 0 or uv.shifting_y > 0:
-        im = ImageChops.offset(im, uv.shifting_x, uv.shifting_y)
+    if uv.blurring_enabled:
+        npim = skimage.filters.gaussian(npim, uv.blurring_radius, channel_axis = 2)
 
-    if uv.symmetry:
-        im.paste(ImageOps.mirror(im.crop((0, 0, im.width // 2, im.height))), (im.width // 2, 0))
+    if uv.custom_code_enabled:
+        code_globals = dict(
+            np = np,
+            scipy = scipy,
+            skimage = skimage,
+            input = npim,
+        )
+        exec(uv.custom_code, code_globals)
+        npim = code_globals.get("output", npim)
 
-    if uv.blurring > 0.0:
-        im = im.filter(ImageFilter.GaussianBlur(uv.blurring))
-
-    if uv.spreading > 0:
-        # TODO: Make deterministic by making use of the provided seed
-        im = im.effect_spread(uv.spreading)
-
-    return im
+    return Image.fromarray(skimage.img_as_ubyte(np.clip(npim, 0.0, 1.0)))
 
 #===============================================================================
 
@@ -337,38 +457,45 @@ def save_session(p, uv, project_dir, session_dir, last_index):
         ),
         extension_params = save_object(uv, session_dir, [
             "save_every_nth_frame",
+            "noise_compression_enabled",
             "noise_compression_constant",
             "noise_compression_adaptive",
+            "color_correction_enabled",
             "color_correction_image",
             "normalize_contrast",
+            "color_balancing_enabled",
             "brightness",
             "contrast",
             "saturation",
-            "noise_mode",
+            "noise_enabled",
             "noise_amount",
             "noise_relative",
-            "modulator_image",
-            "modulator_blurring",
-            "modulator_mode",
-            "modulator_amount",
-            "modulator_relative",
-            "contour_image",
-            "contour_blurring",
-            "contour_amount",
-            "contour_relative",
-            "tinting_color",
-            "tinting_mode",
+            "noise_mode",
+            "modulation_enabled",
+            "modulation_amount",
+            "modulation_relative",
+            "modulation_mode",
+            "modulation_image",
+            "modulation_blurring",
+            "tinting_enabled",
             "tinting_amount",
             "tinting_relative",
-            "sharpening_radius",
+            "tinting_mode",
+            "tinting_color",
+            "sharpening_enabled",
             "sharpening_amount",
             "sharpening_relative",
-            "zooming",
-            "shifting_x",
-            "shifting_y",
-            "symmetry",
-            "blurring",
-            "spreading",
+            "sharpening_radius",
+            "transformation_enabled",
+            "scaling",
+            "rotation",
+            "translation_x",
+            "translation_y",
+            "symmetrize",
+            "blurring_enabled",
+            "blurring_radius",
+            "custom_code_enabled",
+            "custom_code",
         ]),
     )
 
@@ -396,7 +523,7 @@ def generate_image(job_title, p, **p_overrides):
 #===============================================================================
 
 def measure_image(im, metrics):
-    npim = skimage.img_as_float(np.array(im))
+    npim = skimage.img_as_float(im)
     grayscale = skimage.color.rgb2gray(npim[..., :3], channel_axis = 2)
     red, green, blue = npim[..., 0], npim[..., 1], npim[..., 2]
 
@@ -499,44 +626,84 @@ class TemporalScript(scripts.Script):
             ue.save_session = gr.Checkbox(label = "Save session", value = True, elem_id = self.elem_id("save_session"))
 
         with gr.Tab("Frame Preprocessing"):
-            ue.noise_compression_constant = gr.Slider(label = "Noise compression constant", minimum = 0.0, maximum = 1.0, step = 1e-5, value = 0.0, elem_id = self.elem_id("noise_compression_constant"))
-            ue.noise_compression_adaptive = gr.Slider(label = "Noise compression adaptive", minimum = 0.0, maximum = 2.0, step = 0.01, value = 0.0, elem_id = self.elem_id("noise_compression_adaptive"))
-            ue.color_correction_image = gr.Pil(label = "Color correction image", elem_id = self.elem_id("color_correction_image"))
-            ue.normalize_contrast = gr.Checkbox(label = "Normalize contrast", value = False, elem_id = self.elem_id("normalize_contrast"))
-            ue.brightness = gr.Slider(label = "Brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, elem_id = self.elem_id("brightness"))
-            ue.contrast = gr.Slider(label = "Contrast", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, elem_id = self.elem_id("contrast"))
-            ue.saturation = gr.Slider(label = "Saturation", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, elem_id = self.elem_id("saturation"))
-            # FIXME: Pairs (name, value) don't work for some reason
-            ue.noise_mode = gr.Dropdown(label = "Noise mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)), elem_id = self.elem_id("noise_mode"))
-            ue.noise_amount = gr.Slider(label = "Noise amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("noise_amount"))
-            ue.noise_relative = gr.Checkbox(label = "Noise relative", value = False, elem_id = self.elem_id("noise_relative"))
-            ue.modulator_image = gr.Pil(label = "Modulator image", elem_id = self.elem_id("modulator_image"))
-            ue.modulator_blurring = gr.Slider(label = "Modulator blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, elem_id = self.elem_id("modulator_blurring"))
-            # FIXME: Pairs (name, value) don't work for some reason
-            ue.modulator_mode = gr.Dropdown(label = "Modulator mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)), elem_id = self.elem_id("modulator_mode"))
-            ue.modulator_amount = gr.Slider(label = "Modulator amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("modulator_amount"))
-            ue.modulator_relative = gr.Checkbox(label = "Modulator relative", value = False, elem_id = self.elem_id("modulator_relative"))
-            ue.contour_image = gr.Pil(label = "Contour image", elem_id = self.elem_id("contour_image"))
-            ue.contour_blurring = gr.Slider(label = "Contour blurring", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0, elem_id = self.elem_id("contour_blurring"))
-            ue.contour_amount = gr.Slider(label = "Contour amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("contour_amount"))
-            ue.contour_relative = gr.Checkbox(label = "Contour relative", value = False, elem_id = self.elem_id("contour_relative"))
-            ue.tinting_color = gr.ColorPicker(label = "Tinting color", value = "#ffffff", elem_id = self.elem_id("tinting_color"))
-            # FIXME: Pairs (name, value) don't work for some reason
-            ue.tinting_mode = gr.Dropdown(label = "Tinting mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)), elem_id = self.elem_id("tinting_mode"))
-            ue.tinting_amount = gr.Slider(label = "Tinting amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("tinting_amount"))
-            ue.tinting_relative = gr.Checkbox(label = "Tinting relative", value = False, elem_id = self.elem_id("tinting_relative"))
-            ue.sharpening_radius = gr.Slider(label = "Sharpening radius", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0, elem_id = self.elem_id("sharpening_radius"))
-            ue.sharpening_amount = gr.Slider(label = "Sharpening amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("sharpening_amount"))
-            ue.sharpening_relative = gr.Checkbox(label = "Sharpening relative", value = False, elem_id = self.elem_id("sharpening_relative"))
-            ue.zooming = gr.Slider(label = "Zooming", minimum = 0, maximum = 10, step = 1, value = 0, elem_id = self.elem_id("zooming"))
+            with gr.Accordion("Noise compression"):
+                ue.noise_compression_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("noise_compression_enabled"))
+                ue.noise_compression_constant = gr.Slider(label = "Constant", minimum = 0.0, maximum = 1.0, step = 1e-5, value = 0.0, elem_id = self.elem_id("noise_compression_constant"))
+                ue.noise_compression_adaptive = gr.Slider(label = "Adaptive", minimum = 0.0, maximum = 2.0, step = 0.01, value = 0.0, elem_id = self.elem_id("noise_compression_adaptive"))
 
-            with gr.Row():
-                ue.shifting_x = gr.Number(label = "Shifting X", precision = 0, step = 1, value = 0, elem_id = self.elem_id("shifting_x"))
-                ue.shifting_y = gr.Number(label = "Shifting Y", precision = 0, step = 1, value = 0, elem_id = self.elem_id("shifting_y"))
+            with gr.Accordion("Color correction"):
+                ue.color_correction_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("color_correction_enabled"))
+                ue.color_correction_image = gr.Pil(label = "Color correction image", elem_id = self.elem_id("color_correction_image"))
+                ue.normalize_contrast = gr.Checkbox(label = "Normalize contrast", value = False, elem_id = self.elem_id("normalize_contrast"))
 
-            ue.symmetry = gr.Checkbox(label = "Symmetry", value = False, elem_id = self.elem_id("symmetry"))
-            ue.blurring = gr.Slider(label = "Blurring", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0, elem_id = self.elem_id("blurring"))
-            ue.spreading = gr.Slider(label = "Spreading", minimum = 0, maximum = 10, step = 1, value = 0, elem_id = self.elem_id("spreading"))
+            with gr.Accordion("Color balancing"):
+                ue.color_balancing_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("color_balancing_enabled"))
+                ue.brightness = gr.Slider(label = "Brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, elem_id = self.elem_id("brightness"))
+                ue.contrast = gr.Slider(label = "Contrast", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, elem_id = self.elem_id("contrast"))
+                ue.saturation = gr.Slider(label = "Saturation", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, elem_id = self.elem_id("saturation"))
+
+            with gr.Accordion("Noise"):
+                ue.noise_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("noise_enabled"))
+
+                with gr.Row():
+                    ue.noise_amount = gr.Slider(label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("noise_amount"))
+                    ue.noise_relative = gr.Checkbox(label = "Relative", value = False, elem_id = self.elem_id("noise_relative"))
+
+                # FIXME: Pairs (name, value) don't work for some reason
+                ue.noise_mode = gr.Dropdown(label = "Mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)), elem_id = self.elem_id("noise_mode"))
+
+            with gr.Accordion("Modulation"):
+                ue.modulation_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("modulation_enabled"))
+
+                with gr.Row():
+                    ue.modulation_amount = gr.Slider(label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("modulation_amount"))
+                    ue.modulation_relative = gr.Checkbox(label = "Relative", value = False, elem_id = self.elem_id("modulation_relative"))
+
+                # FIXME: Pairs (name, value) don't work for some reason
+                ue.modulation_mode = gr.Dropdown(label = "Mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)), elem_id = self.elem_id("modulation_mode"))
+                ue.modulation_image = gr.Pil(label = "Image", elem_id = self.elem_id("modulation_image"))
+                ue.modulation_blurring = gr.Slider(label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, elem_id = self.elem_id("modulation_blurring"))
+
+            with gr.Accordion("Tinting"):
+                ue.tinting_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("tinting_enabled"))
+
+                with gr.Row():
+                    ue.tinting_amount = gr.Slider(label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("tinting_amount"))
+                    ue.tinting_relative = gr.Checkbox(label = "Relative", value = False, elem_id = self.elem_id("tinting_relative"))
+
+                # FIXME: Pairs (name, value) don't work for some reason
+                ue.tinting_mode = gr.Dropdown(label = "Mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)), elem_id = self.elem_id("tinting_mode"))
+                ue.tinting_color = gr.ColorPicker(label = "Color", value = "#ffffff", elem_id = self.elem_id("tinting_color"))
+
+            with gr.Accordion("Sharpening"):
+                ue.sharpening_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("sharpening_enabled"))
+
+                with gr.Row():
+                    ue.sharpening_amount = gr.Slider(label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("sharpening_amount"))
+                    ue.sharpening_relative = gr.Checkbox(label = "Relative", value = False, elem_id = self.elem_id("sharpening_relative"))
+
+                ue.sharpening_radius = gr.Slider(label = "Radius", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0, elem_id = self.elem_id("sharpening_radius"))
+
+            with gr.Accordion("Transformation"):
+                ue.transformation_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("transformation_enabled"))
+
+                with gr.Row():
+                    ue.translation_x = gr.Number(label = "Translation X", step = 0.001, value = 0.0, elem_id = self.elem_id("translation_x"))
+                    ue.translation_y = gr.Number(label = "Translation Y", step = 0.001, value = 0.0, elem_id = self.elem_id("translation_y"))
+
+                ue.rotation = gr.Slider(label = "Rotation", minimum = -90.0, maximum = 90.0, step = 0.1, value = 0.0, elem_id = self.elem_id("rotation"))
+                ue.scaling = gr.Slider(label = "Scaling", minimum = 0.0, maximum = 2.0, step = 0.001, value = 1.0, elem_id = self.elem_id("scaling"))
+
+            ue.symmetrize = gr.Checkbox(label = "Symmetrize", value = False, elem_id = self.elem_id("symmetrize"))
+
+            with gr.Accordion("Blurring"):
+                ue.blurring_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("blurring_enabled"))
+                ue.blurring_radius = gr.Slider(label = "Blurring", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0, elem_id = self.elem_id("blurring_radius"))
+
+            with gr.Accordion("Custom code"):
+                ue.custom_code_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("custom_code_enabled"))
+                gr.Markdown("**WARNING:** Don't put an untrusted code here!")
+                ue.custom_code = gr.Code(label = "Code", language = "python", value = "", elem_id = self.elem_id("custom_code"))
 
         with gr.Tab("Video Rendering"):
             with gr.Row():
@@ -631,11 +798,8 @@ class TemporalScript(scripts.Script):
         if uv.noise_relative:
             uv.noise_amount *= p.denoising_strength
 
-        if uv.modulator_relative:
-            uv.modulator_amount *= p.denoising_strength
-
-        if uv.contour_relative:
-            uv.contour_amount *= p.denoising_strength
+        if uv.modulation_relative:
+            uv.modulation_amount *= p.denoising_strength
 
         if uv.tinting_relative:
             uv.tinting_amount *= p.denoising_strength
