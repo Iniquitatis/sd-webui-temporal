@@ -7,6 +7,7 @@ from itertools import count
 from os import system
 from pathlib import Path
 from threading import Lock, Thread
+from time import sleep
 from types import SimpleNamespace
 
 import gradio as gr
@@ -31,22 +32,27 @@ def safe_get_directory(path):
 
 class ThreadQueue:
     def __init__(self):
-        self._threads = []
-        self._start_lock = Lock()
-        self._list_lock = Lock()
+        self._queue = []
+        self._execution_lock = Lock()
+        self._queue_lock = Lock()
+
+    @property
+    def busy(self):
+        with self._queue_lock:
+            return len(self._queue) > 0
 
     def enqueue(self, target, *args, **kwargs):
         def callback():
-            with self._start_lock:
+            with self._execution_lock:
                 target(*args, **kwargs)
 
-            with self._list_lock:
-                self._threads = list(filter(Thread.is_alive, self._threads))
+            with self._queue_lock:
+                self._queue.pop(0)
 
-        with self._list_lock:
+        with self._queue_lock:
             thread = Thread(target = callback)
+            self._queue.append(thread)
             thread.start()
-            self._threads.append(thread)
 
 #===============================================================================
 
@@ -287,7 +293,7 @@ def render_video(uv, is_final):
     output_dir = Path(uv.output_dir)
     frame_dir = output_dir / uv.project_subdir
     frame_list_path = output_dir / f"{uv.project_subdir}-{suffix}.txt"
-    video_path = output_dir / f"{uv.project_subdir}-{suffix}.mkv"
+    video_path = output_dir / f"{uv.project_subdir}-{suffix}.mp4"
 
     with open(frame_list_path, "w", encoding = "utf-8") as frame_list:
         frame_paths = sorted(frame_dir.glob("*.png"), key = lambda x: x.name)
@@ -725,12 +731,29 @@ class TemporalScript(scripts.Script):
                 ue.render_draft = gr.Button(value = "Render draft", elem_id = self.elem_id("render_draft"))
                 ue.render_final = gr.Button(value = "Render final", elem_id = self.elem_id("render_final"))
 
+            ue.video_preview = gr.Video(label = "Preview", format = "mp4", interactive = False, elem_id = self.elem_id("video_preview"))
+
         with gr.Tab("Metrics"):
             ue.metrics_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("metrics_enabled"))
             ue.metrics_plot_every_nth_frame = gr.Number(label = "Plot every N-th frame", precision = 0, minimum = 1, step = 1, value = 10, elem_id = self.elem_id("metrics_plot_every_nth_frame"))
 
-        ue.render_draft.click(lambda *args: self._start_video_render(False, *args), inputs = list(ue_dict.values()), outputs = [])
-        ue.render_final.click(lambda *args: self._start_video_render(True, *args), inputs = list(ue_dict.values()), outputs = [])
+        def make_render_callback(is_final):
+            def callback(*args):
+                yield gr.Button.update(interactive = False), gr.Button.update(interactive = False), None
+
+                self._start_video_render(is_final, *args)
+
+                while self._video_render_tq.busy:
+                    sleep(1)
+
+                uv = self._get_ui_values(*args)
+
+                yield gr.Button.update(interactive = True), gr.Button.update(interactive = True), f"{uv.output_dir}/{uv.project_subdir}-{'final' if is_final else 'draft'}.mp4"
+
+            return callback
+
+        ue.render_draft.click(make_render_callback(False), inputs = list(ue_dict.values()), outputs = [ue.render_draft, ue.render_final, ue.video_preview])
+        ue.render_final.click(make_render_callback(True), inputs = list(ue_dict.values()), outputs = [ue.render_draft, ue.render_final, ue.video_preview])
 
         self._ui_element_names = list(ue_dict.keys())
 
