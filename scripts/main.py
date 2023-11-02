@@ -227,7 +227,7 @@ def preprocess_image(im, uv, seed):
         if uv.noise_compression_adaptive > 0.0:
             weight += skimage.restoration.estimate_sigma(npim, average_sigmas = True, channel_axis = 2) * uv.noise_compression_adaptive
 
-        npim = skimage.restoration.denoise_tv_chambolle(npim, weight = max(weight, 1e-5), channel_axis = 2)
+            npim = skimage.restoration.denoise_tv_chambolle(npim, weight = max(weight, 1e-5), channel_axis = 2)
 
     if uv.color_correction_enabled:
         if uv.color_correction_image is not None:
@@ -237,14 +237,14 @@ def preprocess_image(im, uv, seed):
             npim = skimage.exposure.rescale_intensity(npim)
 
     if uv.color_balancing_enabled:
+        npim = remap_range(npim, npim.min(), npim.max(), 0.0, uv.brightness)
+
+        npim = remap_range(npim, npim.min(), npim.max(), 0.5 - uv.contrast / 2, 0.5 + uv.contrast / 2)
+
         hsv = skimage.color.rgb2hsv(npim, channel_axis = 2)
         s = hsv[..., 1]
         s[:] = remap_range(s, s.min(), s.max(), s.min(), uv.saturation)
         npim = skimage.color.hsv2rgb(hsv)
-
-        npim = remap_range(npim, npim.min(), npim.max(), 0.5 - uv.contrast / 2, 0.5 + uv.contrast / 2)
-
-        npim = remap_range(npim, npim.min(), npim.max(), 0.0, uv.brightness)
 
     if uv.noise_enabled:
         npim = blend_images(npim, np.random.default_rng(seed).uniform(high = 1.0 + np.finfo(npim.dtype).eps, size = npim.shape), uv.noise_mode, uv.noise_amount)
