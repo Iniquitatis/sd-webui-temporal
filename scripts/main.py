@@ -227,7 +227,7 @@ def preprocess_image(im, uv, seed):
         if uv.noise_compression_adaptive > 0.0:
             weight += skimage.restoration.estimate_sigma(npim, average_sigmas = True, channel_axis = 2) * uv.noise_compression_adaptive
 
-            npim = skimage.restoration.denoise_tv_chambolle(npim, weight = max(weight, 1e-5), channel_axis = 2)
+        npim = skimage.restoration.denoise_tv_chambolle(npim, weight = max(weight, 1e-5), channel_axis = 2)
 
     if uv.color_correction_enabled:
         if uv.color_correction_image is not None:
