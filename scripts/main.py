@@ -20,7 +20,15 @@ from PIL import Image, ImageColor
 from modules import images, processing, scripts
 from modules.shared import opts, prompt_styles, state
 
-external_code = import_module("extensions.sd-webui-controlnet.scripts.external_code", "external_code")
+#===============================================================================
+
+def import_cn():
+    try:
+        from scripts import external_code
+    except:
+        external_code = None
+
+    return external_code
 
 #===============================================================================
 
@@ -412,8 +420,9 @@ def load_session(p, uv, project_dir, session_dir, last_index):
 
     load_object(p, data.get("generation_params", {}), session_dir)
 
-    for unit_data, cn_unit in zip(data.get("controlnet_params", []), external_code.get_all_units_in_processing(p)):
-        load_object(cn_unit, unit_data, session_dir)
+    if external_code := import_cn():
+        for unit_data, cn_unit in zip(data.get("controlnet_params", []), external_code.get_all_units_in_processing(p)):
+            load_object(cn_unit, unit_data, session_dir)
 
     load_object(uv, data.get("extension_params", {}), session_dir)
 
@@ -462,7 +471,7 @@ def save_session(p, uv, project_dir, session_dir, last_index):
                 "control_mode",
             ])
             for cn_unit in external_code.get_all_units_in_processing(p)
-        ),
+        ) if (external_code := import_cn()) else [],
         extension_params = save_object(uv, session_dir, [
             "save_every_nth_frame",
             "noise_compression_enabled",
