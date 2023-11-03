@@ -1,7 +1,6 @@
 import json
 from contextlib import contextmanager
 from copy import copy
-from importlib import import_module
 from io import BytesIO
 from itertools import count
 from os import system
