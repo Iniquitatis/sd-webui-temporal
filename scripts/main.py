@@ -441,6 +441,8 @@ def save_session(p, uv, project_dir, session_dir, last_index):
             "cfg_scale",
             "denoising_strength",
             "seed",
+            "seed_resize_from_w",
+            "seed_resize_from_h",
         ]),
         controlnet_params = list(
             save_object(cn_unit, session_dir, [
