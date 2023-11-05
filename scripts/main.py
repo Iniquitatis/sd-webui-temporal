@@ -21,6 +21,8 @@ from modules.shared import opts, prompt_styles, state
 
 #===============================================================================
 
+EXTENSION_DIR = Path(scripts.basedir())
+
 def import_cn():
     try:
         from scripts import external_code
@@ -649,7 +651,7 @@ class TemporalScript(scripts.Script):
 
             with gr.Accordion("Color correction"):
                 ue.color_correction_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("color_correction_enabled"))
-                ue.color_correction_image = gr.Pil(label = "Color correction image", elem_id = self.elem_id("color_correction_image"))
+                ue.color_correction_image = gr.Pil(label = "Reference image", elem_id = self.elem_id("color_correction_image"))
                 ue.normalize_contrast = gr.Checkbox(label = "Normalize contrast", value = False, elem_id = self.elem_id("normalize_contrast"))
 
             with gr.Accordion("Color balancing"):
@@ -714,7 +716,7 @@ class TemporalScript(scripts.Script):
 
             with gr.Accordion("Blurring"):
                 ue.blurring_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("blurring_enabled"))
-                ue.blurring_radius = gr.Slider(label = "Blurring", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0, elem_id = self.elem_id("blurring_radius"))
+                ue.blurring_radius = gr.Slider(label = "Radius", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0, elem_id = self.elem_id("blurring_radius"))
 
             with gr.Accordion("Custom code"):
                 ue.custom_code_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("custom_code_enabled"))
@@ -746,6 +748,20 @@ class TemporalScript(scripts.Script):
         with gr.Tab("Metrics"):
             ue.metrics_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("metrics_enabled"))
             ue.metrics_plot_every_nth_frame = gr.Number(label = "Plot every N-th frame", precision = 0, minimum = 1, step = 1, value = 10, elem_id = self.elem_id("metrics_plot_every_nth_frame"))
+
+        with gr.Tab("Help"):
+            for file_name, title in [
+                ("tab_general.md", "General tab"),
+                ("tab_frame_preprocessing.md", "Frame Preprocessing tab"),
+                ("tab_video_rendering.md", "Video Rendering tab"),
+                ("tab_metrics.md", "Metrics tab"),
+                ("additional_notes.md", "Additional notes"),
+            ]:
+                with open(EXTENSION_DIR / f"docs/temporal/{file_name}", "r", encoding = "utf-8") as file:
+                    text = file.read()
+
+                with gr.Accordion(title, open = False):
+                    gr.Markdown(text)
 
         def make_render_callback(is_final):
             def callback(*args):
