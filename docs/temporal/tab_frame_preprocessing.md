@@ -16,25 +16,25 @@
 * **Noise** — modulation of the frame by the random noise.
     * **Enabled** — self-descriptive.
     * **Amount** — amount of the noise to be mixed in into the frame.
-        * **Relative** — determines if the amount will be multiplied by **img2img** denoising strength.
+        * **Relative** — determines if the amount will be multiplied by the **img2img** denoising strength.
     * **Mode** — blending mode of the noise.
-* **Modulation** — modulation of the frame by the random noise.
+* **Modulation** — modulation of the frame by an image.
     * **Enabled** — self-descriptive.
-    * **Amount** — amount of the image to be mixed in into the frame.
-        * **Relative** — determines if the amount will be multiplied by **img2img** denoising strength.
-    * **Mode** — blending mode of the image.
+    * **Amount** — amount of the modulator image to be mixed in into the frame.
+        * **Relative** — determines if the amount will be multiplied by the **img2img** denoising strength.
+    * **Mode** — blending mode of the modulator image.
     * **Image** — an image that will be used to modulate the frame.
-    * **Blurring** — radius of blurring of an image.
+    * **Blurring** — blurring radius of the modulator image.
 * **Tinting** — modulation of the frame by the constant color.
     * **Enabled** — self-descriptive.
     * **Amount** — amount of the color to be mixed in into the frame.
-        * **Relative** — determines if the amount will be multiplied by **img2img** denoising strength.
+        * **Relative** — determines if the amount will be multiplied by the **img2img** denoising strength.
     * **Mode** — blending mode of the color.
     * **Color** — a color that will be used to modulate the frame.
 * **Sharpening** — unsharp masking.
     * **Enabled** — self-descriptive.
     * **Amount** — amount of the sharpening.
-        * **Relative** — determines if the amount will be multiplied by **img2img** denoising strength.
+        * **Relative** — determines if the amount will be multiplied by the **img2img** denoising strength.
     * **Radius** — sharpening radius.
 * **Transformation** — geometric transformations applied to the entire frame.
     * **Enabled** — self-descriptive.
@@ -47,4 +47,6 @@
     * **Radius** — blurring radius.
 * **Custom code** — custom preprocessing code.
     * **Enabled** — self-descriptive.
-    * **Code** — self-descriptive.
+    * **Code** — Python code that will be used to process the frame.
+        * **NOTE:** It provides a global 3D numpy array (height, width, RGB) called `input` and expects a processed array to be assigned to a global variable called `output`. `np`, `scipy`, and `skimage` modules are imported by default.
+        * **WARNING:** Don't run an untrusted code.
