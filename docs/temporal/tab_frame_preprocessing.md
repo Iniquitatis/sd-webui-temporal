@@ -1,4 +1,4 @@
-**NOTE:** Each option in this tab will be applied to the frame before it will be fed to the inference engine.
+**NOTE:** Keep in mind that each option in this tab will be applied to _each_ subsequent frame before it will be fed to the inference engine. Given that this extension works as a loopback, it means that if you, for example, enable blurring, then it will be applied each time before Stable Diffusion does its magic. Therefore, if the blurring radius is too high, the resulting frames might start to get very blurry soon (which might be intended and preferable for some kind of artistic effect, of course).
 
 * **Noise compression** — basically, an actual algorithmical denoising, called noise compression to not be confused with the **img2img** denoising.
     * **Enabled** — self-descriptive.
