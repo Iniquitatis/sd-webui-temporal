@@ -5,6 +5,7 @@ from io import BytesIO
 from itertools import count
 from os import system
 from pathlib import Path
+from shutil import rmtree
 from threading import Lock, Thread
 from time import sleep
 from types import SimpleNamespace
@@ -540,80 +541,107 @@ def generate_image(job_title, p, **p_overrides):
 
 #===============================================================================
 
-def measure_image(im, metrics):
-    npim = skimage.img_as_float(im)
-    grayscale = skimage.color.rgb2gray(npim[..., :3], channel_axis = 2)
-    red, green, blue = npim[..., 0], npim[..., 1], npim[..., 2]
+class Metrics:
+    def __init__(self):
+        self.luminance_mean = []
+        self.luminance_std = []
+        self.color_level_mean = []
+        self.color_level_std = []
+        self.noise_sigma = []
 
-    metrics.luminance_mean.append(np.mean(grayscale))
-    metrics.luminance_std.append(np.std(grayscale))
-    metrics.color_level_mean.append([np.mean(red), np.mean(green), np.mean(blue)])
-    metrics.color_level_std.append([np.std(red), np.std(green), np.std(blue)])
-    metrics.noise_sigma.append(skimage.restoration.estimate_sigma(npim, average_sigmas = True, channel_axis = 2))
+    def measure(self, im):
+        npim = skimage.img_as_float(im)
+        grayscale = skimage.color.rgb2gray(npim[..., :3], channel_axis = 2)
+        red, green, blue = npim[..., 0], npim[..., 1], npim[..., 2]
 
-def load_metrics(metrics, session_dir):
-    if (metrics_path := (session_dir / "metrics.json")).is_file():
-        with open(metrics_path, "r", encoding = "utf-8") as metrics_file:
-            load_object(metrics, json.load(metrics_file), session_dir)
+        self.luminance_mean.append(np.mean(grayscale))
+        self.luminance_std.append(np.std(grayscale))
+        self.color_level_mean.append([np.mean(red), np.mean(green), np.mean(blue)])
+        self.color_level_std.append([np.std(red), np.std(green), np.std(blue)])
+        self.noise_sigma.append(skimage.restoration.estimate_sigma(npim, average_sigmas = True, channel_axis = 2))
 
-def save_metrics(metrics, session_dir):
-    with open(session_dir / "metrics.json", "w", encoding = "utf-8") as metrics_file:
-        json.dump(save_object(metrics, session_dir), metrics_file, indent = 4)
+    def load(self, project_dir):
+        metrics_dir = project_dir / "metrics"
 
-def plot_metrics(metrics, session_dir):
-    result = []
+        if (data_path := (metrics_dir / "data.json")).is_file():
+            with open(data_path, "r", encoding = "utf-8") as data_file:
+                load_object(self, json.load(data_file), metrics_dir)
 
-    @contextmanager
-    def figure(title, path):
-        plt.title(title)
-        plt.xlabel("Frame")
-        plt.ylabel("Level")
-        plt.grid()
+    def save(self, project_dir):
+        metrics_dir = safe_get_directory(project_dir / "metrics")
 
-        try:
-            yield
-        finally:
-            plt.legend()
+        with open(metrics_dir / "data.json", "w", encoding = "utf-8") as data_file:
+            json.dump(save_object(self, metrics_dir), data_file, indent = 4)
 
-            buffer = BytesIO()
-            plt.savefig(buffer, format = "png")
-            buffer.seek(0)
+    def clear(self, project_dir):
+        self.luminance_mean.clear()
+        self.luminance_std.clear()
+        self.color_level_mean.clear()
+        self.color_level_std.clear()
+        self.noise_sigma.clear()
 
-            im = Image.open(buffer)
-            im.load()
-            im.save(path)
-            result.append(im)
+        if (metrics_dir := (project_dir / "metrics")).is_dir():
+            rmtree(metrics_dir)
 
-            plt.close()
+    def plot(self, project_dir, save_images = False):
+        metrics_dir = safe_get_directory(project_dir / "metrics")
 
-    def plot_noise_graph(data, label, color):
-        plt.axhline(data[0], color = color, linestyle = ":", linewidth = 0.5)
-        plt.axhline(np.mean(data), color = color, linestyle = "--", linewidth = 1.0)
-        plt.plot(data, color = color, label = label, linestyle = "--", linewidth = 0.5, marker = "+", markersize = 3)
+        result = []
 
-        if data.size > 3:
-            plt.plot(scipy.signal.savgol_filter(data, min(data.size, 51), 3), color = color, label = f"{label} (smoothed)", linestyle = "-")
+        @contextmanager
+        def figure(title, path):
+            plt.title(title)
+            plt.xlabel("Frame")
+            plt.ylabel("Level")
+            plt.grid()
 
-    with figure("Luminance mean", session_dir / "luminance_mean.png"):
-        plot_noise_graph(np.array(metrics.luminance_mean), "Luminance", "gray")
+            try:
+                yield
+            finally:
+                plt.legend()
 
-    with figure("Luminance standard deviation", session_dir / "luminance_std.png"):
-        plot_noise_graph(np.array(metrics.luminance_std), "Luminance", "gray")
+                buffer = BytesIO()
+                plt.savefig(buffer, format = "png")
+                buffer.seek(0)
 
-    with figure("Color level mean", session_dir / "color_level_mean.png"):
-        plot_noise_graph(np.array(metrics.color_level_mean)[..., 0], "Red", "darkred")
-        plot_noise_graph(np.array(metrics.color_level_mean)[..., 1], "Green", "darkgreen")
-        plot_noise_graph(np.array(metrics.color_level_mean)[..., 2], "Blue", "darkblue")
+                im = Image.open(buffer)
+                im.load()
 
-    with figure("Color level standard deviation", session_dir / "color_level_std.png"):
-        plot_noise_graph(np.array(metrics.color_level_std)[..., 0], "Red", "darkred")
-        plot_noise_graph(np.array(metrics.color_level_std)[..., 1], "Green", "darkgreen")
-        plot_noise_graph(np.array(metrics.color_level_std)[..., 2], "Blue", "darkblue")
+                if save_images:
+                    im.save(path)
 
-    with figure("Noise sigma", session_dir / "noise_sigma.png"):
-        plot_noise_graph(np.array(metrics.noise_sigma), "Noise sigma", "royalblue")
+                result.append(im)
 
-    return result
+                plt.close()
+
+        def plot_noise_graph(data, label, color):
+            plt.axhline(data[0], color = color, linestyle = ":", linewidth = 0.5)
+            plt.axhline(np.mean(data), color = color, linestyle = "--", linewidth = 1.0)
+            plt.plot(data, color = color, label = label, linestyle = "--", linewidth = 0.5, marker = "+", markersize = 3)
+
+            if data.size > 3:
+                plt.plot(scipy.signal.savgol_filter(data, min(data.size, 51), 3), color = color, label = f"{label} (smoothed)", linestyle = "-")
+
+        with figure("Luminance mean", metrics_dir / "luminance_mean.png"):
+            plot_noise_graph(np.array(self.luminance_mean), "Luminance", "gray")
+
+        with figure("Luminance standard deviation", metrics_dir / "luminance_std.png"):
+            plot_noise_graph(np.array(self.luminance_std), "Luminance", "gray")
+
+        with figure("Color level mean", metrics_dir / "color_level_mean.png"):
+            plot_noise_graph(np.array(self.color_level_mean)[..., 0], "Red", "darkred")
+            plot_noise_graph(np.array(self.color_level_mean)[..., 1], "Green", "darkgreen")
+            plot_noise_graph(np.array(self.color_level_mean)[..., 2], "Blue", "darkblue")
+
+        with figure("Color level standard deviation", metrics_dir / "color_level_std.png"):
+            plot_noise_graph(np.array(self.color_level_std)[..., 0], "Red", "darkred")
+            plot_noise_graph(np.array(self.color_level_std)[..., 1], "Green", "darkgreen")
+            plot_noise_graph(np.array(self.color_level_std)[..., 2], "Blue", "darkblue")
+
+        with figure("Noise sigma", metrics_dir / "noise_sigma.png"):
+            plot_noise_graph(np.array(self.noise_sigma), "Noise sigma", "royalblue")
+
+        return result
 
 #===============================================================================
 
@@ -667,7 +695,7 @@ class TemporalScript(scripts.Script):
                     ue.noise_amount = gr.Slider(label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("noise_amount"))
                     ue.noise_relative = gr.Checkbox(label = "Relative", value = False, elem_id = self.elem_id("noise_relative"))
 
-                # FIXME: Pairs (name, value) don't work for some reason
+                # FIXME: Pairs (name, value) don't work in older versions of Gradio
                 ue.noise_mode = gr.Dropdown(label = "Mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)), elem_id = self.elem_id("noise_mode"))
 
             with gr.Accordion("Modulation"):
@@ -677,7 +705,7 @@ class TemporalScript(scripts.Script):
                     ue.modulation_amount = gr.Slider(label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("modulation_amount"))
                     ue.modulation_relative = gr.Checkbox(label = "Relative", value = False, elem_id = self.elem_id("modulation_relative"))
 
-                # FIXME: Pairs (name, value) don't work for some reason
+                # FIXME: Pairs (name, value) don't work in older versions of Gradio
                 ue.modulation_mode = gr.Dropdown(label = "Mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)), elem_id = self.elem_id("modulation_mode"))
                 ue.modulation_image = gr.Pil(label = "Image", elem_id = self.elem_id("modulation_image"))
                 ue.modulation_blurring = gr.Slider(label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, elem_id = self.elem_id("modulation_blurring"))
@@ -689,7 +717,7 @@ class TemporalScript(scripts.Script):
                     ue.tinting_amount = gr.Slider(label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("tinting_amount"))
                     ue.tinting_relative = gr.Checkbox(label = "Relative", value = False, elem_id = self.elem_id("tinting_relative"))
 
-                # FIXME: Pairs (name, value) don't work for some reason
+                # FIXME: Pairs (name, value) don't work in older versions of Gradio
                 ue.tinting_mode = gr.Dropdown(label = "Mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)), elem_id = self.elem_id("tinting_mode"))
                 ue.tinting_color = gr.ColorPicker(label = "Color", value = "#ffffff", elem_id = self.elem_id("tinting_color"))
 
@@ -747,7 +775,9 @@ class TemporalScript(scripts.Script):
 
         with gr.Tab("Metrics"):
             ue.metrics_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("metrics_enabled"))
-            ue.metrics_plot_every_nth_frame = gr.Number(label = "Plot every N-th frame", precision = 0, minimum = 1, step = 1, value = 10, elem_id = self.elem_id("metrics_plot_every_nth_frame"))
+            ue.metrics_save_plots_every_nth_frame = gr.Number(label = "Save plots every N-th frame", precision = 0, minimum = 1, step = 1, value = 10, elem_id = self.elem_id("metrics_save_plots_every_nth_frame"))
+            ue.render_plots = gr.Button(value = "Render plots", elem_id = self.elem_id("render_plots"))
+            ue.metrics_plots = gr.Gallery(label = "Plots", columns = 4, object_fit = "contain", preview = True, elem_id = self.elem_id("metrics_plots"))
 
         with gr.Tab("Help"):
             for file_name, title in [
@@ -778,8 +808,16 @@ class TemporalScript(scripts.Script):
 
             return callback
 
+        def render_plots_callback(*args):
+            uv = self._get_ui_values(*args)
+            project_dir = Path(uv.output_dir) / uv.project_subdir
+            metrics = Metrics()
+            metrics.load(project_dir)
+            return gr.Gallery.update(value = list(metrics.plot(project_dir)))
+
         ue.render_draft.click(make_render_callback(False), inputs = list(ue_dict.values()), outputs = [ue.render_draft, ue.render_final, ue.video_preview])
         ue.render_final.click(make_render_callback(True), inputs = list(ue_dict.values()), outputs = [ue.render_draft, ue.render_final, ue.video_preview])
+        ue.render_plots.click(render_plots_callback, inputs = list(ue_dict.values()), outputs = [ue.metrics_plots])
 
         self._ui_element_names = list(ue_dict.keys())
 
@@ -787,13 +825,7 @@ class TemporalScript(scripts.Script):
 
     def run(self, p, *args):
         uv = self._get_ui_values(*args)
-        metrics = SimpleNamespace(
-            luminance_mean = [],
-            luminance_std = [],
-            color_level_mean = [],
-            color_level_std = [],
-            noise_sigma = [],
-        )
+        metrics = Metrics()
 
         project_dir = safe_get_directory(Path(uv.output_dir) / uv.project_subdir)
         session_dir = safe_get_directory(project_dir / "session")
@@ -802,8 +834,7 @@ class TemporalScript(scripts.Script):
             for path in project_dir.glob("*.png"):
                 path.unlink()
 
-            if (path := (session_dir / "metrics.json")).is_file():
-                path.unlink()
+            metrics.clear(project_dir)
 
         last_index = get_last_frame_index(project_dir)
 
@@ -815,7 +846,7 @@ class TemporalScript(scripts.Script):
             load_session(p, uv, project_dir, session_dir, last_index)
 
         if uv.metrics_enabled:
-            load_metrics(metrics, session_dir)
+            metrics.load(project_dir)
 
         p.n_iter = 1
         p.batch_size = 1
@@ -836,7 +867,7 @@ class TemporalScript(scripts.Script):
                 return processed
 
         if uv.metrics_enabled and last_index == 0:
-            measure_image(p.init_images[0], metrics)
+            metrics.measure(p.init_images[0])
 
         if opts.img2img_color_correction:
             p.color_corrections = [processing.setup_color_correction(p.init_images[0])]
@@ -896,11 +927,11 @@ class TemporalScript(scripts.Script):
                     )
 
             if uv.metrics_enabled:
-                measure_image(last_image, metrics)
+                metrics.measure(last_image)
+                metrics.save(project_dir)
 
-                if frame_index % uv.metrics_plot_every_nth_frame == 0:
-                    save_metrics(metrics, session_dir)
-                    plot_metrics(metrics, session_dir)
+                if frame_index % uv.metrics_save_plots_every_nth_frame == 0:
+                    metrics.plot(project_dir, save_images = True)
 
         if uv.render_draft_on_finish:
             self._start_video_render(False, *args)
