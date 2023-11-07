@@ -7,7 +7,7 @@
 * **Color correction** — various parameters to keep frame's palette normalized.
     * **Enabled** — self-descriptive.
     * **Reference image** — an image that will be used to match histograms. Simply put, an overall color balance of the frame will be matched against this image.
-    * **Normalize contrast** — normalize a contrast curve of the frame so that it's in range of 0.0–1.0.
+    * **Normalize contrast** — normalize the contrast curve of the frame so that it's in range of 0.0–1.0.
 * **Color balancing** — common color balancing.
     * **Enabled** — self-descriptive.
     * **Brightness** — target brightness of the frame.
