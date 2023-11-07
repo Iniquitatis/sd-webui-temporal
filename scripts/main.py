@@ -295,8 +295,6 @@ def preprocess_image(im, uv, seed):
 
 #===============================================================================
 
-INTERPOLATED_FPS = 60
-
 def render_video(uv, is_final):
     suffix = "final" if is_final else "draft"
 
@@ -311,26 +309,29 @@ def render_video(uv, is_final):
         if uv.video_looping:
             frame_paths += reversed(frame_paths[:-1])
 
+        frame_count = len(frame_paths)
+
         for frame_path in frame_paths:
             frame_list.write(f"file '{Path(uv.project_subdir) / frame_path.name}'\nduration 1\n")
 
     filters = []
 
     if is_final:
-        if uv.video_deflickering:
-            filters.append(f"deflicker='size={uv.video_fps}:mode=am'")
+        if uv.video_deflickering_enabled:
+            filters.append(f"deflicker='size={min(uv.video_deflickering_frames, frame_count)}:mode=am'")
 
-        if uv.video_interpolation:
-            filters.append(f"minterpolate='fps={INTERPOLATED_FPS * (uv.video_mb_subframes + 1)}:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1:scd=none'")
+        if uv.video_interpolation_enabled:
+            filters.append(f"minterpolate='fps={uv.video_interpolation_fps * (uv.video_interpolation_mb_subframes + 1)}:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1:scd=none'")
 
-            if uv.video_mb_subframes > 0:
-                filters.append(f"tmix='frames={uv.video_mb_subframes + 1}'")
-                filters.append(f"fps={INTERPOLATED_FPS}")
+            if uv.video_interpolation_mb_subframes > 0:
+                filters.append(f"tmix='frames={uv.video_interpolation_mb_subframes + 1}'")
+                filters.append(f"fps='{uv.video_interpolation_fps}'")
 
-        filters.append(f"scale='{uv.video_width}x{uv.video_height}:flags=lanczos'")
+        if uv.video_scaling_enabled:
+            filters.append(f"scale='{uv.video_scaling_width}x{uv.video_scaling_height}:flags=lanczos'")
 
-    if uv.video_frame_num_overlay:
-        filters.append(f"drawtext='text=\"%{{eif\\:n*{uv.video_fps / (INTERPOLATED_FPS * (uv.video_mb_subframes + 1)) if is_final and uv.video_interpolation else 1.0:.18f}+1\\:d\\:5}}\":x=5:y=5:fontsize=16:fontcolor=#ffffffc0:shadowx=1:shadowy=1:shadowcolor=#000000c0'")
+    if uv.video_frame_num_overlay_enabled:
+        filters.append(f"drawtext='text=\"%{{eif\\:n*{uv.video_fps / uv.video_interpolation_fps if is_final and uv.video_interpolation_enabled else 1.0:.18f}+1\\:d\\:5}}\":x=5:y=5:fontsize={uv.video_frame_num_overlay_font_size}:fontcolor={uv.video_frame_num_overlay_text_color}{int(uv.video_frame_num_overlay_text_alpha * 255.0):02x}:shadowx=1:shadowy=1:shadowcolor={uv.video_frame_num_overlay_shadow_color}{int(uv.video_frame_num_overlay_shadow_alpha * 255.0):02x}'")
 
     system(" ".join([
         f"ffmpeg",
@@ -752,16 +753,37 @@ class TemporalScript(scripts.Script):
                 ue.custom_code = gr.Code(label = "Code", language = "python", value = "", elem_id = self.elem_id("custom_code"))
 
         with gr.Tab("Video Rendering"):
-            with gr.Row():
-                ue.video_width = gr.Slider(label = "Width", minimum = 16, maximum = 2560, step = 16, value = 1024, elem_id = self.elem_id("video_width"))
-                ue.video_height = gr.Slider(label = "Height", minimum = 16, maximum = 2560, step = 16, value = 576, elem_id = self.elem_id("video_height"))
-
             ue.video_fps = gr.Slider(label = "Frames per second", minimum = 1, maximum = 60, step = 1, value = 30, elem_id = self.elem_id("video_fps"))
-            ue.video_interpolation = gr.Checkbox(label = "Interpolation", value = False, elem_id = self.elem_id("video_interpolation"))
-            ue.video_mb_subframes = gr.Slider(label = "Motion blur subframes", minimum = 0, maximum = 15, step = 1, value = 0, elem_id = self.elem_id("video_mb_subframes"))
-            ue.video_deflickering = gr.Checkbox(label = "Deflickering", value = True, elem_id = self.elem_id("video_deflickering"))
             ue.video_looping = gr.Checkbox(label = "Looping", value = False, elem_id = self.elem_id("video_looping"))
-            ue.video_frame_num_overlay = gr.Checkbox(label = "Frame number overlay", value = False, elem_id = self.elem_id("video_frame_num_overlay"))
+
+            with gr.Accordion("Deflickering"):
+                ue.video_deflickering_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("video_deflickering_enabled"))
+                ue.video_deflickering_frames = gr.Slider(label = "Frames", minimum = 2, maximum = 120, step = 1, value = 60, elem_id = self.elem_id("video_deflickering_frames"))
+
+            with gr.Accordion("Interpolation"):
+                ue.video_interpolation_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("video_interpolation_enabled"))
+                # HACK: Extra space is intentional here, as Web UI "smartly" saves UI parameters using labels as keys, making conflicts inevitable
+                ue.video_interpolation_fps = gr.Slider(label = "Frames per second ", minimum = 1, maximum = 60, step = 1, value = 60, elem_id = self.elem_id("video_interpolation_fps"))
+                ue.video_interpolation_mb_subframes = gr.Slider(label = "Motion blur subframes", minimum = 0, maximum = 15, step = 1, value = 0, elem_id = self.elem_id("video_interpolation_mb_subframes"))
+
+            with gr.Accordion("Scaling"):
+                ue.video_scaling_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("video_scaling_enabled"))
+
+                with gr.Row():
+                    ue.video_scaling_width = gr.Slider(label = "Width", minimum = 16, maximum = 2560, step = 16, value = 512, elem_id = self.elem_id("video_scaling_width"))
+                    ue.video_scaling_height = gr.Slider(label = "Height", minimum = 16, maximum = 2560, step = 16, value = 512, elem_id = self.elem_id("video_scaling_height"))
+
+            with gr.Accordion("Frame number overlay"):
+                ue.video_frame_num_overlay_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("video_frame_num_overlay_enabled"))
+                ue.video_frame_num_overlay_font_size = gr.Number(label = "Font size", precision = 0, minimum = 1, maximum = 144, step = 1, value = 16, elem_id = self.elem_id("video_frame_num_overlay_font_size"))
+
+                with gr.Row():
+                    ue.video_frame_num_overlay_text_color = gr.ColorPicker(label = "Text color", value = "#ffffff", elem_id = self.elem_id("video_frame_num_overlay_text_color"))
+                    ue.video_frame_num_overlay_text_alpha = gr.Slider(label = "Text alpha", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0, elem_id = self.elem_id("video_frame_num_overlay_text_alpha"))
+
+                with gr.Row():
+                    ue.video_frame_num_overlay_shadow_color = gr.ColorPicker(label = "Shadow color", value = "#000000", elem_id = self.elem_id("video_frame_num_overlay_shadow_color"))
+                    ue.video_frame_num_overlay_shadow_alpha = gr.Slider(label = "Shadow alpha", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0, elem_id = self.elem_id("video_frame_num_overlay_shadow_alpha"))
 
             with gr.Row():
                 ue.render_draft_on_finish = gr.Checkbox(label = "Render draft when finished", value = False, elem_id = self.elem_id("render_draft_on_finish"))
