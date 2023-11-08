@@ -3,9 +3,9 @@ from contextlib import contextmanager
 from copy import copy
 from io import BytesIO
 from itertools import count
-from os import system
 from pathlib import Path
 from shutil import rmtree
+from subprocess import run
 from threading import Lock, Thread
 from time import sleep
 from types import SimpleNamespace
@@ -296,29 +296,19 @@ def preprocess_image(im, uv, seed):
 #===============================================================================
 
 def render_video(uv, is_final):
-    suffix = "final" if is_final else "draft"
-
     output_dir = Path(uv.output_dir)
     frame_dir = output_dir / uv.project_subdir
-    frame_list_path = output_dir / f"{uv.project_subdir}-{suffix}.txt"
-    video_path = output_dir / f"{uv.project_subdir}-{suffix}.mp4"
+    frame_paths = sorted(frame_dir.glob("*.png"), key = lambda x: x.name)
+    video_path = output_dir / f"{uv.project_subdir}-{'final' if is_final else 'draft'}.mp4"
 
-    with open(frame_list_path, "w", encoding = "utf-8") as frame_list:
-        frame_paths = sorted(frame_dir.glob("*.png"), key = lambda x: x.name)
-
-        if uv.video_looping:
-            frame_paths += reversed(frame_paths[:-1])
-
-        frame_count = len(frame_paths)
-
-        for frame_path in frame_paths:
-            frame_list.write(f"file '{Path(uv.project_subdir) / frame_path.name}'\nduration 1\n")
+    if uv.video_looping:
+        frame_paths += reversed(frame_paths[:-1])
 
     filters = []
 
     if is_final:
         if uv.video_deflickering_enabled:
-            filters.append(f"deflicker='size={min(uv.video_deflickering_frames, frame_count)}:mode=am'")
+            filters.append(f"deflicker='size={min(uv.video_deflickering_frames, len(frame_paths))}:mode=am'")
 
         if uv.video_interpolation_enabled:
             filters.append(f"minterpolate='fps={uv.video_interpolation_fps * (uv.video_interpolation_mb_subframes + 1)}:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1:scd=none'")
@@ -331,26 +321,25 @@ def render_video(uv, is_final):
             filters.append(f"scale='{uv.video_scaling_width}x{uv.video_scaling_height}:flags=lanczos'")
 
     if uv.video_frame_num_overlay_enabled:
-        filters.append(f"drawtext='text=\"%{{eif\\:n*{uv.video_fps / uv.video_interpolation_fps if is_final and uv.video_interpolation_enabled else 1.0:.18f}+1\\:d\\:5}}\":x=5:y=5:fontsize={uv.video_frame_num_overlay_font_size}:fontcolor={uv.video_frame_num_overlay_text_color}{int(uv.video_frame_num_overlay_text_alpha * 255.0):02x}:shadowx=1:shadowy=1:shadowcolor={uv.video_frame_num_overlay_shadow_color}{int(uv.video_frame_num_overlay_shadow_alpha * 255.0):02x}'")
+        filters.append(f"drawtext='text=%{{eif\\:n*{uv.video_fps / uv.video_interpolation_fps if is_final and uv.video_interpolation_enabled else 1.0:.18f}+1\\:d\\:5}}:x=5:y=5:fontsize={uv.video_frame_num_overlay_font_size}:fontcolor={uv.video_frame_num_overlay_text_color}{int(uv.video_frame_num_overlay_text_alpha * 255.0):02x}:shadowx=1:shadowy=1:shadowcolor={uv.video_frame_num_overlay_shadow_color}{int(uv.video_frame_num_overlay_shadow_alpha * 255.0):02x}'")
 
-    system(" ".join([
-        f"ffmpeg",
-        f"-y",
-        f"-r {uv.video_fps}",
-        f"-f concat",
-        f"-safe 0",
-        f"-i \"{frame_list_path}\"",
-        f"-framerate {uv.video_fps}",
-        f"-vf {','.join(filters)}" if len(filters) > 0 else "",
-        f"-c:v libx264",
-        f"-crf 14",
-        f"-preset {'slow' if is_final else 'veryfast'}",
-        f"-tune film",
-        f"-pix_fmt yuv420p",
-        f"\"{video_path}\"",
-    ]))
-
-    frame_list_path.unlink()
+    run([
+        "ffmpeg",
+        "-y",
+        "-r", str(uv.video_fps),
+        "-f", "concat",
+        "-protocol_whitelist", "fd,file",
+        "-safe", "0",
+        "-i", "-",
+        "-framerate", str(uv.video_fps),
+        "-vf", ",".join(filters) if len(filters) > 0 else "null",
+        "-c:v", "libx264",
+        "-crf", "14",
+        "-preset", "slow" if is_final else "veryfast",
+        "-tune", "film",
+        "-pix_fmt", "yuv420p",
+        video_path,
+    ], input = "".join(f"file '{frame_path.resolve()}'\nduration 1\n" for frame_path in frame_paths).encode("utf-8"))
 
 #===============================================================================
 
