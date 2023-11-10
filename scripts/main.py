@@ -317,6 +317,12 @@ def render_video(uv, is_final):
                 filters.append(f"tmix='frames={uv.video_interpolation_mb_subframes + 1}'")
                 filters.append(f"fps='{uv.video_interpolation_fps}'")
 
+        if uv.video_temporal_blurring_enabled:
+            weights = [((x + 1) / (uv.video_temporal_blurring_radius + 1)) ** uv.video_temporal_blurring_easing for x in range(uv.video_temporal_blurring_radius + 1)]
+            weights += reversed(weights[:-1])
+            weights = [f"{x:.18f}" for x in weights]
+            filters.append(f"tmix='frames={len(weights)}:weights={' '.join(weights)}'")
+
         if uv.video_scaling_enabled:
             filters.append(f"scale='{uv.video_scaling_width}x{uv.video_scaling_height}:flags=lanczos'")
 
@@ -754,6 +760,12 @@ class TemporalScript(scripts.Script):
                 # HACK: Extra space is intentional here, as Web UI "smartly" saves UI parameters using labels as keys, making conflicts inevitable
                 ue.video_interpolation_fps = gr.Slider(label = "Frames per second ", minimum = 1, maximum = 60, step = 1, value = 60, elem_id = self.elem_id("video_interpolation_fps"))
                 ue.video_interpolation_mb_subframes = gr.Slider(label = "Motion blur subframes", minimum = 0, maximum = 15, step = 1, value = 0, elem_id = self.elem_id("video_interpolation_mb_subframes"))
+
+            with gr.Accordion("Temporal blurring"):
+                ue.video_temporal_blurring_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("video_temporal_blurring_enabled"))
+                # HACK: Extra space is intentional here, as Web UI "smartly" saves UI parameters using labels as keys, making conflicts inevitable
+                ue.video_temporal_blurring_radius = gr.Slider(label = "Radius ", minimum = 1, maximum = 10, step = 1, value = 1, elem_id = self.elem_id("video_temporal_blurring_radius"))
+                ue.video_temporal_blurring_easing = gr.Slider(label = "Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0, elem_id = self.elem_id("video_temporal_blurring_easing"))
 
             with gr.Accordion("Scaling"):
                 ue.video_scaling_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("video_scaling_enabled"))

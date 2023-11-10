@@ -1,4 +1,4 @@
-**NOTE:** Resulting videos will be placed in the output directory.  
+**NOTE:** Resulting videos will be placed in the output directory.
 **NOTE:** Draft mode simply skips the deflickering, interpolation, and scaling steps, making the rendering process much faster.
 
 * **Frames per second** — virtual framerate. It corresponds to how often the frames change, but not necessarily to the actual video framerate, which is still a subject to change by the interpolation.
@@ -10,6 +10,19 @@
     * **Enabled** — self-descriptive.
     * **Frames per second** — final video framerate.
     * **Motion blur subframes** — additional subframe count that might make the resulting video even smoother. Results are mostly negligible, and each subframe multiplies the amount of work by the factor of `x + 1`.
+* **Temporal blurring** — weighted averaging of several consecutive frames.
+    * **Enabled** — self-descriptive.
+    * **Radius** — kernel radius; total amount of averaged frames equals to `x * 2 + 1`.
+    * **Easing** — kernel easing factor.
+        * Value of 0 means that every frame will be averaged in an equal proportion, whereas value greater than 0 makes a distribution ranging from 0 to 1.
+        * Value greater than 0 makes a soft distribution curve.
+        * Value of 1 makes a triangle distribution curve.
+        * Value greater than 1 makes a sharp distribution curve.
+    * **EXAMPLES:**
+        * `Radius: 1; Easing: 1.0 = Weights [0.5 1 0.5]`
+        * `Radius: 1; Easing: 0.5 = Weights [0.707 1 0.707]`
+        * `Radius: 1; Easing: 2.0 = Weights [0.25 1 0.25]`
+        * `Radius: 3; Easing: 0.0 = Weights [1 1 1 1 1 1 1]`
 * **Scaling** — video resolution upscaling/downscaling using Lanczos interpolation.
     * **Enabled** — self-descriptive.
     * **Width/Height** — final video resolution.
