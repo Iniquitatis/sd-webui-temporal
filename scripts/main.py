@@ -657,150 +657,167 @@ class TemporalScript(scripts.Script):
         ue = SimpleNamespace()
         ue_dict = vars(ue)
 
+        labels = set()
+
+        def unique_label(string):
+            if string in labels:
+                string = unique_label(string + " ")
+
+            labels.add(string)
+
+            return string
+
+        def elem(key, gr_type, *args, **kwargs):
+            if "label" in kwargs:
+                kwargs["label"] = unique_label(kwargs["label"])
+
+            elem = gr_type(*args, elem_id = self.elem_id(key), **kwargs)
+            setattr(ue, key, elem)
+
+            return elem
+
         with gr.Tab("General"):
-            ue.output_dir = gr.Textbox(label = "Output directory", value = "outputs/temporal", elem_id = self.elem_id("output_dir"))
-            ue.project_subdir = gr.Textbox(label = "Project subdirectory", value = "untitled", elem_id = self.elem_id("project_subdir"))
-            ue.frame_count = gr.Number(label = "Frame count", precision = 0, minimum = 1, step = 1, value = 100, elem_id = self.elem_id("frame_count"))
-            ue.save_every_nth_frame = gr.Number(label = "Save every N-th frame", precision = 0, minimum = 1, step = 1, value = 1, elem_id = self.elem_id("save_every_nth_frame"))
-            ue.archive_mode = gr.Checkbox(label = "Archive mode", value = False, elem_id = self.elem_id("archive_mode"))
-            ue.start_from_scratch = gr.Checkbox(label = "Start from scratch", value = False, elem_id = self.elem_id("start_from_scratch"))
-            ue.load_session = gr.Checkbox(label = "Load session", value = True, elem_id = self.elem_id("load_session"))
-            ue.save_session = gr.Checkbox(label = "Save session", value = True, elem_id = self.elem_id("save_session"))
+            elem("output_dir", gr.Textbox, label = "Output directory", value = "outputs/temporal")
+            elem("project_subdir", gr.Textbox, label = "Project subdirectory", value = "untitled")
+            elem("frame_count", gr.Number, label = "Frame count", precision = 0, minimum = 1, step = 1, value = 100)
+            elem("save_every_nth_frame", gr.Number, label = "Save every N-th frame", precision = 0, minimum = 1, step = 1, value = 1)
+            elem("archive_mode", gr.Checkbox, label = "Archive mode", value = False)
+            elem("start_from_scratch", gr.Checkbox, label = "Start from scratch", value = False)
+            elem("load_session", gr.Checkbox, label = "Load session", value = True)
+            elem("save_session", gr.Checkbox, label = "Save session", value = True)
 
         with gr.Tab("Frame Preprocessing"):
             with gr.Accordion("Noise compression"):
-                ue.noise_compression_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("noise_compression_enabled"))
-                ue.noise_compression_constant = gr.Slider(label = "Constant", minimum = 0.0, maximum = 1.0, step = 1e-5, value = 0.0, elem_id = self.elem_id("noise_compression_constant"))
-                ue.noise_compression_adaptive = gr.Slider(label = "Adaptive", minimum = 0.0, maximum = 2.0, step = 0.01, value = 0.0, elem_id = self.elem_id("noise_compression_adaptive"))
+                elem("noise_compression_enabled", gr.Checkbox, label = "Enabled", value = False)
+                elem("noise_compression_constant", gr.Slider, label = "Constant", minimum = 0.0, maximum = 1.0, step = 1e-5, value = 0.0)
+                elem("noise_compression_adaptive", gr.Slider, label = "Adaptive", minimum = 0.0, maximum = 2.0, step = 0.01, value = 0.0)
 
             with gr.Accordion("Color correction"):
-                ue.color_correction_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("color_correction_enabled"))
-                ue.color_correction_image = gr.Pil(label = "Reference image", elem_id = self.elem_id("color_correction_image"))
-                ue.normalize_contrast = gr.Checkbox(label = "Normalize contrast", value = False, elem_id = self.elem_id("normalize_contrast"))
+                elem("color_correction_enabled", gr.Checkbox, label = "Enabled", value = False)
+                elem("color_correction_image", gr.Pil, label = "Reference image")
+                elem("normalize_contrast", gr.Checkbox, label = "Normalize contrast", value = False)
 
             with gr.Accordion("Color balancing"):
-                ue.color_balancing_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("color_balancing_enabled"))
-                ue.brightness = gr.Slider(label = "Brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, elem_id = self.elem_id("brightness"))
-                ue.contrast = gr.Slider(label = "Contrast", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, elem_id = self.elem_id("contrast"))
-                ue.saturation = gr.Slider(label = "Saturation", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, elem_id = self.elem_id("saturation"))
+                elem("color_balancing_enabled", gr.Checkbox, label = "Enabled", value = False)
+                elem("brightness", gr.Slider, label = "Brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0)
+                elem("contrast", gr.Slider, label = "Contrast", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0)
+                elem("saturation", gr.Slider, label = "Saturation", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0)
 
             with gr.Accordion("Noise"):
-                ue.noise_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("noise_enabled"))
+                elem("noise_enabled", gr.Checkbox, label = "Enabled", value = False)
 
                 with gr.Row():
-                    ue.noise_amount = gr.Slider(label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("noise_amount"))
-                    ue.noise_relative = gr.Checkbox(label = "Relative", value = False, elem_id = self.elem_id("noise_relative"))
+                    elem("noise_amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0)
+                    elem("noise_relative", gr.Checkbox, label = "Relative", value = False)
 
                 # FIXME: Pairs (name, value) don't work in older versions of Gradio
-                ue.noise_mode = gr.Dropdown(label = "Mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)), elem_id = self.elem_id("noise_mode"))
+                elem("noise_mode", gr.Dropdown, label = "Mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)))
 
             with gr.Accordion("Modulation"):
-                ue.modulation_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("modulation_enabled"))
+                elem("modulation_enabled", gr.Checkbox, label = "Enabled", value = False)
 
                 with gr.Row():
-                    ue.modulation_amount = gr.Slider(label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("modulation_amount"))
-                    ue.modulation_relative = gr.Checkbox(label = "Relative", value = False, elem_id = self.elem_id("modulation_relative"))
+                    elem("modulation_amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0)
+                    elem("modulation_relative", gr.Checkbox, label = "Relative", value = False)
 
                 # FIXME: Pairs (name, value) don't work in older versions of Gradio
-                ue.modulation_mode = gr.Dropdown(label = "Mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)), elem_id = self.elem_id("modulation_mode"))
-                ue.modulation_image = gr.Pil(label = "Image", elem_id = self.elem_id("modulation_image"))
-                ue.modulation_blurring = gr.Slider(label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, elem_id = self.elem_id("modulation_blurring"))
+                elem("modulation_mode", gr.Dropdown, label = "Mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)))
+                elem("modulation_image", gr.Pil, label = "Image")
+                elem("modulation_blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0)
 
             with gr.Accordion("Tinting"):
-                ue.tinting_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("tinting_enabled"))
+                elem("tinting_enabled", gr.Checkbox, label = "Enabled", value = False)
 
                 with gr.Row():
-                    ue.tinting_amount = gr.Slider(label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("tinting_amount"))
-                    ue.tinting_relative = gr.Checkbox(label = "Relative", value = False, elem_id = self.elem_id("tinting_relative"))
+                    elem("tinting_amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0)
+                    elem("tinting_relative", gr.Checkbox, label = "Relative", value = False)
 
                 # FIXME: Pairs (name, value) don't work in older versions of Gradio
-                ue.tinting_mode = gr.Dropdown(label = "Mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)), elem_id = self.elem_id("tinting_mode"))
-                ue.tinting_color = gr.ColorPicker(label = "Color", value = "#ffffff", elem_id = self.elem_id("tinting_color"))
+                elem("tinting_mode", gr.Dropdown, label = "Mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)))
+                elem("tinting_color", gr.ColorPicker, label = "Color", value = "#ffffff")
 
             with gr.Accordion("Sharpening"):
-                ue.sharpening_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("sharpening_enabled"))
+                elem("sharpening_enabled", gr.Checkbox, label = "Enabled", value = False)
 
                 with gr.Row():
-                    ue.sharpening_amount = gr.Slider(label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, elem_id = self.elem_id("sharpening_amount"))
-                    ue.sharpening_relative = gr.Checkbox(label = "Relative", value = False, elem_id = self.elem_id("sharpening_relative"))
+                    elem("sharpening_amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0)
+                    elem("sharpening_relative", gr.Checkbox, label = "Relative", value = False)
 
-                ue.sharpening_radius = gr.Slider(label = "Radius", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0, elem_id = self.elem_id("sharpening_radius"))
+                elem("sharpening_radius", gr.Slider, label = "Radius", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0)
 
             with gr.Accordion("Transformation"):
-                ue.transformation_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("transformation_enabled"))
+                elem("transformation_enabled", gr.Checkbox, label = "Enabled", value = False)
 
                 with gr.Row():
-                    ue.translation_x = gr.Number(label = "Translation X", step = 0.001, value = 0.0, elem_id = self.elem_id("translation_x"))
-                    ue.translation_y = gr.Number(label = "Translation Y", step = 0.001, value = 0.0, elem_id = self.elem_id("translation_y"))
+                    elem("translation_x", gr.Number, label = "Translation X", step = 0.001, value = 0.0)
+                    elem("translation_y", gr.Number, label = "Translation Y", step = 0.001, value = 0.0)
 
-                ue.rotation = gr.Slider(label = "Rotation", minimum = -90.0, maximum = 90.0, step = 0.1, value = 0.0, elem_id = self.elem_id("rotation"))
-                ue.scaling = gr.Slider(label = "Scaling", minimum = 0.0, maximum = 2.0, step = 0.001, value = 1.0, elem_id = self.elem_id("scaling"))
+                elem("rotation", gr.Slider, label = "Rotation", minimum = -90.0, maximum = 90.0, step = 0.1, value = 0.0)
+                elem("scaling", gr.Slider, label = "Scaling", minimum = 0.0, maximum = 2.0, step = 0.001, value = 1.0)
 
-            ue.symmetrize = gr.Checkbox(label = "Symmetrize", value = False, elem_id = self.elem_id("symmetrize"))
+            elem("symmetrize", gr.Checkbox, label = "Symmetrize", value = False)
 
             with gr.Accordion("Blurring"):
-                ue.blurring_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("blurring_enabled"))
-                ue.blurring_radius = gr.Slider(label = "Radius", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0, elem_id = self.elem_id("blurring_radius"))
+                elem("blurring_enabled", gr.Checkbox, label = "Enabled", value = False)
+                elem("blurring_radius", gr.Slider, label = "Radius", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0)
 
             with gr.Accordion("Custom code"):
-                ue.custom_code_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("custom_code_enabled"))
+                elem("custom_code_enabled", gr.Checkbox, label = "Enabled", value = False)
                 gr.Markdown("**WARNING:** Don't put an untrusted code here!")
-                ue.custom_code = gr.Code(label = "Code", language = "python", value = "", elem_id = self.elem_id("custom_code"))
+                elem("custom_code", gr.Code, label = "Code", language = "python", value = "")
 
         with gr.Tab("Video Rendering"):
-            ue.video_fps = gr.Slider(label = "Frames per second", minimum = 1, maximum = 60, step = 1, value = 30, elem_id = self.elem_id("video_fps"))
-            ue.video_looping = gr.Checkbox(label = "Looping", value = False, elem_id = self.elem_id("video_looping"))
+            elem("video_fps", gr.Slider, label = "Frames per second", minimum = 1, maximum = 60, step = 1, value = 30)
+            elem("video_looping", gr.Checkbox, label = "Looping", value = False)
 
             with gr.Accordion("Deflickering"):
-                ue.video_deflickering_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("video_deflickering_enabled"))
-                ue.video_deflickering_frames = gr.Slider(label = "Frames", minimum = 2, maximum = 120, step = 1, value = 60, elem_id = self.elem_id("video_deflickering_frames"))
+                elem("video_deflickering_enabled", gr.Checkbox, label = "Enabled", value = False)
+                elem("video_deflickering_frames", gr.Slider, label = "Frames", minimum = 2, maximum = 120, step = 1, value = 60)
 
             with gr.Accordion("Interpolation"):
-                ue.video_interpolation_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("video_interpolation_enabled"))
-                # HACK: Extra space is intentional here, as Web UI "smartly" saves UI parameters using labels as keys, making conflicts inevitable
-                ue.video_interpolation_fps = gr.Slider(label = "Frames per second ", minimum = 1, maximum = 60, step = 1, value = 60, elem_id = self.elem_id("video_interpolation_fps"))
-                ue.video_interpolation_mb_subframes = gr.Slider(label = "Motion blur subframes", minimum = 0, maximum = 15, step = 1, value = 0, elem_id = self.elem_id("video_interpolation_mb_subframes"))
+                elem("video_interpolation_enabled", gr.Checkbox, label = "Enabled", value = False)
+                elem("video_interpolation_fps", gr.Slider, label = "Frames per second", minimum = 1, maximum = 60, step = 1, value = 60)
+                elem("video_interpolation_mb_subframes", gr.Slider, label = "Motion blur subframes", minimum = 0, maximum = 15, step = 1, value = 0)
 
             with gr.Accordion("Temporal blurring"):
-                ue.video_temporal_blurring_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("video_temporal_blurring_enabled"))
-                # HACK: Extra space is intentional here, as Web UI "smartly" saves UI parameters using labels as keys, making conflicts inevitable
-                ue.video_temporal_blurring_radius = gr.Slider(label = "Radius ", minimum = 1, maximum = 10, step = 1, value = 1, elem_id = self.elem_id("video_temporal_blurring_radius"))
-                ue.video_temporal_blurring_easing = gr.Slider(label = "Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0, elem_id = self.elem_id("video_temporal_blurring_easing"))
+                elem("video_temporal_blurring_enabled", gr.Checkbox, label = "Enabled", value = False)
+                elem("video_temporal_blurring_radius", gr.Slider, label = "Radius", minimum = 1, maximum = 10, step = 1, value = 1)
+                elem("video_temporal_blurring_easing", gr.Slider, label = "Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0)
 
             with gr.Accordion("Scaling"):
-                ue.video_scaling_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("video_scaling_enabled"))
+                elem("video_scaling_enabled", gr.Checkbox, label = "Enabled", value = False)
 
                 with gr.Row():
-                    ue.video_scaling_width = gr.Slider(label = "Width", minimum = 16, maximum = 2560, step = 16, value = 512, elem_id = self.elem_id("video_scaling_width"))
-                    ue.video_scaling_height = gr.Slider(label = "Height", minimum = 16, maximum = 2560, step = 16, value = 512, elem_id = self.elem_id("video_scaling_height"))
+                    elem("video_scaling_width", gr.Slider, label = "Width", minimum = 16, maximum = 2560, step = 16, value = 512)
+                    elem("video_scaling_height", gr.Slider, label = "Height", minimum = 16, maximum = 2560, step = 16, value = 512)
 
             with gr.Accordion("Frame number overlay"):
-                ue.video_frame_num_overlay_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("video_frame_num_overlay_enabled"))
-                ue.video_frame_num_overlay_font_size = gr.Number(label = "Font size", precision = 0, minimum = 1, maximum = 144, step = 1, value = 16, elem_id = self.elem_id("video_frame_num_overlay_font_size"))
+                elem("video_frame_num_overlay_enabled", gr.Checkbox, label = "Enabled", value = False)
+                elem("video_frame_num_overlay_font_size", gr.Number, label = "Font size", precision = 0, minimum = 1, maximum = 144, step = 1, value = 16)
 
                 with gr.Row():
-                    ue.video_frame_num_overlay_text_color = gr.ColorPicker(label = "Text color", value = "#ffffff", elem_id = self.elem_id("video_frame_num_overlay_text_color"))
-                    ue.video_frame_num_overlay_text_alpha = gr.Slider(label = "Text alpha", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0, elem_id = self.elem_id("video_frame_num_overlay_text_alpha"))
+                    elem("video_frame_num_overlay_text_color", gr.ColorPicker, label = "Text color", value = "#ffffff")
+                    elem("video_frame_num_overlay_text_alpha", gr.Slider, label = "Text alpha", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0)
 
                 with gr.Row():
-                    ue.video_frame_num_overlay_shadow_color = gr.ColorPicker(label = "Shadow color", value = "#000000", elem_id = self.elem_id("video_frame_num_overlay_shadow_color"))
-                    ue.video_frame_num_overlay_shadow_alpha = gr.Slider(label = "Shadow alpha", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0, elem_id = self.elem_id("video_frame_num_overlay_shadow_alpha"))
+                    elem("video_frame_num_overlay_shadow_color", gr.ColorPicker, label = "Shadow color", value = "#000000")
+                    elem("video_frame_num_overlay_shadow_alpha", gr.Slider, label = "Shadow alpha", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0)
 
             with gr.Row():
-                ue.render_draft_on_finish = gr.Checkbox(label = "Render draft when finished", value = False, elem_id = self.elem_id("render_draft_on_finish"))
-                ue.render_final_on_finish = gr.Checkbox(label = "Render final when finished", value = False, elem_id = self.elem_id("render_final_on_finish"))
+                elem("render_draft_on_finish", gr.Checkbox, label = "Render draft when finished", value = False)
+                elem("render_final_on_finish", gr.Checkbox, label = "Render final when finished", value = False)
 
             with gr.Row():
-                ue.render_draft = gr.Button(value = "Render draft", elem_id = self.elem_id("render_draft"))
-                ue.render_final = gr.Button(value = "Render final", elem_id = self.elem_id("render_final"))
+                elem("render_draft", gr.Button, value = "Render draft")
+                elem("render_final", gr.Button, value = "Render final")
 
-            ue.video_preview = gr.Video(label = "Preview", format = "mp4", interactive = False, elem_id = self.elem_id("video_preview"))
+            elem("video_preview", gr.Video, label = "Preview", format = "mp4", interactive = False)
 
         with gr.Tab("Metrics"):
-            ue.metrics_enabled = gr.Checkbox(label = "Enabled", value = False, elem_id = self.elem_id("metrics_enabled"))
-            ue.metrics_save_plots_every_nth_frame = gr.Number(label = "Save plots every N-th frame", precision = 0, minimum = 1, step = 1, value = 10, elem_id = self.elem_id("metrics_save_plots_every_nth_frame"))
-            ue.render_plots = gr.Button(value = "Render plots", elem_id = self.elem_id("render_plots"))
-            ue.metrics_plots = gr.Gallery(label = "Plots", columns = 4, object_fit = "contain", preview = True, elem_id = self.elem_id("metrics_plots"))
+            elem("metrics_enabled", gr.Checkbox, label = "Enabled", value = False)
+            elem("metrics_save_plots_every_nth_frame", gr.Number, label = "Save plots every N-th frame", precision = 0, minimum = 1, step = 1, value = 10)
+            elem("render_plots", gr.Button, value = "Render plots")
+            elem("metrics_plots", gr.Gallery, label = "Plots", columns = 4, object_fit = "contain", preview = True)
 
         with gr.Tab("Help"):
             for file_name, title in [
