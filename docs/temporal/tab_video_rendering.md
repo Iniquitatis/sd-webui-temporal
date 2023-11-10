@@ -1,4 +1,4 @@
-**NOTE:** Resulting videos will be placed in the output directory.
+**NOTE:** Resulting videos will be placed in the output directory.  
 **NOTE:** Draft mode simply skips the deflickering, interpolation, and scaling steps, making the rendering process much faster.
 
 * **Frames per second** — virtual framerate. It corresponds to how often the frames change, but not necessarily to the actual video framerate, which is still a subject to change by the interpolation.
