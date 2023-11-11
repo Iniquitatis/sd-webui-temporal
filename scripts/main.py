@@ -416,6 +416,9 @@ def load_session(p, uv, project_dir, session_dir, last_index):
     with open(params_path, "r", encoding = "utf-8") as params_file:
         data = json.load(params_file)
 
+    # NOTE: `p.override_settings` juggles VAEs back-and-forth, slowing down the process considerably
+    opts.data.update(data.get("shared_params", {}))
+
     load_object(p, data.get("generation_params", {}), session_dir)
 
     if external_code := import_cn():
@@ -436,6 +439,12 @@ def save_session(p, uv, project_dir, session_dir, last_index):
         path.unlink()
 
     data = dict(
+        shared_params = {k: opts.data[k] for k in [
+            "sd_model_checkpoint",
+            "sd_vae",
+            "CLIP_stop_at_last_layers",
+            "always_discard_next_to_last_sigma",
+        ]},
         generation_params = save_object(p, session_dir, [
             "prompt",
             "negative_prompt",
@@ -443,30 +452,35 @@ def save_session(p, uv, project_dir, session_dir, last_index):
             "resize_mode",
             "sampler_name",
             "steps",
+            "refiner_checkpoint",
+            "refiner_switch_at",
             "width",
             "height",
             "cfg_scale",
             "denoising_strength",
             "seed",
+            "seed_enable_extras",
+            "subseed",
+            "subseed_strength",
             "seed_resize_from_w",
             "seed_resize_from_h",
         ]),
         controlnet_params = list(
             save_object(cn_unit, session_dir, [
+                "image",
                 "enabled",
+                "low_vram",
+                "pixel_perfect",
                 "module",
                 "model",
                 "weight",
-                "image",
-                "resize_mode",
-                "low_vram",
+                "guidance_start",
+                "guidance_end",
                 "processor_res",
                 "threshold_a",
                 "threshold_b",
-                "guidance_start",
-                "guidance_end",
-                "pixel_perfect",
                 "control_mode",
+                "resize_mode",
             ])
             for cn_unit in external_code.get_all_units_in_processing(p)
         ) if (external_code := import_cn()) else [],
@@ -870,6 +884,8 @@ class TemporalScript(scripts.Script):
         uv = self._get_ui_values(*args)
         metrics = Metrics()
 
+        opts_backup = opts.data.copy()
+
         project_dir = safe_get_directory(Path(uv.output_dir) / uv.project_subdir)
         session_dir = safe_get_directory(project_dir / "session")
 
@@ -982,6 +998,8 @@ class TemporalScript(scripts.Script):
 
         if uv.render_final_on_finish:
             self._start_video_render(True, *args)
+
+        opts.data.update(opts_backup)
 
         return processed
 
