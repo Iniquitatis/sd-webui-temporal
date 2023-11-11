@@ -528,7 +528,10 @@ def generate_image(job_title, p, **p_overrides):
         else:
             print(f"WARNING: Key {key} doesn't exist in {p_instance.__class__.__name__}")
 
-    processed = processing.process_images(p_instance)
+    try:
+        processed = processing.process_images(p_instance)
+    except Exception:
+        return None
 
     if state.interrupted or state.skipped:
         return None
@@ -904,7 +907,7 @@ class TemporalScript(scripts.Script):
                 p.init_images = [processed.images[0]]
                 p.seed += 1
             else:
-                return processed
+                return processing.Processed(p, p.init_images)
 
         if uv.metrics_enabled and last_index == 0:
             metrics.measure(p.init_images[0])
@@ -939,7 +942,8 @@ class TemporalScript(scripts.Script):
                 init_images = [preprocess_image(last_image, uv, last_seed)],
                 seed = last_seed,
             )):
-                return processed
+                processed = processing.Processed(p, [last_image])
+                break
 
             last_image = processed.images[0]
             last_seed += 1
