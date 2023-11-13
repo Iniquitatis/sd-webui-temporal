@@ -1,6 +1,13 @@
 from pathlib import Path
 from subprocess import run
 
+from temporal.thread_queue import ThreadQueue
+
+video_render_queue = ThreadQueue()
+
+def start_video_render(uv, is_final):
+    video_render_queue.enqueue(render_video, uv, is_final)
+
 def render_video(uv, is_final):
     output_dir = Path(uv.output_dir)
     frame_dir = output_dir / uv.project_subdir

@@ -1,52 +1,18 @@
-from copy import copy
-from itertools import count
 from pathlib import Path
 from time import sleep
 from types import SimpleNamespace
 
 import gradio as gr
-from PIL import Image
 
-from modules import images, processing, scripts
-from modules.shared import opts, prompt_styles, state
+from modules import scripts
 
 from temporal.blend_modes import BLEND_MODES
-from temporal.fs import safe_get_directory
-from temporal.image_preprocessing import preprocess_image
-from temporal.image_utils import generate_noise_image
+from temporal.image_generation import generate_project
 from temporal.interop import EXTENSION_DIR
 from temporal.metrics import Metrics
-from temporal.session import get_last_frame_index, load_session, save_session
-from temporal.thread_queue import ThreadQueue
-from temporal.video_rendering import render_video
-
-def generate_image(job_title, p, **p_overrides):
-    state.job = job_title
-
-    p_instance = copy(p)
-
-    for key, value in p_overrides.items():
-        if hasattr(p_instance, key):
-            setattr(p_instance, key, value)
-        else:
-            print(f"WARNING: Key {key} doesn't exist in {p_instance.__class__.__name__}")
-
-    try:
-        processed = processing.process_images(p_instance)
-    except Exception:
-        return None
-
-    if state.interrupted or state.skipped:
-        return None
-
-    return processed
+from temporal.video_rendering import start_video_render, video_render_queue
 
 class TemporalScript(scripts.Script):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._image_save_tq = ThreadQueue()
-        self._video_render_tq = ThreadQueue()
-
     def title(self):
         return "Temporal"
 
@@ -237,12 +203,12 @@ class TemporalScript(scripts.Script):
             def callback(*args):
                 yield gr.Button.update(interactive = False), gr.Button.update(interactive = False), None
 
-                self._start_video_render(is_final, *args)
-
-                while self._video_render_tq.busy:
-                    sleep(1)
-
                 uv = self._get_ui_values(*args)
+
+                start_video_render(uv, is_final)
+
+                while video_render_queue.busy:
+                    sleep(1)
 
                 yield gr.Button.update(interactive = True), gr.Button.update(interactive = True), f"{uv.output_dir}/{uv.project_subdir}-{'final' if is_final else 'draft'}.mp4"
 
@@ -265,129 +231,15 @@ class TemporalScript(scripts.Script):
 
     def run(self, p, *args):
         uv = self._get_ui_values(*args)
-        metrics = Metrics()
-
-        opts_backup = opts.data.copy()
-
-        project_dir = safe_get_directory(Path(uv.output_dir) / uv.project_subdir)
-        session_dir = safe_get_directory(project_dir / "session")
-
-        if uv.start_from_scratch:
-            for path in project_dir.glob("*.png"):
-                path.unlink()
-
-            metrics.clear(project_dir)
-
-        last_index = get_last_frame_index(project_dir)
-
-        p.prompt = prompt_styles.apply_styles_to_prompt(p.prompt, p.styles)
-        p.negative_prompt = prompt_styles.apply_negative_styles_to_prompt(p.negative_prompt, p.styles)
-        p.styles.clear()
-
-        if uv.load_session:
-            load_session(p, uv, project_dir, session_dir, last_index)
-
-        if uv.metrics_enabled:
-            metrics.load(project_dir)
-
-        p.n_iter = 1
-        p.batch_size = 1
-        p.do_not_save_samples = True
-        p.do_not_save_grid = True
-        processing.fix_seed(p)
-
-        if not p.init_images or not isinstance(p.init_images[0], Image.Image):
-            if processed := generate_image(
-                "Initial image",
-                p,
-                init_images = [generate_noise_image((p.width, p.height), p.seed)],
-                denoising_strength = 1.0,
-            ):
-                p.init_images = [processed.images[0]]
-                p.seed += 1
-            else:
-                return processing.Processed(p, p.init_images)
-
-        if uv.metrics_enabled and last_index == 0:
-            metrics.measure(p.init_images[0])
-
-        if opts.img2img_color_correction:
-            p.color_corrections = [processing.setup_color_correction(p.init_images[0])]
-
-        if uv.save_session:
-            save_session(p, uv, project_dir, session_dir, last_index)
-
-        if uv.noise_relative:
-            uv.noise_amount *= p.denoising_strength
-
-        if uv.modulation_relative:
-            uv.modulation_amount *= p.denoising_strength
-
-        if uv.tinting_relative:
-            uv.tinting_amount *= p.denoising_strength
-
-        if uv.sharpening_relative:
-            uv.sharpening_amount *= p.denoising_strength
-
-        state.job_count = uv.frame_count
-
-        last_image = p.init_images[0]
-        last_seed = p.seed
-
-        for i, frame_index in zip(range(uv.frame_count), count(last_index + 1)):
-            if not (processed := generate_image(
-                f"Frame {i + 1} / {uv.frame_count}",
-                p,
-                init_images = [preprocess_image(last_image, uv, last_seed)],
-                seed = last_seed,
-            )):
-                processed = processing.Processed(p, [last_image])
-                break
-
-            last_image = processed.images[0]
-            last_seed += 1
-
-            if frame_index % uv.save_every_nth_frame == 0:
-                if uv.archive_mode:
-                    self._image_save_tq.enqueue(
-                        Image.Image.save,
-                        last_image,
-                        project_dir / f"{frame_index:05d}.png",
-                        optimize = True,
-                        compress_level = 9,
-                    )
-                else:
-                    images.save_image(
-                        last_image,
-                        project_dir,
-                        "",
-                        processed.seed,
-                        p.prompt,
-                        opts.samples_format,
-                        info = processed.info,
-                        p = p,
-                        forced_filename = f"{frame_index:05d}",
-                    )
-
-            if uv.metrics_enabled:
-                metrics.measure(last_image)
-                metrics.save(project_dir)
-
-                if frame_index % uv.metrics_save_plots_every_nth_frame == 0:
-                    metrics.plot(project_dir, save_images = True)
+        processed = generate_project(p, uv)
 
         if uv.render_draft_on_finish:
-            self._start_video_render(False, *args)
+            start_video_render(uv, False)
 
         if uv.render_final_on_finish:
-            self._start_video_render(True, *args)
-
-        opts.data.update(opts_backup)
+            start_video_render(uv, True)
 
         return processed
 
     def _get_ui_values(self, *args):
         return SimpleNamespace(**{name: arg for name, arg in zip(self._ui_element_names, args)})
-
-    def _start_video_render(self, is_final, *args):
-        self._video_render_tq.enqueue(render_video, self._get_ui_values(*args), is_final)
