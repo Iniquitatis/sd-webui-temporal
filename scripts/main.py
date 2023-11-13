@@ -24,6 +24,7 @@ from temporal.fs import safe_get_directory
 from temporal.image_utils import generate_noise_image, load_image, match_image
 from temporal.interop import EXTENSION_DIR, import_cn
 from temporal.math import remap_range
+from temporal.serialization import load_dict, load_object, save_dict, save_object
 from temporal.thread_queue import ThreadQueue
 
 #===============================================================================
@@ -165,55 +166,6 @@ def get_last_frame_index(frame_dir):
 
     return max((get_index(path) for path in frame_dir.glob("*.png")), default = 0)
 
-def load_object(obj, data, data_dir):
-    def load_value(value):
-        if isinstance(value, bool | int | float | str | None):
-            return value
-
-        elif isinstance(value, list):
-            return [load_value(x) for x in value]
-
-        elif isinstance(value, dict):
-            im_type = value.get("im_type", "")
-            im_path = data_dir / value.get("filename", "")
-
-            if im_type == "pil":
-                return load_image(im_path)
-            elif im_type == "np":
-                return np.array(load_image(im_path))
-            else:
-                return {k: load_value(v) for k, v in value.items()}
-
-    for key, value in data.items():
-        if hasattr(obj, key):
-            setattr(obj, key, load_value(value))
-
-def save_object(obj, data_dir, filter = None):
-    def save_value(value):
-        if isinstance(value, bool | int | float | str | None):
-            return value
-
-        elif isinstance(value, tuple):
-            return tuple(save_value(x) for x in value)
-
-        elif isinstance(value, list):
-            return [save_value(x) for x in value]
-
-        elif isinstance(value, dict):
-            return {k: save_value(v) for k, v in value.items()}
-
-        elif isinstance(value, Image.Image):
-            filename = f"{id(value)}.png"
-            value.save(data_dir / filename)
-            return {"im_type": "pil", "filename": filename}
-
-        elif isinstance(value, np.ndarray):
-            filename = f"{id(value)}.png"
-            Image.fromarray(value).save(data_dir / filename)
-            return {"im_type": "np", "filename": filename}
-
-    return {k: save_value(v) for k, v in vars(obj).items() if not filter or k in filter}
-
 def load_session(p, uv, project_dir, session_dir, last_index):
     if not (params_path := (session_dir / "parameters.json")).is_file():
         return
@@ -222,7 +174,7 @@ def load_session(p, uv, project_dir, session_dir, last_index):
         data = json.load(params_file)
 
     # NOTE: `p.override_settings` juggles VAEs back-and-forth, slowing down the process considerably
-    opts.data.update(data.get("shared_params", {}))
+    load_dict(opts.data, data.get("shared_params", {}), session_dir)
 
     load_object(p, data.get("generation_params", {}), session_dir)
 
@@ -244,12 +196,12 @@ def save_session(p, uv, project_dir, session_dir, last_index):
         path.unlink()
 
     data = dict(
-        shared_params = {k: opts.data[k] for k in [
+        shared_params = save_dict(opts.data, session_dir, [
             "sd_model_checkpoint",
             "sd_vae",
             "CLIP_stop_at_last_layers",
             "always_discard_next_to_last_sigma",
-        ]},
+        ]),
         generation_params = save_object(p, session_dir, [
             "prompt",
             "negative_prompt",
