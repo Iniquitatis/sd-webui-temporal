@@ -30,6 +30,44 @@ def preprocess_image(im, uv, seed):
         if uv.normalize_contrast:
             npim = skimage.exposure.rescale_intensity(npim)
 
+    # NOTE: Just matching the mean
+    #if uv.luminance_matching_enabled:
+    #    luminance = np.mean(skimage.color.rgb2gray(npim, channel_axis = 2))
+    #    npim = npim + (uv.luminance_target - luminance)
+
+    if uv.luminance_matching_enabled:
+        grayscale = skimage.color.rgb2gray(npim, channel_axis = 2)
+        mean, std = np.mean(grayscale), np.std(grayscale)
+        npim = uv.luminance_target + (npim - mean) * (uv.level_std_red / std)
+
+    # NOTE: By mean and std
+    #if uv.level_matching_enabled:
+    #    def adjust_channel(values, target_mean, target_std):
+    #        mean, std = np.mean(values), np.std(values)
+    #        values[:] = target_mean + (values - mean) * (target_std / std)
+    #
+    #    adjust_channel(npim[..., 0], uv.level_mean_red, uv.level_std_red)
+    #    adjust_channel(npim[..., 1], uv.level_mean_green, uv.level_std_green)
+    #    adjust_channel(npim[..., 2], uv.level_mean_blue, uv.level_std_blue)
+
+    # NOTE: To absolute values
+    if uv.level_matching_enabled:
+        def adjust_channel(values, target):
+            values[:] = remap_range(values, values.min(), values.max(), 0.0, target)
+
+        adjust_channel(npim[..., 0], uv.level_mean_red)
+        adjust_channel(npim[..., 1], uv.level_mean_green)
+        adjust_channel(npim[..., 2], uv.level_mean_blue)
+
+    if uv.level_adjustment_enabled:
+        def adjust_channel(values, shadows, midtones, highlights):
+            values[:] = remap_range(values, np.min(values), np.max(values), shadows, highlights)
+            values += midtones - np.mean(values)
+
+        adjust_channel(npim[..., 0], uv.level_shadows_red, uv.level_midtones_red, uv.level_highlights_red)
+        adjust_channel(npim[..., 1], uv.level_shadows_green, uv.level_midtones_green, uv.level_highlights_green)
+        adjust_channel(npim[..., 2], uv.level_shadows_blue, uv.level_midtones_blue, uv.level_highlights_blue)
+
     if uv.color_balancing_enabled:
         npim = remap_range(npim, npim.min(), npim.max(), 0.0, uv.brightness)
 

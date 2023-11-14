@@ -63,6 +63,41 @@ class TemporalScript(scripts.Script):
                 elem("color_correction_image", gr.Pil, label = "Reference image")
                 elem("normalize_contrast", gr.Checkbox, label = "Normalize contrast", value = False)
 
+            with gr.Accordion("Luminance matching"):
+                elem("luminance_matching_enabled", gr.Checkbox, label = "Enabled", value = False)
+                elem("luminance_target", gr.Slider, label = "Target", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.5)
+
+            with gr.Accordion("Level matching"):
+                elem("level_matching_enabled", gr.Checkbox, label = "Enabled", value = False)
+
+                with gr.Row():
+                    elem("level_mean_red", gr.Slider, label = "Mean: red", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.5)
+                    elem("level_mean_green", gr.Slider, label = "Mean: green", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.5)
+                    elem("level_mean_blue", gr.Slider, label = "Mean: blue", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.5)
+
+                with gr.Row():
+                    elem("level_std_red", gr.Slider, label = "Deviation: red", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.5)
+                    elem("level_std_green", gr.Slider, label = "Deviation: green", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.5)
+                    elem("level_std_blue", gr.Slider, label = "Deviation: blue", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.5)
+
+            with gr.Accordion("Level adjustment"):
+                elem("level_adjustment_enabled", gr.Checkbox, label = "Enabled", value = False)
+
+                with gr.Row():
+                    elem("level_shadows_red", gr.Slider, label = "Shadows: red", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0)
+                    elem("level_shadows_green", gr.Slider, label = "Shadows: green", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0)
+                    elem("level_shadows_blue", gr.Slider, label = "Shadows: blue", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0)
+
+                with gr.Row():
+                    elem("level_midtones_red", gr.Slider, label = "Midtones: red", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.5)
+                    elem("level_midtones_green", gr.Slider, label = "Midtones: green", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.5)
+                    elem("level_midtones_blue", gr.Slider, label = "Midtones: blue", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.5)
+
+                with gr.Row():
+                    elem("level_highlights_red", gr.Slider, label = "Highlights: red", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0)
+                    elem("level_highlights_green", gr.Slider, label = "Highlights: green", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0)
+                    elem("level_highlights_blue", gr.Slider, label = "Highlights: blue", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0)
+
             with gr.Accordion("Color balancing"):
                 elem("color_balancing_enabled", gr.Checkbox, label = "Enabled", value = False)
                 elem("brightness", gr.Slider, label = "Brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0)
