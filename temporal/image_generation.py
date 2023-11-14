@@ -38,6 +38,8 @@ def generate_image(job_title, p, **p_overrides):
     return processed
 
 def generate_project(p, uv):
+    _hack(p, uv)
+
     metrics = Metrics()
 
     opts_backup = opts.data.copy()
@@ -152,3 +154,56 @@ def generate_project(p, uv):
     opts.data.update(opts_backup)
 
     return processed
+
+def _hack(p, uv):
+    from types import MethodType
+
+    from modules.processing import StableDiffusionProcessingImg2Img
+    from modules.sd_samplers import create_sampler
+    from modules.sd_samplers_common import sample_to_image
+    from modules.sd_samplers_kdiffusion import KDiffusionSampler
+
+    # NOTE: Hack the sampler
+    # original_sample = getattr(p, "sample")
+
+    # def patched_sample(self, *args, **kwargs):
+    #     """
+    #     x = self.rng.next()
+
+    #     if self.initial_noise_multiplier != 1.0:
+    #         self.extra_generation_params["Noise multiplier"] = self.initial_noise_multiplier
+    #         x *= self.initial_noise_multiplier
+
+    #     samples = self.sampler.sample_img2img(self, self.init_latent, x, conditioning, unconditional_conditioning, image_conditioning=self.image_conditioning)
+
+    #     if self.mask is not None:
+    #         samples = samples * self.nmask + self.init_latent * self.mask
+
+    #     del x
+    #     devices.torch_gc()
+
+    #     return samples
+    #     """
+
+    #     print(self)
+    #     original_callback_state = getattr(self.sampler, "callback_state")
+
+    #     def patched_callback_state(self, d, *args, **kwargs):
+    #         sample_to_image(d).save("A.png")
+    #         return original_callback_state(self, d, *args, **kwargs)
+
+    #     self.sampler.callback_state = MethodType(callback_state, self.sampler)
+    #     return original_sample(self, p, *args, **kwargs)
+
+    # p.sample = MethodType(patched_sample, p)
+
+    # NOTE: Hack the noise compressor
+    # sampler = create_sampler(p.sampler_name, p.sd_model)
+    # sigmas = sampler.get_sigmas(p, p.steps).cpu().numpy()
+    # #uv.noise_compression_enabled = True
+    # uv.noise_compression_constant = sigmas[-uv.noise_compression_sigma_count:].sum() * uv.noise_compression_scale
+    # print("SIGMAS")
+    # print("Provided:", sigmas)
+    # print("Final:", uv.noise_compression_constant)
+
+    pass
