@@ -57,6 +57,7 @@ class TemporalScript(scripts.Script):
                 elem("noise_compression_enabled", gr.Checkbox, label = "Enabled", value = False)
                 elem("noise_compression_constant", gr.Slider, label = "Constant", minimum = 0.0, maximum = 1.0, step = 1e-5, value = 0.0)
                 elem("noise_compression_adaptive", gr.Slider, label = "Adaptive", minimum = 0.0, maximum = 2.0, step = 0.01, value = 0.0)
+                elem("noise_compression_mode", gr.Slider, label = "Mode", minimum = 1, maximum = 3, step = 1, value = 1)
 
             with gr.Accordion("Color correction"):
                 elem("color_correction_enabled", gr.Checkbox, label = "Enabled", value = False)

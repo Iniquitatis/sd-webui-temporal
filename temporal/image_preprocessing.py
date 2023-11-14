@@ -12,6 +12,17 @@ def preprocess_image(im, uv, seed):
     npim = skimage.img_as_float(im)
     height, width = npim.shape[:2]
 
+    # IMPORTANT: Check if noise sigmas could be extracted from:
+    # 1. modules/sd_samplers_kdiffusion.py
+    # 2. modules/sd_samplers_common.py
+    # 3. modules/sd_samplers.py
+    # Else check for concrete formulas in:
+    # 1. https://github.com/crowsonkb/k-diffusion/blob/master/k_diffusion/sampling.py#L146
+    #   * Including `get_ancestral_step` and `sample_euler_ancestral` functions--they seem like the most important ones here.
+    # Why check those? Because then I could try to revert some of SD's excessive work and denoise an image using some of
+    #  those sigmas here--they provide the noise and SD denoises it: I should try to do a similar thing.
+    # If that won't work, then I should try to actually steal an image before the last steps myself instead of relying on
+    #  the add-on (because loopback, for example, didn't work for some reason, but when I've reimplemented it--boom).
     if uv.noise_compression_enabled:
         weight = 0.0
 
@@ -21,7 +32,12 @@ def preprocess_image(im, uv, seed):
         if uv.noise_compression_adaptive > 0.0:
             weight += skimage.restoration.estimate_sigma(npim, average_sigmas = True, channel_axis = 2) * uv.noise_compression_adaptive
 
-        npim = skimage.restoration.denoise_tv_chambolle(npim, weight = max(weight, 1e-5), channel_axis = 2)
+        if uv.noise_compression_mode == 1:
+            npim = skimage.restoration.denoise_tv_chambolle(npim, weight = max(weight, 1e-5), channel_axis = 2)
+        elif uv.noise_compression_mode == 2:
+            npim = skimage.restoration.denoise_bilateral(npim, sigma_color = max(weight, 1e-5), sigma_spatial = 1.0, channel_axis = 2)
+        elif uv.noise_compression_mode == 3:
+            npim = skimage.filters.gaussian(npim, max(weight, 1e-5), channel_axis = 2)
 
     if uv.color_correction_enabled:
         if uv.color_correction_image is not None:
