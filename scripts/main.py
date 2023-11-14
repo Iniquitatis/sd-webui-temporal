@@ -51,6 +51,8 @@ class TemporalScript(scripts.Script):
             elem("start_from_scratch", gr.Checkbox, label = "Start from scratch", value = False)
             elem("load_session", gr.Checkbox, label = "Load session", value = True)
             elem("save_session", gr.Checkbox, label = "Save session", value = True)
+            elem("drift_factor", gr.Number, label = "Drift factor", precision = 0, minimum = 1, maximum = 1000, value = 100)
+            elem("drift_noise", gr.Slider, label = "Drift noise", minimum = 0.0, maximum = 1.0, step = 0.001, value = 0.5)
 
         with gr.Tab("Frame Preprocessing"):
             with gr.Accordion("Noise compression"):

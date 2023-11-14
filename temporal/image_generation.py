@@ -2,6 +2,7 @@ from copy import copy
 from itertools import count
 from pathlib import Path
 
+import skimage
 from PIL import Image
 
 from modules import images, processing
@@ -10,6 +11,7 @@ from modules.shared import opts, prompt_styles, state
 from temporal.fs import safe_get_directory
 from temporal.image_preprocessing import preprocess_image
 from temporal.image_utils import generate_noise_image
+from temporal.math import lerp
 from temporal.metrics import Metrics
 from temporal.session import get_last_frame_index, load_session, save_session
 from temporal.thread_queue import ThreadQueue
@@ -106,19 +108,41 @@ def generate_project(p, uv):
 
     last_image = p.init_images[0]
     last_seed = p.seed
+    last_subseed = p.subseed
+    #last_subseed_strength = p.subseed_strength
+
+    def noisify(im, seed, level):
+        npim = skimage.img_as_float(im)[..., :3]
+        noise = skimage.img_as_float(np.random.default_rng(seed).integers(0, 256, size = (im.height, im.width, 3), dtype = "uint8"))
+        return lerp(npim, noise, level)
+
+    a = noisify(p.init_images[0], last_seed, uv.drift_noise)
+    b = noisify(p.init_images[0], last_seed + 1, uv.drift_noise)
 
     for i, frame_index in zip(range(uv.frame_count), count(last_index + 1)):
         if not (processed := generate_image(
             f"Frame {i + 1} / {uv.frame_count}",
             p,
-            init_images = [preprocess_image(last_image, uv, last_seed)],
-            seed = last_seed,
+            #init_images = [preprocess_image(last_image, uv, last_seed)],
+            #init_images = [preprocess_image(p.init_images[0], uv, last_seed)],
+            init_images = [preprocess_image(Image.fromarray(skimage.img_as_ubyte(lerp(a, b, (i % uv.drift_factor) / uv.drift_factor))), uv, last_seed)],
+            #seed = last_seed,
+            #subseed = last_subseed,
+            #subseed_strength = last_subseed_strength,
         )):
-            processed = processing.Processed(p, [last_image])
-            break
+            return processed
 
         last_image = processed.images[0]
-        last_seed += 1
+        # Works! But probably it's slerp that gives those weirdly snappy results
+        #last_seed = p.seed + i // uv.drift_factor
+        #last_subseed = p.subseed + i // uv.drift_factor
+        #last_subseed_strength = (i % uv.drift_factor) / uv.drift_factor
+
+        if i % uv.drift_factor == uv.drift_factor - 1:
+            last_seed += 1
+
+            a = b
+            b = noisify(p.init_images[0], last_seed, uv.drift_noise)
 
         if frame_index % uv.save_every_nth_frame == 0:
             if uv.archive_mode:
