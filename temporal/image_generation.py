@@ -1,4 +1,3 @@
-from copy import copy
 from itertools import count
 from pathlib import Path
 
@@ -10,25 +9,18 @@ from modules.shared import opts, prompt_styles, state
 from temporal.fs import safe_get_directory
 from temporal.image_preprocessing import preprocess_image
 from temporal.image_utils import generate_noise_image
+from temporal.meta_utils import copy_with_overrides
 from temporal.metrics import Metrics
 from temporal.session import get_last_frame_index, load_session, save_session
 from temporal.thread_queue import ThreadQueue
 
 image_save_queue = ThreadQueue()
 
-def generate_image(job_title, p, **p_overrides):
+def generate_image(job_title, p):
     state.job = job_title
 
-    p_instance = copy(p)
-
-    for key, value in p_overrides.items():
-        if hasattr(p_instance, key):
-            setattr(p_instance, key, value)
-        else:
-            print(f"WARNING: Key {key} doesn't exist in {p_instance.__class__.__name__}")
-
     try:
-        processed = processing.process_images(p_instance)
+        processed = processing.process_images(p)
     except Exception:
         return None
 
@@ -70,12 +62,10 @@ def generate_project(p, uv):
     processing.fix_seed(p)
 
     if not p.init_images or not isinstance(p.init_images[0], Image.Image):
-        if processed := generate_image(
-            "Initial image",
-            p,
+        if processed := generate_image("Initial image", copy_with_overrides(p,
             init_images = [generate_noise_image((p.width, p.height), p.seed)],
             denoising_strength = 1.0,
-        ):
+        )):
             p.init_images = [processed.images[0]]
             p.seed += 1
         else:
@@ -108,12 +98,10 @@ def generate_project(p, uv):
     last_seed = p.seed
 
     for i, frame_index in zip(range(uv.frame_count), count(last_index + 1)):
-        if not (processed := generate_image(
-            f"Frame {i + 1} / {uv.frame_count}",
-            p,
+        if not (processed := generate_image(f"Frame {i + 1} / {uv.frame_count}", copy_with_overrides(p,
             init_images = [preprocess_image(last_image, uv, last_seed)],
             seed = last_seed,
-        )):
+        ))):
             processed = processing.Processed(p, [last_image])
             break
 

@@ -1,3 +1,4 @@
+from itertools import product
 from pathlib import Path
 from time import sleep
 from types import SimpleNamespace
@@ -9,6 +10,7 @@ from modules import scripts
 from temporal.image_blending import BLEND_MODES
 from temporal.image_generation import generate_project
 from temporal.interop import EXTENSION_DIR
+from temporal.meta_utils import copy_with_overrides
 from temporal.metrics import Metrics
 from temporal.video_rendering import start_video_render, video_render_queue
 
@@ -185,6 +187,24 @@ class TemporalScript(scripts.Script):
             elem("render_plots", gr.Button, value = "Render plots")
             elem("metrics_plots", gr.Gallery, label = "Plots", columns = 4, object_fit = "contain", preview = True)
 
+        with gr.Tab("Benchmark"):
+            elem("benchmark_enabled", gr.Checkbox, label = "Enabled", value = False)
+
+            with gr.Row():
+                elem("benchmark_steps_from", gr.Number, label = "Steps: from", precision = 0, minimum = 1, maximum = 150, step = 1, value = 15)
+                elem("benchmark_steps_to", gr.Number, label = "Steps: to", precision = 0, minimum = 1, maximum = 150, step = 1, value = 25)
+                elem("benchmark_steps_step", gr.Number, label = "Steps: step", precision = 0, minimum = 1, maximum = 150, step = 1, value = 5)
+
+            with gr.Row():
+                elem("benchmark_denoising_strength_from", gr.Number, label = "Denoising strength: from", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0)
+                elem("benchmark_denoising_strength_to", gr.Number, label = "Denoising strength: to", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0)
+                elem("benchmark_denoising_strength_step", gr.Number, label = "Denoising strength: step", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.2)
+
+            with gr.Row():
+                elem("benchmark_noise_compression_from", gr.Number, label = "Noise compression: from", minimum = 0.0, maximum = 1.0, step = 1e-5, value = 0.0)
+                elem("benchmark_noise_compression_to", gr.Number, label = "Noise compression: to", minimum = 0.0, maximum = 1.0, step = 1e-5, value = 0.001)
+                elem("benchmark_noise_compression_step", gr.Number, label = "Noise compression: step", minimum = 0.0, maximum = 1.0, step = 1e-5, value = 0.00001)
+
         with gr.Tab("Help"):
             for file_name, title in [
                 ("tab_general.md", "General tab"),
@@ -231,7 +251,29 @@ class TemporalScript(scripts.Script):
 
     def run(self, p, *args):
         uv = self._get_ui_values(*args)
-        processed = generate_project(p, uv)
+
+        if not uv.benchmark_enabled:
+            processed = generate_project(p, uv)
+        else:
+            for steps, denoising_strength, noise_compression in product(
+                range(uv.benchmark_steps_from, uv.benchmark_steps_to + 1, uv.benchmark_steps_step),
+                range(int(uv.benchmark_denoising_strength_from * 100.0), int(uv.benchmark_denoising_strength_to * 100.0) + 1, int(uv.benchmark_denoising_strength_step * 100.0)),
+                range(int(uv.benchmark_noise_compression_from * 1e5), int(uv.benchmark_noise_compression_to * 1e5) + 1, int(uv.benchmark_noise_compression_step * 1e5)),
+            ):
+                denoising_strength /= 100
+                noise_compression /= 1e5
+
+                processed = generate_project(
+                    copy_with_overrides(p,
+                        steps = steps,
+                        denoising_strength = denoising_strength,
+                    ),
+                    copy_with_overrides(uv,
+                        # FIXME: Will break video rendering because it uses `project_subdir` as a file name
+                        project_subdir = f"{uv.project_subdir}/{steps}-{denoising_strength:.02f}-{noise_compression:.05f}",
+                        noise_compression_constant = noise_compression,
+                    ),
+                )
 
         if uv.render_draft_on_finish:
             start_video_render(uv, False)
