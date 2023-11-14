@@ -94,6 +94,7 @@ def save_session(p, uv, project_dir, session_dir, last_index):
         ) if (external_code := import_cn()) else [],
         extension_params = save_object(uv, session_dir, [
             "save_every_nth_frame",
+            "change_rate",
             "noise_compression_enabled",
             "noise_compression_constant",
             "noise_compression_adaptive",

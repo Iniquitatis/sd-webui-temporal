@@ -51,6 +51,7 @@ class TemporalScript(scripts.Script):
             elem("start_from_scratch", gr.Checkbox, label = "Start from scratch", value = False)
             elem("load_session", gr.Checkbox, label = "Load session", value = True)
             elem("save_session", gr.Checkbox, label = "Save session", value = True)
+            elem("change_rate", gr.Number, label = "Change rate", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0)
 
         with gr.Tab("Frame Preprocessing"):
             with gr.Accordion("Noise compression"):

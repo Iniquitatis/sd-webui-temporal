@@ -2,6 +2,7 @@ from copy import copy
 from itertools import count
 from pathlib import Path
 
+import skimage
 from PIL import Image
 
 from modules import images, processing
@@ -10,6 +11,7 @@ from modules.shared import opts, prompt_styles, state
 from temporal.fs import safe_get_directory
 from temporal.image_preprocessing import preprocess_image
 from temporal.image_utils import generate_noise_image
+from temporal.math import lerp
 from temporal.metrics import Metrics
 from temporal.session import get_last_frame_index, load_session, save_session
 from temporal.thread_queue import ThreadQueue
@@ -107,11 +109,17 @@ def generate_project(p, uv):
     last_image = p.init_images[0]
     last_seed = p.seed
 
+    # FIXME: Resize image to buffer size, otherwise throws an error if an image size doesn't match
+    if (generation_buffer_path := (session_dir / "generation_buffer.png")).is_file():
+        generation_buffer = skimage.img_as_float(Image.open(generation_buffer_path))
+    else:
+        generation_buffer = skimage.img_as_float(p.init_images[0])
+
     for i, frame_index in zip(range(uv.frame_count), count(last_index + 1)):
         if not (processed := generate_image(
             f"Frame {i + 1} / {uv.frame_count}",
             p,
-            init_images = [preprocess_image(last_image, uv, last_seed)],
+            init_images = [preprocess_image(Image.fromarray(skimage.img_as_ubyte(generation_buffer)), uv, last_seed)],
             seed = last_seed,
         )):
             processed = processing.Processed(p, [last_image])
@@ -119,6 +127,8 @@ def generate_project(p, uv):
 
         last_image = processed.images[0]
         last_seed += 1
+
+        generation_buffer = lerp(generation_buffer[..., :3], skimage.img_as_float(last_image)[..., :3], uv.change_rate)
 
         if frame_index % uv.save_every_nth_frame == 0:
             if uv.archive_mode:
@@ -148,6 +158,8 @@ def generate_project(p, uv):
 
             if frame_index % uv.metrics_save_plots_every_nth_frame == 0:
                 metrics.plot(project_dir, save_images = True)
+
+    Image.fromarray(skimage.img_as_ubyte(generation_buffer)).save(generation_buffer_path)
 
     opts.data.update(opts_backup)
 

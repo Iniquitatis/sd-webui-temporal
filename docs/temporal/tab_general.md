@@ -7,3 +7,4 @@
 * **Load session** — load settings and continue rendering starting from the last existing frame; does nothing if no frames were rendered in the current project.
 * **Save session** — save current settings to the project directory.
     * **NOTE:** Currently saves all of the extension's frame preprocessing settings, some of the base settings (prompt, sampling method, img2img images, seed, etc.), and most of the ControlNet settings if it's installed.
+* **Change rate** — amount of the new image that will be used to generate the next frame.
