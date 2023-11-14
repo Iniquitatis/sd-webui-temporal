@@ -3,7 +3,7 @@ import scipy
 import skimage
 from PIL import Image, ImageColor
 
-from temporal.blend_modes import blend_images
+from temporal.image_blending import blend_images
 from temporal.image_utils import match_image
 from temporal.math import remap_range
 

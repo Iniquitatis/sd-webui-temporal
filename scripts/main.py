@@ -6,7 +6,7 @@ import gradio as gr
 
 from modules import scripts
 
-from temporal.blend_modes import BLEND_MODES
+from temporal.image_blending import BLEND_MODES
 from temporal.image_generation import generate_project
 from temporal.interop import EXTENSION_DIR
 from temporal.metrics import Metrics
