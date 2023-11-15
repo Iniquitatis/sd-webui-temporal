@@ -23,39 +23,49 @@ def _load_value(value, data_dir):
     if isinstance(value, bool | int | float | str | None):
         return value
 
-    elif isinstance(value, list):
-        return [_load_value(x, data_dir) for x in value]
-
     elif isinstance(value, dict):
-        im_type = value.get("im_type", "")
-        im_path = data_dir / value.get("filename", "")
+        type = value.get("type", "")
 
-        if im_type == "pil":
-            return load_image(im_path)
-        elif im_type == "np":
-            return np.array(load_image(im_path))
+        if type == "tuple":
+            return tuple(_load_value(x, data_dir) for x in value.get("data", []))
+
+        elif type == "list":
+            return [_load_value(x, data_dir) for x in value.get("data", [])]
+
+        elif type == "dict":
+            return {k: _load_value(v, data_dir) for k, v in value.get("data", {}).items()}
+
+        elif type == "pil":
+            return load_image(data_dir / value.get("filename", ""))
+
+        elif type == "np":
+            return np.array(load_image(data_dir / value.get("filename", "")))
+
         else:
-            return {k: _load_value(v, data_dir) for k, v in value.items()}
+            print(f"WARNING: Cannot load value of type {type}")
 
 def _save_value(value, data_dir):
     if isinstance(value, bool | int | float | str | None):
         return value
 
     elif isinstance(value, tuple):
-        return tuple(_save_value(x, data_dir) for x in value)
+        return {"type": "tuple", "data": [_save_value(x, data_dir) for x in value]}
 
     elif isinstance(value, list):
-        return [_save_value(x, data_dir) for x in value]
+        return {"type": "list", "data": [_save_value(x, data_dir) for x in value]}
 
     elif isinstance(value, dict):
-        return {k: _save_value(v, data_dir) for k, v in value.items()}
+        return {"type": "dict", "data": {k: _save_value(v, data_dir) for k, v in value.items()}}
 
     elif isinstance(value, Image.Image):
         filename = f"{id(value)}.png"
         value.save(data_dir / filename)
-        return {"im_type": "pil", "filename": filename}
+        return {"type": "pil", "filename": filename}
 
     elif isinstance(value, np.ndarray):
         filename = f"{id(value)}.png"
         Image.fromarray(value).save(data_dir / filename)
-        return {"im_type": "np", "filename": filename}
+        return {"type": "np", "filename": filename}
+
+    else:
+        print(f"WARNING: Cannot save value of type {value.__class__.__name__}")

@@ -2,6 +2,7 @@ import json
 
 from modules.shared import opts
 
+from temporal.compat import upgrade_project
 from temporal.image_utils import load_image
 from temporal.interop import import_cn
 from temporal.serialization import load_dict, load_object, save_dict, save_object
@@ -19,6 +20,9 @@ def get_last_frame_index(frame_dir):
 
 def load_session(p, uv, project_dir, session_dir, last_index):
     if not (params_path := (session_dir / "parameters.json")).is_file():
+        return
+
+    if not upgrade_project(project_dir):
         return
 
     with open(params_path, "r", encoding = "utf-8") as params_file:
@@ -138,3 +142,6 @@ def save_session(p, uv, project_dir, session_dir, last_index):
 
     with open(session_dir / "parameters.json", "w", encoding = "utf-8") as params_file:
         json.dump(data, params_file, indent = 4)
+
+    with open(session_dir / "version.txt", "w") as version_file:
+        version_file.write("1")
