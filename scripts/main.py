@@ -73,34 +73,55 @@ class TemporalScript(scripts.Script):
                 elem("noise_enabled", gr.Checkbox, label = "Enabled", value = False)
 
                 with gr.Row():
-                    elem("noise_amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0)
-                    elem("noise_relative", gr.Checkbox, label = "Relative", value = False)
+                    with gr.Column():
+                        with gr.Row():
+                            elem("noise_amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0)
+                            elem("noise_relative", gr.Checkbox, label = "Relative", value = False)
 
-                # FIXME: Pairs (name, value) don't work in older versions of Gradio
-                elem("noise_mode", gr.Dropdown, label = "Mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)))
+                        # FIXME: Pairs (name, value) don't work in older versions of Gradio
+                        elem("noise_mode", gr.Dropdown, label = "Mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)))
+
+                    with gr.Column():
+                        elem("noise_mask", gr.Pil, label = "Mask", image_mode = "L", interactive = True)
+                        elem("noise_mask_inverted", gr.Checkbox, label = "Inverted", value = False)
+                        elem("noise_mask_blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0)
 
             with gr.Accordion("Modulation"):
                 elem("modulation_enabled", gr.Checkbox, label = "Enabled", value = False)
 
                 with gr.Row():
-                    elem("modulation_amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0)
-                    elem("modulation_relative", gr.Checkbox, label = "Relative", value = False)
+                    with gr.Column():
+                        with gr.Row():
+                            elem("modulation_amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0)
+                            elem("modulation_relative", gr.Checkbox, label = "Relative", value = False)
 
-                # FIXME: Pairs (name, value) don't work in older versions of Gradio
-                elem("modulation_mode", gr.Dropdown, label = "Mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)))
-                elem("modulation_image", gr.Pil, label = "Image")
-                elem("modulation_blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0)
+                        # FIXME: Pairs (name, value) don't work in older versions of Gradio
+                        elem("modulation_mode", gr.Dropdown, label = "Mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)))
+                        elem("modulation_image", gr.Pil, label = "Image")
+                        elem("modulation_blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0)
+
+                    with gr.Column():
+                        elem("modulation_mask", gr.Pil, label = "Mask", image_mode = "L", interactive = True)
+                        elem("modulation_mask_inverted", gr.Checkbox, label = "Inverted", value = False)
+                        elem("modulation_mask_blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0)
 
             with gr.Accordion("Tinting"):
                 elem("tinting_enabled", gr.Checkbox, label = "Enabled", value = False)
 
                 with gr.Row():
-                    elem("tinting_amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0)
-                    elem("tinting_relative", gr.Checkbox, label = "Relative", value = False)
+                    with gr.Column():
+                        with gr.Row():
+                            elem("tinting_amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0)
+                            elem("tinting_relative", gr.Checkbox, label = "Relative", value = False)
 
-                # FIXME: Pairs (name, value) don't work in older versions of Gradio
-                elem("tinting_mode", gr.Dropdown, label = "Mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)))
-                elem("tinting_color", gr.ColorPicker, label = "Color", value = "#ffffff")
+                        # FIXME: Pairs (name, value) don't work in older versions of Gradio
+                        elem("tinting_mode", gr.Dropdown, label = "Mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)))
+                        elem("tinting_color", gr.ColorPicker, label = "Color", value = "#ffffff")
+
+                    with gr.Column():
+                        elem("tinting_mask", gr.Pil, label = "Mask", image_mode = "L", interactive = True)
+                        elem("tinting_mask_inverted", gr.Checkbox, label = "Inverted", value = False)
+                        elem("tinting_mask_blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0)
 
             with gr.Accordion("Sharpening"):
                 elem("sharpening_enabled", gr.Checkbox, label = "Enabled", value = False)

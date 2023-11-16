@@ -18,6 +18,9 @@
     * **Amount** — amount of the noise to be mixed in into the frame.
         * **Relative** — determines if the amount will be multiplied by the **img2img** denoising strength.
     * **Mode** — blending mode of the noise.
+    * **Mask** — an image that determines which areas will be processed by the effect; black—unprocessed, white—fully processed.
+        * **Inverted** — inversion of the mask image.
+        * **Blurring** — blurring radius of the mask image.
 * **Modulation** — modulation of the frame by an image.
     * **Enabled** — self-descriptive.
     * **Amount** — amount of the modulator image to be mixed in into the frame.
@@ -25,12 +28,18 @@
     * **Mode** — blending mode of the modulator image.
     * **Image** — an image that will be used to modulate the frame.
     * **Blurring** — blurring radius of the modulator image.
+    * **Mask** — an image that determines which areas will be processed by the effect; black—unprocessed, white—fully processed.
+        * **Inverted** — inversion of the mask image.
+        * **Blurring** — blurring radius of the mask image.
 * **Tinting** — modulation of the frame by the constant color.
     * **Enabled** — self-descriptive.
     * **Amount** — amount of the color to be mixed in into the frame.
         * **Relative** — determines if the amount will be multiplied by the **img2img** denoising strength.
     * **Mode** — blending mode of the color.
     * **Color** — a color that will be used to modulate the frame.
+    * **Mask** — an image that determines which areas will be processed by the effect; black—unprocessed, white—fully processed.
+        * **Inverted** — inversion of the mask image.
+        * **Blurring** — blurring radius of the mask image.
 * **Sharpening** — unsharp masking.
     * **Enabled** — self-descriptive.
     * **Amount** — amount of the sharpening.

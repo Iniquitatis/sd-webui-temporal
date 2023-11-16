@@ -130,7 +130,7 @@ def _(b, s):
     return skimage.color.hsv2rgb(np.stack((s_hsv[..., 0], s_hsv[..., 1], b_hsv[..., 2]), axis = 2))
 
 def blend_images(npim, modulator, mode, amount):
-    if modulator is None or amount <= 0.0:
+    if modulator is None or (isinstance(amount, float) and amount <= 0.0):
         return npim
 
     return lerp(npim, BLEND_MODES[mode]["func"](npim, modulator), amount)

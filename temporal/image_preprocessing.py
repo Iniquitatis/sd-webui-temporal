@@ -41,13 +41,13 @@ def preprocess_image(im, uv, seed):
         npim = skimage.color.hsv2rgb(hsv)
 
     if uv.noise_enabled:
-        npim = blend_images(npim, np.random.default_rng(seed).uniform(high = 1.0 + np.finfo(npim.dtype).eps, size = npim.shape), uv.noise_mode, uv.noise_amount)
+        npim = blend_images(npim, np.random.default_rng(seed).uniform(high = 1.0 + np.finfo(npim.dtype).eps, size = npim.shape), uv.noise_mode, uv.noise_amount * _prepare_mask(uv.noise_mask, uv.noise_mask_inverted, uv.noise_mask_blurring, im))
 
     if uv.modulation_enabled and uv.modulation_image is not None:
-        npim = blend_images(npim, skimage.filters.gaussian(skimage.img_as_float(match_image(uv.modulation_image, im)), uv.modulation_blurring, channel_axis = 2), uv.modulation_mode, uv.modulation_amount)
+        npim = blend_images(npim, skimage.filters.gaussian(skimage.img_as_float(match_image(uv.modulation_image, im)), uv.modulation_blurring, channel_axis = 2), uv.modulation_mode, uv.modulation_amount * _prepare_mask(uv.modulation_mask, uv.modulation_mask_inverted, uv.modulation_mask_blurring, im))
 
     if uv.tinting_enabled:
-        npim = blend_images(npim, np.full_like(npim, np.array(ImageColor.getrgb(uv.tinting_color)) / 255.0), uv.tinting_mode, uv.tinting_amount)
+        npim = blend_images(npim, np.full_like(npim, np.array(ImageColor.getrgb(uv.tinting_color)) / 255.0), uv.tinting_mode, uv.tinting_amount * _prepare_mask(uv.tinting_mask, uv.tinting_mask_inverted, uv.tinting_mask_blurring, im))
 
     if uv.sharpening_enabled:
         npim = skimage.filters.unsharp_mask(npim, uv.sharpening_radius, uv.sharpening_amount, channel_axis = 2)
@@ -76,3 +76,17 @@ def preprocess_image(im, uv, seed):
         npim = code_globals.get("output", npim)
 
     return Image.fromarray(skimage.img_as_ubyte(np.clip(npim, 0.0, 1.0)))
+
+def _prepare_mask(mask, inverted, blurring, reference):
+    if not mask:
+        return 1.0
+
+    value = skimage.img_as_float(match_image(mask, reference))
+
+    if inverted:
+        value = 1.0 - value
+
+    if blurring > 0.0:
+        value = skimage.filters.gaussian(value, blurring, channel_axis = 2)
+
+    return value
