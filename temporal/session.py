@@ -3,6 +3,7 @@ import json
 from modules.shared import opts
 
 from temporal.compat import upgrade_project
+from temporal.image_preprocessing import iterate_all_preprocessor_keys
 from temporal.image_utils import load_image
 from temporal.interop import import_cn
 from temporal.serialization import load_dict, load_object, save_dict, save_object
@@ -98,59 +99,11 @@ def save_session(p, uv, project_dir, session_dir, last_index):
         ) if (external_code := import_cn()) else [],
         extension_params = save_object(uv, session_dir, [
             "save_every_nth_frame",
-            "noise_compression_enabled",
-            "noise_compression_constant",
-            "noise_compression_adaptive",
-            "color_correction_enabled",
-            "color_correction_image",
-            "normalize_contrast",
-            "color_balancing_enabled",
-            "brightness",
-            "contrast",
-            "saturation",
-            "noise_enabled",
-            "noise_amount",
-            "noise_relative",
-            "noise_mode",
-            "noise_mask",
-            "noise_mask_inverted",
-            "noise_mask_blurring",
-            "modulation_enabled",
-            "modulation_amount",
-            "modulation_relative",
-            "modulation_mode",
-            "modulation_image",
-            "modulation_blurring",
-            "modulation_mask",
-            "modulation_mask_inverted",
-            "modulation_mask_blurring",
-            "tinting_enabled",
-            "tinting_amount",
-            "tinting_relative",
-            "tinting_mode",
-            "tinting_color",
-            "tinting_mask",
-            "tinting_mask_inverted",
-            "tinting_mask_blurring",
-            "sharpening_enabled",
-            "sharpening_amount",
-            "sharpening_relative",
-            "sharpening_radius",
-            "transformation_enabled",
-            "scaling",
-            "rotation",
-            "translation_x",
-            "translation_y",
-            "symmetrize",
-            "blurring_enabled",
-            "blurring_radius",
-            "custom_code_enabled",
-            "custom_code",
-        ]),
+        ] + list(iterate_all_preprocessor_keys())),
     )
 
     with open(session_dir / "parameters.json", "w", encoding = "utf-8") as params_file:
         json.dump(data, params_file, indent = 4)
 
     with open(session_dir / "version.txt", "w") as version_file:
-        version_file.write("1")
+        version_file.write("2")

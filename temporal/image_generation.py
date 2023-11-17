@@ -8,7 +8,7 @@ from modules import images, processing
 from modules.shared import opts, prompt_styles, state
 
 from temporal.fs import safe_get_directory
-from temporal.image_preprocessing import preprocess_image
+from temporal.image_preprocessing import PREPROCESSORS, preprocess_image
 from temporal.image_utils import generate_noise_image
 from temporal.metrics import Metrics
 from temporal.session import get_last_frame_index, load_session, save_session
@@ -90,17 +90,9 @@ def generate_project(p, uv):
     if uv.save_session:
         save_session(p, uv, project_dir, session_dir, last_index)
 
-    if uv.noise_relative:
-        uv.noise_amount *= p.denoising_strength
-
-    if uv.modulation_relative:
-        uv.modulation_amount *= p.denoising_strength
-
-    if uv.tinting_relative:
-        uv.tinting_amount *= p.denoising_strength
-
-    if uv.sharpening_relative:
-        uv.sharpening_amount *= p.denoising_strength
+    for key in PREPROCESSORS.keys():
+        if getattr(uv, f"{key}_amount_relative"):
+            setattr(uv, f"{key}_amount", getattr(uv, f"{key}_amount") * p.denoising_strength)
 
     state.job_count = uv.frame_count
 

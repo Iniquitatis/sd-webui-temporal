@@ -1,4 +1,5 @@
 import numpy as np
+import skimage
 from PIL import Image
 
 def generate_noise_image(size, seed):
@@ -10,10 +11,22 @@ def load_image(path):
     return im
 
 def match_image(im, reference, mode = True, size = True):
+    if is_np := isinstance(im, np.ndarray):
+        im = Image.fromarray(skimage.util.img_as_ubyte(im))
+
+    if isinstance(reference, np.ndarray):
+        reference = Image.fromarray(skimage.util.img_as_ubyte(reference))
+
     if mode and im.mode != reference.mode:
         im = im.convert(reference.mode)
 
     if size and im.size != reference.size:
         im = im.resize(reference.size, Image.Resampling.LANCZOS)
 
-    return im
+    return skimage.util.img_as_float(im) if is_np else im
+
+def np_to_pil(npim):
+    return Image.fromarray(skimage.util.img_as_ubyte(npim))
+
+def pil_to_np(im):
+    return skimage.util.img_as_float(im)

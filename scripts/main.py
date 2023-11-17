@@ -6,8 +6,8 @@ import gradio as gr
 
 from modules import scripts
 
-from temporal.image_blending import BLEND_MODES
 from temporal.image_generation import generate_project
+from temporal.image_preprocessing import PREPROCESSORS
 from temporal.interop import EXTENSION_DIR
 from temporal.metrics import Metrics
 from temporal.video_rendering import start_video_render, video_render_queue
@@ -53,105 +53,22 @@ class TemporalScript(scripts.Script):
             elem("save_session", gr.Checkbox, label = "Save session", value = True)
 
         with gr.Tab("Frame Preprocessing"):
-            with gr.Accordion("Noise compression"):
-                elem("noise_compression_enabled", gr.Checkbox, label = "Enabled", value = False)
-                elem("noise_compression_constant", gr.Slider, label = "Constant", minimum = 0.0, maximum = 1.0, step = 1e-5, value = 0.0)
-                elem("noise_compression_adaptive", gr.Slider, label = "Adaptive", minimum = 0.0, maximum = 2.0, step = 0.01, value = 0.0)
+            for key, processor in PREPROCESSORS.items():
+                with gr.Accordion(processor.name, open = False):
+                    elem(f"{key}_enabled", gr.Checkbox, label = "Enabled")
 
-            with gr.Accordion("Color correction"):
-                elem("color_correction_enabled", gr.Checkbox, label = "Enabled", value = False)
-                elem("color_correction_image", gr.Pil, label = "Reference image")
-                elem("normalize_contrast", gr.Checkbox, label = "Normalize contrast", value = False)
+                    with gr.Row():
+                        elem(f"{key}_amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0)
+                        elem(f"{key}_amount_relative", gr.Checkbox, label = "Relative", value = False)
 
-            with gr.Accordion("Color balancing"):
-                elem("color_balancing_enabled", gr.Checkbox, label = "Enabled", value = False)
-                elem("brightness", gr.Slider, label = "Brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0)
-                elem("contrast", gr.Slider, label = "Contrast", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0)
-                elem("saturation", gr.Slider, label = "Saturation", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0)
+                    with gr.Tab("Parameters"):
+                        for param in processor.params:
+                            elem(f"{key}_{param.key}", param.type, label = param.name, **param.kwargs)
 
-            with gr.Accordion("Noise"):
-                elem("noise_enabled", gr.Checkbox, label = "Enabled", value = False)
-
-                with gr.Row():
-                    with gr.Column():
-                        with gr.Row():
-                            elem("noise_amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0)
-                            elem("noise_relative", gr.Checkbox, label = "Relative", value = False)
-
-                        # FIXME: Pairs (name, value) don't work in older versions of Gradio
-                        elem("noise_mode", gr.Dropdown, label = "Mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)))
-
-                    with gr.Column():
-                        elem("noise_mask", gr.Pil, label = "Mask", image_mode = "L", interactive = True)
-                        elem("noise_mask_inverted", gr.Checkbox, label = "Inverted", value = False)
-                        elem("noise_mask_blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0)
-
-            with gr.Accordion("Modulation"):
-                elem("modulation_enabled", gr.Checkbox, label = "Enabled", value = False)
-
-                with gr.Row():
-                    with gr.Column():
-                        with gr.Row():
-                            elem("modulation_amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0)
-                            elem("modulation_relative", gr.Checkbox, label = "Relative", value = False)
-
-                        # FIXME: Pairs (name, value) don't work in older versions of Gradio
-                        elem("modulation_mode", gr.Dropdown, label = "Mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)))
-                        elem("modulation_image", gr.Pil, label = "Image")
-                        elem("modulation_blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0)
-
-                    with gr.Column():
-                        elem("modulation_mask", gr.Pil, label = "Mask", image_mode = "L", interactive = True)
-                        elem("modulation_mask_inverted", gr.Checkbox, label = "Inverted", value = False)
-                        elem("modulation_mask_blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0)
-
-            with gr.Accordion("Tinting"):
-                elem("tinting_enabled", gr.Checkbox, label = "Enabled", value = False)
-
-                with gr.Row():
-                    with gr.Column():
-                        with gr.Row():
-                            elem("tinting_amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0)
-                            elem("tinting_relative", gr.Checkbox, label = "Relative", value = False)
-
-                        # FIXME: Pairs (name, value) don't work in older versions of Gradio
-                        elem("tinting_mode", gr.Dropdown, label = "Mode", type = "value", choices = list(BLEND_MODES.keys()), value = next(iter(BLEND_MODES)))
-                        elem("tinting_color", gr.ColorPicker, label = "Color", value = "#ffffff")
-
-                    with gr.Column():
-                        elem("tinting_mask", gr.Pil, label = "Mask", image_mode = "L", interactive = True)
-                        elem("tinting_mask_inverted", gr.Checkbox, label = "Inverted", value = False)
-                        elem("tinting_mask_blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0)
-
-            with gr.Accordion("Sharpening"):
-                elem("sharpening_enabled", gr.Checkbox, label = "Enabled", value = False)
-
-                with gr.Row():
-                    elem("sharpening_amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0)
-                    elem("sharpening_relative", gr.Checkbox, label = "Relative", value = False)
-
-                elem("sharpening_radius", gr.Slider, label = "Radius", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0)
-
-            with gr.Accordion("Transformation"):
-                elem("transformation_enabled", gr.Checkbox, label = "Enabled", value = False)
-
-                with gr.Row():
-                    elem("translation_x", gr.Number, label = "Translation X", step = 0.001, value = 0.0)
-                    elem("translation_y", gr.Number, label = "Translation Y", step = 0.001, value = 0.0)
-
-                elem("rotation", gr.Slider, label = "Rotation", minimum = -90.0, maximum = 90.0, step = 0.1, value = 0.0)
-                elem("scaling", gr.Slider, label = "Scaling", minimum = 0.0, maximum = 2.0, step = 0.001, value = 1.0)
-
-            elem("symmetrize", gr.Checkbox, label = "Symmetrize", value = False)
-
-            with gr.Accordion("Blurring"):
-                elem("blurring_enabled", gr.Checkbox, label = "Enabled", value = False)
-                elem("blurring_radius", gr.Slider, label = "Radius", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0)
-
-            with gr.Accordion("Custom code"):
-                elem("custom_code_enabled", gr.Checkbox, label = "Enabled", value = False)
-                gr.Markdown("**WARNING:** Don't put an untrusted code here!")
-                elem("custom_code", gr.Code, label = "Code", language = "python", value = "")
+                    with gr.Tab("Mask"):
+                        elem(f"{key}_mask", gr.Pil, label = "Mask", image_mode = "L", interactive = True)
+                        elem(f"{key}_mask_inverted", gr.Checkbox, label = "Inverted", value = False)
+                        elem(f"{key}_mask_blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0)
 
         with gr.Tab("Video Rendering"):
             elem("video_fps", gr.Slider, label = "Frames per second", minimum = 1, maximum = 60, step = 1, value = 30)

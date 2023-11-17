@@ -1,8 +1,6 @@
 import numpy as np
 import skimage
 
-from temporal.math import lerp
-
 BLEND_MODES = dict()
 
 def blend_mode(key, name):
@@ -129,8 +127,8 @@ def _(b, s):
     s_hsv = skimage.color.rgb2hsv(s)
     return skimage.color.hsv2rgb(np.stack((s_hsv[..., 0], s_hsv[..., 1], b_hsv[..., 2]), axis = 2))
 
-def blend_images(npim, modulator, mode, amount):
-    if modulator is None or (isinstance(amount, float) and amount <= 0.0):
+def blend_images(npim, modulator, mode):
+    if modulator is None:
         return npim
 
-    return lerp(npim, BLEND_MODES[mode]["func"](npim, modulator), amount)
+    return BLEND_MODES[mode]["func"](npim, modulator)
