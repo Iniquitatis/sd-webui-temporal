@@ -3,6 +3,12 @@ import skimage
 
 BLEND_MODES = dict()
 
+def blend_images(npim, modulator, mode):
+    if modulator is None:
+        return npim
+
+    return BLEND_MODES[mode]["func"](npim, modulator)
+
 def blend_mode(key, name):
     def decorator(func):
         BLEND_MODES[key] = dict(name = name, func = func)
@@ -126,9 +132,3 @@ def _(b, s):
     b_hsv = skimage.color.rgb2hsv(b)
     s_hsv = skimage.color.rgb2hsv(s)
     return skimage.color.hsv2rgb(np.stack((s_hsv[..., 0], s_hsv[..., 1], b_hsv[..., 2]), axis = 2))
-
-def blend_images(npim, modulator, mode):
-    if modulator is None:
-        return npim
-
-    return BLEND_MODES[mode]["func"](npim, modulator)
