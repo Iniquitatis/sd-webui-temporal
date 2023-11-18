@@ -20,9 +20,6 @@ class TemporalScript(scripts.Script):
         return is_img2img
 
     def ui(self, is_img2img):
-        elems = SimpleNamespace()
-        elem_dict = vars(elems)
-
         labels = set()
 
         def unique_label(string):
@@ -32,6 +29,9 @@ class TemporalScript(scripts.Script):
             labels.add(string)
 
             return string
+
+        elems = SimpleNamespace()
+        elem_dict = vars(elems)
 
         def elem(key, gr_type, *args, **kwargs):
             if "label" in kwargs:
