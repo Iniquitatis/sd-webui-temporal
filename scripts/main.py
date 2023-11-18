@@ -74,28 +74,28 @@ class TemporalScript(scripts.Script):
             elem("video_fps", gr.Slider, label = "Frames per second", minimum = 1, maximum = 60, step = 1, value = 30)
             elem("video_looping", gr.Checkbox, label = "Looping", value = False)
 
-            with gr.Accordion("Deflickering"):
+            with gr.Accordion("Deflickering", open = False):
                 elem("video_deflickering_enabled", gr.Checkbox, label = "Enabled", value = False)
                 elem("video_deflickering_frames", gr.Slider, label = "Frames", minimum = 2, maximum = 120, step = 1, value = 60)
 
-            with gr.Accordion("Interpolation"):
+            with gr.Accordion("Interpolation", open = False):
                 elem("video_interpolation_enabled", gr.Checkbox, label = "Enabled", value = False)
                 elem("video_interpolation_fps", gr.Slider, label = "Frames per second", minimum = 1, maximum = 60, step = 1, value = 60)
                 elem("video_interpolation_mb_subframes", gr.Slider, label = "Motion blur subframes", minimum = 0, maximum = 15, step = 1, value = 0)
 
-            with gr.Accordion("Temporal blurring"):
+            with gr.Accordion("Temporal blurring", open = False):
                 elem("video_temporal_blurring_enabled", gr.Checkbox, label = "Enabled", value = False)
                 elem("video_temporal_blurring_radius", gr.Slider, label = "Radius", minimum = 1, maximum = 10, step = 1, value = 1)
                 elem("video_temporal_blurring_easing", gr.Slider, label = "Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0)
 
-            with gr.Accordion("Scaling"):
+            with gr.Accordion("Scaling", open = False):
                 elem("video_scaling_enabled", gr.Checkbox, label = "Enabled", value = False)
 
                 with gr.Row():
                     elem("video_scaling_width", gr.Slider, label = "Width", minimum = 16, maximum = 2560, step = 16, value = 512)
                     elem("video_scaling_height", gr.Slider, label = "Height", minimum = 16, maximum = 2560, step = 16, value = 512)
 
-            with gr.Accordion("Frame number overlay"):
+            with gr.Accordion("Frame number overlay", open = False):
                 elem("video_frame_num_overlay_enabled", gr.Checkbox, label = "Enabled", value = False)
                 elem("video_frame_num_overlay_font_size", gr.Number, label = "Font size", precision = 0, minimum = 1, maximum = 144, step = 1, value = 16)
 
