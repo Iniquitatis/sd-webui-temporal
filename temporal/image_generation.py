@@ -37,15 +37,15 @@ def generate_image(job_title, p, **p_overrides):
 
     return processed
 
-def generate_project(p, uv):
+def generate_project(p, ext_params):
     metrics = Metrics()
 
     opts_backup = opts.data.copy()
 
-    project_dir = safe_get_directory(Path(uv.output_dir) / uv.project_subdir)
+    project_dir = safe_get_directory(Path(ext_params.output_dir) / ext_params.project_subdir)
     session_dir = safe_get_directory(project_dir / "session")
 
-    if uv.start_from_scratch:
+    if ext_params.start_from_scratch:
         for path in project_dir.glob("*.png"):
             path.unlink()
 
@@ -57,10 +57,10 @@ def generate_project(p, uv):
     p.negative_prompt = prompt_styles.apply_negative_styles_to_prompt(p.negative_prompt, p.styles)
     p.styles.clear()
 
-    if uv.load_session:
-        load_session(p, uv, project_dir, session_dir, last_index)
+    if ext_params.load_session:
+        load_session(p, ext_params, project_dir, session_dir, last_index)
 
-    if uv.metrics_enabled:
+    if ext_params.metrics_enabled:
         metrics.load(project_dir)
 
     p.n_iter = 1
@@ -81,29 +81,29 @@ def generate_project(p, uv):
         else:
             return processing.Processed(p, p.init_images)
 
-    if uv.metrics_enabled and last_index == 0:
+    if ext_params.metrics_enabled and last_index == 0:
         metrics.measure(p.init_images[0])
 
     if opts.img2img_color_correction:
         p.color_corrections = [processing.setup_color_correction(p.init_images[0])]
 
-    if uv.save_session:
-        save_session(p, uv, project_dir, session_dir, last_index)
+    if ext_params.save_session:
+        save_session(p, ext_params, project_dir, session_dir, last_index)
 
     for key in PREPROCESSORS.keys():
-        if getattr(uv, f"{key}_amount_relative"):
-            setattr(uv, f"{key}_amount", getattr(uv, f"{key}_amount") * p.denoising_strength)
+        if getattr(ext_params, f"{key}_amount_relative"):
+            setattr(ext_params, f"{key}_amount", getattr(ext_params, f"{key}_amount") * p.denoising_strength)
 
-    state.job_count = uv.frame_count
+    state.job_count = ext_params.frame_count
 
     last_image = p.init_images[0]
     last_seed = p.seed
 
-    for i, frame_index in zip(range(uv.frame_count), count(last_index + 1)):
+    for i, frame_index in zip(range(ext_params.frame_count), count(last_index + 1)):
         if not (processed := generate_image(
-            f"Frame {i + 1} / {uv.frame_count}",
+            f"Frame {i + 1} / {ext_params.frame_count}",
             p,
-            init_images = [preprocess_image(last_image, uv, last_seed)],
+            init_images = [preprocess_image(last_image, ext_params, last_seed)],
             seed = last_seed,
         )):
             processed = processing.Processed(p, [last_image])
@@ -112,8 +112,8 @@ def generate_project(p, uv):
         last_image = processed.images[0]
         last_seed += 1
 
-        if frame_index % uv.save_every_nth_frame == 0:
-            if uv.archive_mode:
+        if frame_index % ext_params.save_every_nth_frame == 0:
+            if ext_params.archive_mode:
                 image_save_queue.enqueue(
                     Image.Image.save,
                     last_image,
@@ -134,11 +134,11 @@ def generate_project(p, uv):
                     forced_filename = f"{frame_index:05d}",
                 )
 
-        if uv.metrics_enabled:
+        if ext_params.metrics_enabled:
             metrics.measure(last_image)
             metrics.save(project_dir)
 
-            if frame_index % uv.metrics_save_plots_every_nth_frame == 0:
+            if frame_index % ext_params.metrics_save_plots_every_nth_frame == 0:
                 metrics.plot(project_dir, save_images = True)
 
     opts.data.update(opts_backup)

@@ -20,7 +20,7 @@ def get_last_frame_index(frame_dir):
 
     return max((get_index(path) for path in frame_dir.glob("*.png")), default = 0)
 
-def load_session(p, uv, project_dir, session_dir, last_index):
+def load_session(p, ext_params, project_dir, session_dir, last_index):
     if not (params_path := (session_dir / "parameters.json")).is_file():
         return
 
@@ -39,7 +39,7 @@ def load_session(p, uv, project_dir, session_dir, last_index):
         for unit_data, cn_unit in zip(data.get("controlnet_params", []), external_code.get_all_units_in_processing(p)):
             load_object(cn_unit, unit_data, session_dir)
 
-    load_object(uv, data.get("extension_params", {}), session_dir)
+    load_object(ext_params, data.get("extension_params", {}), session_dir)
 
     if (im_path := (project_dir / f"{last_index:05d}.png")).is_file():
         p.init_images = [load_image(im_path)]
@@ -48,7 +48,7 @@ def load_session(p, uv, project_dir, session_dir, last_index):
     if p.seed != -1:
         p.seed = p.seed + last_index
 
-def save_session(p, uv, project_dir, session_dir, last_index):
+def save_session(p, ext_params, project_dir, session_dir, last_index):
     for path in session_dir.glob("*.*"):
         path.unlink()
 
@@ -98,7 +98,7 @@ def save_session(p, uv, project_dir, session_dir, last_index):
             ])
             for cn_unit in external_code.get_all_units_in_processing(p)
         ) if (external_code := import_cn()) else [],
-        extension_params = save_object(uv, session_dir, [
+        extension_params = save_object(ext_params, session_dir, [
             "save_every_nth_frame",
         ] + list(iterate_all_preprocessor_keys())),
     )

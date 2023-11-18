@@ -12,21 +12,21 @@ from temporal.math import lerp, remap_range
 
 PREPROCESSORS = dict()
 
-def preprocess_image(im, uv, seed):
+def preprocess_image(im, ext_params, seed):
     im = im.convert("RGB")
     npim = pil_to_np(im)
 
     for key, preprocessor in PREPROCESSORS.items():
-        if not getattr(uv, f"{key}_enabled"):
+        if not getattr(ext_params, f"{key}_enabled"):
             continue
 
         npim = _apply_mask(
             npim,
-            preprocessor.func(npim, seed, SimpleNamespace(**{x.key: getattr(uv, f"{key}_{x.key}") for x in preprocessor.params})),
-            getattr(uv, f"{key}_amount"),
-            getattr(uv, f"{key}_mask"),
-            getattr(uv, f"{key}_mask_inverted"),
-            getattr(uv, f"{key}_mask_blurring"),
+            preprocessor.func(npim, seed, SimpleNamespace(**{x.key: getattr(ext_params, f"{key}_{x.key}") for x in preprocessor.params})),
+            getattr(ext_params, f"{key}_amount"),
+            getattr(ext_params, f"{key}_mask"),
+            getattr(ext_params, f"{key}_mask_inverted"),
+            getattr(ext_params, f"{key}_mask_blurring"),
             im,
         )
 

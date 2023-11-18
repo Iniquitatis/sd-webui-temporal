@@ -20,8 +20,8 @@ class TemporalScript(scripts.Script):
         return is_img2img
 
     def ui(self, is_img2img):
-        ue = SimpleNamespace()
-        ue_dict = vars(ue)
+        elems = SimpleNamespace()
+        elem_dict = vars(elems)
 
         labels = set()
 
@@ -38,7 +38,7 @@ class TemporalScript(scripts.Script):
                 kwargs["label"] = unique_label(kwargs["label"])
 
             elem = gr_type(*args, elem_id = self.elem_id(key), **kwargs)
-            setattr(ue, key, elem)
+            setattr(elems, key, elem)
 
             return elem
 
@@ -141,41 +141,41 @@ class TemporalScript(scripts.Script):
             def callback(*args):
                 yield gr.Button.update(interactive = False), gr.Button.update(interactive = False), None
 
-                uv = self._get_ui_values(*args)
+                ext_params = self._get_ui_values(*args)
 
-                start_video_render(uv, is_final)
+                start_video_render(ext_params, is_final)
 
                 while video_render_queue.busy:
                     sleep(1)
 
-                yield gr.Button.update(interactive = True), gr.Button.update(interactive = True), f"{uv.output_dir}/{uv.project_subdir}-{'final' if is_final else 'draft'}.mp4"
+                yield gr.Button.update(interactive = True), gr.Button.update(interactive = True), f"{ext_params.output_dir}/{ext_params.project_subdir}-{'final' if is_final else 'draft'}.mp4"
 
             return callback
 
         def render_plots_callback(*args):
-            uv = self._get_ui_values(*args)
-            project_dir = Path(uv.output_dir) / uv.project_subdir
+            ext_params = self._get_ui_values(*args)
+            project_dir = Path(ext_params.output_dir) / ext_params.project_subdir
             metrics = Metrics()
             metrics.load(project_dir)
             return gr.Gallery.update(value = list(metrics.plot(project_dir)))
 
-        ue.render_draft.click(make_render_callback(False), inputs = list(ue_dict.values()), outputs = [ue.render_draft, ue.render_final, ue.video_preview])
-        ue.render_final.click(make_render_callback(True), inputs = list(ue_dict.values()), outputs = [ue.render_draft, ue.render_final, ue.video_preview])
-        ue.render_plots.click(render_plots_callback, inputs = list(ue_dict.values()), outputs = [ue.metrics_plots])
+        elems.render_draft.click(make_render_callback(False), inputs = list(elem_dict.values()), outputs = [elems.render_draft, elems.render_final, elems.video_preview])
+        elems.render_final.click(make_render_callback(True), inputs = list(elem_dict.values()), outputs = [elems.render_draft, elems.render_final, elems.video_preview])
+        elems.render_plots.click(render_plots_callback, inputs = list(elem_dict.values()), outputs = [elems.metrics_plots])
 
-        self._ui_element_names = list(ue_dict.keys())
+        self._ui_element_names = list(elem_dict.keys())
 
-        return list(ue_dict.values())
+        return list(elem_dict.values())
 
     def run(self, p, *args):
-        uv = self._get_ui_values(*args)
-        processed = generate_project(p, uv)
+        ext_params = self._get_ui_values(*args)
+        processed = generate_project(p, ext_params)
 
-        if uv.render_draft_on_finish:
-            start_video_render(uv, False)
+        if ext_params.render_draft_on_finish:
+            start_video_render(ext_params, False)
 
-        if uv.render_final_on_finish:
-            start_video_render(uv, True)
+        if ext_params.render_final_on_finish:
+            start_video_render(ext_params, True)
 
         return processed
 
