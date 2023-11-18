@@ -15,7 +15,8 @@ def get_last_frame_index(frame_dir):
                 return int(path.stem)
         except:
             print(f"WARNING: {path} doesn't match the frame name format")
-            return 0
+
+        return 0
 
     return max((get_index(path) for path in frame_dir.glob("*.png")), default = 0)
 
