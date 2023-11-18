@@ -3,17 +3,17 @@ from PIL import Image
 
 from temporal.image_utils import load_image
 
-def load_dict(d, data, data_dir):
+def load_dict(d, data, data_dir, existing_only = True):
     for key, value in data.items():
-        if key in d:
+        if not existing_only or key in d:
             d[key] = _load_value(value, data_dir)
 
 def save_dict(d, data_dir, filter = None):
     return {k: _save_value(v, data_dir) for k, v in d.items() if not filter or k in filter}
 
-def load_object(obj, data, data_dir):
+def load_object(obj, data, data_dir, existing_only = True):
     for key, value in data.items():
-        if hasattr(obj, key):
+        if not existing_only or hasattr(obj, key):
             setattr(obj, key, _load_value(value, data_dir))
 
 def save_object(obj, data_dir, filter = None):

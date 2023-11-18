@@ -5,14 +5,20 @@ from types import SimpleNamespace
 import gradio as gr
 
 from modules import scripts
+from modules.ui_components import ToolButton
 
 from temporal.image_generation import generate_project
 from temporal.image_preprocessing import PREPROCESSORS
 from temporal.interop import EXTENSION_DIR
 from temporal.metrics import Metrics
+from temporal.presets import delete_preset, presets, refresh_presets, save_preset
 from temporal.video_rendering import start_video_render, video_render_queue
 
 class TemporalScript(scripts.Script):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        refresh_presets()
+
     def title(self):
         return "Temporal"
 
@@ -31,16 +37,36 @@ class TemporalScript(scripts.Script):
             return string
 
         elems = SimpleNamespace()
-        elem_dict = vars(elems)
+        stored_elem_dict = {}
 
-        def elem(key, gr_type, *args, **kwargs):
+        def elem(key, gr_type, *args, stored = True, **kwargs):
             if "label" in kwargs:
                 kwargs["label"] = unique_label(kwargs["label"])
 
             elem = gr_type(*args, elem_id = self.elem_id(key), **kwargs)
             setattr(elems, key, elem)
 
+            if stored and gr_type in [
+                gr.Checkbox,
+                gr.Code,
+                gr.ColorPicker,
+                gr.Dropdown,
+                gr.Image,
+                gr.Number,
+                gr.Pil,
+                gr.Slider,
+                gr.Textbox,
+            ]:
+                stored_elem_dict[key] = elem
+
             return elem
+
+        with gr.Row():
+            elem("preset", gr.Dropdown, label = "Preset", choices = list(presets.keys()), allow_custom_value = True, value = next(iter(presets)) if presets else "", stored = False)
+            elem("refresh_presets", ToolButton, value = "\U0001f504")
+            elem("load_preset", ToolButton, value = "\U0001f4c2")
+            elem("save_preset", ToolButton, value = "\U0001f4be")
+            elem("delete_preset", ToolButton, value = "\U0001f5d1\ufe0f")
 
         with gr.Tab("General"):
             elem("output_dir", gr.Textbox, label = "Output directory", value = "outputs/temporal")
@@ -55,7 +81,7 @@ class TemporalScript(scripts.Script):
         with gr.Tab("Frame Preprocessing"):
             for key, processor in PREPROCESSORS.items():
                 with gr.Accordion(processor.name, open = False):
-                    elem(f"{key}_enabled", gr.Checkbox, label = "Enabled")
+                    elem(f"{key}_enabled", gr.Checkbox, label = "Enabled", value = False)
 
                     with gr.Row():
                         elem(f"{key}_amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0)
@@ -137,38 +163,59 @@ class TemporalScript(scripts.Script):
                 with gr.Accordion(title, open = False):
                     gr.Markdown(text)
 
+        def refresh_presets_callback():
+            refresh_presets()
+            return gr.update(choices = list(presets.keys()))
+
+        def load_preset_callback(preset, *args):
+            ext_params = self._unpack_ext_params(*args)
+            return [gr.update(value = presets.get(preset, {}).get(k, v)) for k, v in vars(ext_params).items()]
+
+        def save_preset_callback(preset, *args):
+            ext_params = self._unpack_ext_params(*args)
+            save_preset(preset, ext_params)
+            return gr.update(choices = list(presets.keys()), value = preset)
+
+        def delete_preset_callback(preset):
+            delete_preset(preset)
+            return gr.update(choices = list(presets.keys()), value = next(iter(presets)) if presets else "")
+
         def make_render_callback(is_final):
             def callback(*args):
-                yield gr.Button.update(interactive = False), gr.Button.update(interactive = False), None
+                yield gr.update(interactive = False), gr.update(interactive = False), None
 
-                ext_params = self._get_ui_values(*args)
+                ext_params = self._unpack_ext_params(*args)
 
                 start_video_render(ext_params, is_final)
 
                 while video_render_queue.busy:
                     sleep(1)
 
-                yield gr.Button.update(interactive = True), gr.Button.update(interactive = True), f"{ext_params.output_dir}/{ext_params.project_subdir}-{'final' if is_final else 'draft'}.mp4"
+                yield gr.update(interactive = True), gr.update(interactive = True), f"{ext_params.output_dir}/{ext_params.project_subdir}-{'final' if is_final else 'draft'}.mp4"
 
             return callback
 
         def render_plots_callback(*args):
-            ext_params = self._get_ui_values(*args)
+            ext_params = self._unpack_ext_params(*args)
             project_dir = Path(ext_params.output_dir) / ext_params.project_subdir
             metrics = Metrics()
             metrics.load(project_dir)
-            return gr.Gallery.update(value = list(metrics.plot(project_dir)))
+            return gr.update(value = list(metrics.plot(project_dir)))
 
-        elems.render_draft.click(make_render_callback(False), inputs = list(elem_dict.values()), outputs = [elems.render_draft, elems.render_final, elems.video_preview])
-        elems.render_final.click(make_render_callback(True), inputs = list(elem_dict.values()), outputs = [elems.render_draft, elems.render_final, elems.video_preview])
-        elems.render_plots.click(render_plots_callback, inputs = list(elem_dict.values()), outputs = [elems.metrics_plots])
+        elems.refresh_presets.click(refresh_presets_callback, outputs = elems.preset)
+        elems.load_preset.click(load_preset_callback, inputs = [elems.preset] + list(stored_elem_dict.values()), outputs = list(stored_elem_dict.values()))
+        elems.save_preset.click(save_preset_callback, inputs = [elems.preset] + list(stored_elem_dict.values()), outputs = elems.preset)
+        elems.delete_preset.click(delete_preset_callback, inputs = elems.preset, outputs = elems.preset)
+        elems.render_draft.click(make_render_callback(False), inputs = list(stored_elem_dict.values()), outputs = [elems.render_draft, elems.render_final, elems.video_preview])
+        elems.render_final.click(make_render_callback(True), inputs = list(stored_elem_dict.values()), outputs = [elems.render_draft, elems.render_final, elems.video_preview])
+        elems.render_plots.click(render_plots_callback, inputs = list(stored_elem_dict.values()), outputs = [elems.metrics_plots])
 
-        self._ui_element_names = list(elem_dict.keys())
+        self._elem_names = list(stored_elem_dict.keys())
 
-        return list(elem_dict.values())
+        return list(stored_elem_dict.values())
 
     def run(self, p, *args):
-        ext_params = self._get_ui_values(*args)
+        ext_params = self._unpack_ext_params(*args)
         processed = generate_project(p, ext_params)
 
         if ext_params.render_draft_on_finish:
@@ -179,5 +226,5 @@ class TemporalScript(scripts.Script):
 
         return processed
 
-    def _get_ui_values(self, *args):
-        return SimpleNamespace(**{name: arg for name, arg in zip(self._ui_element_names, args)})
+    def _unpack_ext_params(self, *args):
+        return SimpleNamespace(**{name: arg for name, arg in zip(self._elem_names, args)})
