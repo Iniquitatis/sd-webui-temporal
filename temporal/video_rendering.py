@@ -5,10 +5,10 @@ from temporal.thread_queue import ThreadQueue
 
 video_render_queue = ThreadQueue()
 
-def start_video_render(ext_params, is_final):
-    video_render_queue.enqueue(render_video, ext_params, is_final)
+def start_video_render(ext_params, is_final, metadata = ""):
+    video_render_queue.enqueue(render_video, ext_params, is_final, metadata)
 
-def render_video(ext_params, is_final):
+def render_video(ext_params, is_final, metadata = ""):
     output_dir = Path(ext_params.output_dir)
     frame_dir = output_dir / ext_params.project_subdir
     frame_paths = sorted(frame_dir.glob("*.png"), key = lambda x: x.name)
@@ -57,5 +57,8 @@ def render_video(ext_params, is_final):
         "-preset", "slow" if is_final else "veryfast",
         "-tune", "film",
         "-pix_fmt", "yuv420p",
+        "-metadata", f"parameters={metadata}",
+        "-movflags",
+        "+use_metadata_tags",
         video_path,
     ], input = "".join(f"file '{frame_path.resolve()}'\nduration 1\n" for frame_path in frame_paths).encode("utf-8"))

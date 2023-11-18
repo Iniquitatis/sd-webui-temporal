@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import gradio as gr
 
 from modules import scripts
+from modules.processing import create_infotext
 from modules.ui_components import ToolButton
 
 from temporal.image_generation import generate_project
@@ -99,6 +100,7 @@ class TemporalScript(scripts.Script):
         with gr.Tab("Video Rendering"):
             elem("video_fps", gr.Slider, label = "Frames per second", minimum = 1, maximum = 60, step = 1, value = 30)
             elem("video_looping", gr.Checkbox, label = "Looping", value = False)
+            elem("video_save_metadata", gr.Checkbox, label = "Save metadata", value = False)
 
             with gr.Accordion("Deflickering", open = False):
                 elem("video_deflickering_enabled", gr.Checkbox, label = "Enabled", value = False)
@@ -217,12 +219,18 @@ class TemporalScript(scripts.Script):
     def run(self, p, *args):
         ext_params = self._unpack_ext_params(*args)
         processed = generate_project(p, ext_params)
+        infotext = create_infotext(p,
+            all_prompts = [p.prompt],
+            all_negative_prompts = [p.negative_prompt],
+            all_seeds = [p.seed],
+            all_subseeds = [p.subseed],
+        )
 
         if ext_params.render_draft_on_finish:
-            start_video_render(ext_params, False)
+            start_video_render(ext_params, False, infotext if ext_params.video_save_metadata else "")
 
         if ext_params.render_final_on_finish:
-            start_video_render(ext_params, True)
+            start_video_render(ext_params, True, infotext if ext_params.video_save_metadata else "")
 
         return processed
 
