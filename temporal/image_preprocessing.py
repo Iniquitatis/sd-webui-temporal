@@ -8,7 +8,7 @@ from PIL import ImageColor
 
 from temporal.image_blending import BLEND_MODES, blend_images
 from temporal.image_utils import match_image, np_to_pil, pil_to_np
-from temporal.math import lerp, remap_range
+from temporal.math import lerp, normalize, remap_range
 
 PREPROCESSORS = dict()
 
@@ -25,6 +25,7 @@ def preprocess_image(im, ext_params, seed):
             preprocessor.func(npim, seed, SimpleNamespace(**{x.key: getattr(ext_params, f"{key}_{x.key}") for x in preprocessor.params})),
             getattr(ext_params, f"{key}_amount"),
             getattr(ext_params, f"{key}_mask"),
+            getattr(ext_params, f"{key}_mask_normalized"),
             getattr(ext_params, f"{key}_mask_inverted"),
             getattr(ext_params, f"{key}_mask_blurring"),
             im,
@@ -42,6 +43,7 @@ def iterate_all_preprocessor_keys():
             yield f"{key}_{param.key}"
 
         yield f"{key}_mask"
+        yield f"{key}_mask_normalized"
         yield f"{key}_mask_inverted"
         yield f"{key}_mask_blurring"
 
@@ -175,7 +177,7 @@ def _(npim, seed, params):
     exec(params.code, code_globals)
     return code_globals.get("output", npim)
 
-def _apply_mask(npim, processed, amount, mask, inverted, blurring, reference):
+def _apply_mask(npim, processed, amount, mask, normalized, inverted, blurring, reference):
     if npim is processed or amount == 0.0:
         return npim
 
@@ -184,6 +186,9 @@ def _apply_mask(npim, processed, amount, mask, inverted, blurring, reference):
 
     if mask:
         factor = pil_to_np(match_image(mask, reference))
+
+        if normalized:
+            factor = normalize(factor, factor.min(), factor.max())
 
         if inverted:
             factor = 1.0 - factor

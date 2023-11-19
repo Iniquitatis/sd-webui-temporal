@@ -5,6 +5,7 @@
     * **Amount** — amount of the processed image to be mixed in into the frame.
         * **Relative** — determines if the amount will be multiplied by the **img2img** denoising strength.
     * **Mask** — an image that determines which areas will be processed by a preprocessing effect; black—unprocessed, white—fully processed.
+        * **Normalized** — normalization of the mask image to use the full range from black to white.
         * **Inverted** — inversion of the mask image.
         * **Blurring** — blurring radius of the mask image.
 * **Noise compression** — basically, an actual algorithmical denoising, called noise compression to not be confused with the **img2img** denoising.

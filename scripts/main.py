@@ -93,6 +93,7 @@ class TemporalScript(scripts.Script):
 
                     with gr.Tab("Mask"):
                         elem(f"{key}_mask", gr.Pil, label = "Mask", image_mode = "L", interactive = True)
+                        elem(f"{key}_mask_normalized", gr.Checkbox, label = "Normalized", value = False)
                         elem(f"{key}_mask_inverted", gr.Checkbox, label = "Inverted", value = False)
                         elem(f"{key}_mask_blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0)
 
