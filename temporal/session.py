@@ -100,6 +100,7 @@ def save_session(p, ext_params, project_dir, session_dir, last_index):
         ) if (external_code := import_cn()) else [],
         extension_params = save_object(ext_params, session_dir, [
             "save_every_nth_frame",
+            "archive_mode",
         ] + list(iterate_all_preprocessor_keys())),
     )
 
