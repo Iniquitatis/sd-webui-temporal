@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 from shutil import rmtree
 
 from temporal.fs import safe_get_directory
@@ -29,8 +30,8 @@ def save_preset(name, ext_params):
     preset_dir = safe_get_directory(PRESETS_DIR / name)
 
     with open(preset_dir / "parameters.json", "w", encoding = "utf-8") as file:
-        presets[name] = save_object(ext_params, preset_dir)
-        json.dump(presets[name], file, indent = 4)
+        presets[name] = deepcopy(vars(ext_params))
+        json.dump(save_object(ext_params, preset_dir), file, indent = 4)
 
 def delete_preset(name):
     rmtree(PRESETS_DIR / name, ignore_errors = True)
