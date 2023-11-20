@@ -33,3 +33,12 @@ def np_to_pil(npim):
 
 def pil_to_np(im):
     return skimage.util.img_as_float(im)
+
+def save_image(im, path, archive_mode = False):
+    tmp_path = path.with_suffix(".tmp")
+    kwargs = dict(
+        optimize = True,
+        compress_level = 9,
+    ) if archive_mode else {}
+    im.save(tmp_path, "PNG", **kwargs)
+    tmp_path.rename(path)

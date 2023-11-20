@@ -1,7 +1,7 @@
 import numpy as np
 from PIL import Image
 
-from temporal.image_utils import load_image
+from temporal.image_utils import load_image, save_image
 
 def load_dict(d, data, data_dir, existing_only = True):
     for key, value in data.items():
@@ -59,12 +59,12 @@ def _save_value(value, data_dir):
 
     elif isinstance(value, Image.Image):
         filename = f"{id(value)}.png"
-        value.save(data_dir / filename)
+        save_image(value, data_dir / filename)
         return {"type": "pil", "filename": filename}
 
     elif isinstance(value, np.ndarray):
         filename = f"{id(value)}.png"
-        Image.fromarray(value).save(data_dir / filename)
+        save_image(Image.fromarray(value), data_dir / filename)
         return {"type": "np", "filename": filename}
 
     else:

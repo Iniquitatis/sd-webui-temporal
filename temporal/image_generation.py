@@ -10,7 +10,7 @@ from modules.shared import opts, prompt_styles, state
 
 from temporal.fs import safe_get_directory
 from temporal.image_preprocessing import PREPROCESSORS, preprocess_image
-from temporal.image_utils import generate_noise_image, mean_images
+from temporal.image_utils import generate_noise_image, mean_images, save_image
 from temporal.metrics import Metrics
 from temporal.session import get_last_frame_index, load_session, save_session
 from temporal.thread_queue import ThreadQueue
@@ -118,11 +118,10 @@ def generate_project(p, ext_params):
         if frame_index % ext_params.save_every_nth_frame == 0:
             if ext_params.archive_mode:
                 image_save_queue.enqueue(
-                    Image.Image.save,
+                    save_image,
                     last_image,
                     project_dir / f"{frame_index:05d}.png",
-                    optimize = True,
-                    compress_level = 9,
+                    archive_mode = True,
                 )
             else:
                 images.save_image(

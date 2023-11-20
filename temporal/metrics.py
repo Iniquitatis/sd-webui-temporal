@@ -10,6 +10,7 @@ import skimage
 from PIL import Image
 
 from temporal.fs import safe_get_directory
+from temporal.image_utils import save_image
 from temporal.serialization import load_object, save_object
 
 class Metrics:
@@ -79,7 +80,7 @@ class Metrics:
                 im.load()
 
                 if save_images:
-                    im.save(path)
+                    save_image(im, path)
 
                 result.append(im)
 
