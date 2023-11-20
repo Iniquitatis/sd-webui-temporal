@@ -25,6 +25,9 @@ def match_image(im, reference, mode = True, size = True):
 
     return skimage.util.img_as_float(im) if is_np else im
 
+def mean_images(ims):
+    return np_to_pil(np.mean(np.stack([pil_to_np(im) if isinstance(im, Image.Image) else im for im in ims]), axis = 0))
+
 def np_to_pil(npim):
     return Image.fromarray(skimage.util.img_as_ubyte(npim))
 

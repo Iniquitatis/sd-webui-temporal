@@ -1,5 +1,6 @@
 from copy import copy
 from itertools import count
+from math import ceil
 from pathlib import Path
 
 from PIL import Image
@@ -9,7 +10,7 @@ from modules.shared import opts, prompt_styles, state
 
 from temporal.fs import safe_get_directory
 from temporal.image_preprocessing import PREPROCESSORS, preprocess_image
-from temporal.image_utils import generate_noise_image
+from temporal.image_utils import generate_noise_image, mean_images
 from temporal.metrics import Metrics
 from temporal.session import get_last_frame_index, load_session, save_session
 from temporal.thread_queue import ThreadQueue
@@ -63,8 +64,8 @@ def generate_project(p, ext_params):
     if ext_params.metrics_enabled:
         metrics.load(project_dir)
 
-    p.n_iter = 1
-    p.batch_size = 1
+    p.n_iter = ceil(ext_params.image_samples / ext_params.batch_size)
+    p.batch_size = ext_params.batch_size
     p.do_not_save_samples = True
     p.do_not_save_grid = True
     processing.fix_seed(p)
@@ -74,6 +75,8 @@ def generate_project(p, ext_params):
             "Initial image",
             p,
             init_images = [generate_noise_image((p.width, p.height), p.seed)],
+            n_iter = 1,
+            batch_size = 1,
             denoising_strength = 1.0,
         ):
             p.init_images = [processed.images[0]]
@@ -94,7 +97,7 @@ def generate_project(p, ext_params):
         if getattr(ext_params, f"{key}_amount_relative"):
             setattr(ext_params, f"{key}_amount", getattr(ext_params, f"{key}_amount") * p.denoising_strength)
 
-    state.job_count = ext_params.frame_count
+    state.job_count = ext_params.frame_count * p.n_iter
 
     last_image = p.init_images[0]
     last_seed = p.seed
@@ -109,7 +112,7 @@ def generate_project(p, ext_params):
             processed = processing.Processed(p, [last_image])
             break
 
-        last_image = processed.images[0]
+        last_image = mean_images(processed.images)
         last_seed += 1
 
         if frame_index % ext_params.save_every_nth_frame == 0:
