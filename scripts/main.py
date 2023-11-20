@@ -69,16 +69,26 @@ class TemporalScript(scripts.Script):
             elem("delete_preset", ToolButton, value = "\U0001f5d1\ufe0f")
 
         with gr.Tab("General"):
-            elem("output_dir", gr.Textbox, label = "Output directory", value = "outputs/temporal")
-            elem("project_subdir", gr.Textbox, label = "Project subdirectory", value = "untitled")
-            elem("frame_count", gr.Number, label = "Frame count", precision = 0, minimum = 1, step = 1, value = 100)
-            elem("save_every_nth_frame", gr.Number, label = "Save every N-th frame", precision = 0, minimum = 1, step = 1, value = 1)
-            elem("archive_mode", gr.Checkbox, label = "Archive mode", value = False)
-            elem("start_from_scratch", gr.Checkbox, label = "Start from scratch", value = False)
-            elem("load_session", gr.Checkbox, label = "Load session", value = True)
-            elem("save_session", gr.Checkbox, label = "Save session", value = True)
-            elem("image_samples", gr.Number, label = "Image samples", precision = 0, minimum = 1, value = 1)
-            elem("batch_size", gr.Number, label = "Batch size", precision = 0, minimum = 1, value = 1)
+            with gr.Accordion("Output"):
+                with gr.Row():
+                    elem("output_dir", gr.Textbox, label = "Output directory", value = "outputs/temporal")
+                    elem("project_subdir", gr.Textbox, label = "Project subdirectory", value = "untitled")
+
+                with gr.Row():
+                    elem("frame_count", gr.Number, label = "Frame count", precision = 0, minimum = 1, step = 1, value = 100)
+                    elem("save_every_nth_frame", gr.Number, label = "Save every N-th frame", precision = 0, minimum = 1, step = 1, value = 1)
+
+                elem("archive_mode", gr.Checkbox, label = "Archive mode", value = False)
+
+            with gr.Accordion("Rendering"):
+                with gr.Row():
+                    elem("image_samples", gr.Number, label = "Image samples", precision = 0, minimum = 1, value = 1)
+                    elem("batch_size", gr.Number, label = "Batch size", precision = 0, minimum = 1, value = 1)
+
+            with gr.Accordion("Project"):
+                elem("start_from_scratch", gr.Checkbox, label = "Start from scratch", value = False)
+                elem("load_session", gr.Checkbox, label = "Load session", value = True)
+                elem("save_session", gr.Checkbox, label = "Save session", value = True)
 
         with gr.Tab("Frame Preprocessing"):
             for key, processor in PREPROCESSORS.items():
