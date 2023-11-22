@@ -46,7 +46,7 @@ def generate_project(p, ext_params):
     project_dir = safe_get_directory(Path(ext_params.output_dir) / ext_params.project_subdir)
     session_dir = safe_get_directory(project_dir / "session")
 
-    if ext_params.start_from_scratch:
+    if not ext_params.continue_session:
         for path in project_dir.glob("*.png"):
             path.unlink()
 
@@ -58,7 +58,7 @@ def generate_project(p, ext_params):
     p.negative_prompt = prompt_styles.apply_negative_styles_to_prompt(p.negative_prompt, p.styles)
     p.styles.clear()
 
-    if ext_params.load_session:
+    if ext_params.continue_session:
         load_session(p, ext_params, project_dir, session_dir, last_index)
 
     if ext_params.metrics_enabled:
@@ -90,7 +90,7 @@ def generate_project(p, ext_params):
     if opts.img2img_color_correction:
         p.color_corrections = [processing.setup_color_correction(p.init_images[0])]
 
-    if ext_params.save_session:
+    if ext_params.write_parameters or not (session_dir / "parameters.json").is_file():
         save_session(p, ext_params, project_dir, session_dir, last_index)
 
     for key in PREPROCESSORS.keys():

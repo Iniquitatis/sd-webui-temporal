@@ -86,9 +86,8 @@ class TemporalScript(scripts.Script):
                     elem("batch_size", gr.Number, label = "Batch size", precision = 0, minimum = 1, value = 1)
 
             with gr.Accordion("Project"):
-                elem("start_from_scratch", gr.Checkbox, label = "Start from scratch", value = False)
-                elem("load_session", gr.Checkbox, label = "Load session", value = True)
-                elem("save_session", gr.Checkbox, label = "Save session", value = True)
+                elem("write_parameters", gr.Checkbox, label = "Write parameters", value = False)
+                elem("continue_session", gr.Checkbox, label = "Continue session", value = True)
 
         with gr.Tab("Frame Preprocessing"):
             for key, processor in PREPROCESSORS.items():

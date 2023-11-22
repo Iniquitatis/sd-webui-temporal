@@ -5,5 +5,5 @@
     * Using the **Frame Preprocessing/Color correction/Reference image** to match the histogram against that image. It might also make all of the resulting frames more-or-less consistent palette-wise, which might or might not be preferable.
     * Applying any kind of frame preprocessing drives an image farther from what Stable Diffusion produces, so in some cases might also help.
 * Keep an eye on the space on your HDD, as thousands of just 512x512 images might fill it up quickly.
-* **General/Start from scratch** + **General/Save session** combo is useful when experimenting/tinkering with the parameters before starting the longer rendering process.
+* Enabling the **General/Project/Save session** and disabling the **General/Project/Continue session** is useful when experimenting/tinkering with the parameters before starting the longer rendering process.
 * ControlNet depth maps can be used as masks inside the preprocessing tab's effects. For example, applying a blurring masked by a depth map can create sort of a depth of field.
