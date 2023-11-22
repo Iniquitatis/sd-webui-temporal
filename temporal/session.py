@@ -3,10 +3,14 @@ import json
 from modules.shared import opts
 
 from temporal.compat import upgrade_project
+from temporal.fs import safe_get_directory
 from temporal.image_preprocessing import iterate_all_preprocessor_keys
 from temporal.image_utils import load_image
 from temporal.interop import import_cn
 from temporal.serialization import load_dict, load_object, save_dict, save_object
+
+def does_session_exist(project_dir):
+    return (project_dir / "session" / "parameters.json").is_file()
 
 def get_last_frame_index(frame_dir):
     def get_index(path):
@@ -20,7 +24,9 @@ def get_last_frame_index(frame_dir):
 
     return max((get_index(path) for path in frame_dir.glob("*.png")), default = 0)
 
-def load_session(p, ext_params, project_dir, session_dir, last_index):
+def load_session(p, ext_params, project_dir):
+    session_dir = project_dir / "session"
+
     if not (params_path := (session_dir / "parameters.json")).is_file():
         return
 
@@ -41,6 +47,9 @@ def load_session(p, ext_params, project_dir, session_dir, last_index):
 
     load_object(ext_params, data.get("extension_params", {}), session_dir)
 
+    if not (last_index := get_last_frame_index(project_dir)):
+        return
+
     if (im_path := (project_dir / f"{last_index:05d}.png")).is_file():
         p.init_images = [load_image(im_path)]
 
@@ -48,7 +57,9 @@ def load_session(p, ext_params, project_dir, session_dir, last_index):
     if p.seed != -1:
         p.seed = p.seed + last_index
 
-def save_session(p, ext_params, project_dir, session_dir, last_index):
+def save_session(p, ext_params, project_dir):
+    session_dir = safe_get_directory(project_dir / "session")
+
     for path in session_dir.glob("*.*"):
         path.unlink()
 

@@ -12,7 +12,7 @@ from temporal.fs import safe_get_directory
 from temporal.image_preprocessing import PREPROCESSORS, preprocess_image
 from temporal.image_utils import generate_noise_image, mean_images, save_image
 from temporal.metrics import Metrics
-from temporal.session import get_last_frame_index, load_session, save_session
+from temporal.session import does_session_exist, get_last_frame_index, load_session, save_session
 from temporal.thread_queue import ThreadQueue
 
 image_save_queue = ThreadQueue()
@@ -44,7 +44,6 @@ def generate_project(p, ext_params):
     opts_backup = opts.data.copy()
 
     project_dir = safe_get_directory(Path(ext_params.output_dir) / ext_params.project_subdir)
-    session_dir = safe_get_directory(project_dir / "session")
 
     if ext_params.start_from_scratch:
         for path in project_dir.glob("*.png"):
@@ -59,7 +58,7 @@ def generate_project(p, ext_params):
     p.styles.clear()
 
     if ext_params.load_session:
-        load_session(p, ext_params, project_dir, session_dir, last_index)
+        load_session(p, ext_params, project_dir)
 
     if ext_params.metrics_enabled:
         metrics.load(project_dir)
@@ -90,8 +89,8 @@ def generate_project(p, ext_params):
     if opts.img2img_color_correction:
         p.color_corrections = [processing.setup_color_correction(p.init_images[0])]
 
-    if ext_params.save_session or not (session_dir / "parameters.json").is_file():
-        save_session(p, ext_params, project_dir, session_dir, last_index)
+    if ext_params.save_session or not does_session_exist(project_dir):
+        save_session(p, ext_params, project_dir)
 
     for key in PREPROCESSORS.keys():
         if getattr(ext_params, f"{key}_amount_relative"):
