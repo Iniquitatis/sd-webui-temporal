@@ -27,6 +27,9 @@
     * **Enabled** — self-descriptive.
     * **Strength** — sharpening strength.
     * **Radius** — sharpening radius.
+* **Chromatic aberration** — a fake chromatic aberration-like effect that shifts red and blue channels away from the pixel's center.
+    * **Enabled** — self-descriptive.
+    * **Distance** — distance of channel shifting in pixels.
 * **Scaling** — video resolution upscaling/downscaling using Lanczos interpolation.
     * **Enabled** — self-descriptive.
     * **Width/Height** — final video resolution.

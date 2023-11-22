@@ -132,6 +132,10 @@ class TemporalScript(scripts.Script):
                 elem("video_sharpening_strength", gr.Slider, label = "Strength", minimum = 0.0, maximum = 1.0, step = 0.1, value = 0.0)
                 elem("video_sharpening_radius", gr.Slider, label = "Radius", minimum = 3, maximum = 13, step = 2, value = 3)
 
+            with gr.Accordion("Chromatic aberration", open = False):
+                elem("video_ca_enabled", gr.Checkbox, label = "Enabled", value = False)
+                elem("video_ca_distance", gr.Slider, label = "Distance", minimum = 1, maximum = 512, step = 1, value = 1)
+
             with gr.Accordion("Scaling", open = False):
                 elem("video_scaling_enabled", gr.Checkbox, label = "Enabled", value = False)
 
