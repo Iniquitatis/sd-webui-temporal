@@ -23,6 +23,10 @@
         * `Radius: 1; Easing: 0.5 = Weights [0.707 1 0.707]`
         * `Radius: 1; Easing: 2.0 = Weights [0.25 1 0.25]`
         * `Radius: 3; Easing: 0.0 = Weights [1 1 1 1 1 1 1]`
+* **Sharpening** — unsharp masking.
+    * **Enabled** — self-descriptive.
+    * **Strength** — sharpening strength.
+    * **Radius** — sharpening radius.
 * **Scaling** — video resolution upscaling/downscaling using Lanczos interpolation.
     * **Enabled** — self-descriptive.
     * **Width/Height** — final video resolution.

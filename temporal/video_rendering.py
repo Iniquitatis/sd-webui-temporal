@@ -36,6 +36,9 @@ def render_video(ext_params, is_final):
             weights = [f"{x:.18f}" for x in weights]
             filters.append(f"tmix='frames={len(weights)}:weights={' '.join(weights)}'")
 
+        if ext_params.video_sharpening_enabled:
+            filters.append(f"unsharp='luma_msize_x={ext_params.video_sharpening_radius}:luma_msize_y={ext_params.video_sharpening_radius}:luma_amount={ext_params.video_sharpening_strength}:chroma_msize_x={ext_params.video_sharpening_radius}:chroma_msize_y={ext_params.video_sharpening_radius}:chroma_amount={ext_params.video_sharpening_strength}'")
+
         if ext_params.video_scaling_enabled:
             if ext_params.video_scaling_padded:
                 filters.append(f"scale='-1:{ext_params.video_scaling_height}:flags=lanczos'")
