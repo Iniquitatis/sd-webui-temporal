@@ -26,6 +26,7 @@
 * **Scaling** — video resolution upscaling/downscaling using Lanczos interpolation.
     * **Enabled** — self-descriptive.
     * **Width/Height** — final video resolution.
+    * **Padded** — pad video with black borders if the aspect ratio doesn't match, otherwise simply stretch the frames.
 * **Frame number overlay** — enables printing the frame number in the top-left corner of the resulting video.
     * **Enabled** — self-descriptive.
     * **Font size** — self-descriptive.

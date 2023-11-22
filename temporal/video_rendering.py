@@ -37,7 +37,11 @@ def render_video(ext_params, is_final):
             filters.append(f"tmix='frames={len(weights)}:weights={' '.join(weights)}'")
 
         if ext_params.video_scaling_enabled:
-            filters.append(f"scale='{ext_params.video_scaling_width}x{ext_params.video_scaling_height}:flags=lanczos'")
+            if ext_params.video_scaling_padded:
+                filters.append(f"scale='-1:{ext_params.video_scaling_height}:flags=lanczos'")
+                filters.append(f"pad='{ext_params.video_scaling_width}:ih:(ow-iw)/2'")
+            else:
+                filters.append(f"scale='{ext_params.video_scaling_width}:{ext_params.video_scaling_height}:flags=lanczos'")
 
     if ext_params.video_frame_num_overlay_enabled:
         filters.append(f"drawtext='text=%{{eif\\:n*{ext_params.video_fps / ext_params.video_interpolation_fps if is_final and ext_params.video_interpolation_enabled else 1.0:.18f}+1\\:d\\:5}}:x=5:y=5:fontsize={ext_params.video_frame_num_overlay_font_size}:fontcolor={ext_params.video_frame_num_overlay_text_color}{int(ext_params.video_frame_num_overlay_text_alpha * 255.0):02x}:shadowx=1:shadowy=1:shadowcolor={ext_params.video_frame_num_overlay_shadow_color}{int(ext_params.video_frame_num_overlay_shadow_alpha * 255.0):02x}'")

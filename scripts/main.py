@@ -134,6 +134,8 @@ class TemporalScript(scripts.Script):
                     elem("video_scaling_width", gr.Slider, label = "Width", minimum = 16, maximum = 2560, step = 16, value = 512)
                     elem("video_scaling_height", gr.Slider, label = "Height", minimum = 16, maximum = 2560, step = 16, value = 512)
 
+                elem("video_scaling_padded", gr.Checkbox, label = "Padded", value = False)
+
             with gr.Accordion("Frame number overlay", open = False):
                 elem("video_frame_num_overlay_enabled", gr.Checkbox, label = "Enabled", value = False)
                 elem("video_frame_num_overlay_font_size", gr.Number, label = "Font size", precision = 0, minimum = 1, maximum = 144, step = 1, value = 16)
