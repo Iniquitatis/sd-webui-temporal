@@ -90,7 +90,7 @@ def generate_project(p, ext_params):
     if opts.img2img_color_correction:
         p.color_corrections = [processing.setup_color_correction(p.init_images[0])]
 
-    if ext_params.save_session:
+    if ext_params.save_session or not (session_dir / "parameters.json").is_file():
         save_session(p, ext_params, project_dir, session_dir, last_index)
 
     for key in PREPROCESSORS.keys():
