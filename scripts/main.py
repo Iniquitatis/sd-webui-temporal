@@ -7,6 +7,7 @@ import gradio as gr
 from modules import scripts
 from modules.ui_components import ToolButton
 
+from temporal.fs import load_text
 from temporal.image_generation import generate_project
 from temporal.image_preprocessing import PREPROCESSORS
 from temporal.interop import EXTENSION_DIR
@@ -189,11 +190,8 @@ class TemporalScript(scripts.Script):
                 ("tab_metrics.md", "Metrics tab"),
                 ("additional_notes.md", "Additional notes"),
             ]:
-                with open(EXTENSION_DIR / f"docs/temporal/{file_name}", "r", encoding = "utf-8") as file:
-                    text = file.read()
-
                 with gr.Accordion(title, open = False):
-                    gr.Markdown(text)
+                    gr.Markdown(load_text(EXTENSION_DIR / "docs" / "temporal" / file_name, ""))
 
         def refresh_presets_callback():
             refresh_presets()

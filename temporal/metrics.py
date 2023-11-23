@@ -1,7 +1,5 @@
-import json
 from contextlib import contextmanager
 from io import BytesIO
-from shutil import rmtree
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,7 +7,7 @@ import scipy
 import skimage
 from PIL import Image
 
-from temporal.fs import safe_get_directory
+from temporal.fs import ensure_directory_exists, load_json, save_json
 from temporal.image_utils import save_image
 from temporal.serialization import load_object, save_object
 
@@ -35,28 +33,16 @@ class Metrics:
     def load(self, project_dir):
         metrics_dir = project_dir / "metrics"
 
-        if (data_path := (metrics_dir / "data.json")).is_file():
-            with open(data_path, "r", encoding = "utf-8") as data_file:
-                load_object(self, json.load(data_file), metrics_dir)
+        if data := load_json(metrics_dir / "data.json"):
+            load_object(self, data, metrics_dir)
 
     def save(self, project_dir):
-        metrics_dir = safe_get_directory(project_dir / "metrics")
+        metrics_dir = ensure_directory_exists(project_dir / "metrics")
 
-        with open(metrics_dir / "data.json", "w", encoding = "utf-8") as data_file:
-            json.dump(save_object(self, metrics_dir), data_file, indent = 4)
-
-    def clear(self, project_dir):
-        self.luminance_mean.clear()
-        self.luminance_std.clear()
-        self.color_level_mean.clear()
-        self.color_level_std.clear()
-        self.noise_sigma.clear()
-
-        if (metrics_dir := (project_dir / "metrics")).is_dir():
-            rmtree(metrics_dir)
+        save_json(metrics_dir / "data.json", save_object(self, metrics_dir))
 
     def plot(self, project_dir, save_images = False):
-        metrics_dir = safe_get_directory(project_dir / "metrics")
+        metrics_dir = ensure_directory_exists(project_dir / "metrics")
 
         result = []
 

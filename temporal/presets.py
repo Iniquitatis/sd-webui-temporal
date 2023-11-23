@@ -1,8 +1,6 @@
-import json
 from copy import deepcopy
-from shutil import rmtree
 
-from temporal.fs import safe_get_directory
+from temporal.fs import iterate_subdirectories, load_json, recreate_directory, remove_directory, save_json
 from temporal.interop import EXTENSION_DIR
 from temporal.serialization import load_dict, save_object
 
@@ -13,26 +11,16 @@ presets = {}
 def refresh_presets():
     presets.clear()
 
-    if not PRESETS_DIR.is_dir():
-        return
-
-    for preset_dir in PRESETS_DIR.iterdir():
-        if not preset_dir.is_dir():
-            continue
-
-        with open(preset_dir / "parameters.json", "r", encoding = "utf-8") as file:
+    for preset_dir in iterate_subdirectories(PRESETS_DIR):
+        if data := load_json(preset_dir / "parameters.json"):
             presets[preset_dir.name] = {}
-            load_dict(presets[preset_dir.name], json.load(file), preset_dir, False)
+            load_dict(presets[preset_dir.name], data, preset_dir, False)
 
 def save_preset(name, ext_params):
-    rmtree(PRESETS_DIR / name, ignore_errors = True)
-
-    preset_dir = safe_get_directory(PRESETS_DIR / name)
-
-    with open(preset_dir / "parameters.json", "w", encoding = "utf-8") as file:
-        presets[name] = deepcopy(vars(ext_params))
-        json.dump(save_object(ext_params, preset_dir), file, indent = 4)
+    preset_dir = recreate_directory(PRESETS_DIR / name)
+    presets[name] = deepcopy(vars(ext_params))
+    save_json(preset_dir / "parameters.json", save_object(ext_params, preset_dir))
 
 def delete_preset(name):
-    rmtree(PRESETS_DIR / name, ignore_errors = True)
+    remove_directory(PRESETS_DIR / name)
     presets.pop(name)

@@ -1,10 +1,7 @@
-import json
-from shutil import rmtree
-
 from modules.shared import opts
 
 from temporal.compat import upgrade_project
-from temporal.fs import safe_get_directory
+from temporal.fs import load_json, recreate_directory, save_json, save_text
 from temporal.image_preprocessing import iterate_all_preprocessor_keys
 from temporal.image_utils import load_image, save_image
 from temporal.interop import import_cn
@@ -15,18 +12,19 @@ def does_session_exist(project_dir):
 
 def get_last_frame_index(frame_dir):
     def get_index(path):
-        try:
-            if path.is_file():
+        if path.is_file():
+            try:
                 return int(path.stem)
-        except:
-            print(f"WARNING: {path} doesn't match the frame name format")
+            except:
+                print(f"WARNING: {path} doesn't match the frame name format")
 
         return 0
 
     return max((get_index(path) for path in frame_dir.glob("*.png")), default = 0)
 
 def load_session(p, ext_params, project_dir):
-    session_dir = project_dir / "session"
+    if not (session_dir := (project_dir / "session")).is_dir():
+        return
 
     if not (params_path := (session_dir / "parameters.json")).is_file():
         return
@@ -34,8 +32,7 @@ def load_session(p, ext_params, project_dir):
     if not upgrade_project(project_dir):
         return
 
-    with open(params_path, "r", encoding = "utf-8") as params_file:
-        data = json.load(params_file)
+    data = load_json(params_path, {})
 
     # NOTE: `p.override_settings` juggles VAEs back-and-forth, slowing down the process considerably
     load_dict(opts.data, data.get("shared_params", {}), session_dir)
@@ -49,12 +46,9 @@ def load_session(p, ext_params, project_dir):
     load_object(ext_params, data.get("extension_params", {}), session_dir)
 
 def save_session(p, ext_params, project_dir):
-    session_dir = safe_get_directory(project_dir / "session")
+    session_dir = recreate_directory(project_dir / "session")
 
-    for path in session_dir.glob("*.*"):
-        path.unlink()
-
-    data = dict(
+    save_json(session_dir / "parameters.json", dict(
         shared_params = save_dict(opts.data, session_dir, [
             "sd_model_checkpoint",
             "sd_vae",
@@ -107,13 +101,8 @@ def save_session(p, ext_params, project_dir):
             "batch_size",
             "merged_frames",
         ] + list(iterate_all_preprocessor_keys())),
-    )
-
-    with open(session_dir / "parameters.json", "w", encoding = "utf-8") as params_file:
-        json.dump(data, params_file, indent = 4)
-
-    with open(session_dir / "version.txt", "w") as version_file:
-        version_file.write("3")
+    ))
+    save_text(session_dir / "version.txt", "3")
 
 def load_image_buffer(image_buffer, project_dir):
     if not (buffer_dir := (project_dir / "session" / "buffer")).is_dir():
@@ -126,9 +115,7 @@ def load_image_buffer(image_buffer, project_dir):
     )
 
 def save_image_buffer(image_buffer, project_dir):
-    buffer_dir = project_dir / "session" / "buffer"
-    rmtree(buffer_dir, ignore_errors = True)
-    buffer_dir = safe_get_directory(buffer_dir)
+    buffer_dir = recreate_directory(project_dir / "session" / "buffer")
 
     for i, image in enumerate(image_buffer, 1):
         save_image(image, buffer_dir / f"{i:03d}.png")

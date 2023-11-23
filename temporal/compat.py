@@ -1,7 +1,6 @@
-import json
 from shutil import copy2
 
-from temporal.fs import safe_get_directory
+from temporal.fs import ensure_directory_exists, load_json, load_text, save_json, save_text
 
 UPGRADERS = dict()
 
@@ -41,8 +40,7 @@ def _(path):
     if not (params_path := (path / "session" / "parameters.json")).is_file():
         return False
 
-    with open(params_path, "r", encoding = "utf-8") as file:
-        data = json.load(file)
+    data = load_json(params_path, {})
 
     data["shared_params"] = upgrade_values(data.get("shared_params", {}))
     data["generation_params"] = upgrade_values(data.get("generation_params", {}))
@@ -52,11 +50,8 @@ def _(path):
 
     data["extension_params"] = upgrade_values(data.get("extension_params", {}))
 
-    with open(params_path, "w", encoding = "utf-8") as file:
-        json.dump(data, file, indent = 4)
-
-    with open(version_path, "w") as file:
-        file.write("1")
+    save_json(params_path, data)
+    save_text(version_path, "1")
 
     return True
 
@@ -65,15 +60,13 @@ def _(path):
     if not (version_path := (path / "session" / "version.txt")).is_file():
         return False
 
-    with open(version_path, "r") as file:
-        if int(file.read()) >= 2:
-            return True
+    if int(load_text(version_path, "0")) >= 2:
+        return True
 
     if not (params_path := (path / "session" / "parameters.json")).is_file():
         return False
 
-    with open(params_path, "r", encoding = "utf-8") as file:
-        data = json.load(file)
+    data = load_json(params_path, {})
 
     ext_params = data["extension_params"]
 
@@ -108,11 +101,8 @@ def _(path):
     ]:
         ext_params[key] = 1.0
 
-    with open(params_path, "w", encoding = "utf-8") as file:
-        json.dump(data, file, indent = 4)
-
-    with open(version_path, "w") as file:
-        file.write("2")
+    save_json(params_path, data)
+    save_text(version_path, "2")
 
     return True
 
@@ -121,14 +111,12 @@ def _(path):
     if not (version_path := (path / "session" / "version.txt")).is_file():
         return False
 
-    with open(version_path, "r") as file:
-        if int(file.read()) >= 3:
-            return True
+    if int(load_text(version_path, "0")) >= 3:
+        return True
 
     if frames := sorted(path.glob("*.png"), key = lambda x: int(x.stem)):
-        copy2(frames[-1], safe_get_directory(path / "session" / "buffer") / "001.png")
+        copy2(frames[-1], ensure_directory_exists(path / "session" / "buffer") / "001.png")
 
-    with open(version_path, "w") as file:
-        file.write("3")
+    save_text(version_path, "3")
 
     return True

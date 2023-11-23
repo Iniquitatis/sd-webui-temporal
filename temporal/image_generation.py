@@ -9,7 +9,7 @@ from PIL import Image
 from modules import images, processing
 from modules.shared import opts, prompt_styles, state
 
-from temporal.fs import safe_get_directory
+from temporal.fs import clear_directory, ensure_directory_exists, remove_directory
 from temporal.image_preprocessing import PREPROCESSORS, preprocess_image
 from temporal.image_utils import ensure_image_dims, generate_noise_image, mean_images, save_image
 from temporal.metrics import Metrics
@@ -44,17 +44,12 @@ def generate_project(p, ext_params):
 
     opts_backup = opts.data.copy()
 
-    project_dir = safe_get_directory(Path(ext_params.output_dir) / ext_params.project_subdir)
+    project_dir = ensure_directory_exists(Path(ext_params.output_dir) / ext_params.project_subdir)
 
     if ext_params.start_from_scratch:
-        for path in project_dir.glob("*.png"):
-            path.unlink()
-
-        if (buffer_dir := (project_dir / "buffer")).is_dir():
-            for path in buffer_dir.glob("*.png"):
-                path.unlink()
-
-        metrics.clear(project_dir)
+        clear_directory(project_dir, "*.png")
+        remove_directory(project_dir / "session" / "buffer")
+        remove_directory(project_dir / "metrics")
 
     images_per_batch = ceil(ext_params.image_samples / ext_params.batch_size)
     last_index = get_last_frame_index(project_dir)
