@@ -39,9 +39,15 @@ def pil_to_np(im):
 
 def save_image(im, path, archive_mode = False):
     tmp_path = path.with_suffix(".tmp")
-    kwargs = dict(
+
+    if path.is_file():
+        path.unlink()
+
+    if tmp_path.is_file():
+        tmp_path.unlink()
+
+    im.save(tmp_path, "PNG", **(dict(
         optimize = True,
         compress_level = 9,
-    ) if archive_mode else {}
-    im.save(tmp_path, "PNG", **kwargs)
+    ) if archive_mode else {}))
     tmp_path.rename(path)
