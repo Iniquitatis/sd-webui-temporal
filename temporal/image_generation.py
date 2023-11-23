@@ -51,9 +51,7 @@ def generate_project(p, ext_params):
         remove_directory(project_dir / "session" / "buffer")
         remove_directory(project_dir / "metrics")
 
-    images_per_batch = ceil(ext_params.image_samples / ext_params.batch_size)
     last_index = get_last_frame_index(project_dir)
-    image_buffer = deque(maxlen = ext_params.merged_frames)
 
     p.prompt = prompt_styles.apply_styles_to_prompt(p.prompt, p.styles)
     p.negative_prompt = prompt_styles.apply_negative_styles_to_prompt(p.negative_prompt, p.styles)
@@ -61,6 +59,11 @@ def generate_project(p, ext_params):
 
     if ext_params.load_session:
         load_session(p, ext_params, project_dir)
+
+    images_per_batch = ceil(ext_params.image_samples / ext_params.batch_size)
+    image_buffer = deque(maxlen = ext_params.merged_frames)
+
+    if ext_params.load_session:
         load_image_buffer(image_buffer, project_dir)
 
     if ext_params.metrics_enabled:
