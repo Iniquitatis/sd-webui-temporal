@@ -104,6 +104,8 @@ def generate_project(p, ext_params):
 
     state.job_count = ext_params.frame_count * images_per_batch
 
+    image_buffer_to_save = image_buffer.copy()
+
     for i, frame_index in zip(range(ext_params.frame_count), count(last_index + 1)):
         seed = p.seed + frame_index
 
@@ -144,6 +146,8 @@ def generate_project(p, ext_params):
                     forced_filename = f"{frame_index:05d}",
                 )
 
+            image_buffer_to_save = image_buffer.copy()
+
         if ext_params.metrics_enabled:
             metrics.measure(merged_image)
             metrics.save(project_dir)
@@ -151,8 +155,8 @@ def generate_project(p, ext_params):
             if frame_index % ext_params.metrics_save_plots_every_nth_frame == 0:
                 metrics.plot(project_dir, save_images = True)
 
-    save_image_buffer(image_buffer, project_dir)
+    save_image_buffer(image_buffer_to_save, project_dir)
 
     opts.data.update(opts_backup)
 
-    return processing.Processed(p, [image_buffer[-1]])
+    return processing.Processed(p, [image_buffer_to_save[-1]])
