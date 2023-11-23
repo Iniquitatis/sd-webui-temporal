@@ -1,4 +1,7 @@
 import json
+from shutil import copy2
+
+from temporal.fs import safe_get_directory
 
 UPGRADERS = dict()
 
@@ -110,5 +113,22 @@ def _(path):
 
     with open(version_path, "w") as file:
         file.write("2")
+
+    return True
+
+@upgrader(3)
+def _(path):
+    if not (version_path := (path / "session" / "version.txt")).is_file():
+        return False
+
+    with open(version_path, "r") as file:
+        if int(file.read()) >= 3:
+            return True
+
+    if frames := sorted(path.glob("*.png"), key = lambda x: int(x.stem)):
+        copy2(frames[-1], safe_get_directory(path / "session" / "buffer") / "001.png")
+
+    with open(version_path, "w") as file:
+        file.write("3")
 
     return True

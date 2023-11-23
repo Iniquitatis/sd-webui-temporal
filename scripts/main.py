@@ -85,6 +85,8 @@ class TemporalScript(scripts.Script):
                     elem("image_samples", gr.Number, label = "Image samples", precision = 0, minimum = 1, value = 1)
                     elem("batch_size", gr.Number, label = "Batch size", precision = 0, minimum = 1, value = 1)
 
+                elem("merged_frames", gr.Number, label = "Merged frames", precision = 0, minimum = 1, value = 1)
+
             with gr.Accordion("Project"):
                 elem("start_from_scratch", gr.Checkbox, label = "Start from scratch", value = False)
                 elem("load_session", gr.Checkbox, label = "Load session", value = True)

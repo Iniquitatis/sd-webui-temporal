@@ -1,11 +1,12 @@
 import json
+from shutil import rmtree
 
 from modules.shared import opts
 
 from temporal.compat import upgrade_project
 from temporal.fs import safe_get_directory
 from temporal.image_preprocessing import iterate_all_preprocessor_keys
-from temporal.image_utils import load_image
+from temporal.image_utils import load_image, save_image
 from temporal.interop import import_cn
 from temporal.serialization import load_dict, load_object, save_dict, save_object
 
@@ -46,16 +47,6 @@ def load_session(p, ext_params, project_dir):
             load_object(cn_unit, unit_data, session_dir)
 
     load_object(ext_params, data.get("extension_params", {}), session_dir)
-
-    if not (last_index := get_last_frame_index(project_dir)):
-        return
-
-    if (im_path := (project_dir / f"{last_index:05d}.png")).is_file():
-        p.init_images = [load_image(im_path)]
-
-    # FIXME: Unreliable; works properly only on first generation, but not on the subsequent ones
-    if p.seed != -1:
-        p.seed = p.seed + last_index
 
 def save_session(p, ext_params, project_dir):
     session_dir = safe_get_directory(project_dir / "session")
@@ -114,6 +105,7 @@ def save_session(p, ext_params, project_dir):
             "archive_mode",
             "image_samples",
             "batch_size",
+            "merged_frames",
         ] + list(iterate_all_preprocessor_keys())),
     )
 
@@ -121,4 +113,22 @@ def save_session(p, ext_params, project_dir):
         json.dump(data, params_file, indent = 4)
 
     with open(session_dir / "version.txt", "w") as version_file:
-        version_file.write("2")
+        version_file.write("3")
+
+def load_image_buffer(image_buffer, project_dir):
+    if not (buffer_dir := (project_dir / "session" / "buffer")).is_dir():
+        return
+
+    image_buffer.clear()
+    image_buffer.extend(
+        load_image(x)
+        for x in sorted(buffer_dir.glob("*.png"), key = lambda x: int(x.stem))
+    )
+
+def save_image_buffer(image_buffer, project_dir):
+    buffer_dir = project_dir / "session" / "buffer"
+    rmtree(buffer_dir, ignore_errors = True)
+    buffer_dir = safe_get_directory(buffer_dir)
+
+    for i, image in enumerate(image_buffer, 1):
+        save_image(image, buffer_dir / f"{i:03d}.png")
