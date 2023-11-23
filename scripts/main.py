@@ -7,6 +7,7 @@ import gradio as gr
 from modules import scripts
 from modules.ui_components import ToolButton
 
+from temporal.collection_utils import get_first_element
 from temporal.fs import load_text
 from temporal.image_generation import generate_project
 from temporal.image_preprocessing import PREPROCESSORS
@@ -63,7 +64,7 @@ class TemporalScript(scripts.Script):
             return elem
 
         with gr.Row():
-            elem("preset", gr.Dropdown, label = "Preset", choices = preset_names, allow_custom_value = True, value = next(iter(preset_names)) if preset_names else "", stored = False)
+            elem("preset", gr.Dropdown, label = "Preset", choices = preset_names, allow_custom_value = True, value = get_first_element(preset_names, ""), stored = False)
             elem("refresh_presets", ToolButton, value = "\U0001f504")
             elem("load_preset", ToolButton, value = "\U0001f4c2")
             elem("save_preset", ToolButton, value = "\U0001f4be")
@@ -209,7 +210,7 @@ class TemporalScript(scripts.Script):
 
         def delete_preset_callback(preset):
             delete_preset(preset)
-            return gr.update(choices = preset_names, value = next(iter(preset_names)) if preset_names else "")
+            return gr.update(choices = preset_names, value = get_first_element(preset_names, ""))
 
         def make_render_callback(is_final):
             def callback(*args):

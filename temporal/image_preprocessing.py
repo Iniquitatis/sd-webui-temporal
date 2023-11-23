@@ -6,6 +6,7 @@ import scipy
 import skimage
 from PIL import ImageColor
 
+from temporal.collection_utils import get_first_element
 from temporal.image_blending import BLEND_MODES, blend_images
 from temporal.image_utils import match_image, np_to_pil, pil_to_np
 from temporal.math import lerp, normalize, remap_range
@@ -105,13 +106,13 @@ def _(npim, seed, params):
     return skimage.color.hsv2rgb(hsv)
 
 @preprocessor("noise", "Noise", [
-    UIParam(gr.Dropdown, "mode", "Mode", choices = {k: v["name"] for k, v in BLEND_MODES.items()}, value = next(iter(BLEND_MODES))),
+    UIParam(gr.Dropdown, "mode", "Mode", choices = {k: v["name"] for k, v in BLEND_MODES.items()}, value = get_first_element(BLEND_MODES)),
 ])
 def _(npim, seed, params):
     return blend_images(npim, np.random.default_rng(seed).uniform(high = 1.0 + np.finfo(npim.dtype).eps, size = npim.shape), params.mode)
 
 @preprocessor("modulation", "Modulation", [
-    UIParam(gr.Dropdown, "mode", "Mode", choices = {k: v["name"] for k, v in BLEND_MODES.items()}, value = next(iter(BLEND_MODES))),
+    UIParam(gr.Dropdown, "mode", "Mode", choices = {k: v["name"] for k, v in BLEND_MODES.items()}, value = get_first_element(BLEND_MODES)),
     UIParam(gr.Pil, "image", "Image"),
     UIParam(gr.Slider, "blurring", "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0),
 ])
@@ -122,7 +123,7 @@ def _(npim, seed, params):
     return blend_images(npim, skimage.filters.gaussian(pil_to_np(match_image(params.image, npim)), params.blurring, channel_axis = 2), params.mode)
 
 @preprocessor("tinting", "Tinting", [
-    UIParam(gr.Dropdown, "mode", "Mode", choices = {k: v["name"] for k, v in BLEND_MODES.items()}, value = next(iter(BLEND_MODES))),
+    UIParam(gr.Dropdown, "mode", "Mode", choices = {k: v["name"] for k, v in BLEND_MODES.items()}, value = get_first_element(BLEND_MODES)),
     UIParam(gr.ColorPicker, "color", "Color", value = "#ffffff"),
 ])
 def _(npim, seed, params):
