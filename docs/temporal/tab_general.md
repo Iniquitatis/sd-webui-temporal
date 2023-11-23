@@ -1,3 +1,5 @@
+* **NOTE:** If ControlNet extension is installed, its settings are also saved to the project directory.
+
 * **Output**:
     * **Output directory** — general directory to which all of the extension's projects will be saved.
     * **Project subdirectory** — current project's directory name inside of the output directory.
@@ -11,7 +13,5 @@
     * **Merged frames** — amount of last generated frames to be blended together before processing.
         * **NOTE:** Slows down the morphing effect proportionally and will make the resulting images blurrier (can be somewhat mitigated by enabling the **Sharpening** preprocessing effect).
 * **Project**:
-    * **Start from scratch** — remove all rendered frames inside of the project directory, keeping the project settings intact.
-    * **Load session** — load settings and continue rendering starting from the last existing frame; does nothing if no frames were rendered in the current project.
-    * **Save session** — save current settings to the project directory.
-        * **NOTE:** Currently saves all of the extension's frame preprocessing settings, some of the base settings (prompt, sampling method, img2img images, seed, etc.), and most of the ControlNet settings if it's installed.
+    * **Load parameters** — read parameters from the specified project directory, otherwise take those that are currently set in the UI.
+    * **Continue from last frame** — continue rendering from the last rendered frame, otherwise remove all previously rendered frames and start rendering from scratch.

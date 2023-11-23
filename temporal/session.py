@@ -7,9 +7,6 @@ from temporal.image_utils import load_image, save_image
 from temporal.interop import import_cn
 from temporal.serialization import load_dict, load_object, save_dict, save_object
 
-def does_session_exist(project_dir):
-    return (project_dir / "session" / "parameters.json").is_file()
-
 def get_last_frame_index(frame_dir):
     def get_index(path):
         if path.is_file():

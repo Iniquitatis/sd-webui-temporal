@@ -13,7 +13,7 @@ from temporal.fs import clear_directory, ensure_directory_exists, remove_directo
 from temporal.image_preprocessing import PREPROCESSORS, preprocess_image
 from temporal.image_utils import ensure_image_dims, generate_noise_image, mean_images, save_image
 from temporal.metrics import Metrics
-from temporal.session import does_session_exist, get_last_frame_index, load_image_buffer, load_session, save_session, save_image_buffer
+from temporal.session import get_last_frame_index, load_image_buffer, load_session, save_session, save_image_buffer
 from temporal.thread_queue import ThreadQueue
 
 image_save_queue = ThreadQueue()
@@ -46,7 +46,7 @@ def generate_project(p, ext_params):
 
     project_dir = ensure_directory_exists(Path(ext_params.output_dir) / ext_params.project_subdir)
 
-    if ext_params.start_from_scratch:
+    if not ext_params.continue_from_last_frame:
         clear_directory(project_dir, "*.png")
         remove_directory(project_dir / "session" / "buffer")
         remove_directory(project_dir / "metrics")
@@ -57,13 +57,13 @@ def generate_project(p, ext_params):
     p.negative_prompt = prompt_styles.apply_negative_styles_to_prompt(p.negative_prompt, p.styles)
     p.styles.clear()
 
-    if ext_params.load_session:
+    if ext_params.load_parameters:
         load_session(p, ext_params, project_dir)
 
     images_per_batch = ceil(ext_params.image_samples / ext_params.batch_size)
     image_buffer = deque(maxlen = ext_params.merged_frames)
 
-    if ext_params.load_session:
+    if ext_params.continue_from_last_frame:
         load_image_buffer(image_buffer, project_dir)
 
     if ext_params.metrics_enabled:
@@ -95,8 +95,7 @@ def generate_project(p, ext_params):
     if opts.img2img_color_correction:
         p.color_corrections = [processing.setup_color_correction(p.init_images[0])]
 
-    if ext_params.save_session or not does_session_exist(project_dir):
-        save_session(p, ext_params, project_dir)
+    save_session(p, ext_params, project_dir)
 
     for key in PREPROCESSORS.keys():
         if getattr(ext_params, f"{key}_amount_relative"):

@@ -90,9 +90,8 @@ class TemporalScript(scripts.Script):
                 elem("merged_frames", gr.Number, label = "Merged frames", precision = 0, minimum = 1, value = 1)
 
             with gr.Accordion("Project"):
-                elem("start_from_scratch", gr.Checkbox, label = "Start from scratch", value = False)
-                elem("load_session", gr.Checkbox, label = "Load session", value = True)
-                elem("save_session", gr.Checkbox, label = "Save session", value = True)
+                elem("load_parameters", gr.Checkbox, label = "Load parameters", value = True)
+                elem("continue_from_last_frame", gr.Checkbox, label = "Continue from last frame", value = True)
 
         with gr.Tab("Frame Preprocessing"):
             for key, processor in PREPROCESSORS.items():
