@@ -12,7 +12,7 @@ from temporal.image_generation import generate_project
 from temporal.image_preprocessing import PREPROCESSORS
 from temporal.interop import EXTENSION_DIR
 from temporal.metrics import Metrics
-from temporal.presets import delete_preset, presets, refresh_presets, save_preset
+from temporal.presets import delete_preset, load_preset, preset_names, refresh_presets, save_preset
 from temporal.video_rendering import start_video_render, video_render_queue
 
 class TemporalScript(scripts.Script):
@@ -63,7 +63,7 @@ class TemporalScript(scripts.Script):
             return elem
 
         with gr.Row():
-            elem("preset", gr.Dropdown, label = "Preset", choices = list(presets.keys()), allow_custom_value = True, value = next(iter(presets)) if presets else "", stored = False)
+            elem("preset", gr.Dropdown, label = "Preset", choices = preset_names, allow_custom_value = True, value = next(iter(preset_names)) if preset_names else "", stored = False)
             elem("refresh_presets", ToolButton, value = "\U0001f504")
             elem("load_preset", ToolButton, value = "\U0001f4c2")
             elem("save_preset", ToolButton, value = "\U0001f4be")
@@ -195,20 +195,21 @@ class TemporalScript(scripts.Script):
 
         def refresh_presets_callback():
             refresh_presets()
-            return gr.update(choices = list(presets.keys()))
+            return gr.update(choices = preset_names)
 
         def load_preset_callback(preset, *args):
             ext_params = self._unpack_ext_params(*args)
-            return [gr.update(value = presets.get(preset, {}).get(k, v)) for k, v in vars(ext_params).items()]
+            load_preset(preset, ext_params)
+            return [gr.update(value = v) for v in vars(ext_params).values()]
 
         def save_preset_callback(preset, *args):
             ext_params = self._unpack_ext_params(*args)
             save_preset(preset, ext_params)
-            return gr.update(choices = list(presets.keys()), value = preset)
+            return gr.update(choices = preset_names, value = preset)
 
         def delete_preset_callback(preset):
             delete_preset(preset)
-            return gr.update(choices = list(presets.keys()), value = next(iter(presets)) if presets else "")
+            return gr.update(choices = preset_names, value = next(iter(preset_names)) if preset_names else "")
 
         def make_render_callback(is_final):
             def callback(*args):
