@@ -13,7 +13,7 @@ from temporal.fs import clear_directory, ensure_directory_exists, remove_directo
 from temporal.image_preprocessing import PREPROCESSORS, preprocess_image
 from temporal.image_utils import ensure_image_dims, generate_noise_image, mean_images, save_image
 from temporal.metrics import Metrics
-from temporal.session import get_last_frame_index, load_image_buffer, load_session, save_session, save_image_buffer
+from temporal.session import get_last_frame_index, load_image_buffer, load_last_frame, load_session, save_image_buffer, save_session
 from temporal.thread_queue import ThreadQueue
 
 image_save_queue = ThreadQueue()
@@ -87,7 +87,8 @@ def generate_project(p, ext_params):
         p.init_images = [processed.images[0]]
 
     if not image_buffer:
-        image_buffer.append(ensure_image_dims(p.init_images[0], "RGB", (p.width, p.height)))
+        for _ in range(image_buffer.maxlen or 0):
+            image_buffer.append(ensure_image_dims(p.init_images[0], "RGB", (p.width, p.height)))
 
     if ext_params.metrics_enabled and last_index == 0:
         metrics.measure(p.init_images[0])
@@ -103,6 +104,11 @@ def generate_project(p, ext_params):
 
     state.job_count = ext_params.frame_count * images_per_batch
 
+    if last_frame := load_last_frame(project_dir):
+        last_image = last_frame
+    else:
+        last_image = p.init_images[0]
+
     image_buffer_to_save = image_buffer.copy()
 
     for i, frame_index in zip(range(ext_params.frame_count), count(last_index + 1)):
@@ -111,7 +117,7 @@ def generate_project(p, ext_params):
         if not (processed := generate_image(
             f"Frame {i + 1} / {ext_params.frame_count}",
             p,
-            init_images = [preprocess_image(image_buffer[-1], ext_params, seed)],
+            init_images = [preprocess_image(last_image, ext_params, seed)],
             n_iter = images_per_batch,
             batch_size = ext_params.batch_size,
             seed = seed,
@@ -120,21 +126,21 @@ def generate_project(p, ext_params):
         )):
             break
 
-        generated_image = mean_images([ensure_image_dims(x, "RGB", (p.width, p.height)) for x in processed.images])
-        merged_image = mean_images(image_buffer + deque([generated_image]))
-        image_buffer.append(merged_image)
+        generated_image = mean_images(processed.images)
+        image_buffer.append(generated_image)
+        last_image = mean_images(image_buffer)
 
         if frame_index % ext_params.save_every_nth_frame == 0:
             if ext_params.archive_mode:
                 image_save_queue.enqueue(
                     save_image,
-                    merged_image,
+                    last_image,
                     project_dir / f"{frame_index:05d}.png",
                     archive_mode = True,
                 )
             else:
                 images.save_image(
-                    merged_image,
+                    last_image,
                     project_dir,
                     "",
                     processed.seed,
@@ -148,7 +154,7 @@ def generate_project(p, ext_params):
             image_buffer_to_save = image_buffer.copy()
 
         if ext_params.metrics_enabled:
-            metrics.measure(merged_image)
+            metrics.measure(last_image)
             metrics.save(project_dir)
 
             if frame_index % ext_params.metrics_save_plots_every_nth_frame == 0:
@@ -158,4 +164,4 @@ def generate_project(p, ext_params):
 
     opts.data.update(opts_backup)
 
-    return processing.Processed(p, [image_buffer_to_save[-1]])
+    return processing.Processed(p, [last_image])

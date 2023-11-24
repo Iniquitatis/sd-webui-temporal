@@ -19,6 +19,12 @@ def get_last_frame_index(frame_dir):
 
     return max((get_index(path) for path in frame_dir.glob("*.png")), default = 0)
 
+def load_last_frame(frame_dir):
+    if index := get_last_frame_index(frame_dir):
+        return load_image(frame_dir / f"{index:05d}.png")
+
+    return None
+
 def load_session(p, ext_params, project_dir):
     if not (session_dir := (project_dir / "session")).is_dir():
         return
