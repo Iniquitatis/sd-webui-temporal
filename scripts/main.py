@@ -9,12 +9,35 @@ from modules.ui_components import ToolButton
 
 from temporal.collection_utils import get_first_element
 from temporal.fs import load_text
-from temporal.image_generation import generate_project
+from temporal.image_generation import generate_image, generate_sequence
 from temporal.image_preprocessing import PREPROCESSORS
 from temporal.interop import EXTENSION_DIR
 from temporal.metrics import Metrics
 from temporal.presets import delete_preset, load_preset, preset_names, refresh_presets, save_preset
 from temporal.video_rendering import start_video_render, video_render_queue
+
+MODES = dict(
+    image = SimpleNamespace(
+        func = generate_image,
+        hidden_elems = [
+            "project_subdir",
+            "save_every_nth_frame",
+            "archive_mode",
+            "load_parameters",
+            "continue_from_last_frame",
+            "render_draft_on_finish",
+            "render_final_on_finish",
+            "render_draft",
+            "render_final",
+            "metrics_enabled",
+            "render_plots",
+        ],
+    ),
+    sequence = SimpleNamespace(
+        func = generate_sequence,
+        hidden_elems = [],
+    ),
+)
 
 class TemporalScript(scripts.Script):
     def __init__(self, *args, **kwargs):
@@ -39,7 +62,9 @@ class TemporalScript(scripts.Script):
             return string
 
         elems = SimpleNamespace()
-        stored_elem_dict = {}
+        elem_dict = vars(elems)
+        stored_elems = SimpleNamespace()
+        stored_elem_dict = vars(stored_elems)
 
         def elem(key, gr_type, *args, stored = True, **kwargs):
             if "label" in kwargs:
@@ -59,7 +84,7 @@ class TemporalScript(scripts.Script):
                 gr.Slider,
                 gr.Textbox,
             ]:
-                stored_elem_dict[key] = elem
+                setattr(stored_elems, key, elem)
 
             return elem
 
@@ -69,6 +94,8 @@ class TemporalScript(scripts.Script):
             elem("load_preset", ToolButton, value = "\U0001f4c2")
             elem("save_preset", ToolButton, value = "\U0001f4be")
             elem("delete_preset", ToolButton, value = "\U0001f5d1\ufe0f")
+
+        elem("mode", gr.Dropdown, label = "Mode", choices = list(MODES.keys()), value = "sequence")
 
         with gr.Tab("General"):
             with gr.Accordion("Output"):
@@ -184,6 +211,7 @@ class TemporalScript(scripts.Script):
 
         with gr.Tab("Help"):
             for file_name, title in [
+                ("main.md", "Main"),
                 ("tab_general.md", "General tab"),
                 ("tab_frame_preprocessing.md", "Frame Preprocessing tab"),
                 ("tab_video_rendering.md", "Video Rendering tab"),
@@ -211,6 +239,10 @@ class TemporalScript(scripts.Script):
             delete_preset(preset)
             return gr.update(choices = preset_names, value = get_first_element(preset_names, ""))
 
+        def mode_callback(mode):
+            # TODO: Tabs cannot be hidden; an error is thrown regarding an inability to send a `Tab` as an input component
+            return [gr.update(visible = x not in MODES[mode].hidden_elems) for x in self._elem_names]
+
         def make_render_callback(is_final):
             def callback(*args):
                 yield gr.update(interactive = False), gr.update(interactive = False), None
@@ -237,17 +269,19 @@ class TemporalScript(scripts.Script):
         elems.load_preset.click(load_preset_callback, inputs = [elems.preset] + list(stored_elem_dict.values()), outputs = list(stored_elem_dict.values()))
         elems.save_preset.click(save_preset_callback, inputs = [elems.preset] + list(stored_elem_dict.values()), outputs = elems.preset)
         elems.delete_preset.click(delete_preset_callback, inputs = elems.preset, outputs = elems.preset)
+        elems.mode.change(mode_callback, inputs = elems.mode, outputs = list(elem_dict.values()))
         elems.render_draft.click(make_render_callback(False), inputs = list(stored_elem_dict.values()), outputs = [elems.render_draft, elems.render_final, elems.video_preview])
         elems.render_final.click(make_render_callback(True), inputs = list(stored_elem_dict.values()), outputs = [elems.render_draft, elems.render_final, elems.video_preview])
         elems.render_plots.click(render_plots_callback, inputs = list(stored_elem_dict.values()), outputs = [elems.metrics_plots])
 
-        self._elem_names = list(stored_elem_dict.keys())
+        self._elem_names = list(elem_dict.keys())
+        self._stored_elem_names = list(stored_elem_dict.keys())
 
         return list(stored_elem_dict.values())
 
     def run(self, p, *args):
         ext_params = self._unpack_ext_params(*args)
-        processed = generate_project(p, ext_params)
+        processed = MODES[ext_params.mode].func(p, ext_params)
 
         if ext_params.render_draft_on_finish:
             start_video_render(ext_params, False)
@@ -258,4 +292,4 @@ class TemporalScript(scripts.Script):
         return processed
 
     def _unpack_ext_params(self, *args):
-        return SimpleNamespace(**{name: arg for name, arg in zip(self._elem_names, args)})
+        return SimpleNamespace(**{name: arg for name, arg in zip(self._stored_elem_names, args)})
