@@ -1,4 +1,4 @@
-* **NOTE:** If ControlNet extension is installed, its settings are also saved to the project directory.
+**NOTE:** If ControlNet extension is installed, its settings are also saved to the project directory.
 
 * **Output**:
     * **Output directory** — general directory to which all of the extension's projects will be saved.
