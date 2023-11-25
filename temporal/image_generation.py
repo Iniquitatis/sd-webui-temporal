@@ -180,6 +180,76 @@ def generate_sequence(p, ext_params):
 
     return processing.Processed(p, [last_image])
 
+def generate_prompt_travel(p, ext_params):
+    opts_backup = opts.data.copy()
+
+    project_dir = ensure_directory_exists(Path(ext_params.output_dir) / ext_params.project_subdir)
+
+    if not ext_params.continue_from_last_frame:
+        clear_directory(project_dir, "*.png")
+
+    _apply_prompt_styles(p)
+
+    if ext_params.load_parameters:
+        load_session(p, ext_params, project_dir)
+
+    if not _setup_processing(p):
+        return processing.Processed(p, p.init_images)
+
+    save_session(p, ext_params, project_dir)
+
+    _apply_relative_params(ext_params, p.denoising_strength)
+
+    images_per_batch = ceil(ext_params.image_samples / ext_params.batch_size)
+
+    state.job_count = ext_params.frame_count * images_per_batch
+
+    last_image = None
+
+    for i in range(get_last_frame_index(project_dir), ext_params.frame_count):
+        factor = i * ext_params.prompt_travel_rate
+        prompt_a = f"({ext_params.prompt_travel_prompt_a}:{1.0 - factor})"
+        prompt_b = f"({ext_params.prompt_travel_prompt_b}:{factor})"
+
+        if not (processed := _process_image(
+            f"Frame {i + 1} / {ext_params.frame_count}",
+            p,
+            prompt = f"{p.prompt}, {prompt_a}, {prompt_b}",
+            init_images = [preprocess_image(p.init_images[0], ext_params, p.seed)],
+            n_iter = images_per_batch,
+            batch_size = ext_params.batch_size,
+            do_not_save_samples = True,
+            do_not_save_grid = True,
+        )):
+            break
+
+        last_image = mean_images(processed.images)
+
+        if i % ext_params.save_every_nth_frame == 0:
+            if ext_params.archive_mode:
+                image_save_queue.enqueue(
+                    save_image,
+                    last_image,
+                    project_dir / f"{i:05d}.png",
+                    archive_mode = True,
+                )
+            else:
+                images.save_image(
+                    last_image,
+                    project_dir,
+                    "",
+                    p = p,
+                    prompt = p.prompt,
+                    seed = processed.seed,
+                    info = processed.info,
+                    forced_filename = f"{i:05d}",
+                    extension = opts.samples_format,
+                )
+
+    opts.data.update(opts_backup)
+
+    return processing.Processed(p, [last_image or p.init_images[0]])
+
 def _process_image(job_title, p, **p_overrides):
     state.job = job_title
 

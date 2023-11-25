@@ -9,7 +9,7 @@ from modules.ui_components import ToolButton
 
 from temporal.collection_utils import get_first_element
 from temporal.fs import load_text
-from temporal.image_generation import generate_image, generate_sequence
+from temporal.image_generation import generate_image, generate_prompt_travel, generate_sequence
 from temporal.image_preprocessing import PREPROCESSORS
 from temporal.interop import EXTENSION_DIR
 from temporal.metrics import Metrics
@@ -25,6 +25,9 @@ MODES = dict(
             "archive_mode",
             "load_parameters",
             "continue_from_last_frame",
+            "prompt_travel_prompt_a",
+            "prompt_travel_prompt_b",
+            "prompt_travel_rate",
             "render_draft_on_finish",
             "render_final_on_finish",
             "render_draft",
@@ -35,8 +38,16 @@ MODES = dict(
     ),
     sequence = SimpleNamespace(
         func = generate_sequence,
-        hidden_elems = [],
+        hidden_elems = [
+            "prompt_travel_prompt_a",
+            "prompt_travel_prompt_b",
+            "prompt_travel_rate",
+        ],
     ),
+    prompt_travel = SimpleNamespace(
+        func = generate_prompt_travel,
+        hidden_elems = [],
+    )
 )
 
 class TemporalScript(scripts.Script):
@@ -119,6 +130,11 @@ class TemporalScript(scripts.Script):
             with gr.Accordion("Project"):
                 elem("load_parameters", gr.Checkbox, label = "Load parameters", value = True)
                 elem("continue_from_last_frame", gr.Checkbox, label = "Continue from last frame", value = True)
+
+            with gr.Accordion("Prompt travel"):
+                elem("prompt_travel_prompt_a", gr.Text, label = "Prompt A", lines = 3, value = "")
+                elem("prompt_travel_prompt_b", gr.Text, label = "Prompt B", lines = 3, value = "")
+                elem("prompt_travel_rate", gr.Slider, label = "Rate", minimum = 0.001, maximum = 1.0, step = 0.001, value = 0.01)
 
         with gr.Tab("Frame Preprocessing"):
             for key, processor in PREPROCESSORS.items():
