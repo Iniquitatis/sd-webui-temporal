@@ -44,7 +44,7 @@ def generate_image(p, ext_params):
         if not (processed := _process_image(
             f"Frame {i + 1} / {ext_params.frame_count}",
             p,
-            init_images = [preprocess_image(last_image, ext_params, seed)],
+            init_images = [preprocess_image(last_image, _apply_scenario(ext_params, i + 1), seed)],
             n_iter = images_per_batch,
             batch_size = ext_params.batch_size,
             seed = seed,
@@ -131,7 +131,7 @@ def generate_sequence(p, ext_params):
         if not (processed := _process_image(
             f"Frame {i + 1} / {ext_params.frame_count}",
             p,
-            init_images = [preprocess_image(last_image, ext_params, seed)],
+            init_images = [preprocess_image(last_image, _apply_scenario(ext_params, frame_index), seed)],
             n_iter = images_per_batch,
             batch_size = ext_params.batch_size,
             seed = seed,
@@ -233,6 +233,29 @@ def _apply_relative_params(ext_params, denoising_strength):
     for key in PREPROCESSORS.keys():
         if getattr(ext_params, f"{key}_amount_relative"):
             setattr(ext_params, f"{key}_amount", getattr(ext_params, f"{key}_amount") * denoising_strength)
+
+def _apply_scenario(ext_params, frame_index):
+    import math
+
+    new_ext_params = copy(ext_params)
+
+    for i in range(1, 6):
+        key = getattr(ext_params, f"scenario_property_{i}")
+        expr = getattr(ext_params, f"scenario_value_{i}")
+
+        if key == "none" or not expr:
+            continue
+
+        value = getattr(ext_params, key)
+
+        setattr(new_ext_params, key, eval(expr, dict(
+            math = math,
+            frame = frame_index,
+            frame_count = ext_params.frame_count,
+            value = value,
+        )))
+
+    return new_ext_params
 
 def _pad_image_buffer(image_buffer):
     if not image_buffer:

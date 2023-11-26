@@ -10,7 +10,7 @@ from modules.ui_components import ToolButton
 from temporal.collection_utils import get_first_element
 from temporal.fs import load_text
 from temporal.image_generation import generate_image, generate_sequence
-from temporal.image_preprocessing import PREPROCESSORS
+from temporal.image_preprocessing import PREPROCESSORS, iterate_all_preprocessor_keys
 from temporal.interop import EXTENSION_DIR
 from temporal.metrics import Metrics
 from temporal.presets import delete_preset, load_preset, preset_names, refresh_presets, save_preset
@@ -138,6 +138,14 @@ class TemporalScript(scripts.Script):
                         elem(f"{key}_mask_normalized", gr.Checkbox, label = "Normalized", value = False)
                         elem(f"{key}_mask_inverted", gr.Checkbox, label = "Inverted", value = False)
                         elem(f"{key}_mask_blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0)
+
+        with gr.Tab("Scenario"):
+            keys = ["none"] + [x for x in iterate_all_preprocessor_keys() if isinstance(elem_dict[x], gr.Number | gr.Slider)]
+
+            for i in range(1, 6):
+                with gr.Row():
+                    elem(f"scenario_property_{i}", gr.Dropdown, label = f"Property {i}", choices = keys, value = get_first_element(keys))
+                    elem(f"scenario_value_{i}", gr.Textbox, label = f"Value {i}", value = "")
 
         with gr.Tab("Video Rendering"):
             elem("video_fps", gr.Slider, label = "Frames per second", minimum = 1, maximum = 60, step = 1, value = 30)

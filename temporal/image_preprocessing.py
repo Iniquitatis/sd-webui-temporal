@@ -12,6 +12,7 @@ from temporal.image_utils import match_image, np_to_pil, pil_to_np
 from temporal.math import lerp, normalize, remap_range
 
 PREPROCESSORS = dict()
+PREPROCESSOR_PARAMS = dict()
 
 def preprocess_image(im, ext_params, seed):
     im = im.convert("RGB")
@@ -58,6 +59,18 @@ class UIParam:
 def preprocessor(key, name, params = []):
     def decorator(func):
         PREPROCESSORS[key] = SimpleNamespace(name = name, func = func, params = params)
+        PREPROCESSOR_PARAMS.update({
+            f"{key}_enabled": UIParam(gr.Checkbox, "enabled", "Enabled", value = False),
+            f"{key}_amount": UIParam(gr.Slider, "amount", "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0),
+            f"{key}_amount_relative": UIParam(gr.Checkbox, "relative", "Relative", value = False),
+        })
+        PREPROCESSOR_PARAMS.update({f"{key}_{x.key}": x for x in params})
+        PREPROCESSOR_PARAMS.update({
+            f"{key}_mask": UIParam(gr.Pil, "mask", "Mask", mode = "L", interactive = True),
+            f"{key}_mask_normalized": UIParam(gr.Checkbox, "mask_normalized", "Normalized", value = False),
+            f"{key}_mask_inverted": UIParam(gr.Checkbox, "mask_inverted", "Inverted", value = False),
+            f"{key}_mask_blurring": UIParam(gr.Slider, "mask_blurring", "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0),
+        })
         return func
     return decorator
 
