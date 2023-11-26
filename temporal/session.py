@@ -103,7 +103,10 @@ def save_session(p, ext_params, project_dir):
             "image_samples",
             "batch_size",
             "merged_frames",
-        ] + list(iterate_all_preprocessor_keys())),
+        ] +
+        [f"prompt_{x}" for x in ["a", "b", "c"]] +
+        [f"prompt_{x}_frame" for x in ["a", "b", "c"]] +
+        list(iterate_all_preprocessor_keys())),
     ))
     save_text(session_dir / "version.txt", "3")
 

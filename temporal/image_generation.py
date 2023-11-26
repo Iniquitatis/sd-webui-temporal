@@ -44,6 +44,7 @@ def generate_image(p, ext_params):
         if not (processed := _process_image(
             f"Frame {i + 1} / {ext_params.frame_count}",
             p,
+            prompt = _apply_additional_prompt(p.prompt, ext_params, i + 1),
             init_images = [preprocess_image(last_image, ext_params, seed)],
             n_iter = images_per_batch,
             batch_size = ext_params.batch_size,
@@ -131,6 +132,7 @@ def generate_sequence(p, ext_params):
         if not (processed := _process_image(
             f"Frame {i + 1} / {ext_params.frame_count}",
             p,
+            prompt = _apply_additional_prompt(p.prompt, ext_params, frame_index),
             init_images = [preprocess_image(last_image, ext_params, seed)],
             n_iter = images_per_batch,
             batch_size = ext_params.batch_size,
@@ -233,6 +235,14 @@ def _apply_relative_params(ext_params, denoising_strength):
     for key in PREPROCESSORS.keys():
         if getattr(ext_params, f"{key}_amount_relative"):
             setattr(ext_params, f"{key}_amount", getattr(ext_params, f"{key}_amount") * denoising_strength)
+
+def _apply_additional_prompt(prompt, ext_params, frame_index):
+    for x in reversed(["a", "b", "c"]):
+        if frame_index >= getattr(ext_params, f"prompt_{x}_frame") and (modifier := getattr(ext_params, f"prompt_{x}")):
+            prompt = f"{modifier}, {prompt}"
+            break
+
+    return prompt
 
 def _pad_image_buffer(image_buffer):
     if not image_buffer:

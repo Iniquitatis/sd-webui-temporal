@@ -109,6 +109,11 @@ class TemporalScript(scripts.Script):
 
                 elem("archive_mode", gr.Checkbox, label = "Archive mode", value = False)
 
+            with gr.Accordion("Prompts"):
+                for x in ["a", "b", "c"]:
+                    elem(f"prompt_{x}", gr.Text, label = f"Prompt {x.upper()}", lines = 2, value = "")
+                    elem(f"prompt_{x}_frame", gr.Number, label = f"Prompt {x.upper()} frame", precision = 0, minimum = 1, value = 1)
+
             with gr.Accordion("Rendering"):
                 with gr.Row():
                     elem("image_samples", gr.Number, label = "Image samples", precision = 0, minimum = 1, value = 1)
