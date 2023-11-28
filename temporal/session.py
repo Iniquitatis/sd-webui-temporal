@@ -105,7 +105,7 @@ def save_session(p, ext_params, project_dir):
             "merged_frames",
         ] + list(iterate_all_preprocessor_keys())),
     ))
-    save_text(session_dir / "version.txt", "3")
+    save_text(session_dir / "version.txt", "4")
 
 def load_image_buffer(image_buffer, project_dir):
     if not (buffer_dir := (project_dir / "session" / "buffer")).is_dir():

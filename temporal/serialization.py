@@ -2,6 +2,7 @@ import numpy as np
 from PIL import Image
 
 from temporal.image_utils import load_image, save_image
+from temporal.numpy_utils import load_array, save_array
 
 def load_dict(d, data, data_dir, existing_only = True):
     for key, value in data.items():
@@ -39,7 +40,7 @@ def _load_value(value, data_dir):
             return load_image(data_dir / value.get("filename", ""))
 
         elif type == "np":
-            return np.array(load_image(data_dir / value.get("filename", "")))
+            return load_array(data_dir / value.get("filename", ""))
 
         else:
             print(f"WARNING: Cannot load value of type {type}")
@@ -63,8 +64,8 @@ def _save_value(value, data_dir):
         return {"type": "pil", "filename": filename}
 
     elif isinstance(value, np.ndarray):
-        filename = f"{id(value)}.png"
-        save_image(Image.fromarray(value), data_dir / filename)
+        filename = f"{id(value)}.npy"
+        save_array(value, data_dir / filename)
         return {"type": "np", "filename": filename}
 
     else:

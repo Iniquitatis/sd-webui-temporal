@@ -1,6 +1,10 @@
 from shutil import copy2
 
+import numpy as np
+
 from temporal.fs import ensure_directory_exists, load_json, load_text, save_json, save_text
+from temporal.image_utils import load_image
+from temporal.numpy_utils import save_array
 
 UPGRADERS = dict()
 
@@ -118,5 +122,53 @@ def _(path):
         copy2(frames[-1], ensure_directory_exists(path / "session" / "buffer") / "001.png")
 
     save_text(version_path, "3")
+
+    return True
+
+@upgrader(4)
+def _(path):
+    def upgrade_value(value):
+        if isinstance(value, dict):
+            type = value.get("type", None)
+
+            if type == "list":
+                return {"type": "list", "data": [upgrade_value(x) for x in value["data"]]}
+            elif type == "dict":
+                return {"type": "dict", "data": {k: upgrade_value(v) for k, v in value["data"].items()}}
+            elif type == "np":
+                im_path = path / "session" / value["filename"]
+                arr_path = im_path.with_suffix(".npy")
+                save_array(np.array(load_image(im_path)), arr_path)
+                im_path.unlink()
+                return {"type": "np", "filename": arr_path.name}
+            else:
+                return value
+        else:
+            return value
+
+    def upgrade_values(d):
+        return {k: upgrade_value(v) for k, v in d.items()}
+
+    if not (version_path := (path / "session" / "version.txt")).is_file():
+        return False
+
+    if int(load_text(version_path, "0")) >= 4:
+        return True
+
+    if not (params_path := (path / "session" / "parameters.json")).is_file():
+        return False
+
+    data = load_json(params_path, {})
+
+    data["shared_params"] = upgrade_values(data.get("shared_params", {}))
+    data["generation_params"] = upgrade_values(data.get("generation_params", {}))
+
+    for i, unit_data in enumerate(data.get("controlnet_params", [])):
+        data["controlnet_params"][i] = upgrade_values(unit_data)
+
+    data["extension_params"] = upgrade_values(data.get("extension_params", {}))
+
+    save_json(params_path, data)
+    save_text(version_path, "4")
 
     return True
