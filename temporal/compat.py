@@ -3,8 +3,7 @@ from shutil import copy2
 import numpy as np
 
 from temporal.fs import ensure_directory_exists, load_json, load_text, save_json, save_text
-from temporal.image_utils import load_image
-from temporal.numpy_utils import save_array
+from temporal.image_utils import load_image, pil_to_np
 
 UPGRADERS = dict()
 
@@ -138,7 +137,7 @@ def _(path):
             elif type == "np":
                 im_path = path / "session" / value["filename"]
                 arr_path = im_path.with_suffix(".npy")
-                save_array(np.array(load_image(im_path)), arr_path)
+                np.save(arr_path, np.array(load_image(im_path)))
                 im_path.unlink()
                 return {"type": "np", "filename": arr_path.name}
             else:
@@ -170,5 +169,75 @@ def _(path):
 
     save_json(params_path, data)
     save_text(version_path, "4")
+
+    return True
+
+@upgrader(5)
+def _(path):
+    def upgrade_value(value):
+        if isinstance(value, dict):
+            type = value.get("type", None)
+
+            if type == "list":
+                return {"type": "list", "data": [upgrade_value(x) for x in value["data"]]}
+            elif type == "dict":
+                return {"type": "dict", "data": {k: upgrade_value(v) for k, v in value["data"].items()}}
+            elif type == "np":
+                arr_path = path / "session" / value["filename"]
+                arrz_path = arr_path.with_suffix(".npz")
+                np.savez_compressed(arrz_path, np.load(arr_path))
+                arr_path.unlink()
+                return {"type": "np", "filename": arrz_path.name}
+            else:
+                return value
+        else:
+            return value
+
+    def upgrade_values(d):
+        return {k: upgrade_value(v) for k, v in d.items()}
+
+    if not (version_path := (path / "session" / "version.txt")).is_file():
+        return False
+
+    if int(load_text(version_path, "0")) >= 5:
+        return True
+
+    if not (params_path := (path / "session" / "parameters.json")).is_file():
+        return False
+
+    if not (buffer_dir := (path / "session" / "buffer")).is_dir():
+        return
+
+    data = load_json(params_path, {})
+
+    data["shared_params"] = upgrade_values(data.get("shared_params", {}))
+    data["generation_params"] = upgrade_values(data.get("generation_params", {}))
+
+    for i, unit_data in enumerate(data.get("controlnet_params", [])):
+        data["controlnet_params"][i] = upgrade_values(unit_data)
+
+    data["extension_params"] = upgrade_values(data.get("extension_params", {}))
+
+    save_json(params_path, data)
+
+    image_paths = sorted(buffer_dir.glob("*.png"), key = lambda x: int(x.stem))
+
+    np.savez_compressed(buffer_dir / "buffer.npz", np.stack([
+        pil_to_np(load_image(x))
+        for x in image_paths
+    ], axis = 0))
+
+    for path in image_paths:
+        path.unlink()
+
+    save_json(buffer_dir / "data.json", {
+        "array": {
+            "type": "np",
+            "filename": "buffer.npz",
+        },
+        "last_index": 0,
+    })
+
+    save_text(version_path, "5")
 
     return True

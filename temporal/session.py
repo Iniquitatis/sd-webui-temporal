@@ -3,7 +3,7 @@ from modules.shared import opts
 from temporal.compat import upgrade_project
 from temporal.fs import load_json, recreate_directory, save_json, save_text
 from temporal.image_preprocessing import iterate_all_preprocessor_keys
-from temporal.image_utils import load_image, save_image
+from temporal.image_utils import load_image
 from temporal.interop import import_cn
 from temporal.serialization import load_dict, load_object, save_dict, save_object
 
@@ -103,22 +103,7 @@ def save_session(p, ext_params, project_dir):
             "image_samples",
             "batch_size",
             "merged_frames",
+            "merged_frames_easing",
         ] + list(iterate_all_preprocessor_keys())),
     ))
-    save_text(session_dir / "version.txt", "4")
-
-def load_image_buffer(image_buffer, project_dir):
-    if not (buffer_dir := (project_dir / "session" / "buffer")).is_dir():
-        return
-
-    image_buffer.clear()
-    image_buffer.extend(
-        load_image(x)
-        for x in sorted(buffer_dir.glob("*.png"), key = lambda x: int(x.stem))
-    )
-
-def save_image_buffer(image_buffer, project_dir):
-    buffer_dir = recreate_directory(project_dir / "session" / "buffer")
-
-    for i, image in enumerate(image_buffer, 1):
-        save_image(image, buffer_dir / f"{i:03d}.png")
+    save_text(session_dir / "version.txt", "5")

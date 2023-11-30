@@ -64,7 +64,7 @@ def _save_value(value, data_dir):
         return {"type": "pil", "filename": filename}
 
     elif isinstance(value, np.ndarray):
-        filename = f"{id(value)}.npy"
+        filename = f"{id(value)}.npz"
         save_array(value, data_dir / filename)
         return {"type": "np", "filename": filename}
 

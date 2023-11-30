@@ -114,7 +114,9 @@ class TemporalScript(scripts.Script):
                     elem("image_samples", gr.Number, label = "Image samples", precision = 0, minimum = 1, value = 1)
                     elem("batch_size", gr.Number, label = "Batch size", precision = 0, minimum = 1, value = 1)
 
-                elem("merged_frames", gr.Number, label = "Merged frames", precision = 0, minimum = 1, value = 1)
+                with gr.Row():
+                    elem("merged_frames", gr.Number, label = "Merged frames", precision = 0, minimum = 1, step = 1, value = 1)
+                    elem("merged_frames_easing", gr.Slider, label = "Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0)
 
             with gr.Accordion("Project"):
                 elem("load_parameters", gr.Checkbox, label = "Load parameters", value = True)

@@ -12,6 +12,7 @@
     * **Batch size** — amount of samples to be calculated in parallel, potentially speeding up the process of multisampling. If **Image samples** is not divisible by the batch size, it will be adjusted to the nearest divisible number (e.g. if **Image samples** is 9 and **Batch size** is 4, then total sample count will equal to 12). 
     * **Merged frames** — amount of last generated frames to be blended together before processing.
         * **NOTE:** Slows down the morphing effect proportionally and will make the resulting images blurrier (can be somewhat mitigated by enabling the **Sharpening** preprocessing effect).
+        * **Easing** — frame merging easing factor. The more this value is, the sharper is the blending curve, leading to less contribution for each previous frame; at the value of 0 all frames will be blended evenly.
 * **Project**:
     * **Load parameters** — read parameters from the specified project directory, otherwise take those that are currently set in the UI.
     * **Continue from last frame** — continue rendering from the last rendered frame, otherwise remove all previously rendered frames and start rendering from scratch.

@@ -1,5 +1,4 @@
-from collections import deque
-from copy import copy
+from copy import copy, deepcopy
 from itertools import count
 from math import ceil
 from pathlib import Path
@@ -10,10 +9,11 @@ from modules import images, processing
 from modules.shared import opts, prompt_styles, state
 
 from temporal.fs import clear_directory, ensure_directory_exists, remove_directory
+from temporal.image_buffer import ImageBuffer
 from temporal.image_preprocessing import PREPROCESSORS, preprocess_image
-from temporal.image_utils import ensure_image_dims, generate_noise_image, mean_images, save_image
+from temporal.image_utils import generate_noise_image, mean_images, save_image
 from temporal.metrics import Metrics
-from temporal.session import get_last_frame_index, load_image_buffer, load_last_frame, load_session, save_image_buffer, save_session
+from temporal.session import get_last_frame_index, load_last_frame, load_session, save_session
 from temporal.thread_queue import ThreadQueue
 
 image_save_queue = ThreadQueue()
@@ -26,8 +26,8 @@ def generate_image(p, ext_params):
     if not _setup_processing(p):
         return processing.Processed(p, p.init_images)
 
-    image_buffer = deque([ensure_image_dims(p.init_images[0], "RGB", (p.width, p.height))], maxlen = ext_params.merged_frames)
-    _pad_image_buffer(image_buffer)
+    image_buffer = ImageBuffer(p.width, p.height, 3, ext_params.merged_frames)
+    image_buffer.init(p.init_images[0])
 
     _apply_relative_params(ext_params, p.denoising_strength)
 
@@ -54,8 +54,8 @@ def generate_image(p, ext_params):
             break
 
         generated_image = mean_images(processed.images)
-        image_buffer.append(generated_image)
-        last_image = mean_images(image_buffer)
+        image_buffer.add(generated_image)
+        last_image = image_buffer.average(ext_params.merged_frames_easing)
         last_info = processed.info
 
     images.save_image(
@@ -91,15 +91,11 @@ def generate_sequence(p, ext_params):
     if not _setup_processing(p):
         return processing.Processed(p, p.init_images)
 
-    image_buffer = deque(maxlen = ext_params.merged_frames)
+    image_buffer = ImageBuffer(p.width, p.height, 3, ext_params.merged_frames)
+    image_buffer.init(p.init_images[0])
 
     if ext_params.continue_from_last_frame:
-        load_image_buffer(image_buffer, project_dir)
-
-    if not image_buffer:
-        image_buffer.append(ensure_image_dims(p.init_images[0], "RGB", (p.width, p.height)))
-
-    _pad_image_buffer(image_buffer)
+        image_buffer.load(project_dir)
 
     metrics = Metrics()
     last_index = get_last_frame_index(project_dir)
@@ -123,7 +119,7 @@ def generate_sequence(p, ext_params):
     else:
         last_image = p.init_images[0]
 
-    image_buffer_to_save = image_buffer.copy()
+    image_buffer_to_save = deepcopy(image_buffer)
 
     for i, frame_index in zip(range(ext_params.frame_count), count(last_index + 1)):
         seed = p.seed + frame_index
@@ -141,8 +137,8 @@ def generate_sequence(p, ext_params):
             break
 
         generated_image = mean_images(processed.images)
-        image_buffer.append(generated_image)
-        last_image = mean_images(image_buffer)
+        image_buffer.add(generated_image)
+        last_image = image_buffer.average(ext_params.merged_frames_easing)
 
         if frame_index % ext_params.save_every_nth_frame == 0:
             if ext_params.archive_mode:
@@ -165,7 +161,7 @@ def generate_sequence(p, ext_params):
                     extension = opts.samples_format,
                 )
 
-            image_buffer_to_save = image_buffer.copy()
+            image_buffer_to_save = deepcopy(image_buffer)
 
         if ext_params.metrics_enabled:
             metrics.measure(last_image)
@@ -174,7 +170,7 @@ def generate_sequence(p, ext_params):
             if frame_index % ext_params.metrics_save_plots_every_nth_frame == 0:
                 metrics.plot(project_dir, save_images = True)
 
-    save_image_buffer(image_buffer_to_save, project_dir)
+    image_buffer_to_save.save(project_dir)
 
     opts.data.update(opts_backup)
 
@@ -233,12 +229,3 @@ def _apply_relative_params(ext_params, denoising_strength):
     for key in PREPROCESSORS.keys():
         if getattr(ext_params, f"{key}_amount_relative"):
             setattr(ext_params, f"{key}_amount", getattr(ext_params, f"{key}_amount") * denoising_strength)
-
-def _pad_image_buffer(image_buffer):
-    if not image_buffer:
-        return
-
-    first_image = image_buffer[0]
-
-    while len(image_buffer) < (image_buffer.maxlen or 0):
-        image_buffer.insert(0, first_image)
