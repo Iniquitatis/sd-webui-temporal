@@ -53,7 +53,7 @@ def generate_image(p, ext_params):
         )):
             break
 
-        generated_image = average_images(processed.images, ext_params.multisampling_algorithm, ext_params.multisampling_easing)
+        generated_image = average_images(processed.images[:ext_params.multisampling_batch_size * images_per_batch], ext_params.multisampling_algorithm, ext_params.multisampling_easing)
         image_buffer.add(generated_image)
         last_image = image_buffer.average(ext_params.frame_merging_algorithm, ext_params.frame_merging_easing)
         last_info = processed.info
@@ -136,7 +136,7 @@ def generate_sequence(p, ext_params):
         )):
             break
 
-        generated_image = average_images(processed.images, ext_params.multisampling_algorithm, ext_params.multisampling_easing)
+        generated_image = average_images(processed.images[:ext_params.multisampling_batch_size * images_per_batch], ext_params.multisampling_algorithm, ext_params.multisampling_easing)
         image_buffer.add(generated_image)
         last_image = image_buffer.average(ext_params.frame_merging_algorithm, ext_params.frame_merging_easing)
 
