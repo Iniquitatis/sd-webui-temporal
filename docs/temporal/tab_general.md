@@ -1,18 +1,29 @@
-**NOTE:** If ControlNet extension is installed, its settings are also saved to the project directory.
+**NOTE:** If ControlNet extension is installed, its settings will also be saved alongside the project.
 
-* **Output**:
+* **Output** — common output parameters.
     * **Output directory** — general directory to which all of the extension's projects will be saved.
     * **Project subdirectory** — current project's directory name inside of the output directory.
     * **Frame count** — amount of cycles that will be performed, each of which producing a frame.
     * **Save every N-th frame** — stride at which the frames will be saved.
     * **Archive mode** — disable saving of metadata inside of each frame (such as prompt, seed, etc.) and enable maximum compression.
-* **Rendering**:
-    * **Image samples** — amount of samples to take for generating a frame, reducing the jittering between the consecutive frames.
-        * **NOTE:** Multiplies amount of work to process each frame correspondingly and will make the resulting images blurrier (can be somewhat mitigated by enabling the **Sharpening** preprocessing effect).
-    * **Batch size** — amount of samples to be calculated in parallel, potentially speeding up the process of multisampling. If **Image samples** is not divisible by the batch size, it will be adjusted to the nearest divisible number (e.g. if **Image samples** is 9 and **Batch size** is 4, then total sample count will equal to 12). 
-    * **Merged frames** — amount of last generated frames to be blended together before processing.
-        * **NOTE:** Slows down the morphing effect proportionally and will make the resulting images blurrier (can be somewhat mitigated by enabling the **Sharpening** preprocessing effect).
-        * **Easing** — frame merging easing factor. The more this value is, the sharper is the blending curve, leading to less contribution for each previous frame; at the value of 0 all frames will be blended evenly.
-* **Project**:
+* **Multisampling** — averaging of several samples generated from a single frame.
+    * **Sample count** — amount of samples to take for generating a frame.
+        * **NOTE:** Reduces the jittering between the consecutive frames, multiplies amount of work to process each frame correspondingly, and makes the resulting frames blurrier (can be somewhat mitigated by enabling the **Sharpening** preprocessing effect).
+        * **Batch size** — amount of samples to be calculated in parallel, potentially speeding up the process. If **Sample count** is not divisible by the batch size, it will be adjusted to the nearest divisible number (e.g. if **Sample count** is 9 and **Batch size** is 4, then total sample count will equal to 12).
+    * **Algorithm** — averaging algorithm.
+        * **mean** — produces blurry results.
+        * **median** — produces sharper results than **mean**, but more prone to artifacts on low **Sample count** and takes more time to compute.
+    * **Easing** — sample averaging easing factor. The more this value is, the sharper is the blending curve, leading to less contribution for each subsequent sample; at the value of 0 all samples will be blended evenly.
+        * **NOTE:** This parameter is relevant only for **mean** algorithm.
+* **Frame merging** — averaging of several last generated frames.
+    * **Frame count** — amount of last generated frames to be blended together to produce a final frame.
+        * **NOTE:** Slows down the morphing effect and makes the resulting frames blurrier (can be somewhat mitigated by enabling the **Sharpening** preprocessing effect).
+    * **Algorithm** — averaging algorithm.
+        * **mean** — produces blurry results.
+        * **median** — produces sharper results than **mean**, but more prone to artifacts on low **Frame count** and takes more time to compute.
+            * **NOTE:** As of now, the results won't be visible for approximately half of **Frame count** first iterations.
+    * **Easing** — frame averaging easing factor. The more this value is, the sharper is the blending curve, leading to less contribution for each previous frame; at the value of 0 all frames will be blended evenly.
+        * **NOTE:** This parameter is relevant only for **mean** algorithm.
+* **Project** — control over the session.
     * **Load parameters** — read parameters from the specified project directory, otherwise take those that are currently set in the UI.
     * **Continue from last frame** — continue rendering from the last rendered frame, otherwise remove all previously rendered frames and start rendering from scratch.

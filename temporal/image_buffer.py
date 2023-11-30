@@ -2,6 +2,7 @@ import numpy as np
 
 from temporal.fs import ensure_directory_exists, load_json, save_json
 from temporal.image_utils import ensure_image_dims, np_to_pil, pil_to_np
+from temporal.numpy_utils import average_array, make_eased_weight_array
 from temporal.serialization import load_object, save_object
 
 class ImageBuffer:
@@ -37,11 +38,12 @@ class ImageBuffer:
         self.last_index += 1
         self.last_index %= self.count
 
-    def average(self, easing = 0.0):
-        return np_to_pil(np.clip(np.average(
+    def average(self, algo, easing = 0.0):
+        return np_to_pil(np.clip(average_array(
             self.array,
+            algo = algo,
             axis = 0,
-            weights = np.roll((np.linspace(1, self.count, self.count, dtype = np.float_) / self.count) ** easing, self.last_index),
+            weights = np.roll(make_eased_weight_array(self.count, easing), self.last_index),
         ), 0.0, 1.0))
 
     def load(self, project_dir):

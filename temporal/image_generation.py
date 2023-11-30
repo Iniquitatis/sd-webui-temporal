@@ -11,7 +11,7 @@ from modules.shared import opts, prompt_styles, state
 from temporal.fs import clear_directory, ensure_directory_exists, remove_directory
 from temporal.image_buffer import ImageBuffer
 from temporal.image_preprocessing import PREPROCESSORS, preprocess_image
-from temporal.image_utils import generate_noise_image, mean_images, save_image
+from temporal.image_utils import average_images, generate_noise_image, save_image
 from temporal.metrics import Metrics
 from temporal.session import get_last_frame_index, load_last_frame, load_session, save_session
 from temporal.thread_queue import ThreadQueue
@@ -26,12 +26,12 @@ def generate_image(p, ext_params):
     if not _setup_processing(p):
         return processing.Processed(p, p.init_images)
 
-    image_buffer = ImageBuffer(p.width, p.height, 3, ext_params.merged_frames)
+    image_buffer = ImageBuffer(p.width, p.height, 3, ext_params.frame_merging_frames)
     image_buffer.init(p.init_images[0])
 
     _apply_relative_params(ext_params, p.denoising_strength)
 
-    images_per_batch = ceil(ext_params.image_samples / ext_params.batch_size)
+    images_per_batch = ceil(ext_params.multisampling_samples / ext_params.multisampling_batch_size)
 
     state.job_count = ext_params.frame_count * images_per_batch
 
@@ -46,16 +46,16 @@ def generate_image(p, ext_params):
             p,
             init_images = [preprocess_image(last_image, ext_params, seed)],
             n_iter = images_per_batch,
-            batch_size = ext_params.batch_size,
+            batch_size = ext_params.multisampling_batch_size,
             seed = seed,
             do_not_save_samples = True,
             do_not_save_grid = True,
         )):
             break
 
-        generated_image = mean_images(processed.images)
+        generated_image = average_images(processed.images, ext_params.multisampling_algorithm, ext_params.multisampling_easing)
         image_buffer.add(generated_image)
-        last_image = image_buffer.average(ext_params.merged_frames_easing)
+        last_image = image_buffer.average(ext_params.frame_merging_algorithm, ext_params.frame_merging_easing)
         last_info = processed.info
 
     images.save_image(
@@ -91,7 +91,7 @@ def generate_sequence(p, ext_params):
     if not _setup_processing(p):
         return processing.Processed(p, p.init_images)
 
-    image_buffer = ImageBuffer(p.width, p.height, 3, ext_params.merged_frames)
+    image_buffer = ImageBuffer(p.width, p.height, 3, ext_params.frame_merging_frames)
     image_buffer.init(p.init_images[0])
 
     if ext_params.continue_from_last_frame:
@@ -110,7 +110,7 @@ def generate_sequence(p, ext_params):
 
     _apply_relative_params(ext_params, p.denoising_strength)
 
-    images_per_batch = ceil(ext_params.image_samples / ext_params.batch_size)
+    images_per_batch = ceil(ext_params.multisampling_samples / ext_params.multisampling_batch_size)
 
     state.job_count = ext_params.frame_count * images_per_batch
 
@@ -129,16 +129,16 @@ def generate_sequence(p, ext_params):
             p,
             init_images = [preprocess_image(last_image, ext_params, seed)],
             n_iter = images_per_batch,
-            batch_size = ext_params.batch_size,
+            batch_size = ext_params.multisampling_batch_size,
             seed = seed,
             do_not_save_samples = True,
             do_not_save_grid = True,
         )):
             break
 
-        generated_image = mean_images(processed.images)
+        generated_image = average_images(processed.images, ext_params.multisampling_algorithm, ext_params.multisampling_easing)
         image_buffer.add(generated_image)
-        last_image = image_buffer.average(ext_params.merged_frames_easing)
+        last_image = image_buffer.average(ext_params.frame_merging_algorithm, ext_params.frame_merging_easing)
 
         if frame_index % ext_params.save_every_nth_frame == 0:
             if ext_params.archive_mode:

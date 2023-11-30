@@ -100,10 +100,13 @@ def save_session(p, ext_params, project_dir):
         extension_params = save_object(ext_params, session_dir, [
             "save_every_nth_frame",
             "archive_mode",
-            "image_samples",
-            "batch_size",
-            "merged_frames",
-            "merged_frames_easing",
+            "multisampling_samples",
+            "multisampling_batch_size",
+            "multisampling_algorithm",
+            "multisampling_easing",
+            "frame_merging_frames",
+            "frame_merging_algorithm",
+            "frame_merging_easing",
         ] + list(iterate_all_preprocessor_keys())),
     ))
-    save_text(session_dir / "version.txt", "5")
+    save_text(session_dir / "version.txt", "6")

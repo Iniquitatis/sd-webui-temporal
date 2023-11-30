@@ -241,3 +241,32 @@ def _(path):
     save_text(version_path, "5")
 
     return True
+
+@upgrader(6)
+def _(path):
+    if not (version_path := (path / "session" / "version.txt")).is_file():
+        return False
+
+    if int(load_text(version_path, "0")) >= 6:
+        return True
+
+    if not (params_path := (path / "session" / "parameters.json")).is_file():
+        return False
+
+    data = load_json(params_path, {})
+
+    ext_params = data["extension_params"]
+    ext_params.update({
+        "multisampling_samples": ext_params.pop("image_samples", 1),
+        "multisampling_batch_size": ext_params.pop("batch_size", 1),
+        "multisampling_mode": "mean",
+        "multisampling_easing": 0.0,
+        "frame_merging_frames": ext_params.pop("merged_frames", 1),
+        "frame_merging_mode": "mean",
+        "frame_merging_easing": ext_params.pop("merged_frames_easing", 0.0),
+    })
+
+    save_json(params_path, data)
+    save_text(version_path, "6")
+
+    return True

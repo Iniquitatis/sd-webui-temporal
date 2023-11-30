@@ -109,14 +109,18 @@ class TemporalScript(scripts.Script):
 
                 elem("archive_mode", gr.Checkbox, label = "Archive mode", value = False)
 
-            with gr.Accordion("Rendering"):
+            with gr.Accordion("Multisampling"):
                 with gr.Row():
-                    elem("image_samples", gr.Number, label = "Image samples", precision = 0, minimum = 1, value = 1)
-                    elem("batch_size", gr.Number, label = "Batch size", precision = 0, minimum = 1, value = 1)
+                    elem("multisampling_samples", gr.Number, label = "Sample count", precision = 0, minimum = 1, value = 1)
+                    elem("multisampling_batch_size", gr.Number, label = "Batch size", precision = 0, minimum = 1, value = 1)
 
-                with gr.Row():
-                    elem("merged_frames", gr.Number, label = "Merged frames", precision = 0, minimum = 1, step = 1, value = 1)
-                    elem("merged_frames_easing", gr.Slider, label = "Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0)
+                elem("multisampling_algorithm", gr.Dropdown, label = "Algorithm", choices = ["mean", "median"], value = "mean")
+                elem("multisampling_easing", gr.Slider, label = "Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0)
+
+            with gr.Accordion("Frame merging"):
+                elem("frame_merging_frames", gr.Number, label = "Frame count", precision = 0, minimum = 1, step = 1, value = 1)
+                elem("frame_merging_algorithm", gr.Dropdown, label = "Algorithm", choices = ["mean", "median"], value = "mean")
+                elem("frame_merging_easing", gr.Slider, label = "Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0)
 
             with gr.Accordion("Project"):
                 elem("load_parameters", gr.Checkbox, label = "Load parameters", value = True)

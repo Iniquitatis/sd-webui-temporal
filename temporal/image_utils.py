@@ -2,6 +2,16 @@ import numpy as np
 import skimage
 from PIL import Image
 
+from temporal.numpy_utils import average_array, make_eased_weight_array
+
+def average_images(ims, algo, easing = 0.0):
+    return ims[0] if len(ims) == 1 else np_to_pil(np.clip(average_array(
+        np.stack([pil_to_np(im) if isinstance(im, Image.Image) else im for im in ims]),
+        algo = algo,
+        axis = 0,
+        weights = np.flip(make_eased_weight_array(len(ims), easing)),
+    ), 0.0, 1.0))
+
 def ensure_image_dims(im, mode, size):
     if is_np := isinstance(im, np.ndarray):
         im = Image.fromarray(skimage.util.img_as_ubyte(im))
@@ -27,9 +37,6 @@ def match_image(im, reference, mode = True, size = True):
         reference = Image.fromarray(skimage.util.img_as_ubyte(reference))
 
     return ensure_image_dims(im, reference.mode if mode else im.mode, reference.size if size else im.size)
-
-def mean_images(ims):
-    return ims[0] if len(ims) == 1 else np_to_pil(np.mean(np.stack([pil_to_np(im) if isinstance(im, Image.Image) else im for im in ims]), axis = 0))
 
 def np_to_pil(npim):
     return Image.fromarray(skimage.util.img_as_ubyte(npim))
