@@ -14,6 +14,7 @@ from temporal.image_preprocessing import PREPROCESSORS
 from temporal.interop import EXTENSION_DIR
 from temporal.metrics import Metrics
 from temporal.presets import delete_preset, load_preset, preset_names, refresh_presets, save_preset
+from temporal.time_utils import wait_until
 from temporal.video_rendering import start_video_render, video_render_queue
 
 MODES = dict(
@@ -256,9 +257,7 @@ class TemporalScript(scripts.Script):
                 ext_params = self._unpack_ext_params(*args)
 
                 start_video_render(ext_params, is_final)
-
-                while video_render_queue.busy:
-                    sleep(1)
+                wait_until(lambda: not video_render_queue.busy)
 
                 yield gr.update(interactive = True), gr.update(interactive = True), f"{ext_params.output_dir}/{ext_params.project_subdir}-{'final' if is_final else 'draft'}.mp4"
 

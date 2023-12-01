@@ -15,6 +15,7 @@ from temporal.image_utils import average_images, generate_noise_image, save_imag
 from temporal.metrics import Metrics
 from temporal.session import get_last_frame_index, load_last_frame, load_session, save_session
 from temporal.thread_queue import ThreadQueue
+from temporal.time_utils import wait_until
 
 image_save_queue = ThreadQueue()
 
@@ -171,6 +172,8 @@ def generate_sequence(p, ext_params):
                 metrics.plot(project_dir, save_images = True)
 
     image_buffer_to_save.save(project_dir)
+
+    wait_until(lambda: not image_save_queue.busy)
 
     opts.data.update(opts_backup)
 
