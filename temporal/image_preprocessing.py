@@ -79,6 +79,7 @@ def _(npim, seed, params):
 @preprocessor("color_correction", "Color correction", [
     UIParam(gr.Pil, "image", "Image"),
     UIParam(gr.Checkbox, "normalize_contrast", "Normalize contrast", value = False),
+    UIParam(gr.Checkbox, "equalize_histogram", "Equalize histogram", value = False),
 ])
 def _(npim, seed, params):
     if params.image is not None:
@@ -86,6 +87,9 @@ def _(npim, seed, params):
 
     if params.normalize_contrast:
         npim = skimage.exposure.rescale_intensity(npim)
+
+    if params.equalize_histogram:
+        npim = skimage.exposure.equalize_hist(npim)
 
     return npim
 
