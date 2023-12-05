@@ -17,7 +17,9 @@ def preprocess_image(im, ext_params, seed):
     im = im.convert("RGB")
     npim = pil_to_np(im)
 
-    for key, preprocessor in PREPROCESSORS.items():
+    ordered_preprocessors = ({x: SimpleNamespace() for x in ext_params.preprocessing_order} or {}) | PREPROCESSORS
+
+    for key, preprocessor in ordered_preprocessors.items():
         if not getattr(ext_params, f"{key}_enabled"):
             continue
 
@@ -61,20 +63,27 @@ def preprocessor(key, name, params = []):
         return func
     return decorator
 
-@preprocessor("noise_compression", "Noise compression", [
-    UIParam(gr.Slider, "constant", "Constant", minimum = 0.0, maximum = 1.0, step = 1e-5, value = 0.0),
-    UIParam(gr.Slider, "adaptive", "Adaptive", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0),
+@preprocessor("blurring", "Blurring", [
+    UIParam(gr.Slider, "radius", "Radius", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0),
 ])
 def _(npim, seed, params):
-    weight = 0.0
+    return skimage.filters.gaussian(npim, params.radius, channel_axis = 2)
 
-    if params.constant > 0.0:
-        weight += params.constant
+@preprocessor("color_balancing", "Color balancing", [
+    UIParam(gr.Slider, "brightness", "Brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0),
+    UIParam(gr.Slider, "contrast", "Contrast", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0),
+    UIParam(gr.Slider, "saturation", "Saturation", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0),
+])
+def _(npim, seed, params):
+    npim = remap_range(npim, npim.min(), npim.max(), 0.0, params.brightness)
 
-    if params.adaptive > 0.0:
-        weight += skimage.restoration.estimate_sigma(npim, average_sigmas = True, channel_axis = 2) * params.adaptive
+    npim = remap_range(npim, npim.min(), npim.max(), 0.5 - params.contrast / 2, 0.5 + params.contrast / 2)
 
-    return skimage.restoration.denoise_tv_chambolle(npim, weight = max(weight, 1e-5), channel_axis = 2)
+    hsv = skimage.color.rgb2hsv(npim, channel_axis = 2)
+    s = hsv[..., 1]
+    s[:] = remap_range(s, s.min(), s.max(), s.min(), params.saturation)
+
+    return skimage.color.hsv2rgb(hsv)
 
 @preprocessor("color_correction", "Color correction", [
     UIParam(gr.Pil, "image", "Image"),
@@ -93,27 +102,18 @@ def _(npim, seed, params):
 
     return npim
 
-@preprocessor("color_balancing", "Color balancing", [
-    UIParam(gr.Slider, "brightness", "Brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0),
-    UIParam(gr.Slider, "contrast", "Contrast", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0),
-    UIParam(gr.Slider, "saturation", "Saturation", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0),
+@preprocessor("custom_code", "Custom code", [
+    UIParam(gr.Code, "code", "Code", language = "python"),
 ])
 def _(npim, seed, params):
-    npim = remap_range(npim, npim.min(), npim.max(), 0.0, params.brightness)
-
-    npim = remap_range(npim, npim.min(), npim.max(), 0.5 - params.contrast / 2, 0.5 + params.contrast / 2)
-
-    hsv = skimage.color.rgb2hsv(npim, channel_axis = 2)
-    s = hsv[..., 1]
-    s[:] = remap_range(s, s.min(), s.max(), s.min(), params.saturation)
-
-    return skimage.color.hsv2rgb(hsv)
-
-@preprocessor("noise", "Noise", [
-    UIParam(gr.Dropdown, "mode", "Mode", choices = {k: v["name"] for k, v in BLEND_MODES.items()}, value = get_first_element(BLEND_MODES)),
-])
-def _(npim, seed, params):
-    return blend_images(npim, np.random.default_rng(seed).uniform(high = 1.0 + np.finfo(npim.dtype).eps, size = npim.shape), params.mode)
+    code_globals = dict(
+        np = np,
+        scipy = scipy,
+        skimage = skimage,
+        input = npim,
+    )
+    exec(params.code, code_globals)
+    return code_globals.get("output", npim)
 
 @preprocessor("modulation", "Modulation", [
     UIParam(gr.Dropdown, "mode", "Mode", choices = {k: v["name"] for k, v in BLEND_MODES.items()}, value = get_first_element(BLEND_MODES)),
@@ -126,12 +126,26 @@ def _(npim, seed, params):
 
     return blend_images(npim, skimage.filters.gaussian(pil_to_np(match_image(params.image, npim)), params.blurring, channel_axis = 2), params.mode)
 
-@preprocessor("tinting", "Tinting", [
+@preprocessor("noise", "Noise", [
     UIParam(gr.Dropdown, "mode", "Mode", choices = {k: v["name"] for k, v in BLEND_MODES.items()}, value = get_first_element(BLEND_MODES)),
-    UIParam(gr.ColorPicker, "color", "Color", value = "#ffffff"),
 ])
 def _(npim, seed, params):
-    return blend_images(npim, np.full_like(npim, np.array(ImageColor.getrgb(params.color)) / 255.0), params.mode)
+    return blend_images(npim, np.random.default_rng(seed).uniform(high = 1.0 + np.finfo(npim.dtype).eps, size = npim.shape), params.mode)
+
+@preprocessor("noise_compression", "Noise compression", [
+    UIParam(gr.Slider, "constant", "Constant", minimum = 0.0, maximum = 1.0, step = 1e-5, value = 0.0),
+    UIParam(gr.Slider, "adaptive", "Adaptive", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0),
+])
+def _(npim, seed, params):
+    weight = 0.0
+
+    if params.constant > 0.0:
+        weight += params.constant
+
+    if params.adaptive > 0.0:
+        weight += skimage.restoration.estimate_sigma(npim, average_sigmas = True, channel_axis = 2) * params.adaptive
+
+    return skimage.restoration.denoise_tv_chambolle(npim, weight = max(weight, 1e-5), channel_axis = 2)
 
 @preprocessor("sharpening", "Sharpening", [
     UIParam(gr.Slider, "strength", "Strength", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0),
@@ -139,6 +153,20 @@ def _(npim, seed, params):
 ])
 def _(npim, seed, params):
     return skimage.filters.unsharp_mask(npim, params.radius, params.strength, channel_axis = 2)
+
+@preprocessor("symmetry", "Symmetry")
+def _(npim, seed, params):
+    _, width = npim.shape[:2]
+    npim = npim.copy()
+    npim[:, width // 2:] = np.flip(npim[:, :width // 2], axis = 1)
+    return npim
+
+@preprocessor("tinting", "Tinting", [
+    UIParam(gr.Dropdown, "mode", "Mode", choices = {k: v["name"] for k, v in BLEND_MODES.items()}, value = get_first_element(BLEND_MODES)),
+    UIParam(gr.ColorPicker, "color", "Color", value = "#ffffff"),
+])
+def _(npim, seed, params):
+    return blend_images(npim, np.full_like(npim, np.array(ImageColor.getrgb(params.color)) / 255.0), params.mode)
 
 @preprocessor("transformation", "Transformation", [
     UIParam(gr.Slider, "translation_x", "Translation X", minimum = -1.0, maximum = 1.0, step = 0.001, value = 0.0),
@@ -155,32 +183,6 @@ def _(npim, seed, params):
     s_transform = skimage.transform.AffineTransform(scale = params.scaling)
 
     return skimage.transform.warp(npim, skimage.transform.AffineTransform(t_transform.params @ np.linalg.inv(o_transform.params) @ s_transform.params @ r_transform.params @ o_transform.params).inverse, mode = "symmetric")
-
-@preprocessor("symmetry", "Symmetry")
-def _(npim, seed, params):
-    _, width = npim.shape[:2]
-    npim = npim.copy()
-    npim[:, width // 2:] = np.flip(npim[:, :width // 2], axis = 1)
-    return npim
-
-@preprocessor("blurring", "Blurring", [
-    UIParam(gr.Slider, "radius", "Radius", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0),
-])
-def _(npim, seed, params):
-    return skimage.filters.gaussian(npim, params.radius, channel_axis = 2)
-
-@preprocessor("custom_code", "Custom code", [
-    UIParam(gr.Code, "code", "Code", language = "python"),
-])
-def _(npim, seed, params):
-    code_globals = dict(
-        np = np,
-        scipy = scipy,
-        skimage = skimage,
-        input = npim,
-    )
-    exec(params.code, code_globals)
-    return code_globals.get("output", npim)
 
 def _apply_mask(npim, processed, amount, mask, normalized, inverted, blurring, reference):
     if npim is processed or amount == 0.0:

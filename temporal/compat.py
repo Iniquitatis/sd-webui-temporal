@@ -270,3 +270,39 @@ def _(path):
     save_text(version_path, "6")
 
     return True
+
+@upgrader(7)
+def _(path):
+    if not (version_path := (path / "session" / "version.txt")).is_file():
+        return False
+
+    if int(load_text(version_path, "0")) >= 7:
+        return True
+
+    if not (params_path := (path / "session" / "parameters.json")).is_file():
+        return False
+
+    data = load_json(params_path, {})
+
+    ext_params = data["extension_params"]
+    ext_params["preprocessing_order"] = {
+        "type": "list",
+        "data": [
+            "noise_compression",
+            "color_correction",
+            "color_balancing",
+            "noise",
+            "modulation",
+            "tinting",
+            "sharpening",
+            "transformation",
+            "symmetry",
+            "blurring",
+            "custom_code",
+        ],
+    }
+
+    save_json(params_path, data)
+    save_text(version_path, "7")
+
+    return True

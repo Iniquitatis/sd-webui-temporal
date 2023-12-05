@@ -127,6 +127,8 @@ class TemporalScript(scripts.Script):
                 elem("continue_from_last_frame", gr.Checkbox, label = "Continue from last frame", value = True)
 
         with gr.Tab("Frame Preprocessing"):
+            elem("preprocessing_order", gr.Dropdown, label = "Order", multiselect = True, choices = list(PREPROCESSORS.keys()), value = [])
+
             for key, processor in PREPROCESSORS.items():
                 with gr.Accordion(processor.name, open = False):
                     elem(f"{key}_enabled", gr.Checkbox, label = "Enabled", value = False)

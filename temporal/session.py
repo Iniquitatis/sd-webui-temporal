@@ -114,6 +114,7 @@ def save_session(p, ext_params, project_dir):
             "frame_merging_frames",
             "frame_merging_algorithm",
             "frame_merging_easing",
+            "preprocessing_order",
         ] + list(iterate_all_preprocessor_keys())),
     ))
-    save_text(session_dir / "version.txt", "6")
+    save_text(session_dir / "version.txt", "7")
