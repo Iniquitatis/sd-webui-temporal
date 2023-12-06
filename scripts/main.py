@@ -14,6 +14,7 @@ from temporal.interop import EXTENSION_DIR
 from temporal.metrics import Metrics
 from temporal.presets import delete_preset, load_preset, preset_names, refresh_presets, save_preset
 from temporal.time_utils import wait_until
+from temporal.video_filtering import FILTERS
 from temporal.video_rendering import start_video_render, video_render_queue
 
 MODES = dict(
@@ -150,56 +151,14 @@ class TemporalScript(scripts.Script):
         with gr.Tab("Video Rendering"):
             elem("video_fps", gr.Slider, label = "Frames per second", minimum = 1, maximum = 60, step = 1, value = 30)
             elem("video_looping", gr.Checkbox, label = "Looping", value = False)
+            elem("video_filtering_order", gr.Dropdown, label = "Order", multiselect = True, choices = list(FILTERS.keys()), value = [])
 
-            with gr.Accordion("Deflickering", open = False):
-                elem("video_deflickering_enabled", gr.Checkbox, label = "Enabled", value = False)
-                elem("video_deflickering_frames", gr.Slider, label = "Frames", minimum = 2, maximum = 120, step = 1, value = 60)
+            for key, filter in FILTERS.items():
+                with gr.Accordion(filter.name, open = False):
+                    elem(f"video_{key}_enabled", gr.Checkbox, label = "Enabled", value = False)
 
-            with gr.Accordion("Interpolation", open = False):
-                elem("video_interpolation_enabled", gr.Checkbox, label = "Enabled", value = False)
-                elem("video_interpolation_fps", gr.Slider, label = "Frames per second", minimum = 1, maximum = 60, step = 1, value = 60)
-                elem("video_interpolation_mb_subframes", gr.Slider, label = "Motion blur subframes", minimum = 0, maximum = 15, step = 1, value = 0)
-
-            with gr.Accordion("Temporal blurring", open = False):
-                elem("video_temporal_blurring_enabled", gr.Checkbox, label = "Enabled", value = False)
-                elem("video_temporal_blurring_radius", gr.Slider, label = "Radius", minimum = 1, maximum = 10, step = 1, value = 1)
-                elem("video_temporal_blurring_easing", gr.Slider, label = "Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0)
-
-            with gr.Accordion("Color balancing", open = False):
-                elem("video_color_balancing_enabled", gr.Checkbox, label = "Enabled", value = False)
-                elem("video_color_balancing_brightness", gr.Slider, label = "Brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0)
-                elem("video_color_balancing_contrast", gr.Slider, label = "Contrast", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0)
-                elem("video_color_balancing_saturation", gr.Slider, label = "Saturation", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0)
-
-            with gr.Accordion("Sharpening", open = False):
-                elem("video_sharpening_enabled", gr.Checkbox, label = "Enabled", value = False)
-                elem("video_sharpening_strength", gr.Slider, label = "Strength", minimum = 0.0, maximum = 1.0, step = 0.1, value = 0.0)
-                elem("video_sharpening_radius", gr.Slider, label = "Radius", minimum = 3, maximum = 13, step = 2, value = 3)
-
-            with gr.Accordion("Chromatic aberration", open = False):
-                elem("video_ca_enabled", gr.Checkbox, label = "Enabled", value = False)
-                elem("video_ca_distance", gr.Slider, label = "Distance", minimum = 1, maximum = 512, step = 1, value = 1)
-
-            with gr.Accordion("Scaling", open = False):
-                elem("video_scaling_enabled", gr.Checkbox, label = "Enabled", value = False)
-
-                with gr.Row():
-                    elem("video_scaling_width", gr.Slider, label = "Width", minimum = 16, maximum = 2560, step = 16, value = 512)
-                    elem("video_scaling_height", gr.Slider, label = "Height", minimum = 16, maximum = 2560, step = 16, value = 512)
-
-                elem("video_scaling_padded", gr.Checkbox, label = "Padded", value = False)
-
-            with gr.Accordion("Frame number overlay", open = False):
-                elem("video_frame_num_overlay_enabled", gr.Checkbox, label = "Enabled", value = False)
-                elem("video_frame_num_overlay_font_size", gr.Number, label = "Font size", precision = 0, minimum = 1, maximum = 144, step = 1, value = 16)
-
-                with gr.Row():
-                    elem("video_frame_num_overlay_text_color", gr.ColorPicker, label = "Text color", value = "#ffffff")
-                    elem("video_frame_num_overlay_text_alpha", gr.Slider, label = "Text alpha", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0)
-
-                with gr.Row():
-                    elem("video_frame_num_overlay_shadow_color", gr.ColorPicker, label = "Shadow color", value = "#000000")
-                    elem("video_frame_num_overlay_shadow_alpha", gr.Slider, label = "Shadow alpha", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0)
+                    for param in filter.params:
+                        elem(f"video_{key}_{param.key}", param.type, label = param.name, **param.kwargs)
 
             with gr.Row():
                 elem("render_draft_on_finish", gr.Checkbox, label = "Render draft when finished", value = False)

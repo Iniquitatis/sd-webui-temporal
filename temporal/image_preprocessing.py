@@ -6,7 +6,7 @@ import scipy
 import skimage
 from PIL import ImageColor
 
-from temporal.collection_utils import get_first_element
+from temporal.collection_utils import get_first_element, reorder_dict
 from temporal.image_blending import BLEND_MODES, blend_images
 from temporal.image_utils import match_image, np_to_pil, pil_to_np
 from temporal.math import lerp, normalize, remap_range
@@ -17,9 +17,7 @@ def preprocess_image(im, ext_params, seed):
     im = im.convert("RGB")
     npim = pil_to_np(im)
 
-    ordered_preprocessors = ({x: SimpleNamespace() for x in ext_params.preprocessing_order} or {}) | PREPROCESSORS
-
-    for key, preprocessor in ordered_preprocessors.items():
+    for key, preprocessor in reorder_dict(PREPROCESSORS, ext_params.preprocessing_order or []).items():
         if not getattr(ext_params, f"{key}_enabled"):
             continue
 

@@ -2,6 +2,7 @@ from pathlib import Path
 from subprocess import run
 
 from temporal.thread_queue import ThreadQueue
+from temporal.video_filtering import build_filter
 
 video_render_queue = ThreadQueue()
 
@@ -17,44 +18,6 @@ def render_video(ext_params, is_final):
     if ext_params.video_looping:
         frame_paths += reversed(frame_paths[:-1])
 
-    filters = []
-
-    if is_final:
-        if ext_params.video_deflickering_enabled:
-            filters.append(f"deflicker='size={min(ext_params.video_deflickering_frames, len(frame_paths))}:mode=am'")
-
-        if ext_params.video_interpolation_enabled:
-            filters.append(f"minterpolate='fps={ext_params.video_interpolation_fps * (ext_params.video_interpolation_mb_subframes + 1)}:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1:scd=none'")
-
-            if ext_params.video_interpolation_mb_subframes > 0:
-                filters.append(f"tmix='frames={ext_params.video_interpolation_mb_subframes + 1}'")
-                filters.append(f"fps='{ext_params.video_interpolation_fps}'")
-
-        if ext_params.video_temporal_blurring_enabled:
-            weights = [((x + 1) / (ext_params.video_temporal_blurring_radius + 1)) ** ext_params.video_temporal_blurring_easing for x in range(ext_params.video_temporal_blurring_radius + 1)]
-            weights += reversed(weights[:-1])
-            weights = [f"{x:.18f}" for x in weights]
-            filters.append(f"tmix='frames={len(weights)}:weights={' '.join(weights)}'")
-
-        if ext_params.video_color_balancing_enabled:
-            filters.append(f"eq='contrast={ext_params.video_color_balancing_contrast}:brightness={ext_params.video_color_balancing_brightness - 1.0}:saturation={ext_params.video_color_balancing_saturation}'")
-
-        if ext_params.video_sharpening_enabled:
-            filters.append(f"unsharp='luma_msize_x={ext_params.video_sharpening_radius}:luma_msize_y={ext_params.video_sharpening_radius}:luma_amount={ext_params.video_sharpening_strength}:chroma_msize_x={ext_params.video_sharpening_radius}:chroma_msize_y={ext_params.video_sharpening_radius}:chroma_amount={ext_params.video_sharpening_strength}'")
-
-        if ext_params.video_ca_enabled:
-            filters.append(f"rgbashift='rh=-{ext_params.video_ca_distance}:bh={ext_params.video_ca_distance}'")
-
-        if ext_params.video_scaling_enabled:
-            if ext_params.video_scaling_padded:
-                filters.append(f"scale='-1:{ext_params.video_scaling_height}:flags=lanczos'")
-                filters.append(f"pad='{ext_params.video_scaling_width}:ih:(ow-iw)/2'")
-            else:
-                filters.append(f"scale='{ext_params.video_scaling_width}:{ext_params.video_scaling_height}:flags=lanczos'")
-
-    if ext_params.video_frame_num_overlay_enabled:
-        filters.append(f"drawtext='text=%{{eif\\:n*{ext_params.video_fps / ext_params.video_interpolation_fps if is_final and ext_params.video_interpolation_enabled else 1.0:.18f}+1\\:d\\:5}}:x=5:y=5:fontsize={ext_params.video_frame_num_overlay_font_size}:fontcolor={ext_params.video_frame_num_overlay_text_color}{int(ext_params.video_frame_num_overlay_text_alpha * 255.0):02x}:shadowx=1:shadowy=1:shadowcolor={ext_params.video_frame_num_overlay_shadow_color}{int(ext_params.video_frame_num_overlay_shadow_alpha * 255.0):02x}'")
-
     run([
         "ffmpeg",
         "-y",
@@ -64,7 +27,7 @@ def render_video(ext_params, is_final):
         "-safe", "0",
         "-i", "-",
         "-framerate", str(ext_params.video_fps),
-        "-vf", ",".join(filters) if len(filters) > 0 else "null",
+        "-vf", build_filter(ext_params) if is_final else "null",
         "-c:v", "libx264",
         "-crf", "14",
         "-preset", "slow" if is_final else "veryfast",
