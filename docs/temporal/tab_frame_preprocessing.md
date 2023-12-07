@@ -30,6 +30,13 @@
     * **Mode** — blending mode of the modulator image.
     * **Image** — an image that will be used to modulate the frame.
     * **Blurring** — blurring radius of the modulator image.
+* **Morphology** — processing of the frame using a morphological operation.
+    * **Mode** — operation type.
+        * **erosion** — makes the image details "thicker" and darker.
+        * **dilation** — makes the image details "thinner" and brighter.
+        * **opening** — erosion followed by dilation.
+        * **closing** — dilation followed by erosion.
+    * **Radius** — operation radius.
 * **Noise** — modulation of the frame by the random noise.
     * **Mode** — blending mode of the noise.
 * **Noise compression** — basically, an actual algorithmical denoising, called noise compression to not be confused with the **img2img** denoising.

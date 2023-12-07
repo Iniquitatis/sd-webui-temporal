@@ -135,6 +135,25 @@ def _(npim, seed, params):
 
     return blend_images(npim, skimage.filters.gaussian(pil_to_np(match_image(params.image, npim)), params.blurring, channel_axis = 2), params.mode)
 
+@preprocessor("morphology", "Morphology", [
+    UIParam(gr.Dropdown, "mode", "Mode", choices = ["erosion", "dilation", "opening", "closing"], value = "erosion"),
+    UIParam(gr.Slider, "radius", "Radius", minimum = 0, maximum = 50, step = 1, value = 0),
+])
+def _(npim, seed, params):
+    func = (
+        skimage.morphology.erosion  if params.mode == "erosion"  else
+        skimage.morphology.dilation if params.mode == "dilation" else
+        skimage.morphology.opening  if params.mode == "opening"  else
+        skimage.morphology.closing  if params.mode == "closing"  else
+        lambda image, footprint: image
+    )
+    footprint = skimage.morphology.disk(params.radius)
+    return np.stack([
+        func(npim[..., 0], footprint),
+        func(npim[..., 1], footprint),
+        func(npim[..., 2], footprint),
+    ], axis = 2)
+
 @preprocessor("noise", "Noise", [
     UIParam(gr.Dropdown, "mode", "Mode", choices = {k: v["name"] for k, v in BLEND_MODES.items()}, value = get_first_element(BLEND_MODES)),
 ])
