@@ -113,6 +113,17 @@ def _(npim, seed, params):
     exec(params.code, code_globals)
     return code_globals.get("output", npim)
 
+@preprocessor("median", "Median", [
+    UIParam(gr.Slider, "radius", "Radius", minimum = 0, maximum = 50, step = 1, value = 0),
+])
+def _(npim, seed, params):
+    footprint = skimage.morphology.disk(params.radius)
+    return np.stack([
+        skimage.filters.median(npim[..., 0], footprint),
+        skimage.filters.median(npim[..., 1], footprint),
+        skimage.filters.median(npim[..., 2], footprint),
+    ], axis = 2)
+
 @preprocessor("modulation", "Modulation", [
     UIParam(gr.Dropdown, "mode", "Mode", choices = {k: v["name"] for k, v in BLEND_MODES.items()}, value = get_first_element(BLEND_MODES)),
     UIParam(gr.Pil, "image", "Image"),

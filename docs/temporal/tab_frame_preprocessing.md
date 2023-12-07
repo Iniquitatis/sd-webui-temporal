@@ -24,6 +24,8 @@
     * **Code** — Python code that will be used to process the frame.
         * **NOTE:** It provides a global 3D numpy array (height, width, RGB) called `input` and expects a processed array to be assigned to a global variable called `output`. `np`, `scipy`, and `skimage` modules are imported by default.
         * **WARNING:** Don't run an untrusted code.
+* **Median** — averaging of neighboring pixels using the median filter.
+    * **Radius** — averaging radius.
 * **Modulation** — modulation of the frame by an image.
     * **Mode** — blending mode of the modulator image.
     * **Image** — an image that will be used to modulate the frame.
