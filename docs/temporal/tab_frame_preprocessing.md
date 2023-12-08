@@ -42,6 +42,10 @@
 * **Noise compression** — basically, an actual algorithmical denoising, called noise compression to not be confused with the **img2img** denoising.
     * **Constant** — constant rate of the denoising. Generally should be very low, like 0.0002 or so, although it may vary.
     * **Adaptive** — adaptive rate of the denoising.
+* **Palettization** — applying a palette to the frame.
+    * **Palette** — an image where _each_ pixel represents one color of a palette.
+        * **NOTE:** Generally those images are very small (up to 256 pixels _total_) and contain just a few pixels representing the unique colors. For example, an 8x2 image contains 16 colors, and so on.
+    * **Dithering** — determines whether an image will be dithered in the process of quantization or not. In simple terms, it means reducing the color banding while using a limited color palette.
 * **Sharpening** — unsharp masking.
     * **Strength** — sharpening strength.
     * **Radius** — sharpening radius.

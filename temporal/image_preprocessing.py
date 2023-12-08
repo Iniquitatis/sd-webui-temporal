@@ -4,7 +4,7 @@ import gradio as gr
 import numpy as np
 import scipy
 import skimage
-from PIL import ImageColor
+from PIL import Image, ImageColor
 
 from temporal.collection_utils import get_first_element, reorder_dict
 from temporal.image_blending import BLEND_MODES, blend_images
@@ -174,6 +174,20 @@ def _(npim, seed, params):
         weight += skimage.restoration.estimate_sigma(npim, average_sigmas = True, channel_axis = 2) * params.adaptive
 
     return skimage.restoration.denoise_tv_chambolle(npim, weight = max(weight, 1e-5), channel_axis = 2)
+
+@preprocessor("palettization", "Palettization", [
+    UIParam(gr.Pil, "palette", "Palette", image_mode = "RGB"),
+    UIParam(gr.Checkbox, "dithering", "Dithering", value = False),
+])
+def _(npim, seed, params):
+    palette_bytes = params.palette.tobytes()
+    palette = Image.new("P", (1, 1))
+    palette.putpalette(palette_bytes, "RGB")
+    return pil_to_np(np_to_pil(npim).quantize(
+        palette = palette,
+        colors = len(palette_bytes),
+        dither = Image.Dither.FLOYDSTEINBERG if params.dithering else Image.Dither.NONE,
+    ).convert("RGB"))
 
 @preprocessor("sharpening", "Sharpening", [
     UIParam(gr.Slider, "strength", "Strength", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0),
