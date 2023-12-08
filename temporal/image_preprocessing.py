@@ -196,6 +196,15 @@ def _(npim, seed, params):
         dither = Image.Dither.FLOYDSTEINBERG if params.dithering else Image.Dither.NONE,
     ).convert("RGB"))
 
+@preprocessor("pixelization", "Pixelization", [
+    UIParam(gr.Number, "pixel_size", "Pixel size", minimum = 1, step = 1, value = 1),
+])
+def _(npim, seed, params):
+    def resize(npim, size):
+        return skimage.transform.resize(npim, output_shape = size, order = 0, anti_aliasing = False)
+
+    return resize(resize(npim, (npim.shape[0] // params.pixel_size, npim.shape[1] // params.pixel_size)), npim.shape[:2])
+
 @preprocessor("sharpening", "Sharpening", [
     UIParam(gr.Slider, "strength", "Strength", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0),
     UIParam(gr.Slider, "radius", "Radius", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0),

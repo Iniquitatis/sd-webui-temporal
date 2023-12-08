@@ -56,6 +56,9 @@
     * **Stretch** — enables linear stretching of the palette to fill all 256 colors, reducing the color banding.
         * **NOTE:** While it smoothes out the color transitions, it also introduces transitional tones that might not be intended in the palette.
     * **Dithering** — determines whether an image will be dithered in the process of quantization or not. In simple terms, it means reducing the color banding while using a limited color palette.
+* **Pixelization** — rounding to a specific virtual pixel size.
+    * **Pixel size** — size of a virtual pixel. For example, at pixel size of 8, an image with resolution 1024x512 will look as if it had resolution of 128x64.
+        * **NOTE:** It's up to user to make sure that the resolution can be divided evenly by the pixel size.
 * **Sharpening** — unsharp masking.
     * **Strength** — sharpening strength.
     * **Radius** — sharpening radius.
