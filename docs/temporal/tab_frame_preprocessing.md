@@ -45,6 +45,8 @@
 * **Palettization** — applying a palette to the frame.
     * **Palette** — an image where _each_ pixel represents one color of a palette.
         * **NOTE:** Generally those images are very small (up to 256 pixels _total_) and contain just a few pixels representing the unique colors. For example, an 8x2 image contains 16 colors, and so on.
+    * **Stretch** — enables linear stretching of the palette to fill all 256 colors, reducing the color banding.
+        * **NOTE:** While it smoothes out the color transitions, it also introduces transitional tones that might not be intended in the palette.
     * **Dithering** — determines whether an image will be dithered in the process of quantization or not. In simple terms, it means reducing the color banding while using a limited color palette.
 * **Sharpening** — unsharp masking.
     * **Strength** — sharpening strength.

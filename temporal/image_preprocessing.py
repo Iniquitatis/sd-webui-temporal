@@ -177,15 +177,28 @@ def _(npim, seed, params):
 
 @preprocessor("palettization", "Palettization", [
     UIParam(gr.Pil, "palette", "Palette", image_mode = "RGB"),
+    UIParam(gr.Checkbox, "stretch", "Stretch", value = False),
     UIParam(gr.Checkbox, "dithering", "Dithering", value = False),
 ])
 def _(npim, seed, params):
-    palette_bytes = params.palette.tobytes()
+    def stretch_array(arr, new_length):
+        return np.interp(np.arange(new_length), np.linspace(0, new_length - 1, len(arr)), arr)
+
+    palette_arr = np.array(params.palette, dtype = np.float_).reshape((params.palette.width * params.palette.height, 3))
+
+    if params.stretch:
+        palette_arr = np.stack([
+            stretch_array(palette_arr[..., 0], 256),
+            stretch_array(palette_arr[..., 1], 256),
+            stretch_array(palette_arr[..., 2], 256),
+        ], axis = 1)
+
     palette = Image.new("P", (1, 1))
-    palette.putpalette(palette_bytes, "RGB")
+    palette.putpalette(palette_arr.ravel().astype(np.ubyte), "RGB")
+
     return pil_to_np(np_to_pil(npim).quantize(
         palette = palette,
-        colors = len(palette_bytes),
+        colors = palette_arr.size,
         dither = Image.Dither.FLOYDSTEINBERG if params.dithering else Image.Dither.NONE,
     ).convert("RGB"))
 
