@@ -49,16 +49,6 @@ def _(fps, params):
 def _(fps, params):
     return f"deflicker='size={min(params.frames, 1)}:mode=am'"
 
-@filter("frame_number_overlay", "Frame number overlay", [
-    UIParam(gr.Number, "font_size", "Font size", precision = 0, minimum = 1, maximum = 144, step = 1, value = 16),
-    UIParam(gr.ColorPicker, "text_color", "Text color", value = "#ffffff"),
-    UIParam(gr.Slider, "text_alpha", "Text alpha", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0),
-    UIParam(gr.ColorPicker, "shadow_color", "Shadow color", value = "#000000"),
-    UIParam(gr.Slider, "shadow_alpha", "Shadow alpha", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0),
-])
-def _(fps, params):
-    return f"drawtext='text=%{{eif\\:t*{fps}+1\\:d\\:5}}:x=5:y=5:fontsize={params.font_size}:fontcolor={params.text_color}{int(params.text_alpha * 255.0):02x}:shadowx=1:shadowy=1:shadowcolor={params.shadow_color}{int(params.shadow_alpha * 255.0):02x}'"
-
 @filter("interpolation", "Interpolation", [
     UIParam(gr.Slider, "fps", "Frames per second", minimum = 1, maximum = 60, step = 1, value = 60),
     UIParam(gr.Slider, "mb_subframes", "Motion blur subframes", minimum = 0, maximum = 15, step = 1, value = 0),
@@ -105,3 +95,30 @@ def _(fps, params):
     weights += reversed(weights[:-1])
     weights = [f"{x:.18f}" for x in weights]
     return f"tmix='frames={len(weights)}:weights={' '.join(weights)}'"
+
+@filter("text_overlay", "Text overlay", [
+    UIParam(gr.Textbox, "text", "Text", value = "{frame}"),
+    UIParam(gr.Slider, "anchor_x", "Anchor X", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0),
+    UIParam(gr.Slider, "anchor_y", "Anchor Y", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0),
+    UIParam(gr.Number, "offset_x", "Offset X", precision = 1, step = 1, value = 0),
+    UIParam(gr.Number, "offset_y", "Offset Y", precision = 1, step = 1, value = 0),
+    UIParam(gr.Textbox, "font", "Font", value = "sans"),
+    UIParam(gr.Number, "font_size", "Font size", precision = 0, minimum = 1, maximum = 144, step = 1, value = 16),
+    UIParam(gr.ColorPicker, "text_color", "Text color", value = "#ffffff"),
+    UIParam(gr.Slider, "text_alpha", "Text alpha", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0),
+    UIParam(gr.Number, "shadow_offset_x", "Shadow offset X", step = 1, value = 1),
+    UIParam(gr.Number, "shadow_offset_y", "Shadow offset Y", step = 1, value = 1),
+    UIParam(gr.ColorPicker, "shadow_color", "Shadow color", value = "#000000"),
+    UIParam(gr.Slider, "shadow_alpha", "Shadow alpha", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0),
+])
+def _(fps, params):
+    text = (
+        params.text
+        .format(
+            frame = f"%{{eif:t*{fps}+1:d:5}}",
+        )
+        .replace("\\", "\\\\")
+        .replace(":", "\\:")
+        .replace("'", "\\'")
+    )
+    return f"drawtext='text={text}:x=(W-tw)*{params.anchor_x}+{params.offset_x}:y=(H-th)*{params.anchor_y}+{params.offset_y}:font={params.font}:fontsize={params.font_size}:fontcolor={params.text_color}{int(params.text_alpha * 255.0):02x}:shadowx={params.shadow_offset_x}:shadowy={params.shadow_offset_y}:shadowcolor={params.shadow_color}{int(params.shadow_alpha * 255.0):02x}'"

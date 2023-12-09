@@ -15,12 +15,6 @@
     * **Saturation** — target saturation level.
 * **Deflickering** — reduces the luminance variations between frames.
     * **Frames** — amount of frames to take into account when calculating the mean luminance.
-* **Frame number overlay** — enables printing the frame number in the top-left corner of the resulting video.
-    * **Font size** — self-descriptive.
-    * **Text color** — self-descriptive.
-    * **Text alpha** — self-descriptive.
-    * **Shadow color** — self-descriptive.
-    * **Shadow alpha** — self-descriptive.
 * **Interpolation** — video framerate upscaling/downscaling using motion interpolation in order to keep the transitions between frames smooth.
     * **Frames per second** — interpolated video framerate.
     * **Motion blur subframes** — additional subframe count that might make the resulting video even smoother. Results are mostly negligible, and each subframe multiplies the amount of work by the factor of `x + 1`.
@@ -42,6 +36,18 @@
         * `Radius: 1; Easing: 0.5 = Weights [0.707 1 0.707]`
         * `Radius: 1; Easing: 2.0 = Weights [0.25 1 0.25]`
         * `Radius: 3; Easing: 0.0 = Weights [1 1 1 1 1 1 1]`
+* **Text overlay** — draws the text.
+    * **Text** — text that will be drawn. Variables should be enclosed between `{}`. Available variables are:
+        * **frame** — number of the currently shown frame.
+    * **Anchor X/Y** — anchor of where the text should be placed regarding the frame borders. 0.0 — left/top, 0.5 — center/center, 1.0 — right/bottom.
+    * **Offset X/Y** — position of the text relative to the anchor; pixels.
+    * **Font** — name of the system-installed font.
+    * **Font size** — size of the font; pixels.
+    * **Text color** — color of the text.
+    * **Text alpha** — opacity of the text.
+    * **Shadow offset X/Y** — offset of the text shadow; pixels.
+    * **Shadow color** — color of the text shadow.
+    * **Shadow alpha** — opacity of the text shadow.
 * **Render draft/final when finished** — automatically start the video rendering after all frames have been rendered.
 * **Render draft/final** — start the video rendering immediately.
 * **Preview** — a video player that will show the result after the _manually started_ video rendering finishes.
