@@ -47,7 +47,7 @@ def _(fps, params):
     UIParam(gr.Slider, "frames", "Frames", minimum = 2, maximum = 120, step = 1, value = 60),
 ])
 def _(fps, params):
-    return f"deflicker='size={min(params.frames, 1)}:mode=am'"
+    return f"deflicker='size={params.frames}:mode=am'"
 
 @filter("interpolation", "Interpolation", [
     UIParam(gr.Slider, "fps", "Frames per second", minimum = 1, maximum = 60, step = 1, value = 60),
