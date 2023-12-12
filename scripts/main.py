@@ -110,6 +110,9 @@ class TemporalScript(scripts.Script):
 
                 elem("archive_mode", gr.Checkbox, label = "Archive mode", value = False)
 
+            with gr.Accordion("Processing"):
+                elem("use_sd", gr.Checkbox, label = "Use Stable Diffusion", value = True)
+
             with gr.Accordion("Multisampling"):
                 with gr.Row():
                     elem("multisampling_samples", gr.Number, label = "Sample count", precision = 0, minimum = 1, value = 1)

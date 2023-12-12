@@ -107,6 +107,7 @@ def save_session(p, ext_params, project_dir):
         extension_params = save_object(ext_params, session_dir, [
             "save_every_nth_frame",
             "archive_mode",
+            "use_sd",
             "multisampling_samples",
             "multisampling_batch_size",
             "multisampling_algorithm",

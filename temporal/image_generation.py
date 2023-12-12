@@ -13,6 +13,7 @@ from temporal.image_buffer import ImageBuffer
 from temporal.image_preprocessing import PREPROCESSORS, preprocess_image
 from temporal.image_utils import average_images, generate_noise_image, save_image
 from temporal.metrics import Metrics
+from temporal.object_utils import copy_with_overrides
 from temporal.session import get_last_frame_index, load_last_frame, load_session, save_session
 from temporal.thread_queue import ThreadQueue
 from temporal.time_utils import wait_until
@@ -42,16 +43,14 @@ def generate_image(p, ext_params):
     for i in range(ext_params.frame_count):
         seed = p.seed + i
 
-        if not (processed := _process_image(
-            f"Frame {i + 1} / {ext_params.frame_count}",
-            p,
+        if not (processed := _process_image(f"Frame {i + 1} / {ext_params.frame_count}", copy_with_overrides(p,
             init_images = [preprocess_image(last_image, ext_params, seed)],
             n_iter = images_per_batch,
             batch_size = ext_params.multisampling_batch_size,
             seed = seed,
             do_not_save_samples = True,
             do_not_save_grid = True,
-        )):
+        ), ext_params.use_sd)):
             break
 
         generated_image = average_images(processed.images[:ext_params.multisampling_batch_size * images_per_batch], ext_params.multisampling_algorithm, ext_params.multisampling_easing)
@@ -125,16 +124,14 @@ def generate_sequence(p, ext_params):
     for i, frame_index in zip(range(ext_params.frame_count), count(last_index + 1)):
         seed = p.seed + frame_index
 
-        if not (processed := _process_image(
-            f"Frame {i + 1} / {ext_params.frame_count}",
-            p,
+        if not (processed := _process_image(f"Frame {i + 1} / {ext_params.frame_count}", copy_with_overrides(p,
             init_images = [preprocess_image(last_image, ext_params, seed)],
             n_iter = images_per_batch,
             batch_size = ext_params.multisampling_batch_size,
             seed = seed,
             do_not_save_samples = True,
             do_not_save_grid = True,
-        )):
+        ), ext_params.use_sd)):
             break
 
         generated_image = average_images(processed.images[:ext_params.multisampling_batch_size * images_per_batch], ext_params.multisampling_algorithm, ext_params.multisampling_easing)
@@ -179,19 +176,16 @@ def generate_sequence(p, ext_params):
 
     return processing.Processed(p, [last_image])
 
-def _process_image(job_title, p, **p_overrides):
+def _process_image(job_title, p, use_sd = True):
     state.job = job_title
 
-    p_instance = copy(p)
-
-    for key, value in p_overrides.items():
-        if hasattr(p_instance, key):
-            setattr(p_instance, key, value)
-        else:
-            print(f"WARNING: Key {key} doesn't exist in {p_instance.__class__.__name__}")
+    p = copy(p)
 
     try:
-        processed = processing.process_images(p_instance)
+        if use_sd:
+            processed = processing.process_images(p)
+        else:
+            processed = processing.Processed(p, [p.init_images[0]] * p.n_iter * p.batch_size)
     except Exception:
         return None
 
@@ -209,16 +203,14 @@ def _setup_processing(p):
     processing.fix_seed(p)
 
     if not p.init_images or not isinstance(p.init_images[0], Image.Image):
-        if not (processed := _process_image(
-            "Initial image",
-            p,
+        if not (processed := _process_image("Initial image", copy_with_overrides(p,
             init_images = [generate_noise_image((p.width, p.height), p.seed)],
             n_iter = 1,
             batch_size = 1,
             denoising_strength = 1.0,
             do_not_save_samples = True,
             do_not_save_grid = True,
-        )):
+        ))):
             return False
 
         p.init_images = [processed.images[0]]
