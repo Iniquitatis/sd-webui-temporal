@@ -111,6 +111,7 @@ class TemporalScript(scripts.Script):
                 elem("archive_mode", gr.Checkbox, label = "Archive mode", value = False)
 
             with gr.Accordion("Processing"):
+                elem("noise_for_first_frame", gr.Checkbox, label = "Noise for first frame", value = False)
                 elem("use_sd", gr.Checkbox, label = "Use Stable Diffusion", value = True)
 
             with gr.Accordion("Multisampling"):

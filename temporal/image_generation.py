@@ -25,7 +25,7 @@ def generate_image(p, ext_params):
 
     _apply_prompt_styles(p)
 
-    if not _setup_processing(p):
+    if not _setup_processing(p, ext_params.noise_for_first_frame):
         return processing.Processed(p, p.init_images)
 
     image_buffer = ImageBuffer(p.width, p.height, 3, ext_params.frame_merging_frames)
@@ -88,7 +88,7 @@ def generate_sequence(p, ext_params):
     if ext_params.load_parameters:
         load_session(p, ext_params, project_dir)
 
-    if not _setup_processing(p):
+    if not _setup_processing(p, ext_params.noise_for_first_frame):
         return processing.Processed(p, p.init_images)
 
     image_buffer = ImageBuffer(p.width, p.height, 3, ext_params.frame_merging_frames)
@@ -199,7 +199,7 @@ def _apply_prompt_styles(p):
     p.negative_prompt = prompt_styles.apply_negative_styles_to_prompt(p.negative_prompt, p.styles)
     p.styles.clear()
 
-def _setup_processing(p):
+def _setup_processing(p, noise_for_first_frame = False):
     processing.fix_seed(p)
 
     if not p.init_images or not isinstance(p.init_images[0], Image.Image):
@@ -210,7 +210,7 @@ def _setup_processing(p):
             denoising_strength = 1.0,
             do_not_save_samples = True,
             do_not_save_grid = True,
-        ))):
+        ), not noise_for_first_frame)):
             return False
 
         p.init_images = [processed.images[0]]

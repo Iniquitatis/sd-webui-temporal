@@ -7,6 +7,7 @@
     * **Save every N-th frame** — stride at which the frames will be saved.
     * **Archive mode** — disable saving of metadata inside of each frame (such as prompt, seed, etc.) and enable maximum compression.
 * **Processing** — processing parameters.
+    * **Noise for first frame** — use noise as a first frame instead of a newly generated image if the initial img2img image is absent.
     * **Use Stable Diffusion** — process frames with Stable Diffusion after preprocessing them, otherwise simply output preprocessed frames.
         * **NOTE:** Disabling this option might be useful for tweaking the preprocessing parameters and checking how they affect the results. Most of the time it should be enabled, though, unless one wants to use this extension as a sort of a simple image animator.
 * **Multisampling** — averaging of several samples generated from a single frame.
