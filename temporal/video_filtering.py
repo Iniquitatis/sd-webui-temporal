@@ -87,7 +87,7 @@ def _(fps, params):
     return f"unsharp='luma_msize_x={params.radius}:luma_msize_y={params.radius}:luma_amount={params.strength}:chroma_msize_x={params.radius}:chroma_msize_y={params.radius}:chroma_amount={params.strength}'"
 
 @filter("temporal_blurring", "Temporal blurring", [
-    UIParam(gr.Slider, "radius", "Radius", minimum = 1, maximum = 10, step = 1, value = 1),
+    UIParam(gr.Slider, "radius", "Radius", minimum = 1, maximum = 60, step = 1, value = 1),
     UIParam(gr.Slider, "easing", "Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0),
 ])
 def _(fps, params):
