@@ -86,15 +86,21 @@ def _(fps, params):
 def _(fps, params):
     return f"unsharp='luma_msize_x={params.radius}:luma_msize_y={params.radius}:luma_amount={params.strength}:chroma_msize_x={params.radius}:chroma_msize_y={params.radius}:chroma_amount={params.strength}'"
 
-@filter("temporal_blurring", "Temporal blurring", [
+@filter("temporal_averaging", "Temporal averaging", [
     UIParam(gr.Slider, "radius", "Radius", minimum = 1, maximum = 60, step = 1, value = 1),
+    UIParam(gr.Dropdown, "algorithm", "Algorithm", choices = ["mean", "median"], value = "mean"),
     UIParam(gr.Slider, "easing", "Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0),
 ])
 def _(fps, params):
-    weights = [((x + 1) / (params.radius + 1)) ** params.easing for x in range(params.radius + 1)]
-    weights += reversed(weights[:-1])
-    weights = [f"{x:.18f}" for x in weights]
-    return f"tmix='frames={len(weights)}:weights={' '.join(weights)}'"
+    if params.algorithm == "mean":
+        weights = [((x + 1) / (params.radius + 1)) ** params.easing for x in range(params.radius + 1)]
+        weights += reversed(weights[:-1])
+        weights = [f"{x:.18f}" for x in weights]
+        return f"tmix='frames={len(weights)}:weights={' '.join(weights)}'"
+    elif params.algorithm == "median":
+        return f"tmedian='radius={params.radius}'"
+    else:
+        return "null"
 
 @filter("text_overlay", "Text overlay", [
     UIParam(gr.Textbox, "text", "Text", value = "{frame}"),

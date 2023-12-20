@@ -24,18 +24,22 @@
 * **Sharpening** — unsharp masking.
     * **Strength** — sharpening strength.
     * **Radius** — sharpening radius.
-* **Temporal blurring** — weighted averaging of several consecutive frames.
-    * **Radius** — kernel radius; total amount of averaged frames equals to `x * 2 + 1`.
+* **Temporal averaging** — averaging of several consecutive frames.
+    * **Radius** — filter radius; total amount of averaged frames equals to `x * 2 + 1`.
+    * **Algorithm** — algorithm to use when computing the average.
+        * **mean** — produces blurry video.
+        * **median** — produces sharper video than **mean**, but more prone to artifacts.
     * **Easing** — kernel easing factor.
+        * **NOTE:** This parameter is relevant only for **mean** algorithm.
         * Value of 0 means that every frame will be averaged in an equal proportion, whereas value greater than 0 makes a distribution ranging from 0 to 1.
         * Value greater than 0 makes a soft distribution curve.
         * Value of 1 makes a triangle distribution curve.
         * Value greater than 1 makes a sharp distribution curve.
-    * **EXAMPLES:**
-        * `Radius: 1; Easing: 1.0 = Weights [0.5 1 0.5]`
-        * `Radius: 1; Easing: 0.5 = Weights [0.707 1 0.707]`
-        * `Radius: 1; Easing: 2.0 = Weights [0.25 1 0.25]`
-        * `Radius: 3; Easing: 0.0 = Weights [1 1 1 1 1 1 1]`
+        * **EXAMPLES:**
+            * `Radius: 1; Easing: 1.0 = Weights [0.5 1 0.5]`
+            * `Radius: 1; Easing: 0.5 = Weights [0.707 1 0.707]`
+            * `Radius: 1; Easing: 2.0 = Weights [0.25 1 0.25]`
+            * `Radius: 3; Easing: 0.0 = Weights [1 1 1 1 1 1 1]`
 * **Text overlay** — draws the text.
     * **Text** — text that will be drawn. Variables should be enclosed between `{}`. Available variables are:
         * **frame** — number of the currently shown frame.
