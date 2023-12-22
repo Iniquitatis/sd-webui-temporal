@@ -21,6 +21,10 @@
 * **Scaling** — video resolution upscaling/downscaling using Lanczos interpolation.
     * **Width/Height** — final video resolution.
     * **Padded** — pad video with black borders if the aspect ratio doesn't match, otherwise simply stretch the frames.
+    * **Background color** — color of the padded area.
+    * **Backdrop** — use a scaled copy of the current frame as the background.
+    * **Backdrop brightness** — brightness of the backdrop image.
+    * **Backdrop blurring** — blurring radius of the backdrop image.
 * **Sharpening** — unsharp masking.
     * **Strength** — sharpening strength.
     * **Radius** — sharpening radius.

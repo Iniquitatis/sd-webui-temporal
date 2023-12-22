@@ -67,13 +67,40 @@ def _(fps, params):
     UIParam(gr.Slider, "width", "Width", minimum = 16, maximum = 2560, step = 16, value = 512),
     UIParam(gr.Slider, "height", "Height", minimum = 16, maximum = 2560, step = 16, value = 512),
     UIParam(gr.Checkbox, "padded", "Padded", value = False),
+    UIParam(gr.ColorPicker, "background_color", "Background color", value = "#000000"),
+    UIParam(gr.Checkbox, "backdrop", "Backdrop", value = False),
+    UIParam(gr.Slider, "backdrop_brightness", "Backdrop brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 0.5),
+    UIParam(gr.Slider, "backdrop_blurring", "Backdrop blurring", minimum = 0.0, maximum = 50.0, step = 1.0, value = 0.0),
 ])
 def _(fps, params):
     parts = []
 
     if params.padded:
-        parts.append(f"scale='-1:{params.height}:flags=lanczos'")
-        parts.append(f"pad='{params.width}:ih:(ow-iw)/2'")
+        parts.append(f"split[bg][fg]")
+
+        if params.width > params.height:
+            bgsw, bgsh = params.width, -1
+            fgsw, fgsh = -1, params.height
+            pw, ph = params.width, "ih"
+            px, py = "(ow-iw)/2", 0
+        else:
+            bgsw, bgsh = -1, params.height
+            fgsw, fgsh = params.width, -1
+            pw, ph = "iw", params.height
+            px, py = 0, "(oh-ih)/2"
+
+        if params.backdrop:
+            parts.append(f"[bg]scale='w={bgsw}:h={bgsh}:flags=lanczos'[bg]")
+            parts.append(f"[bg]crop='w={params.width}:h={params.height}'[bg]")
+            parts.append(f"[bg]eq='brightness={params.backdrop_brightness - 1.0}'[bg]")
+            parts.append(f"[bg]gblur='sigma={params.backdrop_blurring}'[bg]")
+        else:
+            parts.append(f"[bg]scale='w={params.width}:h={params.height}:flags=neighbor'[bg]")
+            parts.append(f"[bg]drawbox='w={params.width}:h={params.height}:color={params.background_color}:thickness=fill'[bg]")
+
+        parts.append(f"[fg]scale='w={fgsw}:h={fgsh}:flags=lanczos'[fg]")
+        parts.append(f"[fg]pad='w={pw}:h={ph}:x={px}:y={py}:color=#00000000'[fg]")
+        parts.append(f"[bg][fg]overlay")
     else:
         parts.append(f"scale='{params.width}:{params.height}:flags=lanczos'")
 
