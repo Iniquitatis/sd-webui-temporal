@@ -259,10 +259,10 @@ def _(path):
     ext_params.update({
         "multisampling_samples": ext_params.pop("image_samples", 1),
         "multisampling_batch_size": ext_params.pop("batch_size", 1),
-        "multisampling_mode": "mean",
+        "multisampling_algorithm": "mean",
         "multisampling_easing": 0.0,
         "frame_merging_frames": ext_params.pop("merged_frames", 1),
-        "frame_merging_mode": "mean",
+        "frame_merging_algorithm": "mean",
         "frame_merging_easing": ext_params.pop("merged_frames_easing", 0.0),
     })
 
