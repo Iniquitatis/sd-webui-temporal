@@ -119,4 +119,4 @@ def save_session(p, ext_params, project_dir):
             "preprocessing_order",
         ] + list(iterate_all_preprocessor_keys())),
     ))
-    save_text(session_dir / "version.txt", "7")
+    save_text(session_dir / "version.txt", "8")

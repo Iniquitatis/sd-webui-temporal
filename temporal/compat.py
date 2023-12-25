@@ -306,3 +306,27 @@ def _(path):
     save_text(version_path, "7")
 
     return True
+
+@upgrader(8)
+def _(path):
+    if not (version_path := (path / "session" / "version.txt")).is_file():
+        return False
+
+    if int(load_text(version_path, "0")) >= 8:
+        return True
+
+    if not (params_path := (path / "session" / "parameters.json")).is_file():
+        return False
+
+    data = load_json(params_path, {})
+
+    ext_params = data["extension_params"]
+
+    for key in ["multisampling_algorithm", "frame_merging_algorithm"]:
+        if ext_params[key] == "mean":
+            ext_params[key] = "arithmetic_mean"
+
+    save_json(params_path, data)
+    save_text(version_path, "8")
+
+    return True
