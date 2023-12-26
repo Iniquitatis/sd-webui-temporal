@@ -11,7 +11,7 @@ from temporal.func_utils import make_func_registerer
 from temporal.image_blending import blend_images
 from temporal.image_utils import apply_channelwise, ensure_image_dims, get_rgb_array, join_hsv_to_rgb, match_image, np_to_pil, pil_to_np, split_hsv
 from temporal.math import lerp, normalize, remap_range
-from temporal.numpy_utils import generate_value_noise, saturate_array
+from temporal.numpy_utils import generate_value_noise, match_array_dimensions, saturate_array
 
 PREPROCESSORS, preprocessor = make_func_registerer(name = "", params = [])
 
@@ -172,6 +172,31 @@ def _(npim, seed, params):
         params.persistence,
         seed if params.use_dynamic_seed else params.seed,
     )
+
+@preprocessor("outline", "Outline", [
+    UIParam(gr.Dropdown, "algorithm", "Algorithm", choices = ["sobel", "scharr", "prewitt", "roberts_cross"], value = "sobel"),
+    UIParam(gr.Slider, "thickness", "Thickness", minimum = 1, maximum = 50, step = 1, value = 1),
+    UIParam(gr.Checkbox, "rescale", "Rescale", value = False),
+    UIParam(gr.ColorPicker, "color", "Color", value = "#000000"),
+])
+def _(npim, seed, params):
+    func = (
+        skimage.filters.sobel   if params.algorithm == "sobel"         else
+        skimage.filters.scharr  if params.algorithm == "scharr"        else
+        skimage.filters.prewitt if params.algorithm == "prewitt"       else
+        skimage.filters.roberts if params.algorithm == "roberts_cross" else
+        lambda image: image
+    )
+
+    outline = saturate_array(func(skimage.color.rgb2gray(npim)))
+
+    if params.thickness > 1:
+        outline = skimage.morphology.dilation(outline, skimage.morphology.disk(params.thickness - 1))
+
+    if params.rescale:
+        outline = skimage.exposure.rescale_intensity(outline)
+
+    return lerp(npim, get_rgb_array(params.color), match_array_dimensions(outline, npim, 0))
 
 @preprocessor("palettization", "Palettization", [
     UIParam(gr.Pil, "palette", "Palette", image_mode = "RGB"),
