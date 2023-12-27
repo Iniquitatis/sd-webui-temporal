@@ -23,8 +23,6 @@ image_save_queue = ThreadQueue()
 def generate_image(p, ext_params):
     opts_backup = opts.data.copy()
 
-    opts.save_to_dirs = False
-
     _apply_prompt_styles(p)
 
     if not _setup_processing(p, ext_params.noise_for_first_frame):
