@@ -4,12 +4,13 @@ from PIL import Image
 
 from temporal.numpy_utils import average_array, make_eased_weight_array
 
-def average_images(ims, algo, easing = 0.0):
+def average_images(ims, algo, easing = 0.0, trimming = 0.0):
     return ims[0] if len(ims) == 1 else np_to_pil(np.clip(average_array(
         np.stack([pil_to_np(im) if isinstance(im, Image.Image) else im for im in ims]),
         algo = algo,
         axis = 0,
         weights = np.flip(make_eased_weight_array(len(ims), easing)),
+        trim = trimming,
     ), 0.0, 1.0))
 
 def ensure_image_dims(im, mode, size):

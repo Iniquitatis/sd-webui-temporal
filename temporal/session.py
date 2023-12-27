@@ -113,9 +113,11 @@ def save_session(p, ext_params, project_dir):
             "multisampling_batch_size",
             "multisampling_algorithm",
             "multisampling_easing",
+            "multisampling_trimming",
             "frame_merging_frames",
             "frame_merging_algorithm",
             "frame_merging_easing",
+            "frame_merging_trimming",
             "preprocessing_order",
         ] + list(iterate_all_preprocessor_keys())),
     ))

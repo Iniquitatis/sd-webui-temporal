@@ -1,7 +1,11 @@
 import numpy as np
 from scipy import stats
 
-def average_array(arr, algo, axis, weights = None):
+def average_array(arr, algo, axis, weights = None, trim = 0.0):
+    if trim > 0.0:
+        arr = stats.trimboth(arr, trim, axis)
+        weights = None
+
     if algo == "harmonic_mean":
         return stats.hmean(arr + 1.0, axis = axis, weights = match_array_dimensions(weights, arr, axis) if weights is not None else None) - 1.0
     elif algo == "geometric_mean":

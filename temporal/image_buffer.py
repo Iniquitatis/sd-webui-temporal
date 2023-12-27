@@ -38,12 +38,13 @@ class ImageBuffer:
         self.last_index += 1
         self.last_index %= self.count
 
-    def average(self, algo, easing = 0.0):
+    def average(self, algo, easing = 0.0, trimming = 0.0):
         return np_to_pil(np.clip(average_array(
             self.array,
             algo = algo,
             axis = 0,
             weights = np.roll(make_eased_weight_array(self.count, easing), self.last_index),
+            trim = trimming,
         ), 0.0, 1.0))
 
     def load(self, project_dir):
