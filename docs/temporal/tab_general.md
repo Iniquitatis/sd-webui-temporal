@@ -14,30 +14,20 @@
     * **Sample count** — amount of samples to take for generating a frame.
         * **NOTE:** Reduces the jittering between the consecutive frames, increases the general middle-scale detail precision, multiplies amount of work to process each frame correspondingly, and makes the resulting frames blurrier (can be somewhat mitigated by enabling the **Sharpening** preprocessing effect).
         * **Batch size** — amount of samples to be calculated in parallel, potentially speeding up the process. If **Sample count** is not divisible by the batch size, it will be adjusted to the nearest divisible number (e.g. if **Sample count** is 9 and **Batch size** is 4, then total sample count will equal to 12).
-    * **Algorithm** — averaging algorithm.
-        * **harmonic_mean** — mean that prefers the darkest colors.
-        * **geometric_mean** — mean that prefers the darker colors.
-        * **arithmetic_mean** — standard mean.
-        * **root_mean_square** — mean that prefers the brightest colors.
-        * **median** — produces sharp results, but makes images "oily" and "smudgy", leaving out fine details and abrupt composition changes.
-    * **Easing** — sample averaging easing factor. The more this value is, the sharper is the blending curve, leading to less contribution for each subsequent sample; at the value of 0 all samples will be blended evenly.
-        * **NOTE:** This parameter is relevant only for mean algorithms.
     * **Trimming** — factor of distribution trimming (e.g. 0.25 trims 25% of the darkest and brightest colors), controlling the sharpness and bringing means closer to the median.
-        * **NOTE:** As of now, the **Easing** parameter will not work if this factor is greater than 0.
+    * **Easing** — sample averaging easing factor. The more this value is, the sharper is the blending curve, leading to less contribution for each subsequent sample; at the value of 0 all samples will be blended evenly.
+        * **NOTE:** This parameter won't have any effect if the **Trimming** parameter is greater than 0.
+    * **Preference** — "brightness preference" of the averaging algorithm. At minimum, it prefers the darkest colors, at maximum—the brightest ones.
+        * **NOTE:** The greater the **Trimming** parameter is, the less this parameter will affect the result.
 * **Frame merging** — averaging of several last generated frames.
     * **Frame count** — amount of last generated frames to be blended together to produce a final frame.
         * **NOTE:** Slows down the morphing effect, increases the general middle-scale detail precision, and makes the resulting frames blurrier (can be somewhat mitigated by enabling the **Sharpening** preprocessing effect).
-    * **Algorithm** — averaging algorithm.
-        * **harmonic_mean** — mean that prefers the darkest colors.
-        * **geometric_mean** — mean that prefers the darker colors.
-        * **arithmetic_mean** — standard mean.
-        * **root_mean_square** — mean that prefers the brightest colors.
-        * **median** — produces sharp results, but makes images "oily" and "smudgy", leaving out fine details and abrupt composition changes.
-            * **NOTE:** As of now, the results won't be visible for approximately half of **Frame count** first iterations.
-    * **Easing** — frame averaging easing factor. The more this value is, the sharper is the blending curve, leading to less contribution for each previous frame; at the value of 0 all frames will be blended evenly.
-        * **NOTE:** This parameter is relevant only for mean algorithms.
     * **Trimming** — factor of distribution trimming (e.g. 0.25 trims 25% of the darkest and brightest colors), controlling the sharpness and bringing means closer to the median.
-        * **NOTE:** As of now, the **Easing** parameter will not work if this factor is greater than 0.
+        * **NOTE:** The higher this value is, the longer it will take for any visible changes to occur: factor of 0.5 will require approximately half of **Frame count** first iterations.
+    * **Easing** — frame averaging easing factor. The more this value is, the sharper is the blending curve, leading to less contribution for each previous frame; at the value of 0 all frames will be blended evenly.
+        * **NOTE:** This parameter won't have any effect if the **Trimming** parameter is greater than 0.
+    * **Preference** — "brightness preference" of the averaging algorithm. At minimum, it prefers the darkest colors, at maximum—the brightest ones.
+        * **NOTE:** The greater the **Trimming** parameter is, the less this parameter will affect the result.
 * **Project** — control over the session.
     * **Load parameters** — read parameters from the specified project directory, otherwise take those that are currently set in the UI.
     * **Continue from last frame** — continue rendering from the last rendered frame, otherwise remove all previously rendered frames and start rendering from scratch.

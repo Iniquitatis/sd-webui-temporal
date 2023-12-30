@@ -53,9 +53,9 @@ def generate_image(p, ext_params):
         ), ext_params.use_sd)):
             break
 
-        generated_image = average_images(processed.images[:ext_params.multisampling_batch_size * images_per_batch], ext_params.multisampling_algorithm, ext_params.multisampling_easing, ext_params.multisampling_trimming)
+        generated_image = average_images(processed.images[:ext_params.multisampling_batch_size * images_per_batch], ext_params.multisampling_trimming, ext_params.multisampling_easing, ext_params.multisampling_preference)
         image_buffer.add(generated_image)
-        last_image = image_buffer.average(ext_params.frame_merging_algorithm, ext_params.frame_merging_easing, ext_params.frame_merging_trimming)
+        last_image = image_buffer.average(ext_params.frame_merging_trimming, ext_params.frame_merging_easing, ext_params.frame_merging_preference)
         last_info = processed.info
 
     images.save_image(
@@ -136,9 +136,9 @@ def generate_sequence(p, ext_params):
         ), ext_params.use_sd)):
             break
 
-        generated_image = average_images(processed.images[:ext_params.multisampling_batch_size * images_per_batch], ext_params.multisampling_algorithm, ext_params.multisampling_easing, ext_params.multisampling_trimming)
+        generated_image = average_images(processed.images[:ext_params.multisampling_batch_size * images_per_batch], ext_params.multisampling_trimming, ext_params.multisampling_easing, ext_params.multisampling_preference)
         image_buffer.add(generated_image)
-        last_image = image_buffer.average(ext_params.frame_merging_algorithm, ext_params.frame_merging_easing, ext_params.frame_merging_trimming)
+        last_image = image_buffer.average(ext_params.frame_merging_trimming, ext_params.frame_merging_easing, ext_params.frame_merging_preference)
 
         if frame_index % ext_params.save_every_nth_frame == 0:
             if ext_params.archive_mode:

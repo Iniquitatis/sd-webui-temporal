@@ -119,15 +119,15 @@ class TemporalScript(scripts.Script):
                     elem("multisampling_samples", gr.Number, label = "Sample count", precision = 0, minimum = 1, value = 1)
                     elem("multisampling_batch_size", gr.Number, label = "Batch size", precision = 0, minimum = 1, value = 1)
 
-                elem("multisampling_algorithm", gr.Dropdown, label = "Algorithm", choices = ["harmonic_mean", "geometric_mean", "arithmetic_mean", "root_mean_square", "median"], value = "arithmetic_mean")
-                elem("multisampling_easing", gr.Slider, label = "Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0)
                 elem("multisampling_trimming", gr.Slider, label = "Trimming", minimum = 0.0, maximum = 0.5, step = 0.01, value = 0.0)
+                elem("multisampling_easing", gr.Slider, label = "Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0)
+                elem("multisampling_preference", gr.Slider, label = "Preference", minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0)
 
             with gr.Accordion("Frame merging"):
                 elem("frame_merging_frames", gr.Number, label = "Frame count", precision = 0, minimum = 1, step = 1, value = 1)
-                elem("frame_merging_algorithm", gr.Dropdown, label = "Algorithm", choices = ["harmonic_mean", "geometric_mean", "arithmetic_mean", "root_mean_square", "median"], value = "arithmetic_mean")
-                elem("frame_merging_easing", gr.Slider, label = "Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0)
                 elem("frame_merging_trimming", gr.Slider, label = "Trimming", minimum = 0.0, maximum = 0.5, step = 0.01, value = 0.0)
+                elem("frame_merging_easing", gr.Slider, label = "Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0)
+                elem("frame_merging_preference", gr.Slider, label = "Preference", minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0)
 
             with gr.Accordion("Project"):
                 elem("load_parameters", gr.Checkbox, label = "Load parameters", value = True)

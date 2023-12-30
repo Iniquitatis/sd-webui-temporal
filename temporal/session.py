@@ -111,14 +111,14 @@ def save_session(p, ext_params, project_dir):
             "use_sd",
             "multisampling_samples",
             "multisampling_batch_size",
-            "multisampling_algorithm",
-            "multisampling_easing",
             "multisampling_trimming",
+            "multisampling_easing",
+            "multisampling_preference",
             "frame_merging_frames",
-            "frame_merging_algorithm",
-            "frame_merging_easing",
             "frame_merging_trimming",
+            "frame_merging_easing",
+            "frame_merging_preference",
             "preprocessing_order",
         ] + list(iterate_all_preprocessor_keys())),
     ))
-    save_text(session_dir / "version.txt", "8")
+    save_text(session_dir / "version.txt", "9")

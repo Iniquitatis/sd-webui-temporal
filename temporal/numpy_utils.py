@@ -1,26 +1,36 @@
 import numpy as np
 from scipy import stats
 
-def average_array(arr, algo, axis, weights = None, trim = 0.0):
-    if trim > 0.0:
+def average_array(arr, axis, trim = 0.0, power = 1.0, weights = None):
+    if trim == 0.5:
+        return np.median(arr, axis)
+    elif trim > 0.0:
         arr = stats.trimboth(arr, trim, axis)
         weights = None
 
-    if algo == "harmonic_mean":
-        return stats.hmean(arr + 1.0, axis = axis, weights = match_array_dimensions(weights, arr, axis) if weights is not None else None) - 1.0
-    elif algo == "geometric_mean":
-        return stats.gmean(arr + 1.0, axis = axis, weights = match_array_dimensions(weights, arr, axis) if weights is not None else None) - 1.0
-    elif algo == "arithmetic_mean":
-        if weights is not None:
-            return np.average(arr, axis, weights)
-        else:
-            return np.mean(arr, axis)
-    elif algo == "root_mean_square":
-        return np.sqrt(np.average(np.square(arr + 1.0), axis, weights)) - 1.0
-    elif algo == "median":
-        return np.median(arr, axis)
+    if weights is not None:
+        weights = match_array_dimensions(weights, arr, axis)
+
+    if power != 1.0:
+        arr = arr + 1.0
+
+    if power == -1.0:
+        result = stats.hmean(arr, axis = axis, weights = weights)
+    elif power == 0.0:
+        result = stats.gmean(arr, axis = axis, weights = weights)
+    elif power == 1.0:
+        result = np.average(arr, axis, weights)
+    elif power == 2.0:
+        result = np.sqrt(np.average(np.square(arr), axis, weights))
+    elif power == 3.0:
+        result = np.cbrt(np.average(np.power(arr, 3.0), axis, weights))
     else:
-        raise Exception(f"Unknown algorithm name: {algo}")
+        result = stats.pmean(arr, power, axis = axis, weights = weights)
+
+    if power != 1.0:
+        result -= 1.0
+
+    return result
 
 def make_eased_weight_array(count, easing):
     return (np.linspace(1, count, count, dtype = np.float_) / count) ** easing
