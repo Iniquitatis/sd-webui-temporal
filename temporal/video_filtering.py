@@ -64,8 +64,8 @@ def _(fps, params):
     return ",".join(parts)
 
 @filter("scaling", "Scaling", [
-    UIParam(gr.Slider, "width", "Width", minimum = 16, maximum = 2560, step = 16, value = 512),
-    UIParam(gr.Slider, "height", "Height", minimum = 16, maximum = 2560, step = 16, value = 512),
+    UIParam(gr.Slider, "width", "Width", minimum = 16, maximum = 2560, step = 8, value = 512),
+    UIParam(gr.Slider, "height", "Height", minimum = 16, maximum = 2560, step = 8, value = 512),
     UIParam(gr.Checkbox, "padded", "Padded", value = False),
     UIParam(gr.ColorPicker, "background_color", "Background color", value = "#000000"),
     UIParam(gr.Checkbox, "backdrop", "Backdrop", value = False),
