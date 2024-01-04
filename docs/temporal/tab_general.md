@@ -19,6 +19,15 @@
         * **NOTE:** This parameter won't have any effect if the **Trimming** parameter is greater than 0.
     * **Preference** — "brightness preference" of the averaging algorithm. At minimum, it prefers the darkest colors, at maximum—the brightest ones.
         * **NOTE:** The greater the **Trimming** parameter is, the less this parameter will affect the result.
+* **Detailing** — an additional detailing pass that upscales the image and then scales it back, allowing for much higher precision at the cost of the processing speed.
+    * **Enabled** — determines whether the detailing is enabled or not.
+    * **Scale** — upscaling factor.
+        * **NOTE:** It doesn't affect the final output resolution, but rather the processing resolution itself.
+    * **Scale buffer** — determines whether the **Frame merging** happens at a higher precision.
+        * **NOTE:** It is uncertain whether it actually has a big impact on the result, but it certainly slows down the process a bit.
+    * **Sampling method** — same as the usual img2img option.
+    * **Steps** — same as the usual img2img option.
+    * **Denoising strength** — same as the usual img2img option.
 * **Frame merging** — averaging of several last generated frames.
     * **Frame count** — amount of last generated frames to be blended together to produce a final frame.
         * **NOTE:** Slows down the morphing effect, increases the general middle-scale detail precision, and makes the resulting frames blurrier (can be somewhat mitigated by enabling the **Sharpening** preprocessing effect).

@@ -4,6 +4,7 @@ from types import SimpleNamespace
 import gradio as gr
 
 from modules import scripts
+from modules.sd_samplers import visible_sampler_names
 from modules.ui_components import ToolButton
 
 from temporal.collection_utils import get_first_element
@@ -122,6 +123,14 @@ class TemporalScript(scripts.Script):
                 elem("multisampling_trimming", gr.Slider, label = "Trimming", minimum = 0.0, maximum = 0.5, step = 0.01, value = 0.0)
                 elem("multisampling_easing", gr.Slider, label = "Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0)
                 elem("multisampling_preference", gr.Slider, label = "Preference", minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0)
+
+            with gr.Accordion("Detailing"):
+                elem("detailing_enabled", gr.Checkbox, label = "Enabled", value = False)
+                elem("detailing_scale", gr.Slider, label = "Scale", minimum = 1, maximum = 4, step = 1, value = 1)
+                elem("detailing_scale_buffer", gr.Checkbox, label = "Scale buffer", value = False)
+                elem("detailing_sampler", gr.Dropdown, label = "Sampling method", choices = visible_sampler_names(), value = "Euler a")
+                elem("detailing_steps", gr.Slider, label = "Steps", minimum = 1, maximum = 150, step = 1, value = 15)
+                elem("detailing_denoising_strength", gr.Slider, label = "Denoising strength", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.2)
 
             with gr.Accordion("Frame merging"):
                 elem("frame_merging_frames", gr.Number, label = "Frame count", precision = 0, minimum = 1, step = 1, value = 1)
