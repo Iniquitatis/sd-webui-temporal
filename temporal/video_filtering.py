@@ -125,7 +125,7 @@ def _(fps, params):
         weights = [f"{x:.18f}" for x in weights]
         return f"tmix='frames={len(weights)}:weights={' '.join(weights)}'"
     elif params.algorithm == "median":
-        return f"tmedian='radius={params.radius}'"
+        return f"tpad='start={params.radius}:stop={params.radius}:start_mode=clone:stop_mode=clone',tmedian='radius={params.radius}'"
     else:
         return "null"
 
