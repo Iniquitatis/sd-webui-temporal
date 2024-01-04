@@ -35,9 +35,13 @@ def load_image(path):
 
 def match_image(im, reference, mode = True, size = True):
     if isinstance(reference, np.ndarray):
-        reference = Image.fromarray(skimage.util.img_as_ubyte(reference))
+        ref_mode = "RGBA" if reference.shape[2] == 4 else "RGB"
+        ref_size = (reference.shape[1], reference.shape[0])
+    else:
+        ref_mode = reference.mode
+        ref_size = reference.size
 
-    return ensure_image_dims(im, reference.mode if mode else im.mode, reference.size if size else im.size)
+    return ensure_image_dims(im, ref_mode if mode else im.mode, ref_size if size else im.size)
 
 def np_to_pil(npim):
     return Image.fromarray(skimage.util.img_as_ubyte(npim))
