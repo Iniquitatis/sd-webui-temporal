@@ -10,6 +10,7 @@ from temporal.collection_utils import get_first_element, reorder_dict
 from temporal.image_blending import BLEND_MODES, blend_images
 from temporal.image_utils import match_image, np_to_pil, pil_to_np
 from temporal.math import lerp, normalize, remap_range
+from temporal.numpy_utils import generate_noise
 
 PREPROCESSORS = dict()
 
@@ -158,7 +159,7 @@ def _(npim, seed, params):
     UIParam(gr.Dropdown, "mode", "Mode", choices = {k: v["name"] for k, v in BLEND_MODES.items()}, value = get_first_element(BLEND_MODES)),
 ])
 def _(npim, seed, params):
-    return blend_images(npim, np.random.default_rng(seed).uniform(high = 1.0 + np.finfo(npim.dtype).eps, size = npim.shape), params.mode)
+    return blend_images(npim, generate_noise(npim.shape, seed), params.mode)
 
 @preprocessor("noise_compression", "Noise compression", [
     UIParam(gr.Slider, "constant", "Constant", minimum = 0.0, maximum = 1.0, step = 1e-5, value = 0.0),

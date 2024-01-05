@@ -2,7 +2,7 @@ import numpy as np
 import skimage
 from PIL import Image
 
-from temporal.numpy_utils import average_array, make_eased_weight_array
+from temporal.numpy_utils import average_array, generate_noise, generate_value_noise, make_eased_weight_array
 
 def average_images(ims, trimming = 0.0, easing = 0.0, preference = 0.0):
     return ims[0] if len(ims) == 1 else np_to_pil(np.clip(average_array(
@@ -25,27 +25,11 @@ def ensure_image_dims(im, mode, size):
 
     return skimage.util.img_as_float(im) if is_np else im
 
-def generate_noise_image(size, seed):
-    return Image.fromarray(np.random.default_rng(seed).integers(0, 256, size = (size[1], size[0], 3), dtype = "uint8"))
+def generate_noise_image(size, seed = None):
+    return np_to_pil(generate_noise((size[1], size[0], 3), seed))
 
-def generate_value_noise_image(size, channels, scale, octaves, lacunarity, persistence, seed):
-    shape = (size[1], size[0], channels)
-    noise = np.random.default_rng(seed).integers(0, 256, size = shape, dtype = "uint8").astype("float") / 256.0
-
-    def scaled_noise(scale):
-        return skimage.transform.warp(noise, skimage.transform.AffineTransform(scale = scale).inverse, order = 3, mode = "symmetric")
-
-    result = np.zeros(shape)
-    total_amplitude = 0.0
-    amplitude = 0.5
-
-    for i in range(octaves):
-        result += scaled_noise(scale) * amplitude
-        total_amplitude += amplitude
-        scale /= lacunarity
-        amplitude *= persistence
-
-    return Image.fromarray(skimage.util.img_as_ubyte(result / total_amplitude))
+def generate_value_noise_image(size, channels, scale, octaves, lacunarity, persistence, seed = None):
+    return np_to_pil(generate_value_noise((size[1], size[0], channels), scale, octaves, lacunarity, persistence, seed))
 
 def load_image(path):
     im = Image.open(path)
