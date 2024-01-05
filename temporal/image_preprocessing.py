@@ -50,6 +50,21 @@ class UIParam:
 def _(npim, seed, params):
     return skimage.filters.gaussian(npim, params.radius, channel_axis = 2)
 
+@preprocessor("bokeh", "Bokeh", [
+    UIParam(gr.Slider, "radius", "Radius", minimum = 0, maximum = 50, step = 1, value = 0),
+    UIParam(gr.Slider, "highlight", "Highlight", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0),
+])
+def _(npim, seed, params):
+    footprint = skimage.morphology.disk(params.radius)
+    weights = footprint.astype(np.float_)
+    weights /= weights.sum()
+    return apply_channelwise(npim, lambda x: lerp(
+        scipy.ndimage.convolve(x, weights, mode = "nearest"),
+        # FIXME: This highlight thingy looks quite shitty
+        scipy.ndimage.maximum_filter(x, footprint = footprint, mode = "nearest"),
+        params.highlight,
+    ))
+
 @preprocessor("color_balancing", "Color balancing", [
     UIParam(gr.Slider, "brightness", "Brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0),
     UIParam(gr.Slider, "contrast", "Contrast", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0),
