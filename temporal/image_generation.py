@@ -11,7 +11,7 @@ from modules.shared import opts, prompt_styles, state
 from temporal.fs import clear_directory, ensure_directory_exists, remove_directory
 from temporal.image_buffer import ImageBuffer
 from temporal.image_preprocessing import PREPROCESSORS, preprocess_image
-from temporal.image_utils import average_images, ensure_image_dims, generate_noise_image, save_image
+from temporal.image_utils import average_images, ensure_image_dims, generate_value_noise_image, save_image
 from temporal.metrics import Metrics
 from temporal.object_utils import copy_with_overrides
 from temporal.session import get_last_frame_index, load_last_frame, load_session, save_session
@@ -25,7 +25,7 @@ def generate_image(p, ext_params):
 
     _apply_prompt_styles(p)
 
-    if not _setup_processing(p, ext_params.noise_for_first_frame):
+    if not _setup_processing(p, ext_params):
         return processing.Processed(p, p.init_images)
 
     buffer_width = p.width
@@ -141,7 +141,7 @@ def generate_sequence(p, ext_params):
     if ext_params.load_parameters:
         load_session(p, ext_params, project_dir)
 
-    if not _setup_processing(p, ext_params.noise_for_first_frame):
+    if not _setup_processing(p, ext_params):
         return processing.Processed(p, p.init_images)
 
     buffer_width = p.width
@@ -303,18 +303,26 @@ def _apply_prompt_styles(p):
     p.negative_prompt = prompt_styles.apply_negative_styles_to_prompt(p.negative_prompt, p.styles)
     p.styles.clear()
 
-def _setup_processing(p, noise_for_first_frame = False):
+def _setup_processing(p, ext_params):
     processing.fix_seed(p)
 
     if not p.init_images or not isinstance(p.init_images[0], Image.Image):
         if not (processed := _process_image("Initial image", copy_with_overrides(p,
-            init_images = [generate_noise_image((p.width, p.height), p.seed)],
+            init_images = [generate_value_noise_image(
+                (p.width, p.height),
+                3,
+                ext_params.initial_noise_scale,
+                ext_params.initial_noise_octaves,
+                ext_params.initial_noise_lacunarity,
+                ext_params.initial_noise_persistence,
+                p.seed,
+            )],
             n_iter = 1,
             batch_size = 1,
-            denoising_strength = 1.0,
+            denoising_strength = 1.0 - ext_params.initial_noise_factor,
             do_not_save_samples = True,
             do_not_save_grid = True,
-        ), not noise_for_first_frame)):
+        ), ext_params.initial_noise_factor < 1.0)):
             return False
 
         p.init_images = [processed.images[0]]

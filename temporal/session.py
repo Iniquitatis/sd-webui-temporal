@@ -107,7 +107,11 @@ def save_session(p, ext_params, project_dir):
         extension_params = save_object(ext_params, session_dir, [
             "save_every_nth_frame",
             "archive_mode",
-            "noise_for_first_frame",
+            "initial_noise_factor",
+            "initial_noise_scale",
+            "initial_noise_octaves",
+            "initial_noise_lacunarity",
+            "initial_noise_persistence",
             "use_sd",
             "multisampling_samples",
             "multisampling_batch_size",
@@ -127,4 +131,4 @@ def save_session(p, ext_params, project_dir):
             "preprocessing_order",
         ] + list(iterate_all_preprocessor_keys())),
     ))
-    save_text(session_dir / "version.txt", "9")
+    save_text(session_dir / "version.txt", "10")

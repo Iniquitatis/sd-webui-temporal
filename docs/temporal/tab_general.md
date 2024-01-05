@@ -6,8 +6,13 @@
     * **Frame count** — amount of cycles that will be performed, each of which producing a frame.
     * **Save every N-th frame** — stride at which the frames will be saved.
     * **Archive mode** — disable saving of metadata inside of each frame (such as prompt, seed, etc.) and enable maximum compression.
+* **Initial noise** — parameters of noise to use in a generation of the initial image if it's absent.
+    * **Factor** — amount of noise that will be left unprocessed.
+    * **Scale** — scale of the noise pattern; pixels.
+    * **Octaves** — amount of progressively downscaled noise layers that will be mixed into a single one.
+    * **Persistence** — downscale factor of each subsequent noise layer compared to a previous one.
+    * **Lacunarity** — amplitude factor of each subsequent noise layer compared to a previous one.
 * **Processing** — processing parameters.
-    * **Noise for first frame** — use noise as a first frame instead of a newly generated image if the initial img2img image is absent.
     * **Use Stable Diffusion** — process frames with Stable Diffusion after preprocessing them, otherwise simply output preprocessed frames.
         * **NOTE:** Disabling this option might be useful for tweaking the preprocessing parameters and checking how they affect the results. Most of the time it should be enabled, though, unless one wants to use this extension as a sort of a simple image animator.
 * **Multisampling** — averaging of several samples generated from a single frame.

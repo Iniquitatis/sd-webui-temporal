@@ -111,8 +111,14 @@ class TemporalScript(scripts.Script):
 
                 elem("archive_mode", gr.Checkbox, label = "Archive mode", value = False)
 
+            with gr.Accordion("Initial noise"):
+                elem("initial_noise_factor", gr.Slider, label = "Factor", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0)
+                elem("initial_noise_scale", gr.Slider, label = "Scale", minimum = 1, maximum = 1024, step = 1, value = 1)
+                elem("initial_noise_octaves", gr.Slider, label = "Octaves", minimum = 1, maximum = 10, step = 1, value = 1)
+                elem("initial_noise_lacunarity", gr.Slider, label = "Lacunarity", minimum = 0.01, maximum = 4.0, step = 0.01, value = 2.0)
+                elem("initial_noise_persistence", gr.Slider, label = "Persistence", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.5)
+
             with gr.Accordion("Processing"):
-                elem("noise_for_first_frame", gr.Checkbox, label = "Noise for first frame", value = False)
                 elem("use_sd", gr.Checkbox, label = "Use Stable Diffusion", value = True)
 
             with gr.Accordion("Multisampling"):

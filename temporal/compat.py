@@ -362,3 +362,24 @@ def _(path):
     save_text(version_path, "9")
 
     return True
+
+@upgrader(10)
+def _(path):
+    if not (version_path := (path / "session" / "version.txt")).is_file():
+        return False
+
+    if int(load_text(version_path, "0")) >= 10:
+        return True
+
+    if not (params_path := (path / "session" / "parameters.json")).is_file():
+        return False
+
+    data = load_json(params_path, {})
+
+    ext_params = data["extension_params"]
+    ext_params["initial_noise_factor"] = float(ext_params.pop("noise_for_first_frame"))
+
+    save_json(params_path, data)
+    save_text(version_path, "10")
+
+    return True
