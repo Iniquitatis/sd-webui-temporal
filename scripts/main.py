@@ -5,7 +5,7 @@ import gradio as gr
 
 from modules import scripts
 from modules.sd_samplers import visible_sampler_names
-from modules.ui_components import ToolButton
+from modules.ui_components import InputAccordion, ToolButton
 
 from temporal.collection_utils import get_first_element
 from temporal.fs import load_text
@@ -145,14 +145,13 @@ class TemporalScript(scripts.Script):
             ui.callback("delete_preset", "click", delete_preset_callback, ["preset"], ["preset"])
 
         def mode_callback(mode):
-            # TODO: Tabs cannot be hidden; an error is thrown regarding an inability to send a `Tab` as an input component
             return [gr.update(visible = ui.is_in_group(x, f"mode_{mode}")) for x in ui.parse_ids(["group:mode_*"])]
 
         ui.elem("mode", gr.Dropdown, label = "Mode", choices = list(MODES.keys()), value = "sequence", groups = ["params"])
         ui.callback("mode", "change", mode_callback, ["mode"], ["group:mode_*"])
 
-        with ui.elem("", gr.Tab, "General"):
-            with ui.elem("", gr.Accordion, "Output"):
+        with ui.elem("", gr.Tab, label = "General"):
+            with ui.elem("", gr.Accordion, label = "Output"):
                 with ui.elem("", gr.Row):
                     ui.elem("output_dir", gr.Textbox, label = "Output directory", value = "outputs/temporal", groups = ["params"])
                     ui.elem("project_subdir", gr.Textbox, label = "Project subdirectory", value = "untitled", groups = ["params", "mode_sequence"])
@@ -163,17 +162,17 @@ class TemporalScript(scripts.Script):
 
                 ui.elem("archive_mode", gr.Checkbox, label = "Archive mode", value = False, groups = ["params", "session", "mode_sequence"])
 
-            with ui.elem("", gr.Accordion, "Initial noise"):
+            with ui.elem("", gr.Accordion, label = "Initial noise", open = False):
                 ui.elem("initial_noise_factor", gr.Slider, label = "Factor", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, groups = ["params", "session"])
                 ui.elem("initial_noise_scale", gr.Slider, label = "Scale", minimum = 1, maximum = 1024, step = 1, value = 1, groups = ["params", "session"])
                 ui.elem("initial_noise_octaves", gr.Slider, label = "Octaves", minimum = 1, maximum = 10, step = 1, value = 1, groups = ["params", "session"])
                 ui.elem("initial_noise_lacunarity", gr.Slider, label = "Lacunarity", minimum = 0.01, maximum = 4.0, step = 0.01, value = 2.0, groups = ["params", "session"])
                 ui.elem("initial_noise_persistence", gr.Slider, label = "Persistence", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.5, groups = ["params", "session"])
 
-            with ui.elem("", gr.Accordion, "Processing"):
+            with ui.elem("", gr.Accordion, label = "Processing", open = False):
                 ui.elem("use_sd", gr.Checkbox, label = "Use Stable Diffusion", value = True, groups = ["params", "session"])
 
-            with ui.elem("", gr.Accordion, "Multisampling"):
+            with ui.elem("", gr.Accordion, label = "Multisampling", open = False):
                 with ui.elem("", gr.Row):
                     ui.elem("multisampling_samples", gr.Number, label = "Sample count", precision = 0, minimum = 1, value = 1, groups = ["params", "session"])
                     ui.elem("multisampling_batch_size", gr.Number, label = "Batch size", precision = 0, minimum = 1, value = 1, groups = ["params", "session"])
@@ -182,56 +181,53 @@ class TemporalScript(scripts.Script):
                 ui.elem("multisampling_easing", gr.Slider, label = "Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0, groups = ["params", "session"])
                 ui.elem("multisampling_preference", gr.Slider, label = "Preference", minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0, groups = ["params", "session"])
 
-            with ui.elem("", gr.Accordion, "Detailing"):
-                ui.elem("detailing_enabled", gr.Checkbox, label = "Enabled", value = False, groups = ["params", "session"])
+            with ui.elem("detailing_enabled", InputAccordion, label = "Detailing", value = False, groups = ["params", "session"]):
                 ui.elem("detailing_scale", gr.Slider, label = "Scale", minimum = 1, maximum = 4, step = 1, value = 1, groups = ["params", "session"])
                 ui.elem("detailing_scale_buffer", gr.Checkbox, label = "Scale buffer", value = False, groups = ["params", "session"])
                 ui.elem("detailing_sampler", gr.Dropdown, label = "Sampling method", choices = visible_sampler_names(), value = "Euler a", groups = ["params", "session"])
                 ui.elem("detailing_steps", gr.Slider, label = "Steps", minimum = 1, maximum = 150, step = 1, value = 15, groups = ["params", "session"])
                 ui.elem("detailing_denoising_strength", gr.Slider, label = "Denoising strength", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.2, groups = ["params", "session"])
 
-            with ui.elem("", gr.Accordion, "Frame merging"):
+            with ui.elem("", gr.Accordion, label = "Frame merging", open = False):
                 ui.elem("frame_merging_frames", gr.Number, label = "Frame count", precision = 0, minimum = 1, step = 1, value = 1, groups = ["params", "session"])
                 ui.elem("frame_merging_trimming", gr.Slider, label = "Trimming", minimum = 0.0, maximum = 0.5, step = 0.01, value = 0.0, groups = ["params", "session"])
                 ui.elem("frame_merging_easing", gr.Slider, label = "Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0, groups = ["params", "session"])
                 ui.elem("frame_merging_preference", gr.Slider, label = "Preference", minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0, groups = ["params", "session"])
 
-            with ui.elem("", gr.Accordion, "Project"):
-                ui.elem("load_parameters", gr.Checkbox, label = "Load parameters", value = True, groups = ["params", "mode_sequence"])
-                ui.elem("continue_from_last_frame", gr.Checkbox, label = "Continue from last frame", value = True, groups = ["params", "mode_sequence"])
+            with ui.elem("project_params", gr.Accordion, label = "Project", groups = ["mode_sequence"]):
+                ui.elem("load_parameters", gr.Checkbox, label = "Load parameters", value = True, groups = ["params"])
+                ui.elem("continue_from_last_frame", gr.Checkbox, label = "Continue from last frame", value = True, groups = ["params"])
 
-        with ui.elem("", gr.Tab, "Frame Preprocessing"):
+        with ui.elem("", gr.Tab, label = "Frame Preprocessing"):
             ui.elem("preprocessing_order", gr.Dropdown, label = "Order", multiselect = True, choices = list(PREPROCESSORS.keys()), value = [], groups = ["params", "session"])
 
             for key, processor in PREPROCESSORS.items():
-                with ui.elem("", gr.Accordion, processor.name, open = False):
-                    ui.elem(f"{key}_enabled", gr.Checkbox, label = "Enabled", value = False, groups = ["params", "session"])
-
+                with ui.elem(f"{key}_enabled", InputAccordion, label = processor.name, value = False, groups = ["params", "session"]):
                     with ui.elem("", gr.Row):
                         ui.elem(f"{key}_amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0, groups = ["params", "session"])
                         ui.elem(f"{key}_amount_relative", gr.Checkbox, label = "Relative", value = False, groups = ["params", "session"])
 
-                    with ui.elem("", gr.Tab, "Parameters"):
+                    with ui.elem("", gr.Tab, label = "Parameters"):
                         for param in processor.params:
                             ui.elem(f"{key}_{param.key}", param.type, label = param.name, **param.kwargs, groups = ["params", "session"])
 
-                    with ui.elem("", gr.Tab, "Mask"):
+                    with ui.elem("", gr.Tab, label = "Mask"):
                         ui.elem(f"{key}_mask", gr.Pil, label = "Mask", image_mode = "L", interactive = True, groups = ["params", "session"])
                         ui.elem(f"{key}_mask_normalized", gr.Checkbox, label = "Normalized", value = False, groups = ["params", "session"])
                         ui.elem(f"{key}_mask_inverted", gr.Checkbox, label = "Inverted", value = False, groups = ["params", "session"])
                         ui.elem(f"{key}_mask_blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, groups = ["params", "session"])
 
-        with ui.elem("", gr.Tab, "Video Rendering"):
-            ui.elem("video_fps", gr.Slider, label = "Frames per second", minimum = 1, maximum = 60, step = 1, value = 30, groups = ["params"])
-            ui.elem("video_looping", gr.Checkbox, label = "Looping", value = False, groups = ["params"])
-            ui.elem("video_filtering_order", gr.Dropdown, label = "Order", multiselect = True, choices = list(FILTERS.keys()), value = [], groups = ["params"])
+        # FIXME: `Tab` cannot be hidden; an error is thrown regarding an inability to send it as an input component
+        with ui.elem("", gr.Tab, label = "Video Rendering"):
+            ui.elem("video_fps", gr.Slider, label = "Frames per second", minimum = 1, maximum = 60, step = 1, value = 30, groups = ["params", "mode_sequence"])
+            ui.elem("video_looping", gr.Checkbox, label = "Looping", value = False, groups = ["params", "mode_sequence"])
+            ui.elem("video_filtering_order", gr.Dropdown, label = "Order", multiselect = True, choices = list(FILTERS.keys()), value = [], groups = ["params", "mode_sequence"])
 
             for key, filter in FILTERS.items():
-                with ui.elem("", gr.Accordion, filter.name, open = False):
-                    ui.elem(f"video_{key}_enabled", gr.Checkbox, label = "Enabled", value = False, groups = ["params"])
-
+                # FIXME: `InputAccordion` cannot be hidden; behaves in a broken way when its visibility is changed
+                with ui.elem(f"video_{key}_enabled", InputAccordion, label = filter.name, value = False, groups = ["params"]):
                     for param in filter.params:
-                        ui.elem(f"video_{key}_{param.key}", param.type, label = param.name, **param.kwargs, groups = ["params"])
+                        ui.elem(f"video_{key}_{param.key}", param.type, label = param.name, **param.kwargs, groups = ["params", "mode_sequence"])
 
             with ui.elem("", gr.Row):
                 ui.elem("render_draft_on_finish", gr.Checkbox, label = "Render draft when finished", value = False, groups = ["params", "mode_sequence"])
@@ -256,9 +252,9 @@ class TemporalScript(scripts.Script):
                 ui.elem("render_final", gr.Button, value = "Render final", groups = ["mode_sequence"])
                 ui.callback("render_final", "click", make_render_callback(True), ["group:params"], ["render_draft", "render_final", "video_preview"])
 
-            ui.elem("video_preview", gr.Video, label = "Preview", format = "mp4", interactive = False)
+            ui.elem("video_preview", gr.Video, label = "Preview", format = "mp4", interactive = False, groups = ["mode_sequence"])
 
-        with ui.elem("", gr.Tab, "Metrics"):
+        with ui.elem("", gr.Tab, label = "Metrics"):
             def render_plots_callback(*args):
                 ext_params = ui.unpack_values(["group:params"], *args)
                 project_dir = Path(ext_params.output_dir) / ext_params.project_subdir
@@ -267,12 +263,12 @@ class TemporalScript(scripts.Script):
                 return gr.update(value = metrics.plot(project_dir))
 
             ui.elem("metrics_enabled", gr.Checkbox, label = "Enabled", value = False, groups = ["params", "mode_sequence"])
-            ui.elem("metrics_save_plots_every_nth_frame", gr.Number, label = "Save plots every N-th frame", precision = 0, minimum = 1, step = 1, value = 10, groups = ["params"])
+            ui.elem("metrics_save_plots_every_nth_frame", gr.Number, label = "Save plots every N-th frame", precision = 0, minimum = 1, step = 1, value = 10, groups = ["params", "mode_sequence"])
             ui.elem("render_plots", gr.Button, value = "Render plots", groups = ["mode_sequence"])
             ui.callback("render_plots", "click", render_plots_callback, ["group:params"], ["metrics_plots"])
-            ui.elem("metrics_plots", gr.Gallery, label = "Plots", columns = 4, object_fit = "contain", preview = True)
+            ui.elem("metrics_plots", gr.Gallery, label = "Plots", columns = 4, object_fit = "contain", preview = True, groups = ["mode_sequence"])
 
-        with ui.elem("", gr.Tab, "Help"):
+        with ui.elem("", gr.Tab, label = "Help"):
             for file_name, title in [
                 ("main.md", "Main"),
                 ("tab_general.md", "General tab"),
@@ -281,8 +277,8 @@ class TemporalScript(scripts.Script):
                 ("tab_metrics.md", "Metrics tab"),
                 ("additional_notes.md", "Additional notes"),
             ]:
-                with ui.elem("", gr.Accordion, title, open = False):
-                    ui.elem("", gr.Markdown, load_text(EXTENSION_DIR / "docs" / "temporal" / file_name, ""))
+                with ui.elem("", gr.Accordion, label = title, open = False):
+                    ui.elem("", gr.Markdown, value = load_text(EXTENSION_DIR / "docs" / "temporal" / file_name, ""))
 
         return ui.finalize(["group:params"])
 
