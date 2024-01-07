@@ -48,6 +48,7 @@ class UI:
         self._elems = {}
         self._ids = []
         self._groups = {}
+        self._callbacks = {}
         self._existing_labels = set()
 
     def parse_ids(self, ids):
@@ -79,22 +80,29 @@ class UI:
             self._ids.append(id)
             self._elems[id] = elem
             self._groups[id] = ["all"] + groups
+            self._callbacks[id] = []
 
         return elem
 
     def callback(self, id, event, func, inputs, outputs):
-        event_func = getattr(self._elems[id], event)
-        event_func(
-            func,
-            inputs = [self._elems[x] for x in self.parse_ids(inputs)],
-            outputs = [self._elems[x] for x in self.parse_ids(outputs)],
-        )
+        self._callbacks[id].append((event, func, inputs, outputs))
 
     def finalize(self, ids):
+        for id, callbacks in self._callbacks.items():
+            for event, func, inputs, outputs in callbacks:
+                event_func = getattr(self._elems[id], event)
+                event_func(
+                    func,
+                    inputs = [self._elems[x] for x in self.parse_ids(inputs)],
+                    outputs = [self._elems[x] for x in self.parse_ids(outputs)],
+                )
+
         result = [self._elems[x] for x in self.parse_ids(ids)]
+
         self._id_formatter = None
         self._elems.clear()
         self._existing_labels.clear()
+
         return result
 
     def unpack_values(self, ids, *args):
@@ -115,13 +123,40 @@ class TemporalScript(scripts.Script):
         self._ui = ui = UI(self.elem_id)
 
         with ui.elem("", gr.Row):
+            def refresh_presets_callback():
+                refresh_presets()
+                return gr.update(choices = preset_names)
+
+            def load_preset_callback(preset, *args):
+                ext_params = ui.unpack_values(["group:params"], *args)
+                load_preset(preset, ext_params)
+                return [gr.update(value = v) for v in vars(ext_params).values()]
+
+            def save_preset_callback(preset, *args):
+                ext_params = ui.unpack_values(["group:params"], *args)
+                save_preset(preset, ext_params)
+                return gr.update(choices = preset_names, value = preset)
+
+            def delete_preset_callback(preset):
+                delete_preset(preset)
+                return gr.update(choices = preset_names, value = get_first_element(preset_names, ""))
+
             ui.elem("preset", gr.Dropdown, label = "Preset", choices = preset_names, allow_custom_value = True, value = get_first_element(preset_names, ""))
             ui.elem("refresh_presets", ToolButton, value = "\U0001f504")
+            ui.callback("refresh_presets", "click", refresh_presets_callback, [], ["preset"])
             ui.elem("load_preset", ToolButton, value = "\U0001f4c2")
+            ui.callback("load_preset", "click", load_preset_callback, ["preset", "group:params"], ["group:params"])
             ui.elem("save_preset", ToolButton, value = "\U0001f4be")
+            ui.callback("save_preset", "click", save_preset_callback, ["preset", "group:params"], ["preset"])
             ui.elem("delete_preset", ToolButton, value = "\U0001f5d1\ufe0f")
+            ui.callback("delete_preset", "click", delete_preset_callback, ["preset"], ["preset"])
+
+        def mode_callback(mode):
+            # TODO: Tabs cannot be hidden; an error is thrown regarding an inability to send a `Tab` as an input component
+            return [gr.update(visible = x not in MODES[mode].hidden_elems) for x in ui.parse_ids(["group:all"])]
 
         ui.elem("mode", gr.Dropdown, label = "Mode", choices = list(MODES.keys()), value = "sequence", groups = ["params"])
+        ui.callback("mode", "change", mode_callback, ["mode"], ["group:all"])
 
         with ui.elem("", gr.Tab, "General"):
             with ui.elem("", gr.Accordion, "Output"):
@@ -210,15 +245,38 @@ class TemporalScript(scripts.Script):
                 ui.elem("render_final_on_finish", gr.Checkbox, label = "Render final when finished", value = False, groups = ["params"])
 
             with ui.elem("", gr.Row):
+                def make_render_callback(is_final):
+                    def callback(*args):
+                        yield gr.update(interactive = False), gr.update(interactive = False), gr.update()
+
+                        ext_params = ui.unpack_values(["group:params"], *args)
+
+                        start_video_render(ext_params, is_final)
+                        wait_until(lambda: not video_render_queue.busy)
+
+                        yield gr.update(interactive = True), gr.update(interactive = True), f"{ext_params.output_dir}/{ext_params.project_subdir}-{'final' if is_final else 'draft'}.mp4"
+
+                    return callback
+
                 ui.elem("render_draft", gr.Button, value = "Render draft")
+                ui.callback("render_draft", "click", make_render_callback(False), ["group:params"], ["render_draft", "render_final", "video_preview"])
                 ui.elem("render_final", gr.Button, value = "Render final")
+                ui.callback("render_final", "click", make_render_callback(True), ["group:params"], ["render_draft", "render_final", "video_preview"])
 
             ui.elem("video_preview", gr.Video, label = "Preview", format = "mp4", interactive = False)
 
         with ui.elem("", gr.Tab, "Metrics"):
+            def render_plots_callback(*args):
+                ext_params = ui.unpack_values(["group:params"], *args)
+                project_dir = Path(ext_params.output_dir) / ext_params.project_subdir
+                metrics = Metrics()
+                metrics.load(project_dir)
+                return gr.update(value = metrics.plot(project_dir))
+
             ui.elem("metrics_enabled", gr.Checkbox, label = "Enabled", value = False, groups = ["params"])
             ui.elem("metrics_save_plots_every_nth_frame", gr.Number, label = "Save plots every N-th frame", precision = 0, minimum = 1, step = 1, value = 10, groups = ["params"])
             ui.elem("render_plots", gr.Button, value = "Render plots")
+            ui.callback("render_plots", "click", render_plots_callback, ["group:params"], ["metrics_plots"])
             ui.elem("metrics_plots", gr.Gallery, label = "Plots", columns = 4, object_fit = "contain", preview = True)
 
         with ui.elem("", gr.Tab, "Help"):
@@ -232,57 +290,6 @@ class TemporalScript(scripts.Script):
             ]:
                 with ui.elem("", gr.Accordion, title, open = False):
                     ui.elem("", gr.Markdown, load_text(EXTENSION_DIR / "docs" / "temporal" / file_name, ""))
-
-        def refresh_presets_callback():
-            refresh_presets()
-            return gr.update(choices = preset_names)
-
-        def load_preset_callback(preset, *args):
-            ext_params = ui.unpack_values(["group:params"], *args)
-            load_preset(preset, ext_params)
-            return [gr.update(value = v) for v in vars(ext_params).values()]
-
-        def save_preset_callback(preset, *args):
-            ext_params = ui.unpack_values(["group:params"], *args)
-            save_preset(preset, ext_params)
-            return gr.update(choices = preset_names, value = preset)
-
-        def delete_preset_callback(preset):
-            delete_preset(preset)
-            return gr.update(choices = preset_names, value = get_first_element(preset_names, ""))
-
-        def mode_callback(mode):
-            # TODO: Tabs cannot be hidden; an error is thrown regarding an inability to send a `Tab` as an input component
-            return [gr.update(visible = x not in MODES[mode].hidden_elems) for x in ui.parse_ids(["group:all"])]
-
-        def make_render_callback(is_final):
-            def callback(*args):
-                yield gr.update(interactive = False), gr.update(interactive = False), gr.update()
-
-                ext_params = ui.unpack_values(["group:params"], *args)
-
-                start_video_render(ext_params, is_final)
-                wait_until(lambda: not video_render_queue.busy)
-
-                yield gr.update(interactive = True), gr.update(interactive = True), f"{ext_params.output_dir}/{ext_params.project_subdir}-{'final' if is_final else 'draft'}.mp4"
-
-            return callback
-
-        def render_plots_callback(*args):
-            ext_params = ui.unpack_values(["group:params"], *args)
-            project_dir = Path(ext_params.output_dir) / ext_params.project_subdir
-            metrics = Metrics()
-            metrics.load(project_dir)
-            return gr.update(value = metrics.plot(project_dir))
-
-        ui.callback("refresh_presets", "click", refresh_presets_callback, [], ["preset"])
-        ui.callback("load_preset", "click", load_preset_callback, ["preset", "group:params"], ["group:params"])
-        ui.callback("save_preset", "click", save_preset_callback, ["preset", "group:params"], ["preset"])
-        ui.callback("delete_preset", "click", delete_preset_callback, ["preset"], ["preset"])
-        ui.callback("mode", "change", mode_callback, ["mode"], ["group:all"])
-        ui.callback("render_draft", "click", make_render_callback(False), ["group:params"], ["render_draft", "render_final", "video_preview"])
-        ui.callback("render_final", "click", make_render_callback(True), ["group:params"], ["render_draft", "render_final", "video_preview"])
-        ui.callback("render_plots", "click", render_plots_callback, ["group:params"], ["metrics_plots"])
 
         return ui.finalize(["group:params"])
 
