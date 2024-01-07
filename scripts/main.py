@@ -15,30 +15,19 @@ from temporal.interop import EXTENSION_DIR
 from temporal.metrics import Metrics
 from temporal.presets import delete_preset, load_preset, preset_names, refresh_presets, save_preset
 from temporal.session import saved_ext_param_ids
+from temporal.string_utils import match_mask
 from temporal.time_utils import wait_until
 from temporal.video_filtering import FILTERS
 from temporal.video_rendering import start_video_render, video_render_queue
 
 MODES = dict(
     image = SimpleNamespace(
+        name = "Image",
         func = generate_image,
-        hidden_elems = [
-            "project_subdir",
-            "save_every_nth_frame",
-            "archive_mode",
-            "load_parameters",
-            "continue_from_last_frame",
-            "render_draft_on_finish",
-            "render_final_on_finish",
-            "render_draft",
-            "render_final",
-            "metrics_enabled",
-            "render_plots",
-        ],
     ),
     sequence = SimpleNamespace(
+        name = "Sequence",
         func = generate_sequence,
-        hidden_elems = [],
     ),
 )
 
@@ -56,11 +45,15 @@ class UI:
 
         for id in ids:
             if id.startswith("group:"):
-                result.extend(x for x in self._ids if set(self._groups[x]).issuperset(id.split(":")[1].split("+")))
+                _, group = id.split(":")
+                result.extend(x for x in self._ids if self.is_in_group(x, group))
             else:
-                result.append(id)
+                result.extend(x for x in self._ids if match_mask(x, id))
 
         return result
+
+    def is_in_group(self, id, group):
+        return any(match_mask(x, group) for x in self._groups[id])
 
     def elem(self, id, constructor, *args, groups = [], **kwargs):
         def unique_label(string):
@@ -153,22 +146,22 @@ class TemporalScript(scripts.Script):
 
         def mode_callback(mode):
             # TODO: Tabs cannot be hidden; an error is thrown regarding an inability to send a `Tab` as an input component
-            return [gr.update(visible = x not in MODES[mode].hidden_elems) for x in ui.parse_ids(["group:all"])]
+            return [gr.update(visible = ui.is_in_group(x, f"mode_{mode}")) for x in ui.parse_ids(["group:mode_*"])]
 
         ui.elem("mode", gr.Dropdown, label = "Mode", choices = list(MODES.keys()), value = "sequence", groups = ["params"])
-        ui.callback("mode", "change", mode_callback, ["mode"], ["group:all"])
+        ui.callback("mode", "change", mode_callback, ["mode"], ["group:mode_*"])
 
         with ui.elem("", gr.Tab, "General"):
             with ui.elem("", gr.Accordion, "Output"):
                 with ui.elem("", gr.Row):
                     ui.elem("output_dir", gr.Textbox, label = "Output directory", value = "outputs/temporal", groups = ["params"])
-                    ui.elem("project_subdir", gr.Textbox, label = "Project subdirectory", value = "untitled", groups = ["params"])
+                    ui.elem("project_subdir", gr.Textbox, label = "Project subdirectory", value = "untitled", groups = ["params", "mode_sequence"])
 
                 with ui.elem("", gr.Row):
                     ui.elem("frame_count", gr.Number, label = "Frame count", precision = 0, minimum = 1, step = 1, value = 100, groups = ["params"])
-                    ui.elem("save_every_nth_frame", gr.Number, label = "Save every N-th frame", precision = 0, minimum = 1, step = 1, value = 1, groups = ["params", "session"])
+                    ui.elem("save_every_nth_frame", gr.Number, label = "Save every N-th frame", precision = 0, minimum = 1, step = 1, value = 1, groups = ["params", "session", "mode_sequence"])
 
-                ui.elem("archive_mode", gr.Checkbox, label = "Archive mode", value = False, groups = ["params", "session"])
+                ui.elem("archive_mode", gr.Checkbox, label = "Archive mode", value = False, groups = ["params", "session", "mode_sequence"])
 
             with ui.elem("", gr.Accordion, "Initial noise"):
                 ui.elem("initial_noise_factor", gr.Slider, label = "Factor", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, groups = ["params", "session"])
@@ -204,8 +197,8 @@ class TemporalScript(scripts.Script):
                 ui.elem("frame_merging_preference", gr.Slider, label = "Preference", minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0, groups = ["params", "session"])
 
             with ui.elem("", gr.Accordion, "Project"):
-                ui.elem("load_parameters", gr.Checkbox, label = "Load parameters", value = True, groups = ["params"])
-                ui.elem("continue_from_last_frame", gr.Checkbox, label = "Continue from last frame", value = True, groups = ["params"])
+                ui.elem("load_parameters", gr.Checkbox, label = "Load parameters", value = True, groups = ["params", "mode_sequence"])
+                ui.elem("continue_from_last_frame", gr.Checkbox, label = "Continue from last frame", value = True, groups = ["params", "mode_sequence"])
 
         with ui.elem("", gr.Tab, "Frame Preprocessing"):
             ui.elem("preprocessing_order", gr.Dropdown, label = "Order", multiselect = True, choices = list(PREPROCESSORS.keys()), value = [], groups = ["params", "session"])
@@ -241,8 +234,8 @@ class TemporalScript(scripts.Script):
                         ui.elem(f"video_{key}_{param.key}", param.type, label = param.name, **param.kwargs, groups = ["params"])
 
             with ui.elem("", gr.Row):
-                ui.elem("render_draft_on_finish", gr.Checkbox, label = "Render draft when finished", value = False, groups = ["params"])
-                ui.elem("render_final_on_finish", gr.Checkbox, label = "Render final when finished", value = False, groups = ["params"])
+                ui.elem("render_draft_on_finish", gr.Checkbox, label = "Render draft when finished", value = False, groups = ["params", "mode_sequence"])
+                ui.elem("render_final_on_finish", gr.Checkbox, label = "Render final when finished", value = False, groups = ["params", "mode_sequence"])
 
             with ui.elem("", gr.Row):
                 def make_render_callback(is_final):
@@ -258,9 +251,9 @@ class TemporalScript(scripts.Script):
 
                     return callback
 
-                ui.elem("render_draft", gr.Button, value = "Render draft")
+                ui.elem("render_draft", gr.Button, value = "Render draft", groups = ["mode_sequence"])
                 ui.callback("render_draft", "click", make_render_callback(False), ["group:params"], ["render_draft", "render_final", "video_preview"])
-                ui.elem("render_final", gr.Button, value = "Render final")
+                ui.elem("render_final", gr.Button, value = "Render final", groups = ["mode_sequence"])
                 ui.callback("render_final", "click", make_render_callback(True), ["group:params"], ["render_draft", "render_final", "video_preview"])
 
             ui.elem("video_preview", gr.Video, label = "Preview", format = "mp4", interactive = False)
@@ -273,9 +266,9 @@ class TemporalScript(scripts.Script):
                 metrics.load(project_dir)
                 return gr.update(value = metrics.plot(project_dir))
 
-            ui.elem("metrics_enabled", gr.Checkbox, label = "Enabled", value = False, groups = ["params"])
+            ui.elem("metrics_enabled", gr.Checkbox, label = "Enabled", value = False, groups = ["params", "mode_sequence"])
             ui.elem("metrics_save_plots_every_nth_frame", gr.Number, label = "Save plots every N-th frame", precision = 0, minimum = 1, step = 1, value = 10, groups = ["params"])
-            ui.elem("render_plots", gr.Button, value = "Render plots")
+            ui.elem("render_plots", gr.Button, value = "Render plots", groups = ["mode_sequence"])
             ui.callback("render_plots", "click", render_plots_callback, ["group:params"], ["metrics_plots"])
             ui.elem("metrics_plots", gr.Gallery, label = "Plots", columns = 4, object_fit = "contain", preview = True)
 
