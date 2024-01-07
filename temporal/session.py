@@ -2,10 +2,11 @@ from modules.shared import opts
 
 from temporal.compat import upgrade_project
 from temporal.fs import load_json, recreate_directory, save_json, save_text
-from temporal.image_preprocessing import iterate_all_preprocessor_keys
 from temporal.image_utils import load_image
 from temporal.interop import import_cn
 from temporal.serialization import load_dict, load_object, save_dict, save_object
+
+saved_ext_param_ids = []
 
 def get_last_frame_index(frame_dir):
     def get_index(path):
@@ -104,31 +105,6 @@ def save_session(p, ext_params, project_dir):
             ])
             for cn_unit in external_code.get_all_units_in_processing(p)
         ) if (external_code := import_cn()) else [],
-        extension_params = save_object(ext_params, session_dir, [
-            "save_every_nth_frame",
-            "archive_mode",
-            "initial_noise_factor",
-            "initial_noise_scale",
-            "initial_noise_octaves",
-            "initial_noise_lacunarity",
-            "initial_noise_persistence",
-            "use_sd",
-            "multisampling_samples",
-            "multisampling_batch_size",
-            "multisampling_trimming",
-            "multisampling_easing",
-            "multisampling_preference",
-            "detailing_enabled",
-            "detailing_scale",
-            "detailing_scale_buffer",
-            "detailing_sampler",
-            "detailing_steps",
-            "detailing_denoising_strength",
-            "frame_merging_frames",
-            "frame_merging_trimming",
-            "frame_merging_easing",
-            "frame_merging_preference",
-            "preprocessing_order",
-        ] + list(iterate_all_preprocessor_keys())),
+        extension_params = save_object(ext_params, session_dir, saved_ext_param_ids),
     ))
     save_text(session_dir / "version.txt", "10")

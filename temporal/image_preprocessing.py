@@ -35,20 +35,6 @@ def preprocess_image(im, ext_params, seed):
 
     return np_to_pil(np.clip(npim, 0.0, 1.0))
 
-def iterate_all_preprocessor_keys():
-    for key, preprocessor in PREPROCESSORS.items():
-        yield f"{key}_enabled"
-        yield f"{key}_amount"
-        yield f"{key}_amount_relative"
-
-        for param in preprocessor.params:
-            yield f"{key}_{param.key}"
-
-        yield f"{key}_mask"
-        yield f"{key}_mask_normalized"
-        yield f"{key}_mask_inverted"
-        yield f"{key}_mask_blurring"
-
 class UIParam:
     def __init__(self, type, key, name, **kwargs):
         self.type = type
