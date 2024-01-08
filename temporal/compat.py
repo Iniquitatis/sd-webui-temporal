@@ -347,7 +347,13 @@ def _(path):
     data = load_json(params_path, {})
 
     ext_params = data["extension_params"]
-    ext_params["initial_noise_factor"] = float(ext_params.pop("noise_for_first_frame"))
+    ext_params.update({
+        "initial_noise_factor": float(ext_params.pop("noise_for_first_frame")),
+        "initial_noise_scale": 1,
+        "initial_noise_octaves": 1,
+        "initial_noise_lacunarity": 2.0,
+        "initial_noise_persistence": 0.5,
+    })
 
     save_json(params_path, data)
     save_text(version_path, "10")
