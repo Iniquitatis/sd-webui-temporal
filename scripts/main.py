@@ -9,7 +9,7 @@ from modules.ui_components import InputAccordion, ToolButton
 
 from temporal.collection_utils import get_first_element
 from temporal.fs import load_text
-from temporal.image_generation import generate_image, generate_sequence
+from temporal.image_generation import GENERATION_MODES
 from temporal.image_preprocessing import PREPROCESSORS
 from temporal.interop import EXTENSION_DIR
 from temporal.metrics import Metrics
@@ -19,17 +19,6 @@ from temporal.string_utils import match_mask
 from temporal.time_utils import wait_until
 from temporal.video_filtering import FILTERS
 from temporal.video_rendering import start_video_render, video_render_queue
-
-MODES = dict(
-    image = SimpleNamespace(
-        name = "Image",
-        func = generate_image,
-    ),
-    sequence = SimpleNamespace(
-        name = "Sequence",
-        func = generate_sequence,
-    ),
-)
 
 class UI:
     def __init__(self, id_formatter):
@@ -147,7 +136,7 @@ class TemporalScript(scripts.Script):
         def mode_callback(mode):
             return [gr.update(visible = ui.is_in_group(x, f"mode_{mode}")) for x in ui.parse_ids(["group:mode_*"])]
 
-        ui.elem("mode", gr.Dropdown, label = "Mode", choices = list(MODES.keys()), value = "sequence", groups = ["params"])
+        ui.elem("mode", gr.Dropdown, label = "Mode", choices = list(GENERATION_MODES.keys()), value = "sequence", groups = ["params"])
         ui.callback("mode", "change", mode_callback, ["mode"], ["group:mode_*"])
 
         with ui.elem("", gr.Tab, label = "General"):
@@ -285,7 +274,7 @@ class TemporalScript(scripts.Script):
     def run(self, p, *args):
         saved_ext_param_ids[:] = self._ui.parse_ids(["group:session"])
         ext_params = self._ui.unpack_values(["group:params"], *args)
-        processed = MODES[ext_params.mode].func(p, ext_params)
+        processed = GENERATION_MODES[ext_params.mode].func(p, ext_params)
 
         if ext_params.render_draft_on_finish:
             start_video_render(ext_params, False)

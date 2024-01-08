@@ -2,6 +2,7 @@ from copy import copy, deepcopy
 from itertools import count
 from math import ceil
 from pathlib import Path
+from types import SimpleNamespace
 
 from PIL import Image
 
@@ -18,9 +19,18 @@ from temporal.session import get_last_frame_index, load_last_frame, load_session
 from temporal.thread_queue import ThreadQueue
 from temporal.time_utils import wait_until
 
+GENERATION_MODES = dict()
+
+def generation_mode(key, name):
+    def decorator(func):
+        GENERATION_MODES[key] = SimpleNamespace(name = name, func = func)
+        return func
+    return decorator
+
 image_save_queue = ThreadQueue()
 
-def generate_image(p, ext_params):
+@generation_mode("image", "Image")
+def _(p, ext_params):
     opts_backup = opts.data.copy()
 
     _apply_prompt_styles(p)
@@ -124,7 +134,8 @@ def generate_image(p, ext_params):
 
     return processing.Processed(p, [last_image])
 
-def generate_sequence(p, ext_params):
+@generation_mode("sequence", "Sequence")
+def _(p, ext_params):
     opts_backup = opts.data.copy()
 
     opts.save_to_dirs = False
