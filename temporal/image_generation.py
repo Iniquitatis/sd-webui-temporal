@@ -32,101 +32,34 @@ def _(p, ext_params):
     if not _setup_processing(p, ext_params):
         return processing.Processed(p, p.init_images)
 
-    buffer_width = p.width
-    buffer_height = p.height
-
-    if ext_params.detailing_scale_buffer:
-        buffer_width *= ext_params.detailing_scale
-        buffer_height *= ext_params.detailing_scale
-
-    image_buffer = ImageBuffer(buffer_width, buffer_height, 3, ext_params.frame_merging_frames)
-    image_buffer.init(p.init_images[0])
+    image_buffer = _make_image_buffer(p, ext_params)
 
     _apply_relative_params(ext_params, p.denoising_strength)
 
-    batch_count = ceil(ext_params.multisampling_samples / ext_params.multisampling_batch_size)
-    total_sample_count = ext_params.multisampling_batch_size * batch_count
-
-    state.job_count = ext_params.frame_count * batch_count
-
-    if ext_params.detailing_enabled:
-        state.job_count *= 2
-
-    last_image = p.init_images[0]
-    last_info = None
+    last_processed = processing.Processed(p, [p.init_images[0]])
 
     for i in range(ext_params.frame_count):
-        seed = p.seed + i
-
-        if not (processed := _process_image(f"Frame {i + 1} / {ext_params.frame_count}", copy_with_overrides(p,
-            init_images = [preprocess_image(last_image, ext_params, seed)],
-            n_iter = batch_count,
-            batch_size = ext_params.multisampling_batch_size,
-            seed = seed,
-            do_not_save_samples = True,
-            do_not_save_grid = True,
-        ), ext_params.use_sd)):
+        if not (processed := _process_iteration(
+            p = p,
+            ext_params = ext_params,
+            image_buffer = image_buffer,
+            image = last_processed.images[0],
+            i = i,
+            frame_index = i,
+        )):
             break
 
-        samples = processed.images[:total_sample_count]
+        last_processed = processed
 
-        if ext_params.detailing_enabled:
-            detailed_samples = []
-            stopped = False
-
-            for j in range(batch_count):
-                offset_from = j * ext_params.multisampling_batch_size
-                offset_to = (j + 1) * ext_params.multisampling_batch_size
-
-                if not (detailed := _process_image("Detailing", copy_with_overrides(p,
-                    init_images = samples[offset_from:offset_to],
-                    sampler_name = ext_params.detailing_sampler,
-                    steps = ext_params.detailing_steps,
-                    width = p.width * ext_params.detailing_scale,
-                    height = p.height * ext_params.detailing_scale,
-                    n_iter = 1,
-                    batch_size = ext_params.multisampling_batch_size,
-                    denoising_strength = ext_params.detailing_denoising_strength,
-                    seed = seed + total_sample_count + offset_from,
-                    seed_enable_extras = True,
-                    seed_resize_from_w = p.seed_resize_from_w or p.width,
-                    seed_resize_from_h = p.seed_resize_from_h or p.height,
-                    do_not_save_samples = True,
-                    do_not_save_grid = True,
-                ), ext_params.use_sd)):
-                    stopped = True
-                    break
-
-                detailed_samples.extend(
-                    ensure_image_dims(x, x.mode, (buffer_width, buffer_height))
-                    for x in detailed.images[:ext_params.multisampling_batch_size]
-                )
-
-            if stopped:
-                break
-
-            samples = detailed_samples
-
-        generated_image = average_images(samples, ext_params.multisampling_trimming, ext_params.multisampling_easing, ext_params.multisampling_preference)
-        image_buffer.add(generated_image)
-        last_image = image_buffer.average(ext_params.frame_merging_trimming, ext_params.frame_merging_easing, ext_params.frame_merging_preference)
-        last_image = ensure_image_dims(last_image, last_image.mode, (p.width, p.height))
-        last_info = processed.info
-
-    images.save_image(
-        last_image,
-        ext_params.output_dir,
-        "",
+    _save_processed_image(
         p = p,
-        prompt = p.prompt,
-        seed = p.seed,
-        info = last_info,
-        extension = opts.samples_format,
+        processed = last_processed,
+        output_dir = ext_params.output_dir,
     )
 
     opts.data.update(opts_backup)
 
-    return processing.Processed(p, [last_image])
+    return last_processed
 
 @generation_mode("sequence", "Sequence")
 def _(p, ext_params):
@@ -149,15 +82,7 @@ def _(p, ext_params):
     if not _setup_processing(p, ext_params):
         return processing.Processed(p, p.init_images)
 
-    buffer_width = p.width
-    buffer_height = p.height
-
-    if ext_params.detailing_scale_buffer:
-        buffer_width *= ext_params.detailing_scale
-        buffer_height *= ext_params.detailing_scale
-
-    image_buffer = ImageBuffer(buffer_width, buffer_height, 3, ext_params.frame_merging_frames)
-    image_buffer.init(p.init_images[0])
+    image_buffer = _make_image_buffer(p, ext_params)
 
     if ext_params.continue_from_last_frame:
         image_buffer.load(project_dir)
@@ -175,103 +100,39 @@ def _(p, ext_params):
 
     _apply_relative_params(ext_params, p.denoising_strength)
 
-    batch_count = ceil(ext_params.multisampling_samples / ext_params.multisampling_batch_size)
-    total_sample_count = ext_params.multisampling_batch_size * batch_count
-
-    state.job_count = ext_params.frame_count * batch_count
-
-    if ext_params.detailing_enabled:
-        state.job_count *= 2
-
     if last_frame := load_last_frame(project_dir):
-        last_image = last_frame
+        last_processed = processing.Processed(p, [last_frame])
     else:
-        last_image = p.init_images[0]
+        last_processed = processing.Processed(p, [p.init_images[0]])
 
     image_buffer_to_save = deepcopy(image_buffer)
 
     for i, frame_index in zip(range(ext_params.frame_count), count(last_index + 1)):
-        seed = p.seed + frame_index
-
-        if not (processed := _process_image(f"Frame {i + 1} / {ext_params.frame_count}", copy_with_overrides(p,
-            init_images = [preprocess_image(last_image, ext_params, seed)],
-            n_iter = batch_count,
-            batch_size = ext_params.multisampling_batch_size,
-            seed = seed,
-            do_not_save_samples = True,
-            do_not_save_grid = True,
-        ), ext_params.use_sd)):
+        if not (processed := _process_iteration(
+            p = p,
+            ext_params = ext_params,
+            image_buffer = image_buffer,
+            image = last_processed.images[0],
+            i = i,
+            frame_index = frame_index,
+        )):
             break
 
-        samples = processed.images[:total_sample_count]
-
-        if ext_params.detailing_enabled:
-            detailed_samples = []
-            stopped = False
-
-            for j in range(batch_count):
-                offset_from = j * ext_params.multisampling_batch_size
-                offset_to = (j + 1) * ext_params.multisampling_batch_size
-
-                if not (detailed := _process_image("Detailing", copy_with_overrides(p,
-                    init_images = samples[offset_from:offset_to],
-                    sampler_name = ext_params.detailing_sampler,
-                    steps = ext_params.detailing_steps,
-                    width = p.width * ext_params.detailing_scale,
-                    height = p.height * ext_params.detailing_scale,
-                    n_iter = 1,
-                    batch_size = ext_params.multisampling_batch_size,
-                    denoising_strength = ext_params.detailing_denoising_strength,
-                    seed = seed + total_sample_count + offset_from,
-                    seed_enable_extras = True,
-                    seed_resize_from_w = p.seed_resize_from_w or p.width,
-                    seed_resize_from_h = p.seed_resize_from_h or p.height,
-                    do_not_save_samples = True,
-                    do_not_save_grid = True,
-                ), ext_params.use_sd)):
-                    stopped = True
-                    break
-
-                detailed_samples.extend(
-                    ensure_image_dims(x, x.mode, (buffer_width, buffer_height))
-                    for x in detailed.images[:ext_params.multisampling_batch_size]
-                )
-
-            if stopped:
-                break
-
-            samples = detailed_samples
-
-        generated_image = average_images(samples, ext_params.multisampling_trimming, ext_params.multisampling_easing, ext_params.multisampling_preference)
-        image_buffer.add(generated_image)
-        last_image = image_buffer.average(ext_params.frame_merging_trimming, ext_params.frame_merging_easing, ext_params.frame_merging_preference)
-        last_image = ensure_image_dims(last_image, last_image.mode, (p.width, p.height))
+        last_processed = processed
 
         if frame_index % ext_params.save_every_nth_frame == 0:
-            if ext_params.archive_mode:
-                image_save_queue.enqueue(
-                    save_image,
-                    last_image,
-                    project_dir / f"{frame_index:05d}.png",
-                    archive_mode = True,
-                )
-            else:
-                images.save_image(
-                    last_image,
-                    project_dir,
-                    "",
-                    p = p,
-                    prompt = p.prompt,
-                    seed = processed.seed,
-                    info = processed.info,
-                    forced_filename = f"{frame_index:05d}",
-                    extension = opts.samples_format,
-                )
+            _save_processed_image(
+                p = p,
+                processed = last_processed,
+                output_dir = project_dir,
+                file_name = f"{frame_index:05d}",
+                archive_mode = ext_params.archive_mode,
+            )
 
             image_buffer_to_save = deepcopy(image_buffer)
 
         if ext_params.metrics_enabled:
-            metrics.measure(last_image)
+            metrics.measure(last_processed.images[0])
             metrics.save(project_dir)
 
             if frame_index % ext_params.metrics_save_plots_every_nth_frame == 0:
@@ -283,7 +144,7 @@ def _(p, ext_params):
 
     opts.data.update(opts_backup)
 
-    return processing.Processed(p, [last_image])
+    return last_processed
 
 def _process_image(job_title, p, use_sd = True):
     state.job = job_title
@@ -337,7 +198,103 @@ def _setup_processing(p, ext_params):
 
     return True
 
+def _make_image_buffer(p, ext_params):
+    width = p.width
+    height = p.height
+
+    if ext_params.detailing_scale_buffer:
+        width *= ext_params.detailing_scale
+        height *= ext_params.detailing_scale
+
+    buffer = ImageBuffer(width, height, 3, ext_params.frame_merging_frames)
+    buffer.init(p.init_images[0])
+
+    return buffer
+
 def _apply_relative_params(ext_params, denoising_strength):
     for key in PREPROCESSORS.keys():
         if getattr(ext_params, f"{key}_amount_relative"):
             setattr(ext_params, f"{key}_amount", getattr(ext_params, f"{key}_amount") * denoising_strength)
+
+def _process_iteration(p, ext_params, image_buffer, image, i, frame_index):
+    batch_count = ceil(ext_params.multisampling_samples / ext_params.multisampling_batch_size)
+    total_sample_count = ext_params.multisampling_batch_size * batch_count
+
+    state.job_count = ext_params.frame_count * batch_count
+
+    if ext_params.detailing_enabled:
+        state.job_count *= 2
+
+    seed = p.seed + frame_index
+
+    if not (processed := _process_image(f"Frame {i + 1} / {ext_params.frame_count}", copy_with_overrides(p,
+        init_images = [preprocess_image(image, ext_params, seed)],
+        n_iter = batch_count,
+        batch_size = ext_params.multisampling_batch_size,
+        seed = seed,
+        do_not_save_samples = True,
+        do_not_save_grid = True,
+    ), ext_params.use_sd)):
+        return None
+
+    samples = processed.images[:total_sample_count]
+
+    if ext_params.detailing_enabled:
+        detailed_samples = []
+
+        for j in range(batch_count):
+            offset_from = j * ext_params.multisampling_batch_size
+            offset_to = (j + 1) * ext_params.multisampling_batch_size
+
+            if not (detailed := _process_image("Detailing", copy_with_overrides(p,
+                init_images = samples[offset_from:offset_to],
+                sampler_name = ext_params.detailing_sampler,
+                steps = ext_params.detailing_steps,
+                width = p.width * ext_params.detailing_scale,
+                height = p.height * ext_params.detailing_scale,
+                n_iter = 1,
+                batch_size = ext_params.multisampling_batch_size,
+                denoising_strength = ext_params.detailing_denoising_strength,
+                seed = seed + total_sample_count + offset_from,
+                seed_enable_extras = True,
+                seed_resize_from_w = p.seed_resize_from_w or p.width,
+                seed_resize_from_h = p.seed_resize_from_h or p.height,
+                do_not_save_samples = True,
+                do_not_save_grid = True,
+            ), ext_params.use_sd)):
+                return None
+
+            detailed_samples.extend(
+                ensure_image_dims(x, x.mode, (image_buffer.width, image_buffer.height))
+                for x in detailed.images[:ext_params.multisampling_batch_size]
+            )
+
+        samples = detailed_samples
+
+    multisampled_image = average_images(samples, ext_params.multisampling_trimming, ext_params.multisampling_easing, ext_params.multisampling_preference)
+    image_buffer.add(multisampled_image)
+    merged_image = image_buffer.average(ext_params.frame_merging_trimming, ext_params.frame_merging_easing, ext_params.frame_merging_preference)
+    merged_image = ensure_image_dims(merged_image, merged_image.mode, (p.width, p.height))
+
+    return copy_with_overrides(processed, images = [merged_image])
+
+def _save_processed_image(p, processed, output_dir, file_name = None, archive_mode = False):
+    if archive_mode:
+        image_save_queue.enqueue(
+            save_image,
+            processed.images[0],
+            (output_dir / file_name).with_suffix(".png"),
+            archive_mode = True,
+        )
+    else:
+        images.save_image(
+            processed.images[0],
+            output_dir,
+            "",
+            p = p,
+            prompt = processed.prompt,
+            seed = processed.seed,
+            info = processed.info,
+            forced_filename = file_name,
+            extension = opts.samples_format,
+        )
