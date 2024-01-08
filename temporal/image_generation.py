@@ -45,7 +45,7 @@ def _(p, ext_params):
             image_buffer = image_buffer,
             image = last_processed.images[0],
             i = i,
-            frame_index = i,
+            frame_index = i + 1,
         )):
             break
 
