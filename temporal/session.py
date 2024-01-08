@@ -33,8 +33,7 @@ def load_session(p, ext_params, project_dir):
     if not (params_path := (session_dir / "parameters.json")).is_file():
         return
 
-    if not upgrade_project(project_dir):
-        return
+    upgrade_project(project_dir)
 
     data = load_json(params_path, {})
 

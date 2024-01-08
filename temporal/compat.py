@@ -9,12 +9,14 @@ from temporal.image_utils import load_image, pil_to_np
 UPGRADERS, upgrader = make_func_registerer()
 
 def upgrade_project(path):
-    for version, upgrader in UPGRADERS.items():
-        if not upgrader.func(path):
-            print(f"WARNING: Couldn't upgrade project to version {version}")
-            return False
+    last_version = 0
 
-    return True
+    for version, upgrader in UPGRADERS.items():
+        if upgrader.func(path):
+            last_version = version
+
+    if last_version:
+        print(f"Upgraded project to version {last_version}")
 
 @upgrader(1)
 def _(path):
@@ -32,10 +34,10 @@ def _(path):
     def upgrade_values(d):
         return {k: upgrade_value(v) for k, v in d.items()}
 
-    if (version_path := (path / "session" / "version.txt")).is_file():
-        return True
+    version_path = path / "session" / "version.txt"
+    params_path = path / "session" / "parameters.json"
 
-    if not (params_path := (path / "session" / "parameters.json")).is_file():
+    if "im_type" not in load_text(params_path, ""):
         return False
 
     data = load_json(params_path, {})
@@ -55,13 +57,10 @@ def _(path):
 
 @upgrader(2)
 def _(path):
-    if not (version_path := (path / "session" / "version.txt")).is_file():
-        return False
+    version_path = path / "session" / "version.txt"
+    params_path = path / "session" / "parameters.json"
 
-    if int(load_text(version_path, "0")) >= 2:
-        return True
-
-    if not (params_path := (path / "session" / "parameters.json")).is_file():
+    if int(load_text(version_path, "0")) != 1:
         return False
 
     data = load_json(params_path, {})
@@ -106,11 +105,10 @@ def _(path):
 
 @upgrader(3)
 def _(path):
-    if not (version_path := (path / "session" / "version.txt")).is_file():
-        return False
+    version_path = path / "session" / "version.txt"
 
-    if int(load_text(version_path, "0")) >= 3:
-        return True
+    if int(load_text(version_path, "0")) != 2:
+        return False
 
     if frames := sorted(path.glob("*.png"), key = lambda x: int(x.stem)):
         copy2(frames[-1], ensure_directory_exists(path / "session" / "buffer") / "001.png")
@@ -143,13 +141,10 @@ def _(path):
     def upgrade_values(d):
         return {k: upgrade_value(v) for k, v in d.items()}
 
-    if not (version_path := (path / "session" / "version.txt")).is_file():
-        return False
+    version_path = path / "session" / "version.txt"
+    params_path = path / "session" / "parameters.json"
 
-    if int(load_text(version_path, "0")) >= 4:
-        return True
-
-    if not (params_path := (path / "session" / "parameters.json")).is_file():
+    if int(load_text(version_path, "0")) != 3:
         return False
 
     data = load_json(params_path, {})
@@ -191,17 +186,12 @@ def _(path):
     def upgrade_values(d):
         return {k: upgrade_value(v) for k, v in d.items()}
 
-    if not (version_path := (path / "session" / "version.txt")).is_file():
+    version_path = path / "session" / "version.txt"
+    params_path = path / "session" / "parameters.json"
+    buffer_dir = path / "session" / "buffer"
+
+    if int(load_text(version_path, "0")) != 4:
         return False
-
-    if int(load_text(version_path, "0")) >= 5:
-        return True
-
-    if not (params_path := (path / "session" / "parameters.json")).is_file():
-        return False
-
-    if not (buffer_dir := (path / "session" / "buffer")).is_dir():
-        return
 
     data = load_json(params_path, {})
 
@@ -239,13 +229,10 @@ def _(path):
 
 @upgrader(6)
 def _(path):
-    if not (version_path := (path / "session" / "version.txt")).is_file():
-        return False
+    version_path = path / "session" / "version.txt"
+    params_path = path / "session" / "parameters.json"
 
-    if int(load_text(version_path, "0")) >= 6:
-        return True
-
-    if not (params_path := (path / "session" / "parameters.json")).is_file():
+    if int(load_text(version_path, "0")) != 5:
         return False
 
     data = load_json(params_path, {})
@@ -268,13 +255,10 @@ def _(path):
 
 @upgrader(7)
 def _(path):
-    if not (version_path := (path / "session" / "version.txt")).is_file():
-        return False
+    version_path = path / "session" / "version.txt"
+    params_path = path / "session" / "parameters.json"
 
-    if int(load_text(version_path, "0")) >= 7:
-        return True
-
-    if not (params_path := (path / "session" / "parameters.json")).is_file():
+    if int(load_text(version_path, "0")) != 6:
         return False
 
     data = load_json(params_path, {})
@@ -304,13 +288,10 @@ def _(path):
 
 @upgrader(8)
 def _(path):
-    if not (version_path := (path / "session" / "version.txt")).is_file():
-        return False
+    version_path = path / "session" / "version.txt"
+    params_path = path / "session" / "parameters.json"
 
-    if int(load_text(version_path, "0")) >= 8:
-        return True
-
-    if not (params_path := (path / "session" / "parameters.json")).is_file():
+    if int(load_text(version_path, "0")) != 7:
         return False
 
     data = load_json(params_path, {})
@@ -328,13 +309,10 @@ def _(path):
 
 @upgrader(9)
 def _(path):
-    if not (version_path := (path / "session" / "version.txt")).is_file():
-        return False
+    version_path = path / "session" / "version.txt"
+    params_path = path / "session" / "parameters.json"
 
-    if int(load_text(version_path, "0")) >= 9:
-        return True
-
-    if not (params_path := (path / "session" / "parameters.json")).is_file():
+    if int(load_text(version_path, "0")) != 8:
         return False
 
     data = load_json(params_path, {})
@@ -360,13 +338,10 @@ def _(path):
 
 @upgrader(10)
 def _(path):
-    if not (version_path := (path / "session" / "version.txt")).is_file():
-        return False
+    version_path = path / "session" / "version.txt"
+    params_path = path / "session" / "parameters.json"
 
-    if int(load_text(version_path, "0")) >= 10:
-        return True
-
-    if not (params_path := (path / "session" / "parameters.json")).is_file():
+    if int(load_text(version_path, "0")) != 9:
         return False
 
     data = load_json(params_path, {})
