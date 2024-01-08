@@ -162,6 +162,10 @@ def _process_image(job_title, p, use_sd = True):
     if state.interrupted or state.skipped:
         return None
 
+    if not use_sd:
+        state.nextjob()
+        state.assign_current_image(processed.images[0])
+
     return processed
 
 def _apply_prompt_styles(p):
