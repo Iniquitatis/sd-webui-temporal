@@ -3,8 +3,9 @@ from types import SimpleNamespace
 import gradio as gr
 
 from temporal.collection_utils import reorder_dict
+from temporal.func_utils import make_func_registerer
 
-FILTERS = dict()
+FILTERS, filter = make_func_registerer(name = "", params = [])
 
 def build_filter(ext_params):
     return ",".join([
@@ -22,12 +23,6 @@ class UIParam:
         self.key = key
         self.name = name
         self.kwargs = kwargs
-
-def filter(key, name, params = []):
-    def decorator(func):
-        FILTERS[key] = SimpleNamespace(name = name, func = func, params = params)
-        return func
-    return decorator
 
 @filter("chromatic_aberration", "Chromatic aberration", [
     UIParam(gr.Slider, "distance", "Distance", minimum = 1, maximum = 512, step = 1, value = 1),

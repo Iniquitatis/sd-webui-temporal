@@ -3,23 +3,18 @@ from shutil import copy2
 import numpy as np
 
 from temporal.fs import ensure_directory_exists, load_json, load_text, save_json, save_text
+from temporal.func_utils import make_func_registerer
 from temporal.image_utils import load_image, pil_to_np
 
-UPGRADERS = dict()
+UPGRADERS, upgrader = make_func_registerer()
 
 def upgrade_project(path):
-    for version, func in UPGRADERS.items():
-        if not func(path):
+    for version, upgrader in UPGRADERS.items():
+        if not upgrader.func(path):
             print(f"WARNING: Couldn't upgrade project to version {version}")
             return False
 
     return True
-
-def upgrader(version):
-    def decorator(func):
-        UPGRADERS[version] = func
-        return func
-    return decorator
 
 @upgrader(1)
 def _(path):

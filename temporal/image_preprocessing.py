@@ -7,12 +7,13 @@ import skimage
 from PIL import Image, ImageColor
 
 from temporal.collection_utils import get_first_element, reorder_dict
+from temporal.func_utils import make_func_registerer
 from temporal.image_blending import BLEND_MODES, blend_images
 from temporal.image_utils import match_image, np_to_pil, pil_to_np
 from temporal.math import lerp, normalize, remap_range
 from temporal.numpy_utils import generate_noise
 
-PREPROCESSORS = dict()
+PREPROCESSORS, preprocessor = make_func_registerer(name = "", params = [])
 
 def preprocess_image(im, ext_params, seed):
     im = im.convert("RGB")
@@ -41,12 +42,6 @@ class UIParam:
         self.key = key
         self.name = name
         self.kwargs = kwargs
-
-def preprocessor(key, name, params = []):
-    def decorator(func):
-        PREPROCESSORS[key] = SimpleNamespace(name = name, func = func, params = params)
-        return func
-    return decorator
 
 @preprocessor("blurring", "Blurring", [
     UIParam(gr.Slider, "radius", "Radius", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0),
@@ -112,7 +107,7 @@ def _(npim, seed, params):
     ], axis = 2)
 
 @preprocessor("modulation", "Modulation", [
-    UIParam(gr.Dropdown, "mode", "Mode", choices = {k: v["name"] for k, v in BLEND_MODES.items()}, value = get_first_element(BLEND_MODES)),
+    UIParam(gr.Dropdown, "mode", "Mode", choices = {k: v.name for k, v in BLEND_MODES.items()}, value = get_first_element(BLEND_MODES)),
     UIParam(gr.Pil, "image", "Image"),
     UIParam(gr.Slider, "blurring", "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0),
 ])
@@ -142,7 +137,7 @@ def _(npim, seed, params):
     ], axis = 2)
 
 @preprocessor("noise", "Noise", [
-    UIParam(gr.Dropdown, "mode", "Mode", choices = {k: v["name"] for k, v in BLEND_MODES.items()}, value = get_first_element(BLEND_MODES)),
+    UIParam(gr.Dropdown, "mode", "Mode", choices = {k: v.name for k, v in BLEND_MODES.items()}, value = get_first_element(BLEND_MODES)),
 ])
 def _(npim, seed, params):
     return blend_images(npim, generate_noise(npim.shape, seed), params.mode)
@@ -204,7 +199,7 @@ def _(npim, seed, params):
     return npim
 
 @preprocessor("tinting", "Tinting", [
-    UIParam(gr.Dropdown, "mode", "Mode", choices = {k: v["name"] for k, v in BLEND_MODES.items()}, value = get_first_element(BLEND_MODES)),
+    UIParam(gr.Dropdown, "mode", "Mode", choices = {k: v.name for k, v in BLEND_MODES.items()}, value = get_first_element(BLEND_MODES)),
     UIParam(gr.ColorPicker, "color", "Color", value = "#ffffff"),
 ])
 def _(npim, seed, params):

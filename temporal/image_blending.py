@@ -1,19 +1,15 @@
 import numpy as np
 import skimage
 
-BLEND_MODES = dict()
+from temporal.func_utils import make_func_registerer
+
+BLEND_MODES, blend_mode = make_func_registerer(name = "")
 
 def blend_images(npim, modulator, mode):
     if modulator is None:
         return npim
 
-    return BLEND_MODES[mode]["func"](npim, modulator)
-
-def blend_mode(key, name):
-    def decorator(func):
-        BLEND_MODES[key] = dict(name = name, func = func)
-        return func
-    return decorator
+    return BLEND_MODES[mode].func(npim, modulator)
 
 @blend_mode("normal", "Normal")
 def _(b, s):
@@ -48,8 +44,8 @@ def _(b, s):
     result = np.zeros_like(s)
     less_idx = np.where(s <= 0.5)
     more_idx = np.where(s >  0.5)
-    result[less_idx] = BLEND_MODES["multiply"]["func"](b[less_idx], 2.0 * s[less_idx])
-    result[more_idx] = BLEND_MODES["screen"]["func"](b[more_idx], 2.0 * s[more_idx] - 1.0)
+    result[less_idx] = BLEND_MODES["multiply"].func(b[less_idx], 2.0 * s[less_idx])
+    result[more_idx] = BLEND_MODES["screen"].func(b[more_idx], 2.0 * s[more_idx] - 1.0)
     return result
 
 @blend_mode("soft_light", "Soft light")
@@ -95,7 +91,7 @@ def _(b, s):
 
 @blend_mode("overlay", "Overlay")
 def _(b, s):
-    return BLEND_MODES["hard_light"]["func"](s, b)
+    return BLEND_MODES["hard_light"].func(s, b)
 
 @blend_mode("screen", "Screen")
 def _(b, s):

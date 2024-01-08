@@ -2,7 +2,6 @@ from copy import copy, deepcopy
 from itertools import count
 from math import ceil
 from pathlib import Path
-from types import SimpleNamespace
 
 from PIL import Image
 
@@ -10,6 +9,7 @@ from modules import images, processing
 from modules.shared import opts, prompt_styles, state
 
 from temporal.fs import clear_directory, ensure_directory_exists, remove_directory
+from temporal.func_utils import make_func_registerer
 from temporal.image_buffer import ImageBuffer
 from temporal.image_preprocessing import PREPROCESSORS, preprocess_image
 from temporal.image_utils import average_images, ensure_image_dims, generate_value_noise_image, save_image
@@ -19,13 +19,7 @@ from temporal.session import get_last_frame_index, load_last_frame, load_session
 from temporal.thread_queue import ThreadQueue
 from temporal.time_utils import wait_until
 
-GENERATION_MODES = dict()
-
-def generation_mode(key, name):
-    def decorator(func):
-        GENERATION_MODES[key] = SimpleNamespace(name = name, func = func)
-        return func
-    return decorator
+GENERATION_MODES, generation_mode = make_func_registerer(name = "")
 
 image_save_queue = ThreadQueue()
 
