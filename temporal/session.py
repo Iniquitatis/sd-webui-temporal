@@ -106,4 +106,4 @@ def save_session(p, ext_params, project_dir):
         ) if (external_code := import_cn()) else [],
         extension_params = save_object(ext_params, session_dir, saved_ext_param_ids),
     ))
-    save_text(session_dir / "version.txt", "10")
+    save_text(session_dir / "version.txt", "11")

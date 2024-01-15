@@ -6,6 +6,7 @@
     * **Enabled** — determines whether a preprocessing effect is turned on or not.
     * **Amount** — amount of the processed image to be mixed in into the frame.
         * **Relative** — determines if the amount will be multiplied by the **img2img** denoising strength.
+    * **Mode** — blending mode of the processed image.
     * **Mask** — an image that determines which areas will be processed by a preprocessing effect; black—unprocessed, white—fully processed.
         * **Normalized** — normalization of the mask image to use the full range from black to white.
         * **Inverted** — inversion of the mask image.
@@ -20,16 +21,17 @@
     * **Reference image** — an image that will be used to match histograms. Simply put, an overall color balance of the frame will be matched against this image.
     * **Normalize contrast** — normalize the contrast curve of the frame so that it's in range of 0.0–1.0.
     * **Equalize histogram** — equalize the image histogram, distributing the color intensities evenly.
+* **Color overlay** — overlaying the constant color on top of the frame.
+    * **Color** — a color that will be used to modulate the frame.
 * **Custom code** — custom preprocessing code.
     * **Code** — Python code that will be used to process the frame.
         * **NOTE:** It provides a global 3D numpy array (height, width, RGB) called `input` and expects a processed array to be assigned to a global variable called `output`. `np`, `scipy`, and `skimage` modules are imported by default.
         * **WARNING:** Don't run an untrusted code.
-* **Median** — averaging of neighboring pixels using the median filter.
-    * **Radius** — averaging radius.
-* **Modulation** — modulation of the frame by an image.
-    * **Mode** — blending mode of the modulator image.
+* **Image overlay** — overlaying an image on top of the frame.
     * **Image** — an image that will be used to modulate the frame.
     * **Blurring** — blurring radius of the modulator image.
+* **Median** — averaging of neighboring pixels using the median filter.
+    * **Radius** — averaging radius.
 * **Morphology** — processing of the frame using a morphological operation.
     * **Mode** — operation type.
         * **erosion** — makes the image details "thicker" and darker.
@@ -37,11 +39,10 @@
         * **opening** — erosion followed by dilation.
         * **closing** — dilation followed by erosion.
     * **Radius** — operation radius.
-* **Noise** — modulation of the frame by the random noise.
-    * **Mode** — blending mode of the noise.
 * **Noise compression** — basically, an actual algorithmical denoising, called noise compression to not be confused with the **img2img** denoising.
     * **Constant** — constant rate of the denoising. Generally should be very low, like 0.0002 or so, although it may vary.
     * **Adaptive** — adaptive rate of the denoising.
+* **Noise ovleray** — overlaying the random noise on top of the frame.
 * **Palettization** — applying a palette to the frame.
     * **Palette** — an image where _each_ pixel represents one color of a palette.
         * **NOTE:** Generally those images are very small (up to 256 pixels _total_) and contain just a few pixels representing the unique colors. For example, an 8x2 image contains 16 colors, and so on.
@@ -52,9 +53,6 @@
     * **Strength** — sharpening strength.
     * **Radius** — sharpening radius.
 * **Symmetry** — makes the frame symmetrical on the horizontal axis.
-* **Tinting** — modulation of the frame by the constant color.
-    * **Mode** — blending mode of the color.
-    * **Color** — a color that will be used to modulate the frame.
 * **Transformation** — geometric transformations applied to the entire frame.
     * **Translation X/Y** — amount of shifting to apply (e.g. X 0.3 — 30% of the image width).
     * **Rotation** — amount of rotation to apply; degrees.

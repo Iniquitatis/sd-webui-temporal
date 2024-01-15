@@ -9,6 +9,7 @@ from modules.ui_components import InputAccordion, ToolButton
 
 from temporal.collection_utils import get_first_element
 from temporal.fs import load_text
+from temporal.image_blending import BLEND_MODES
 from temporal.image_generation import GENERATION_MODES
 from temporal.image_preprocessing import PREPROCESSORS
 from temporal.interop import EXTENSION_DIR
@@ -195,6 +196,8 @@ class TemporalScript(scripts.Script):
                     with ui.elem("", gr.Row):
                         ui.elem(f"{key}_amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0, groups = ["params", "session"])
                         ui.elem(f"{key}_amount_relative", gr.Checkbox, label = "Relative", value = False, groups = ["params", "session"])
+
+                    ui.elem(f"{key}_blend_mode", gr.Dropdown, label = "Blend mode", choices = list(BLEND_MODES.keys()), value = get_first_element(BLEND_MODES), groups = ["params", "session"])
 
                     with ui.elem("", gr.Tab, label = "Parameters"):
                         if processor.params:
