@@ -197,8 +197,11 @@ class TemporalScript(scripts.Script):
                         ui.elem(f"{key}_amount_relative", gr.Checkbox, label = "Relative", value = False, groups = ["params", "session"])
 
                     with ui.elem("", gr.Tab, label = "Parameters"):
-                        for param in processor.params:
-                            ui.elem(f"{key}_{param.key}", param.type, label = param.name, **param.kwargs, groups = ["params", "session"])
+                        if processor.params:
+                            for param in processor.params:
+                                ui.elem(f"{key}_{param.key}", param.type, label = param.name, **param.kwargs, groups = ["params", "session"])
+                        else:
+                            ui.elem("", gr.Markdown, value = "_This effect has no available parameters._")
 
                     with ui.elem("", gr.Tab, label = "Mask"):
                         ui.elem(f"{key}_mask", gr.Pil, label = "Mask", image_mode = "L", interactive = True, groups = ["params", "session"])
