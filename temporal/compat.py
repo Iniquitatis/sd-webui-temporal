@@ -413,3 +413,28 @@ def _(path):
     save_text(version_path, "11")
 
     return True
+
+@upgrader(12)
+def _(path):
+    version_path = path / "session" / "version.txt"
+    params_path = path / "session" / "parameters.json"
+
+    if int(load_text(version_path, "0")) != 11:
+        return False
+
+    data = load_json(params_path, {})
+
+    ext_params = data["extension_params"]
+    ext_params.update({
+        "noise_overlay_scale": 1,
+        "noise_overlay_octaves": 1,
+        "noise_overlay_lacunarity": 2.0,
+        "noise_overlay_persistence": 0.5,
+        "noise_overlay_seed": 0,
+        "noise_overlay_use_dynamic_seed": True,
+    })
+
+    save_json(params_path, data)
+    save_text(version_path, "12")
+
+    return True

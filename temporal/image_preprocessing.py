@@ -11,7 +11,7 @@ from temporal.func_utils import make_func_registerer
 from temporal.image_blending import blend_images
 from temporal.image_utils import match_image, np_to_pil, pil_to_np
 from temporal.math import lerp, normalize, remap_range
-from temporal.numpy_utils import generate_noise
+from temporal.numpy_utils import generate_value_noise
 
 PREPROCESSORS, preprocessor = make_func_registerer(name = "", params = [])
 
@@ -157,9 +157,23 @@ def _(npim, seed, params):
 
     return skimage.restoration.denoise_tv_chambolle(npim, weight = max(weight, 1e-5), channel_axis = 2)
 
-@preprocessor("noise_overlay", "Noise overlay")
+@preprocessor("noise_overlay", "Noise overlay", [
+    UIParam(gr.Slider, "scale", "Scale", minimum = 1, maximum = 1024, step = 1, value = 1),
+    UIParam(gr.Slider, "octaves", "Octaves", minimum = 1, maximum = 10, step = 1, value = 1),
+    UIParam(gr.Slider, "lacunarity", "Lacunarity", minimum = 0.01, maximum = 4.0, step = 0.01, value = 2.0),
+    UIParam(gr.Slider, "persistence", "Persistence", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.5),
+    UIParam(gr.Number, "seed", "Seed", precision = 0, minimum = 0, step = 1, value = 0),
+    UIParam(gr.Checkbox, "use_dynamic_seed", "Use dynamic seed", value = False),
+])
 def _(npim, seed, params):
-    return generate_noise(npim.shape, seed)
+    return generate_value_noise(
+        npim.shape,
+        params.scale,
+        params.octaves,
+        params.lacunarity,
+        params.persistence,
+        seed if params.use_dynamic_seed else params.seed,
+    )
 
 @preprocessor("palettization", "Palettization", [
     UIParam(gr.Pil, "palette", "Palette", image_mode = "RGB"),

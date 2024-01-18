@@ -43,6 +43,12 @@
     * **Constant** — constant rate of the denoising. Generally should be very low, like 0.0002 or so, although it may vary.
     * **Adaptive** — adaptive rate of the denoising.
 * **Noise ovleray** — overlaying the random noise on top of the frame.
+    * **Scale** — scale of the noise pattern; pixels.
+    * **Octaves** — amount of progressively downscaled noise layers that will be mixed into a single one.
+    * **Lacunarity** — downscale factor of each subsequent noise layer compared to a previous one.
+    * **Persistence** — amplitude factor of each subsequent noise layer compared to a previous one.
+    * **Seed** — static seed that will be used for generating the noise pattern.
+    * **Use dynamic seed** — determines whether a currently processed frame's seed will be used or an effect's one.
 * **Palettization** — applying a palette to the frame.
     * **Palette** — an image where _each_ pixel represents one color of a palette.
         * **NOTE:** Generally those images are very small (up to 256 pixels _total_) and contain just a few pixels representing the unique colors. For example, an 8x2 image contains 16 colors, and so on.
