@@ -10,8 +10,8 @@
     * **Factor** — amount of noise that will be left unprocessed.
     * **Scale** — scale of the noise pattern; pixels.
     * **Octaves** — amount of progressively downscaled noise layers that will be mixed into a single one.
-    * **Persistence** — downscale factor of each subsequent noise layer compared to a previous one.
-    * **Lacunarity** — amplitude factor of each subsequent noise layer compared to a previous one.
+    * **Lacunarity** — downscale factor of each subsequent noise layer compared to a previous one.
+    * **Persistence** — amplitude factor of each subsequent noise layer compared to a previous one.
 * **Processing** — processing parameters.
     * **Use Stable Diffusion** — process frames with Stable Diffusion after preprocessing them, otherwise simply output preprocessed frames.
         * **NOTE:** Disabling this option might be useful for tweaking the preprocessing parameters and checking how they affect the results. Most of the time it should be enabled, though, unless one wants to use this extension as a sort of a simple image animator.
