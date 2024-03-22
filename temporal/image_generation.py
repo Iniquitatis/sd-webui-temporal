@@ -192,7 +192,7 @@ def _setup_processing(p, ext_params):
             denoising_strength = 1.0 - ext_params.initial_noise_factor,
             do_not_save_samples = True,
             do_not_save_grid = True,
-        ), ext_params.initial_noise_factor < 1.0)):
+        ), ext_params.initial_noise_factor < 1.0)) or not processed.images:
             return False
 
         p.init_images = [processed.images[0]]
@@ -238,7 +238,7 @@ def _process_iteration(p, ext_params, image_buffer, image, i, frame_index):
         seed = seed,
         do_not_save_samples = True,
         do_not_save_grid = True,
-    ), ext_params.use_sd)):
+    ), ext_params.use_sd)) or not processed.images:
         return None
 
     samples = processed.images[:total_sample_count]
@@ -265,7 +265,7 @@ def _process_iteration(p, ext_params, image_buffer, image, i, frame_index):
                 seed_resize_from_h = p.seed_resize_from_h or p.height,
                 do_not_save_samples = True,
                 do_not_save_grid = True,
-            ), ext_params.use_sd)):
+            ), ext_params.use_sd)) or not detailed.images:
                 return None
 
             detailed_samples.extend(
