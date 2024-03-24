@@ -9,7 +9,8 @@ def average_array(arr, axis, trim = 0.0, power = 1.0, weights = None):
         arr = stats.trimboth(arr, trim, axis)
         weights = None
 
-    if weights is not None:
+    # NOTE: That power check is needed for `np.average`, but not for `stats.x`
+    if weights is not None and power not in (1.0, 2.0, 3.0):
         weights = match_array_dimensions(weights, arr, axis)
 
     if power != 1.0:
