@@ -8,7 +8,7 @@ import skimage
 from PIL import Image
 
 from temporal.fs import ensure_directory_exists, load_json, save_json
-from temporal.image_utils import save_image
+from temporal.image_utils import pil_to_np, save_image
 from temporal.serialization import load_object, save_object
 
 class Metrics:
@@ -20,7 +20,7 @@ class Metrics:
         self.noise_sigma = []
 
     def measure(self, im):
-        npim = skimage.img_as_float(im)
+        npim = pil_to_np(im)
         grayscale = skimage.color.rgb2gray(npim[..., :3], channel_axis = 2)
         red, green, blue = npim[..., 0], npim[..., 1], npim[..., 2]
 
