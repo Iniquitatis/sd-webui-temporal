@@ -32,6 +32,7 @@
     * **Blurring** — blurring radius of the modulator image.
 * **Median** — averaging of neighboring pixels using the median filter.
     * **Radius** — averaging radius.
+    * **Percentile** — percent at which the median value will be calculated; 0 — darkest, 100 — brightest.
 * **Morphology** — processing of the frame using a morphological operation.
     * **Mode** — operation type.
         * **erosion** — makes the image details "thicker" and darker.

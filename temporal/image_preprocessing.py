@@ -113,10 +113,17 @@ def _(npim, seed, params):
 
 @preprocessor("median", "Median", [
     UIParam(gr.Slider, "radius", "Radius", minimum = 0, maximum = 50, step = 1, value = 0),
+    UIParam(gr.Slider, "percentile", "Percentile", minimum = 0.0, maximum = 100.0, step = 0.1, value = 50.0),
 ])
 def _(npim, seed, params):
     footprint = skimage.morphology.disk(params.radius)
-    return apply_channelwise(npim, lambda x: skimage.filters.median(x, footprint))
+
+    if params.percentile == 50.0:
+        filter = lambda x: scipy.ndimage.median_filter(x, footprint = footprint, mode = "nearest")
+    else:
+        filter = lambda x: scipy.ndimage.percentile_filter(x, params.percentile, footprint = footprint, mode = "nearest")
+
+    return apply_channelwise(npim, filter)
 
 @preprocessor("morphology", "Morphology", [
     UIParam(gr.Dropdown, "mode", "Mode", choices = ["erosion", "dilation", "opening", "closing"], value = "erosion"),
