@@ -64,5 +64,8 @@ def match_array_dimensions(arr, ref, axis):
 def load_array(path):
     return np.load(path)["arr_0"]
 
+def saturate_array(arr):
+    return np.clip(arr, 0.0, 1.0)
+
 def save_array(arr, path):
     np.savez_compressed(path, arr)

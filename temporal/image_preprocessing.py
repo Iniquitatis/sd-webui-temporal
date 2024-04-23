@@ -11,7 +11,7 @@ from temporal.func_utils import make_func_registerer
 from temporal.image_blending import blend_images
 from temporal.image_utils import ensure_image_dims, match_image, np_to_pil, pil_to_np
 from temporal.math import lerp, normalize, remap_range
-from temporal.numpy_utils import generate_value_noise
+from temporal.numpy_utils import generate_value_noise, saturate_array
 
 PREPROCESSORS, preprocessor = make_func_registerer(name = "", params = [])
 
@@ -35,7 +35,7 @@ def preprocess_image(im, ext_params, seed):
             im,
         )
 
-    return np_to_pil(np.clip(npim, 0.0, 1.0))
+    return np_to_pil(saturate_array(npim))
 
 class UIParam:
     def __init__(self, type, key, name, **kwargs):

@@ -2,16 +2,16 @@ import numpy as np
 import skimage
 from PIL import Image
 
-from temporal.numpy_utils import average_array, generate_noise, generate_value_noise, make_eased_weight_array
+from temporal.numpy_utils import average_array, generate_noise, generate_value_noise, make_eased_weight_array, saturate_array
 
 def average_images(ims, trimming = 0.0, easing = 0.0, preference = 0.0):
-    return ims[0] if len(ims) == 1 else np_to_pil(np.clip(average_array(
+    return ims[0] if len(ims) == 1 else np_to_pil(saturate_array(average_array(
         np.stack([pil_to_np(im) for im in ims]),
         axis = 0,
         trim = trimming,
         power = preference + 1.0,
         weights = np.flip(make_eased_weight_array(len(ims), easing)),
-    ), 0.0, 1.0))
+    )))
 
 def ensure_image_dims(im, mode = None, size = None):
     if is_np := isinstance(im, np.ndarray):

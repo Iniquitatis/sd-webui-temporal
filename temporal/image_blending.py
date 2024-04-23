@@ -29,7 +29,7 @@ def _(b, s):
 
 @blend_mode("divide", "Divide")
 def _(b, s):
-    return b / np.clip(s, 1e-6, 1.0)
+    return b / np.maximum(s, 1e-6)
 
 @blend_mode("lighten", "Lighten")
 def _(b, s):
