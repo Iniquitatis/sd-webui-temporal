@@ -15,6 +15,7 @@
 * **Processing** — processing parameters.
     * **Use Stable Diffusion** — process frames with Stable Diffusion after preprocessing them, otherwise simply output preprocessed frames.
         * **NOTE:** Disabling this option might be useful for tweaking the preprocessing parameters and checking how they affect the results. Most of the time it should be enabled, though, unless one wants to use this extension as a sort of a simple image animator.
+    * **Show only finalized frames** — set only the fully processed frames as live preview.
 * **Multisampling** — averaging of several samples generated from a single frame.
     * **Sample count** — amount of samples to take for generating a frame.
         * **NOTE:** Reduces the jittering between the consecutive frames, increases the general middle-scale detail precision, multiplies amount of work to process each frame correspondingly, and makes the resulting frames blurrier (can be somewhat mitigated by enabling the **Sharpening** preprocessing effect).

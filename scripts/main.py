@@ -161,6 +161,7 @@ class TemporalScript(scripts.Script):
 
             with ui.elem("", gr.Accordion, label = "Processing", open = False):
                 ui.elem("use_sd", gr.Checkbox, label = "Use Stable Diffusion", value = True, groups = ["params", "session"])
+                ui.elem("show_only_finalized_frames", gr.Checkbox, label = "Show only finalized frames", value = False, groups = ["params"])
 
             with ui.elem("", gr.Accordion, label = "Multisampling", open = False):
                 with ui.elem("", gr.Row):

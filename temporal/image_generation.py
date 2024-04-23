@@ -28,6 +28,9 @@ image_save_queue = ThreadQueue()
 def _(p, ext_params):
     opts_backup = opts.data.copy()
 
+    if ext_params.show_only_finalized_frames:
+        opts.show_progress_every_n_steps = -1
+
     _apply_prompt_styles(p)
 
     if not _setup_processing(p, ext_params):
@@ -54,6 +57,8 @@ def _(p, ext_params):
 
         last_processed = processed
 
+        _set_preview_image(last_processed.images[0])
+
     if not canceled or opts.save_incomplete_images:
         _save_processed_image(
             p = p,
@@ -70,6 +75,9 @@ def _(p, ext_params):
     opts_backup = opts.data.copy()
 
     opts.save_to_dirs = False
+
+    if ext_params.show_only_finalized_frames:
+        opts.show_progress_every_n_steps = -1
 
     project_dir = ensure_directory_exists(Path(ext_params.output_dir) / ext_params.project_subdir)
 
@@ -124,6 +132,8 @@ def _(p, ext_params):
 
         last_processed = processed
 
+        _set_preview_image(last_processed.images[0])
+
         if frame_index % ext_params.save_every_nth_frame == 0:
             _save_processed_image(
                 p = p,
@@ -150,7 +160,7 @@ def _(p, ext_params):
 
     return last_processed
 
-def _process_image(job_title, p, use_sd = True):
+def _process_image(job_title, p, use_sd = True, preview = True):
     state.job = job_title
 
     p = copy(p)
@@ -168,7 +178,11 @@ def _process_image(job_title, p, use_sd = True):
 
     if not use_sd:
         state.nextjob()
-        state.assign_current_image(processed.images[0])
+
+    if preview and processed.images and (image := processed.images[0]):
+        _set_preview_image(image)
+    else:
+        _set_preview_image(None)
 
     return processed
 
@@ -196,7 +210,7 @@ def _setup_processing(p, ext_params):
             denoising_strength = 1.0 - ext_params.initial_noise_factor,
             do_not_save_samples = True,
             do_not_save_grid = True,
-        ), ext_params.initial_noise_factor < 1.0)) or not processed.images:
+        ), ext_params.initial_noise_factor < 1.0, not ext_params.show_only_finalized_frames)) or not processed.images:
             return False
 
         p.init_images = [processed.images[0]]
@@ -242,7 +256,7 @@ def _process_iteration(p, ext_params, image_buffer, image, i, frame_index):
         seed = seed,
         do_not_save_samples = True,
         do_not_save_grid = True,
-    ), ext_params.use_sd)) or not processed.images:
+    ), ext_params.use_sd, not ext_params.show_only_finalized_frames)) or not processed.images:
         return None
 
     samples = processed.images[:total_sample_count]
@@ -269,7 +283,7 @@ def _process_iteration(p, ext_params, image_buffer, image, i, frame_index):
                 seed_resize_from_h = p.seed_resize_from_h or p.height,
                 do_not_save_samples = True,
                 do_not_save_grid = True,
-            ), ext_params.use_sd)) or not detailed.images:
+            ), ext_params.use_sd, not ext_params.show_only_finalized_frames)) or not detailed.images:
                 return None
 
             detailed_samples.extend(
@@ -285,6 +299,20 @@ def _process_iteration(p, ext_params, image_buffer, image, i, frame_index):
     merged_image = ensure_image_dims(merged_image, merged_image.mode, (p.width, p.height))
 
     return copy_with_overrides(processed, images = [merged_image])
+
+_last_preview_image = None
+
+def _set_preview_image(image = None):
+    global _last_preview_image
+
+    if image is None:
+        if _last_preview_image is not None:
+            state.assign_current_image(_last_preview_image)
+
+        return
+
+    state.assign_current_image(image)
+    _last_preview_image = image
 
 def _save_processed_image(p, processed, output_dir, file_name = None, archive_mode = False):
     if archive_mode:
