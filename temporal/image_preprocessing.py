@@ -9,7 +9,7 @@ from PIL import Image, ImageColor
 from temporal.collection_utils import reorder_dict
 from temporal.func_utils import make_func_registerer
 from temporal.image_blending import blend_images
-from temporal.image_utils import apply_channelwise, ensure_image_dims, match_image, np_to_pil, pil_to_np
+from temporal.image_utils import apply_channelwise, ensure_image_dims, join_hsv_to_rgb, match_image, np_to_pil, pil_to_np, split_hsv
 from temporal.math import lerp, normalize, remap_range
 from temporal.numpy_utils import generate_value_noise, saturate_array
 
@@ -60,11 +60,10 @@ def _(npim, seed, params):
 
     npim = remap_range(npim, npim.min(), npim.max(), 0.5 - params.contrast / 2, 0.5 + params.contrast / 2)
 
-    hsv = skimage.color.rgb2hsv(npim, channel_axis = 2)
-    s = hsv[..., 1]
+    h, s, v = split_hsv(npim)
     s[:] = remap_range(s, s.min(), s.max(), s.min(), params.saturation)
 
-    return skimage.color.hsv2rgb(hsv)
+    return join_hsv_to_rgb(h, s, v)
 
 @preprocessor("color_correction", "Color correction", [
     UIParam(gr.Pil, "image", "Image"),

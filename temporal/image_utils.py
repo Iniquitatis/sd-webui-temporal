@@ -34,6 +34,9 @@ def generate_noise_image(size, seed = None):
 def generate_value_noise_image(size, channels, scale, octaves, lacunarity, persistence, seed = None):
     return np_to_pil(generate_value_noise((size[1], size[0], channels), scale, octaves, lacunarity, persistence, seed))
 
+def join_hsv_to_rgb(h, s, v):
+    return skimage.color.hsv2rgb(np.stack([h, s, v], axis = -1), channel_axis = -1)
+
 def load_image(path):
     im = Image.open(path)
     im.load()
@@ -75,3 +78,7 @@ def save_image(im, path, archive_mode = False):
         compress_level = 9,
     ) if archive_mode else {}))
     tmp_path.rename(path)
+
+def split_hsv(npim):
+    hsv = skimage.color.rgb2hsv(npim, channel_axis = -1)
+    return hsv[..., 0], hsv[..., 1], hsv[..., 2]

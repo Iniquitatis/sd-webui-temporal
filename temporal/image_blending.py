@@ -1,7 +1,7 @@
 import numpy as np
-import skimage
 
 from temporal.func_utils import make_func_registerer
+from temporal.image_utils import join_hsv_to_rgb, split_hsv
 
 BLEND_MODES, blend_mode = make_func_registerer(name = "")
 
@@ -107,24 +107,24 @@ def _(b, s):
 
 @blend_mode("hue", "Hue")
 def _(b, s):
-    b_hsv = skimage.color.rgb2hsv(b)
-    s_hsv = skimage.color.rgb2hsv(s)
-    return skimage.color.hsv2rgb(np.stack((s_hsv[..., 0], b_hsv[..., 1], b_hsv[..., 2]), axis = 2))
+    bh, bs, bv = split_hsv(b)
+    sh, ss, sv = split_hsv(s)
+    return join_hsv_to_rgb(sh, bs, bv)
 
 @blend_mode("saturation", "Saturation")
 def _(b, s):
-    b_hsv = skimage.color.rgb2hsv(b)
-    s_hsv = skimage.color.rgb2hsv(s)
-    return skimage.color.hsv2rgb(np.stack((b_hsv[..., 0], s_hsv[..., 1], b_hsv[..., 2]), axis = 2))
+    bh, bs, bv = split_hsv(b)
+    sh, ss, sv = split_hsv(s)
+    return join_hsv_to_rgb(bh, ss, bv)
 
 @blend_mode("value", "Value")
 def _(b, s):
-    b_hsv = skimage.color.rgb2hsv(b)
-    s_hsv = skimage.color.rgb2hsv(s)
-    return skimage.color.hsv2rgb(np.stack((b_hsv[..., 0], b_hsv[..., 1], s_hsv[..., 2]), axis = 2))
+    bh, bs, bv = split_hsv(b)
+    sh, ss, sv = split_hsv(s)
+    return join_hsv_to_rgb(bh, bs, sv)
 
 @blend_mode("color", "Color")
 def _(b, s):
-    b_hsv = skimage.color.rgb2hsv(b)
-    s_hsv = skimage.color.rgb2hsv(s)
-    return skimage.color.hsv2rgb(np.stack((s_hsv[..., 0], s_hsv[..., 1], b_hsv[..., 2]), axis = 2))
+    bh, bs, bv = split_hsv(b)
+    sh, ss, sv = split_hsv(s)
+    return join_hsv_to_rgb(sh, ss, bv)
