@@ -172,7 +172,7 @@ class TemporalScript(scripts.Script):
                 ui.elem("multisampling_preference", gr.Slider, label = "Preference", minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0, groups = ["params", "session"])
 
             with ui.elem("detailing_enabled", InputAccordion, label = "Detailing", value = False, groups = ["params", "session"]):
-                ui.elem("detailing_scale", gr.Slider, label = "Scale", minimum = 1, maximum = 4, step = 1, value = 1, groups = ["params", "session"])
+                ui.elem("detailing_scale", gr.Slider, label = "Scale", minimum = 1.0, maximum = 4.0, step = 0.25, value = 1.0, groups = ["params", "session"])
                 ui.elem("detailing_scale_buffer", gr.Checkbox, label = "Scale buffer", value = False, groups = ["params", "session"])
                 ui.elem("detailing_sampler", gr.Dropdown, label = "Sampling method", choices = visible_sampler_names(), value = "Euler a", groups = ["params", "session"])
                 ui.elem("detailing_steps", gr.Slider, label = "Steps", minimum = 1, maximum = 150, step = 1, value = 15, groups = ["params", "session"])

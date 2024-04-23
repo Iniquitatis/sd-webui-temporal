@@ -13,6 +13,7 @@ from temporal.func_utils import make_func_registerer
 from temporal.image_buffer import ImageBuffer
 from temporal.image_preprocessing import PREPROCESSORS, preprocess_image
 from temporal.image_utils import average_images, ensure_image_dims, generate_value_noise_image, save_image
+from temporal.math import quantize
 from temporal.metrics import Metrics
 from temporal.object_utils import copy_with_overrides
 from temporal.session import get_last_frame_index, load_last_frame, load_session, save_session
@@ -210,8 +211,8 @@ def _make_image_buffer(p, ext_params):
     height = p.height
 
     if ext_params.detailing_scale_buffer:
-        width *= ext_params.detailing_scale
-        height *= ext_params.detailing_scale
+        width = quantize(width * ext_params.detailing_scale, 8)
+        height = quantize(height * ext_params.detailing_scale, 8)
 
     buffer = ImageBuffer(width, height, 3, ext_params.frame_merging_frames)
     buffer.init(p.init_images[0])
@@ -257,8 +258,8 @@ def _process_iteration(p, ext_params, image_buffer, image, i, frame_index):
                 init_images = samples[offset_from:offset_to],
                 sampler_name = ext_params.detailing_sampler,
                 steps = ext_params.detailing_steps,
-                width = p.width * ext_params.detailing_scale,
-                height = p.height * ext_params.detailing_scale,
+                width = quantize(p.width * ext_params.detailing_scale, 8),
+                height = quantize(p.height * ext_params.detailing_scale, 8),
                 n_iter = 1,
                 batch_size = ext_params.multisampling_batch_size,
                 denoising_strength = ext_params.detailing_denoising_strength,
