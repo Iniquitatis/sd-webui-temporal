@@ -37,6 +37,7 @@ def _(p, ext_params):
     _apply_relative_params(ext_params, p.denoising_strength)
 
     last_processed = processing.Processed(p, [p.init_images[0]])
+    canceled = False
 
     for i in range(ext_params.frame_count):
         if not (processed := _process_iteration(
@@ -47,15 +48,17 @@ def _(p, ext_params):
             i = i,
             frame_index = i + 1,
         )):
+            canceled = True
             break
 
         last_processed = processed
 
-    _save_processed_image(
-        p = p,
-        processed = last_processed,
-        output_dir = ext_params.output_dir,
-    )
+    if not canceled or opts.save_incomplete_images:
+        _save_processed_image(
+            p = p,
+            processed = last_processed,
+            output_dir = ext_params.output_dir,
+        )
 
     opts.data.update(opts_backup)
 
