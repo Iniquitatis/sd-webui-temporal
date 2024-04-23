@@ -6,7 +6,7 @@ from temporal.numpy_utils import average_array, generate_noise, generate_value_n
 
 def average_images(ims, trimming = 0.0, easing = 0.0, preference = 0.0):
     return ims[0] if len(ims) == 1 else np_to_pil(np.clip(average_array(
-        np.stack([pil_to_np(im) if isinstance(im, Image.Image) else im for im in ims]),
+        np.stack([pil_to_np(im) for im in ims]),
         axis = 0,
         trim = trimming,
         power = preference + 1.0,
@@ -15,7 +15,7 @@ def average_images(ims, trimming = 0.0, easing = 0.0, preference = 0.0):
 
 def ensure_image_dims(im, mode = None, size = None):
     if is_np := isinstance(im, np.ndarray):
-        im = Image.fromarray(skimage.util.img_as_ubyte(im))
+        im = np_to_pil(im)
 
     if mode is not None and im.mode != mode:
         im = im.convert(mode)
@@ -23,7 +23,7 @@ def ensure_image_dims(im, mode = None, size = None):
     if size is not None and im.size != size:
         im = im.resize(size, Image.Resampling.LANCZOS)
 
-    return skimage.util.img_as_float(im) if is_np else im
+    return pil_to_np(im) if is_np else im
 
 def generate_noise_image(size, seed = None):
     return np_to_pil(generate_noise((size[1], size[0], 3), seed))
@@ -47,9 +47,15 @@ def match_image(im, reference, mode = True, size = True):
     return ensure_image_dims(im, ref_mode if mode else None, ref_size if size else None)
 
 def np_to_pil(npim):
+    if isinstance(npim, Image.Image):
+        return npim
+
     return Image.fromarray(skimage.util.img_as_ubyte(npim))
 
 def pil_to_np(im):
+    if isinstance(im, np.ndarray):
+        return im
+
     return skimage.util.img_as_float(im)
 
 def save_image(im, path, archive_mode = False):
