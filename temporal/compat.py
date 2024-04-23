@@ -438,3 +438,24 @@ def _(path):
     save_text(version_path, "12")
 
     return True
+
+@upgrader(13)
+def _(path):
+    version_path = path / "session" / "version.txt"
+    params_path = path / "session" / "parameters.json"
+
+    if int(load_text(version_path, "0")) != 12:
+        return False
+
+    data = load_json(params_path, {})
+
+    ext_params = data["extension_params"]
+    ext_params.update({
+        "symmetry_horizontal": True,
+        "symmetry_vertical": False,
+    })
+
+    save_json(params_path, data)
+    save_text(version_path, "13")
+
+    return True

@@ -196,11 +196,20 @@ def _(npim, seed, params):
 def _(npim, seed, params):
     return skimage.filters.unsharp_mask(npim, params.radius, params.strength, channel_axis = 2)
 
-@preprocessor("symmetry", "Symmetry")
+@preprocessor("symmetry", "Symmetry", [
+    UIParam(gr.Checkbox, "horizontal", "Horizontal", value = False),
+    UIParam(gr.Checkbox, "vertical", "Vertical", value = False),
+])
 def _(npim, seed, params):
-    _, width = npim.shape[:2]
+    height, width = npim.shape[:2]
     npim = npim.copy()
-    npim[:, width // 2:] = np.flip(npim[:, :width // 2], axis = 1)
+
+    if params.horizontal:
+        npim[:, width // 2:] = np.flip(npim[:, :width // 2], axis = 1)
+
+    if params.vertical:
+        npim[height // 2:, :] = np.flip(npim[:height // 2, :], axis = 0)
+
     return npim
 
 @preprocessor("transformation", "Transformation", [

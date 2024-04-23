@@ -58,7 +58,9 @@
 * **Sharpening** — unsharp masking.
     * **Strength** — sharpening strength.
     * **Radius** — sharpening radius.
-* **Symmetry** — makes the frame symmetrical on the horizontal axis.
+* **Symmetry** — makes the frame symmetrical.
+    * **Horizontal** — symmetrize the horizontal axis.
+    * **Vertical** — symmetrize the vertical axis.
 * **Transformation** — geometric transformations applied to the entire frame.
     * **Translation X/Y** — amount of shifting to apply (e.g. X 0.3 — 30% of the image width).
     * **Rotation** — amount of rotation to apply; degrees.
