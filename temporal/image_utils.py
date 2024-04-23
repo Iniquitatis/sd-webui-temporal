@@ -13,14 +13,14 @@ def average_images(ims, trimming = 0.0, easing = 0.0, preference = 0.0):
         weights = np.flip(make_eased_weight_array(len(ims), easing)),
     ), 0.0, 1.0))
 
-def ensure_image_dims(im, mode, size):
+def ensure_image_dims(im, mode = None, size = None):
     if is_np := isinstance(im, np.ndarray):
         im = Image.fromarray(skimage.util.img_as_ubyte(im))
 
-    if im.mode != mode:
+    if mode is not None and im.mode != mode:
         im = im.convert(mode)
 
-    if im.size != size:
+    if size is not None and im.size != size:
         im = im.resize(size, Image.Resampling.LANCZOS)
 
     return skimage.util.img_as_float(im) if is_np else im
@@ -44,7 +44,7 @@ def match_image(im, reference, mode = True, size = True):
         ref_mode = reference.mode
         ref_size = reference.size
 
-    return ensure_image_dims(im, ref_mode if mode else im.mode, ref_size if size else im.size)
+    return ensure_image_dims(im, ref_mode if mode else None, ref_size if size else None)
 
 def np_to_pil(npim):
     return Image.fromarray(skimage.util.img_as_ubyte(npim))
