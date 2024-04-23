@@ -9,7 +9,7 @@ from PIL import Image, ImageColor
 from temporal.collection_utils import reorder_dict
 from temporal.func_utils import make_func_registerer
 from temporal.image_blending import blend_images
-from temporal.image_utils import ensure_image_dims, match_image, np_to_pil, pil_to_np
+from temporal.image_utils import apply_channelwise, ensure_image_dims, match_image, np_to_pil, pil_to_np
 from temporal.math import lerp, normalize, remap_range
 from temporal.numpy_utils import generate_value_noise, saturate_array
 
@@ -117,11 +117,7 @@ def _(npim, seed, params):
 ])
 def _(npim, seed, params):
     footprint = skimage.morphology.disk(params.radius)
-    return np.stack([
-        skimage.filters.median(npim[..., 0], footprint),
-        skimage.filters.median(npim[..., 1], footprint),
-        skimage.filters.median(npim[..., 2], footprint),
-    ], axis = 2)
+    return apply_channelwise(npim, lambda x: skimage.filters.median(x, footprint))
 
 @preprocessor("morphology", "Morphology", [
     UIParam(gr.Dropdown, "mode", "Mode", choices = ["erosion", "dilation", "opening", "closing"], value = "erosion"),
@@ -136,11 +132,7 @@ def _(npim, seed, params):
         lambda image, footprint: image
     )
     footprint = skimage.morphology.disk(params.radius)
-    return np.stack([
-        func(npim[..., 0], footprint),
-        func(npim[..., 1], footprint),
-        func(npim[..., 2], footprint),
-    ], axis = 2)
+    return apply_channelwise(npim, lambda x: func(x, footprint))
 
 @preprocessor("noise_compression", "Noise compression", [
     UIParam(gr.Slider, "constant", "Constant", minimum = 0.0, maximum = 1.0, step = 1e-5, value = 0.0),
@@ -187,11 +179,7 @@ def _(npim, seed, params):
     palette_arr = np.array(params.palette, dtype = np.float_).reshape((params.palette.width * params.palette.height, 3))
 
     if params.stretch:
-        palette_arr = np.stack([
-            stretch_array(palette_arr[..., 0], 256),
-            stretch_array(palette_arr[..., 1], 256),
-            stretch_array(palette_arr[..., 2], 256),
-        ], axis = 1)
+        palette_arr = apply_channelwise(palette_arr, lambda x: stretch_array(x, 256))
 
     palette = Image.new("P", (1, 1))
     palette.putpalette(palette_arr.ravel().astype(np.ubyte), "RGB")

@@ -4,6 +4,9 @@ from PIL import Image
 
 from temporal.numpy_utils import average_array, generate_noise, generate_value_noise, make_eased_weight_array, saturate_array
 
+def apply_channelwise(npim, func):
+    return np.stack([func(npim[..., i]) for i in range(npim.shape[-1])], axis = -1)
+
 def average_images(ims, trimming = 0.0, easing = 0.0, preference = 0.0):
     return ims[0] if len(ims) == 1 else np_to_pil(saturate_array(average_array(
         np.stack([pil_to_np(im) for im in ims]),
