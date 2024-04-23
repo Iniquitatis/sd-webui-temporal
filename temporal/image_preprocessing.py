@@ -4,12 +4,12 @@ import gradio as gr
 import numpy as np
 import scipy
 import skimage
-from PIL import Image, ImageColor
+from PIL import Image
 
 from temporal.collection_utils import reorder_dict
 from temporal.func_utils import make_func_registerer
 from temporal.image_blending import blend_images
-from temporal.image_utils import apply_channelwise, ensure_image_dims, join_hsv_to_rgb, match_image, np_to_pil, pil_to_np, split_hsv
+from temporal.image_utils import apply_channelwise, ensure_image_dims, get_rgb_array, join_hsv_to_rgb, match_image, np_to_pil, pil_to_np, split_hsv
 from temporal.math import lerp, normalize, remap_range
 from temporal.numpy_utils import generate_value_noise, saturate_array
 
@@ -86,7 +86,7 @@ def _(npim, seed, params):
     UIParam(gr.ColorPicker, "color", "Color", value = "#ffffff"),
 ])
 def _(npim, seed, params):
-    return np.full_like(npim, np.array(ImageColor.getrgb(params.color)) / 255.0)
+    return np.full_like(npim, get_rgb_array(params.color))
 
 @preprocessor("custom_code", "Custom code", [
     UIParam(gr.Code, "code", "Code", language = "python"),

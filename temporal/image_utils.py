@@ -1,6 +1,6 @@
 import numpy as np
 import skimage
-from PIL import Image
+from PIL import Image, ImageColor
 
 from temporal.numpy_utils import average_array, generate_noise, generate_value_noise, make_eased_weight_array, saturate_array
 
@@ -33,6 +33,9 @@ def generate_noise_image(size, seed = None):
 
 def generate_value_noise_image(size, channels, scale, octaves, lacunarity, persistence, seed = None):
     return np_to_pil(generate_value_noise((size[1], size[0], channels), scale, octaves, lacunarity, persistence, seed))
+
+def get_rgb_array(color):
+    return np.array(ImageColor.getrgb(color), dtype = np.float_) / 255.0
 
 def join_hsv_to_rgb(h, s, v):
     return skimage.color.hsv2rgb(np.stack([h, s, v], axis = -1), channel_axis = -1)
