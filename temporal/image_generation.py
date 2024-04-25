@@ -2,6 +2,7 @@ from copy import copy, deepcopy
 from itertools import count
 from math import ceil
 from pathlib import Path
+from time import perf_counter
 
 from PIL import Image
 
@@ -45,6 +46,8 @@ def _(p, ext_params):
     canceled = False
 
     for i in range(ext_params.frame_count):
+        start_time = perf_counter()
+
         if not (processed := _process_iteration(
             p = p,
             ext_params = ext_params,
@@ -59,6 +62,10 @@ def _(p, ext_params):
         last_processed = processed
 
         _set_preview_image(last_processed.images[0])
+
+        end_time = perf_counter()
+
+        print(f"[Temporal] Iteration took {end_time - start_time:.6f} seconds")
 
     if not canceled or opts.save_incomplete_images:
         _save_processed_image(
@@ -124,6 +131,8 @@ def _(p, ext_params):
     image_buffer_to_save = deepcopy(image_buffer)
 
     for i, frame_index in zip(range(ext_params.frame_count), count(last_index + 1)):
+        start_time = perf_counter()
+
         if not (processed := _process_iteration(
             p = p,
             ext_params = ext_params,
@@ -155,6 +164,10 @@ def _(p, ext_params):
 
             if frame_index % ext_params.metrics_save_plots_every_nth_frame == 0:
                 metrics.plot_to_directory(project.metrics_path)
+
+        end_time = perf_counter()
+
+        print(f"[Temporal] Iteration took {end_time - start_time:.6f} seconds")
 
     image_buffer_to_save.save(project.buffer_path)
 
