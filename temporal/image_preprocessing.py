@@ -10,7 +10,7 @@ from temporal.collection_utils import reorder_dict
 from temporal.func_utils import make_func_registerer
 from temporal.image_blending import blend_images
 from temporal.image_utils import apply_channelwise, ensure_image_dims, get_rgb_array, join_hsv_to_rgb, match_image, np_to_pil, pil_to_np, split_hsv
-from temporal.math import lerp, normalize, remap_range
+from temporal.math import lerp, normalize, quantize, remap_range
 from temporal.numpy_utils import generate_value_noise, match_array_dimensions, saturate_array
 
 PREPROCESSORS, preprocessor = make_func_registerer(name = "", params = [])
@@ -244,6 +244,12 @@ def _(npim, seed, params):
         return skimage.transform.resize(npim, output_shape = size, order = 0, anti_aliasing = False)
 
     return resize(resize(npim, (npim.shape[0] // params.pixel_size, npim.shape[1] // params.pixel_size)), npim.shape[:2])
+
+@preprocessor("posterization", "Posterization", [
+    UIParam(gr.Slider, "levels", "Levels", minimum = 1, maximum = 256, step = 1, value = 16),
+])
+def _(npim, seed, params):
+    return quantize(npim, params.levels)
 
 @preprocessor("sharpening", "Sharpening", [
     UIParam(gr.Slider, "strength", "Strength", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0),

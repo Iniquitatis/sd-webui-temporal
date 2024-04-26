@@ -59,6 +59,8 @@
 * **Pixelization** — rounding to a specific virtual pixel size.
     * **Pixel size** — size of a virtual pixel. For example, at pixel size of 8, an image with resolution 1024x512 will look as if it had resolution of 128x64.
         * **NOTE:** It's up to user to make sure that the resolution can be divided evenly by the pixel size.
+* **Posterization** — quantization of color channels.
+    * **Levels** — amount of levels. For example, if this parameter is set to 4, then each channel (red, green, and blue) will be rounded to four possible values.
 * **Sharpening** — unsharp masking.
     * **Strength** — sharpening strength.
     * **Radius** — sharpening radius.
