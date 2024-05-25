@@ -1,9 +1,9 @@
 import numpy as np
 
-from temporal.fs import load_json, recreate_directory, save_json
-from temporal.image_utils import ensure_image_dims, np_to_pil, pil_to_np
-from temporal.numpy_utils import average_array, make_eased_weight_array, saturate_array
 from temporal.serialization import load_object, save_object
+from temporal.utils.fs import load_json, recreate_directory, save_json
+from temporal.utils.image import ensure_image_dims, np_to_pil, pil_to_np
+from temporal.utils.numpy import average_array, make_eased_weight_array, saturate_array
 
 class ImageBuffer:
     def __init__(self, width, height, channels, count):

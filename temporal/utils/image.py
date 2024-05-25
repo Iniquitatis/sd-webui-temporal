@@ -2,7 +2,7 @@ import numpy as np
 import skimage
 from PIL import Image, ImageColor
 
-from temporal.numpy_utils import average_array, generate_noise, generate_value_noise, make_eased_weight_array, saturate_array
+from temporal.utils.numpy import average_array, generate_noise, generate_value_noise, make_eased_weight_array, saturate_array
 
 def apply_channelwise(npim, func):
     return np.stack([func(npim[..., i]) for i in range(npim.shape[-1])], axis = -1)

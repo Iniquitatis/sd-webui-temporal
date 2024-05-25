@@ -1,6 +1,6 @@
 from temporal.compat import VERSION, upgrade_project
-from temporal.fs import clear_directory, is_directory_empty, load_json, remove_entry, save_text
-from temporal.image_utils import load_image
+from temporal.utils.fs import clear_directory, is_directory_empty, load_json, remove_entry, save_text
+from temporal.utils.image import load_image
 
 FRAME_NAME_FORMAT = "{index:05d}"
 FRAME_EXTENSION = "png"

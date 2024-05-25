@@ -7,8 +7,6 @@ from modules import scripts
 from modules.sd_samplers import visible_sampler_names
 from modules.ui_components import InputAccordion, ToolButton
 
-from temporal.collection_utils import get_first_element
-from temporal.fs import load_text
 from temporal.image_blending import BLEND_MODES
 from temporal.image_generation import GENERATION_MODES
 from temporal.image_preprocessing import PREPROCESSORS
@@ -18,8 +16,10 @@ from temporal.preset_store import PresetStore
 from temporal.project import Project, make_video_file_name
 from temporal.project_store import ProjectStore
 from temporal.session import Session, saved_ext_param_ids
-from temporal.string_utils import match_mask
-from temporal.time_utils import wait_until
+from temporal.utils.collection import get_first_element
+from temporal.utils.fs import load_text
+from temporal.utils.string import match_mask
+from temporal.utils.time import wait_until
 from temporal.video_filtering import FILTERS
 from temporal.video_rendering import enqueue_video_render, video_render_queue
 

@@ -9,18 +9,18 @@ from PIL import Image
 from modules import images, processing
 from modules.shared import opts, prompt_styles, state
 
-from temporal.func_utils import make_func_registerer
 from temporal.image_buffer import ImageBuffer
 from temporal.image_preprocessing import PREPROCESSORS, preprocess_image
-from temporal.image_utils import average_images, ensure_image_dims, generate_value_noise_image, save_image
 from temporal.interop import get_cn_units
-from temporal.math import quantize
 from temporal.metrics import Metrics
-from temporal.object_utils import copy_with_overrides
 from temporal.project import make_frame_name, Project
 from temporal.session import Session
 from temporal.thread_queue import ThreadQueue
-from temporal.time_utils import wait_until
+from temporal.utils.func import make_func_registerer
+from temporal.utils.image import average_images, ensure_image_dims, generate_value_noise_image, save_image
+from temporal.utils.math import quantize
+from temporal.utils.object import copy_with_overrides
+from temporal.utils.time import wait_until
 
 GENERATION_MODES, generation_mode = make_func_registerer(name = "")
 

@@ -2,8 +2,8 @@ from types import SimpleNamespace
 
 import gradio as gr
 
-from temporal.collection_utils import reorder_dict
-from temporal.func_utils import make_func_registerer
+from temporal.utils.collection import reorder_dict
+from temporal.utils.func import make_func_registerer
 
 FILTERS, filter = make_func_registerer(name = "", params = [])
 

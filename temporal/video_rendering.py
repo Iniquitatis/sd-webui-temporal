@@ -1,8 +1,8 @@
 from itertools import chain
 from subprocess import run
 
-from temporal.fs import save_text
 from temporal.thread_queue import ThreadQueue
+from temporal.utils.fs import save_text
 from temporal.video_filtering import build_filter
 
 video_render_queue = ThreadQueue()

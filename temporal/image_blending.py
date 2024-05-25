@@ -1,7 +1,7 @@
 import numpy as np
 
-from temporal.func_utils import make_func_registerer
-from temporal.image_utils import join_hsv_to_rgb, split_hsv
+from temporal.utils.func import make_func_registerer
+from temporal.utils.image import join_hsv_to_rgb, split_hsv
 
 BLEND_MODES, blend_mode = make_func_registerer(name = "")
 

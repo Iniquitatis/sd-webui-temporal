@@ -1,6 +1,6 @@
-from temporal.collection_utils import natural_sort
-from temporal.fs import iterate_subdirectories, remove_entry, rename_entry
 from temporal.project import Project, make_video_file_name
+from temporal.utils.collection import natural_sort
+from temporal.utils.fs import iterate_subdirectories, remove_entry, rename_entry
 
 class ProjectStore:
     def __init__(self, path):

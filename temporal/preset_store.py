@@ -1,6 +1,6 @@
-from temporal.collection_utils import natural_sort
-from temporal.fs import iterate_subdirectories, remove_entry
 from temporal.preset import Preset
+from temporal.utils.collection import natural_sort
+from temporal.utils.fs import iterate_subdirectories, remove_entry
 
 class PresetStore:
     def __init__(self, path):

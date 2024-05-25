@@ -1,5 +1,5 @@
-from temporal.fs import load_json, recreate_directory, save_json
 from temporal.serialization import load_dict, load_object, save_dict, save_object
+from temporal.utils.fs import load_json, recreate_directory, save_json
 
 saved_ext_param_ids = []
 

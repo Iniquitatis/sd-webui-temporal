@@ -2,9 +2,9 @@ from shutil import copy2
 
 import numpy as np
 
-from temporal.fs import ensure_directory_exists, load_json, load_text, move_entry, save_json, save_text
-from temporal.func_utils import make_func_registerer
-from temporal.image_utils import load_image, pil_to_np
+from temporal.utils.fs import ensure_directory_exists, load_json, load_text, move_entry, save_json, save_text
+from temporal.utils.func import make_func_registerer
+from temporal.utils.image import load_image, pil_to_np
 
 VERSION = 15
 UPGRADERS, upgrader = make_func_registerer()

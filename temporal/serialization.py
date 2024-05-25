@@ -1,8 +1,8 @@
 import numpy as np
 from PIL import Image
 
-from temporal.image_utils import load_image, save_image
-from temporal.numpy_utils import load_array, save_array
+from temporal.utils.image import load_image, save_image
+from temporal.utils.numpy import load_array, save_array
 
 def load_dict(d, data, data_dir, existing_only = True):
     for key, value in data.items():
