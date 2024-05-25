@@ -88,3 +88,6 @@ def remove_entry(path):
         rmtree(path)
 
     return path
+
+def rename_entry(dir, old_name, new_name):
+    return move_entry(dir / old_name, dir / new_name)

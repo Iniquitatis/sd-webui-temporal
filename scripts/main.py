@@ -16,6 +16,7 @@ from temporal.interop import EXTENSION_DIR
 from temporal.metrics import Metrics
 from temporal.preset_store import PresetStore
 from temporal.project import Project, make_video_file_name
+from temporal.project_store import ProjectStore
 from temporal.session import Session, saved_ext_param_ids
 from temporal.string_utils import match_mask
 from temporal.time_utils import wait_until
@@ -97,6 +98,8 @@ class TemporalScript(scripts.Script):
         super().__init__(*args, **kwargs)
         self._preset_store = PresetStore(EXTENSION_DIR / "presets")
         self._preset_store.refresh_presets()
+        self._project_store = ProjectStore(Path("outputs") / "temporal")
+        self._project_store.refresh_projects()
 
     def title(self):
         return "Temporal"
@@ -266,6 +269,57 @@ class TemporalScript(scripts.Script):
             ui.callback("render_plots", "click", render_plots_callback, ["group:params"], ["metrics_plots"])
             ui.elem("metrics_plots", gr.Gallery, label = "Plots", columns = 4, object_fit = "contain", preview = True, groups = ["mode_sequence"])
 
+        with ui.elem("", gr.Tab, label = "Project Management"):
+            with ui.elem("", gr.Row):
+                def refresh_projects_callback(output_dir):
+                    self._project_store.path = Path(output_dir)
+                    self._project_store.refresh_projects()
+                    return gr.update(choices = self._project_store.project_names)
+
+                def load_project_callback(output_dir, project_name, *args):
+                    ext_params = ui.unpack_values(["group:session"], *args)
+                    self._project_store.path = Path(output_dir)
+                    project = self._project_store.open_project(project_name)
+                    session = Session(ext_params = ext_params)
+                    session.load(project.session_path)
+                    return [gr.update(value = v) for v in vars(ext_params).values()]
+
+                def delete_project_callback(output_dir, project_name):
+                    self._project_store.path = Path(output_dir)
+                    self._project_store.delete_project(project_name)
+                    return gr.update(choices = self._project_store.project_names, value = get_first_element(self._project_store.project_names, ""))
+
+                ui.elem("managed_project", gr.Dropdown, label = "Project", choices = self._project_store.project_names, allow_custom_value = True, value = get_first_element(self._project_store.project_names, ""))
+                ui.elem("refresh_projects", ToolButton, value = "\U0001f504")
+                ui.callback("refresh_projects", "click", refresh_projects_callback, ["output_dir"], ["managed_project"])
+                ui.elem("load_project", ToolButton, value = "\U0001f4c2")
+                ui.callback("load_project", "click", load_project_callback, ["output_dir", "managed_project", "group:session"], ["group:session"])
+                ui.elem("delete_project", ToolButton, value = "\U0001f5d1\ufe0f")
+                ui.callback("delete_project", "click", delete_project_callback, ["output_dir", "managed_project"], ["managed_project"])
+
+            with ui.elem("", gr.Row):
+                def rename_project_callback(output_dir, old_name, new_name):
+                    self._project_store.path = Path(output_dir)
+                    self._project_store.rename_project(old_name, new_name)
+                    return gr.update(choices = self._project_store.project_names, value = new_name)
+
+                ui.elem("new_project_name", gr.Textbox, label = "New name", value = "")
+                ui.elem("confirm_project_rename", ToolButton, value = "\U00002714\ufe0f")
+                ui.callback("confirm_project_rename", "click", rename_project_callback, ["output_dir", "managed_project", "new_project_name"], ["managed_project"])
+
+            def delete_intermediate_frames_callback(output_dir, project_name):
+                self._project_store.path = Path(output_dir)
+                self._project_store.open_project(project_name).delete_intermediate_frames()
+
+            def delete_session_data_callback(output_dir, project_name):
+                self._project_store.path = Path(output_dir)
+                self._project_store.open_project(project_name).delete_session_data()
+
+            ui.elem("delete_intermediate_frames", gr.Button, value = "Delete intermediate frames")
+            ui.callback("delete_intermediate_frames", "click", delete_intermediate_frames_callback, ["output_dir", "managed_project"], [])
+            ui.elem("delete_session_data", gr.Button, value = "Delete session data")
+            ui.callback("delete_session_data", "click", delete_session_data_callback, ["output_dir", "managed_project"], [])
+
         with ui.elem("", gr.Tab, label = "Help"):
             for file_name, title in [
                 ("main.md", "Main"),
@@ -273,6 +327,7 @@ class TemporalScript(scripts.Script):
                 ("tab_frame_preprocessing.md", "Frame Preprocessing tab"),
                 ("tab_video_rendering.md", "Video Rendering tab"),
                 ("tab_metrics.md", "Metrics tab"),
+                ("tab_project_management.md", "Project Management tab"),
                 ("additional_notes.md", "Additional notes"),
             ]:
                 with ui.elem("", gr.Accordion, label = title, open = False):
