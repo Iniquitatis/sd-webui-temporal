@@ -1,6 +1,7 @@
 from threading import Lock, Thread
 from typing import Any, Callable
 
+
 class ThreadQueue:
     def __init__(self) -> None:
         self._queue = []

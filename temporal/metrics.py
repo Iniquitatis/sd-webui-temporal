@@ -13,6 +13,7 @@ from temporal.serialization import load_object, save_object
 from temporal.utils.fs import ensure_directory_exists, load_json, save_json
 from temporal.utils.image import PILImage, pil_to_np, save_image
 
+
 class Metrics:
     def __init__(self) -> None:
         self.luminance_mean = []

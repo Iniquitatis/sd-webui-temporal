@@ -2,9 +2,11 @@ from copy import deepcopy
 from types import SimpleNamespace
 from typing import Any, Callable
 
+
 Func = Callable[..., Any]
 Decorator = Callable[[Func], Func]
 Wrapper = Callable[..., Decorator]
+
 
 def make_func_registerer(**default_params: Any) -> tuple[dict[str, SimpleNamespace], Wrapper]:
     registered = {}

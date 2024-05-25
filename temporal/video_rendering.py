@@ -8,10 +8,13 @@ from temporal.thread_queue import ThreadQueue
 from temporal.utils.fs import save_text
 from temporal.video_filtering import build_filter
 
+
 video_render_queue = ThreadQueue()
+
 
 def enqueue_video_render(path: Path, frame_paths: Sequence[Path], ext_params: SimpleNamespace, is_final: bool) -> None:
     video_render_queue.enqueue(render_video, path, frame_paths, ext_params, is_final)
+
 
 def render_video(path: Path, frame_paths: Sequence[Path], ext_params: SimpleNamespace, is_final: bool) -> None:
     if ext_params.video_looping:

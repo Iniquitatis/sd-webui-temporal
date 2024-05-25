@@ -6,7 +6,9 @@ import gradio as gr
 from temporal.utils.collection import reorder_dict
 from temporal.utils.func import make_func_registerer
 
+
 FILTERS, filter = make_func_registerer(name = "", params = [])
+
 
 def build_filter(ext_params: SimpleNamespace) -> str:
     return ",".join([
@@ -18,6 +20,7 @@ def build_filter(ext_params: SimpleNamespace) -> str:
         if getattr(ext_params, f"video_{key}_enabled")
     ] or ["null"])
 
+
 class UIParam:
     def __init__(self, type: Type[gr.components.Component], key: str, name: str, **kwargs: Any) -> None:
         self.type = type
@@ -25,11 +28,13 @@ class UIParam:
         self.name = name
         self.kwargs = kwargs
 
+
 @filter("chromatic_aberration", "Chromatic aberration", [
     UIParam(gr.Slider, "distance", "Distance", minimum = 1, maximum = 512, step = 1, value = 1),
 ])
 def _(fps: int, params: SimpleNamespace) -> str:
     return f"rgbashift='rh=-{params.distance}:bh={params.distance}'"
+
 
 @filter("color_balancing", "Color balancing", [
     UIParam(gr.Slider, "brightness", "Brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0),
@@ -39,11 +44,13 @@ def _(fps: int, params: SimpleNamespace) -> str:
 def _(fps: int, params: SimpleNamespace) -> str:
     return f"eq='contrast={params.contrast}:brightness={params.brightness - 1.0}:saturation={params.saturation}'"
 
+
 @filter("deflickering", "Deflickering", [
     UIParam(gr.Slider, "frames", "Frames", minimum = 2, maximum = 120, step = 1, value = 60),
 ])
 def _(fps: int, params: SimpleNamespace) -> str:
     return f"deflicker='size={params.frames}:mode=am'"
+
 
 @filter("interpolation", "Interpolation", [
     UIParam(gr.Slider, "fps", "Frames per second", minimum = 1, maximum = 60, step = 1, value = 60),
@@ -58,6 +65,7 @@ def _(fps: int, params: SimpleNamespace) -> str:
         parts.append(f"fps='{params.fps}'")
 
     return ",".join(parts)
+
 
 @filter("scaling", "Scaling", [
     UIParam(gr.Slider, "width", "Width", minimum = 16, maximum = 2560, step = 8, value = 512),
@@ -102,12 +110,14 @@ def _(fps: int, params: SimpleNamespace) -> str:
 
     return ",".join(parts)
 
+
 @filter("sharpening", "Sharpening", [
     UIParam(gr.Slider, "strength", "Strength", minimum = 0.0, maximum = 1.0, step = 0.1, value = 0.0),
     UIParam(gr.Slider, "radius", "Radius", minimum = 3, maximum = 13, step = 2, value = 3),
 ])
 def _(fps: int, params: SimpleNamespace) -> str:
     return f"unsharp='luma_msize_x={params.radius}:luma_msize_y={params.radius}:luma_amount={params.strength}:chroma_msize_x={params.radius}:chroma_msize_y={params.radius}:chroma_amount={params.strength}'"
+
 
 @filter("temporal_averaging", "Temporal averaging", [
     UIParam(gr.Slider, "radius", "Radius", minimum = 1, maximum = 60, step = 1, value = 1),
@@ -124,6 +134,7 @@ def _(fps: int, params: SimpleNamespace) -> str:
         return f"tpad='start={params.radius}:stop={params.radius}:start_mode=clone:stop_mode=clone',tmedian='radius={params.radius}'"
     else:
         return "null"
+
 
 @filter("text_overlay", "Text overlay", [
     UIParam(gr.Textbox, "text", "Text", value = "{frame}"),

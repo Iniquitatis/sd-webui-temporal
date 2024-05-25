@@ -8,8 +8,11 @@ from temporal.utils.fs import ensure_directory_exists, load_json, load_text, mov
 from temporal.utils.func import make_func_registerer
 from temporal.utils.image import load_image, pil_to_np
 
+
 VERSION = 15
+
 UPGRADERS, upgrader = make_func_registerer()
+
 
 def upgrade_project(path: Path) -> None:
     last_version = 0
@@ -20,6 +23,7 @@ def upgrade_project(path: Path) -> None:
 
     if last_version:
         print(f"Upgraded project to version {last_version}")
+
 
 @upgrader(1)
 def _(path: Path) -> bool:
@@ -57,6 +61,7 @@ def _(path: Path) -> bool:
     save_text(version_path, "1")
 
     return True
+
 
 @upgrader(2)
 def _(path: Path) -> bool:
@@ -106,6 +111,7 @@ def _(path: Path) -> bool:
 
     return True
 
+
 @upgrader(3)
 def _(path: Path) -> bool:
     version_path = path / "session" / "version.txt"
@@ -119,6 +125,7 @@ def _(path: Path) -> bool:
     save_text(version_path, "3")
 
     return True
+
 
 @upgrader(4)
 def _(path: Path) -> bool:
@@ -164,6 +171,7 @@ def _(path: Path) -> bool:
     save_text(version_path, "4")
 
     return True
+
 
 @upgrader(5)
 def _(path: Path) -> bool:
@@ -230,6 +238,7 @@ def _(path: Path) -> bool:
 
     return True
 
+
 @upgrader(6)
 def _(path: Path) -> bool:
     version_path = path / "session" / "version.txt"
@@ -255,6 +264,7 @@ def _(path: Path) -> bool:
     save_text(version_path, "6")
 
     return True
+
 
 @upgrader(7)
 def _(path: Path) -> bool:
@@ -289,6 +299,7 @@ def _(path: Path) -> bool:
 
     return True
 
+
 @upgrader(8)
 def _(path: Path) -> bool:
     version_path = path / "session" / "version.txt"
@@ -309,6 +320,7 @@ def _(path: Path) -> bool:
     save_text(version_path, "8")
 
     return True
+
 
 @upgrader(9)
 def _(path: Path) -> bool:
@@ -339,6 +351,7 @@ def _(path: Path) -> bool:
 
     return True
 
+
 @upgrader(10)
 def _(path: Path) -> bool:
     version_path = path / "session" / "version.txt"
@@ -362,6 +375,7 @@ def _(path: Path) -> bool:
     save_text(version_path, "10")
 
     return True
+
 
 @upgrader(11)
 def _(path: Path) -> bool:
@@ -417,6 +431,7 @@ def _(path: Path) -> bool:
 
     return True
 
+
 @upgrader(12)
 def _(path: Path) -> bool:
     version_path = path / "session" / "version.txt"
@@ -442,6 +457,7 @@ def _(path: Path) -> bool:
 
     return True
 
+
 @upgrader(13)
 def _(path: Path) -> bool:
     version_path = path / "session" / "version.txt"
@@ -463,6 +479,7 @@ def _(path: Path) -> bool:
 
     return True
 
+
 @upgrader(14)
 def _(path: Path) -> bool:
     version_path = path / "session" / "version.txt"
@@ -482,6 +499,7 @@ def _(path: Path) -> bool:
     save_text(version_path, "14")
 
     return True
+
 
 @upgrader(15)
 def _(path: Path) -> bool:

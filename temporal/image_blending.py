@@ -5,7 +5,9 @@ import numpy as np
 from temporal.utils.func import make_func_registerer
 from temporal.utils.image import NumpyImage, join_hsv_to_rgb, split_hsv
 
+
 BLEND_MODES, blend_mode = make_func_registerer(name = "")
+
 
 def blend_images(npim: NumpyImage, modulator: Optional[NumpyImage], mode: str) -> NumpyImage:
     if modulator is None:
@@ -13,33 +15,41 @@ def blend_images(npim: NumpyImage, modulator: Optional[NumpyImage], mode: str) -
 
     return BLEND_MODES[mode].func(npim, modulator)
 
+
 @blend_mode("normal", "Normal")
 def _(b: NumpyImage, s: NumpyImage) -> NumpyImage:
     return s
+
 
 @blend_mode("add", "Add")
 def _(b: NumpyImage, s: NumpyImage) -> NumpyImage:
     return b + s
 
+
 @blend_mode("subtract", "Subtract")
 def _(b: NumpyImage, s: NumpyImage) -> NumpyImage:
     return b - s
+
 
 @blend_mode("multiply", "Multiply")
 def _(b: NumpyImage, s: NumpyImage) -> NumpyImage:
     return b * s
 
+
 @blend_mode("divide", "Divide")
 def _(b: NumpyImage, s: NumpyImage) -> NumpyImage:
     return b / np.maximum(s, 1e-6)
+
 
 @blend_mode("lighten", "Lighten")
 def _(b: NumpyImage, s: NumpyImage) -> NumpyImage:
     return np.maximum(b, s)
 
+
 @blend_mode("darken", "Darken")
 def _(b: NumpyImage, s: NumpyImage) -> NumpyImage:
     return np.minimum(b, s)
+
 
 @blend_mode("hard_light", "Hard light")
 def _(b: NumpyImage, s: NumpyImage) -> NumpyImage:
@@ -49,6 +59,7 @@ def _(b: NumpyImage, s: NumpyImage) -> NumpyImage:
     result[less_idx] = BLEND_MODES["multiply"].func(b[less_idx], 2.0 * s[less_idx])
     result[more_idx] = BLEND_MODES["screen"].func(b[more_idx], 2.0 * s[more_idx] - 1.0)
     return result
+
 
 @blend_mode("soft_light", "Soft light")
 def _(b: NumpyImage, s: NumpyImage) -> NumpyImage:
@@ -67,6 +78,7 @@ def _(b: NumpyImage, s: NumpyImage) -> NumpyImage:
     result[more_idx] = b[more_idx] + (2.0 * s[more_idx] - 1.0) * (D(b[more_idx]) - b[more_idx])
     return result
 
+
 @blend_mode("color_dodge", "Color dodge")
 def _(b: NumpyImage, s: NumpyImage) -> NumpyImage:
     result = np.zeros_like(s)
@@ -78,6 +90,7 @@ def _(b: NumpyImage, s: NumpyImage) -> NumpyImage:
     result[np.where(s1_mask)] = 1.0
     result[else_idx] = np.minimum(1.0, b[else_idx] / (1.0 - s[else_idx]))
     return result
+
 
 @blend_mode("color_burn", "Color burn")
 def _(b: NumpyImage, s: NumpyImage) -> NumpyImage:
@@ -91,21 +104,26 @@ def _(b: NumpyImage, s: NumpyImage) -> NumpyImage:
     result[else_idx] = 1.0 - np.minimum(1.0, (1.0 - b[else_idx]) / s[else_idx])
     return result
 
+
 @blend_mode("overlay", "Overlay")
 def _(b: NumpyImage, s: NumpyImage) -> NumpyImage:
     return BLEND_MODES["hard_light"].func(s, b)
+
 
 @blend_mode("screen", "Screen")
 def _(b: NumpyImage, s: NumpyImage) -> NumpyImage:
     return b + s - (b * s)
 
+
 @blend_mode("difference", "Difference")
 def _(b: NumpyImage, s: NumpyImage) -> NumpyImage:
     return np.abs(b - s)
 
+
 @blend_mode("exclusion", "Exclusion")
 def _(b: NumpyImage, s: NumpyImage) -> NumpyImage:
     return b + s - 2.0 * b * s
+
 
 @blend_mode("hue", "Hue")
 def _(b: NumpyImage, s: NumpyImage) -> NumpyImage:
@@ -113,17 +131,20 @@ def _(b: NumpyImage, s: NumpyImage) -> NumpyImage:
     sh, ss, sv = split_hsv(s)
     return join_hsv_to_rgb(sh, bs, bv)
 
+
 @blend_mode("saturation", "Saturation")
 def _(b: NumpyImage, s: NumpyImage) -> NumpyImage:
     bh, bs, bv = split_hsv(b)
     sh, ss, sv = split_hsv(s)
     return join_hsv_to_rgb(bh, ss, bv)
 
+
 @blend_mode("value", "Value")
 def _(b: NumpyImage, s: NumpyImage) -> NumpyImage:
     bh, bs, bv = split_hsv(b)
     sh, ss, sv = split_hsv(s)
     return join_hsv_to_rgb(bh, bs, sv)
+
 
 @blend_mode("color", "Color")
 def _(b: NumpyImage, s: NumpyImage) -> NumpyImage:

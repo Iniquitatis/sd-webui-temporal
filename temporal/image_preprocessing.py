@@ -14,7 +14,9 @@ from temporal.utils.image import NumpyImage, PILImage, apply_channelwise, ensure
 from temporal.utils.math import lerp, normalize, remap_range
 from temporal.utils.numpy import generate_value_noise, saturate_array
 
+
 PREPROCESSORS, preprocessor = make_func_registerer(name = "", params = [])
+
 
 def preprocess_image(im: PILImage, ext_params: SimpleNamespace, seed: int) -> PILImage:
     im = ensure_image_dims(im, "RGB")
@@ -38,6 +40,7 @@ def preprocess_image(im: PILImage, ext_params: SimpleNamespace, seed: int) -> PI
 
     return np_to_pil(saturate_array(npim))
 
+
 class UIParam:
     def __init__(self, type: Type[gr.components.Component], key: str, name: str, **kwargs: Any) -> None:
         self.type = type
@@ -45,11 +48,13 @@ class UIParam:
         self.name = name
         self.kwargs = kwargs
 
+
 @preprocessor("blurring", "Blurring", [
     UIParam(gr.Slider, "radius", "Radius", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0),
 ])
 def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
     return skimage.filters.gaussian(npim, params.radius, channel_axis = 2)
+
 
 @preprocessor("color_balancing", "Color balancing", [
     UIParam(gr.Slider, "brightness", "Brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0),
@@ -65,6 +70,7 @@ def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
     s[:] = remap_range(s, s.min(), s.max(), s.min(), params.saturation)
 
     return join_hsv_to_rgb(h, s, v)
+
 
 @preprocessor("color_correction", "Color correction", [
     UIParam(gr.Pil, "image", "Image"),
@@ -83,11 +89,13 @@ def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
 
     return npim
 
+
 @preprocessor("color_overlay", "Color overlay", [
     UIParam(gr.ColorPicker, "color", "Color", value = "#ffffff"),
 ])
 def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
     return np.full_like(npim, get_rgb_array(params.color))
+
 
 @preprocessor("custom_code", "Custom code", [
     UIParam(gr.Code, "code", "Code", language = "python"),
@@ -102,6 +110,7 @@ def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
     exec(params.code, code_globals)
     return code_globals.get("output", npim)
 
+
 @preprocessor("image_overlay", "Image overlay", [
     UIParam(gr.Pil, "image", "Image"),
     UIParam(gr.Slider, "blurring", "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0),
@@ -111,6 +120,7 @@ def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
         return npim
 
     return skimage.filters.gaussian(pil_to_np(match_image(params.image, npim)), params.blurring, channel_axis = 2)
+
 
 @preprocessor("median", "Median", [
     UIParam(gr.Slider, "radius", "Radius", minimum = 0, maximum = 50, step = 1, value = 0),
@@ -125,6 +135,7 @@ def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
         filter = lambda x: scipy.ndimage.percentile_filter(x, params.percentile, footprint = footprint, mode = "nearest")
 
     return apply_channelwise(npim, filter)
+
 
 @preprocessor("morphology", "Morphology", [
     UIParam(gr.Dropdown, "mode", "Mode", choices = ["erosion", "dilation", "opening", "closing"], value = "erosion"),
@@ -141,6 +152,7 @@ def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
     footprint = skimage.morphology.disk(params.radius)
     return apply_channelwise(npim, lambda x: func(x, footprint))
 
+
 @preprocessor("noise_compression", "Noise compression", [
     UIParam(gr.Slider, "constant", "Constant", minimum = 0.0, maximum = 1.0, step = 1e-5, value = 0.0),
     UIParam(gr.Slider, "adaptive", "Adaptive", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0),
@@ -155,6 +167,7 @@ def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
         weight += skimage.restoration.estimate_sigma(npim, average_sigmas = True, channel_axis = 2) * params.adaptive
 
     return skimage.restoration.denoise_tv_chambolle(npim, weight = max(weight, 1e-5), channel_axis = 2)
+
 
 @preprocessor("noise_overlay", "Noise overlay", [
     UIParam(gr.Slider, "scale", "Scale", minimum = 1, maximum = 1024, step = 1, value = 1),
@@ -173,6 +186,7 @@ def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
         params.persistence,
         seed if params.use_dynamic_seed else params.seed,
     )
+
 
 @preprocessor("palettization", "Palettization", [
     UIParam(gr.Pil, "palette", "Palette", image_mode = "RGB"),
@@ -197,12 +211,14 @@ def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
         dither = Image.Dither.FLOYDSTEINBERG if params.dithering else Image.Dither.NONE,
     ).convert("RGB"))
 
+
 @preprocessor("sharpening", "Sharpening", [
     UIParam(gr.Slider, "strength", "Strength", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0),
     UIParam(gr.Slider, "radius", "Radius", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0),
 ])
 def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
     return skimage.filters.unsharp_mask(npim, params.radius, params.strength, channel_axis = 2)
+
 
 @preprocessor("symmetry", "Symmetry", [
     UIParam(gr.Checkbox, "horizontal", "Horizontal", value = False),
@@ -220,6 +236,7 @@ def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
 
     return npim
 
+
 @preprocessor("transformation", "Transformation", [
     UIParam(gr.Slider, "translation_x", "Translation X", minimum = -1.0, maximum = 1.0, step = 0.001, value = 0.0),
     UIParam(gr.Slider, "translation_y", "Translation Y", minimum = -1.0, maximum = 1.0, step = 0.001, value = 0.0),
@@ -235,6 +252,7 @@ def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
     s_transform = skimage.transform.AffineTransform(scale = params.scaling)
 
     return skimage.transform.warp(npim, skimage.transform.AffineTransform(t_transform.params @ np.linalg.inv(o_transform.params) @ s_transform.params @ r_transform.params @ o_transform.params).inverse, mode = "symmetric")
+
 
 def _apply_mask(npim: NumpyImage, processed: NumpyImage, amount: float, blend_mode: str, mask: Optional[PILImage], normalized: bool, inverted: bool, blurring: float, reference: PILImage) -> NumpyImage:
     if npim is processed or amount == 0.0:

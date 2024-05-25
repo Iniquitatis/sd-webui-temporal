@@ -28,9 +28,12 @@ from temporal.utils.time import wait_until
 from temporal.video_filtering import FILTERS
 from temporal.video_rendering import enqueue_video_render, video_render_queue
 
+
 PROJECT_GALLERY_SIZE = 10
 
+
 T = TypeVar("T", bound = Block | Component)
+
 
 class UI:
     def __init__(self, id_formatter: Callable[[str], str]) -> None:
@@ -101,6 +104,7 @@ class UI:
 
     def unpack_values(self, ids: Iterable[str], *args: Any) -> SimpleNamespace:
         return SimpleNamespace(**{name: arg for name, arg in zip(self.parse_ids(ids), args)})
+
 
 class TemporalScript(scripts.Script):
     def __init__(self, *args: Any, **kwargs: Any) -> None:

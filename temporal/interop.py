@@ -5,7 +5,9 @@ from typing import Any, Optional
 from modules import scripts
 from modules.processing import StableDiffusionProcessing
 
+
 EXTENSION_DIR = Path(scripts.basedir())
+
 
 def import_cn() -> Optional[ModuleType]:
     try:
@@ -14,6 +16,7 @@ def import_cn() -> Optional[ModuleType]:
         external_code = None
 
     return external_code
+
 
 def get_cn_units(p: StableDiffusionProcessing) -> Optional[list[Any]]:
     if not (external_code := import_cn()):

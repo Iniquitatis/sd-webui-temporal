@@ -9,13 +9,17 @@ from numpy.typing import NDArray
 
 from temporal.utils.numpy import average_array, generate_noise, generate_value_noise, make_eased_weight_array, saturate_array
 
+
 PILImage = Image.Image
 NumpyImage = NDArray[np.float_]
 
+
 T = TypeVar("T", PILImage, NumpyImage)
+
 
 def apply_channelwise(npim: NumpyImage, func: Callable[[NumpyImage], NumpyImage]) -> NumpyImage:
     return np.stack([func(npim[..., i]) for i in range(npim.shape[-1])], axis = -1)
+
 
 def average_images(ims: Sequence[PILImage], trimming: float = 0.0, easing: float = 0.0, preference: float = 0.0) -> PILImage:
     return ims[0] if len(ims) == 1 else np_to_pil(saturate_array(average_array(
@@ -25,6 +29,7 @@ def average_images(ims: Sequence[PILImage], trimming: float = 0.0, easing: float
         power = preference + 1.0,
         weights = np.flip(make_eased_weight_array(len(ims), easing)),
     )))
+
 
 def ensure_image_dims(im: T, mode: Optional[str] = None, size: Optional[tuple[int, int]] = None) -> T:
     if isinstance(im, np.ndarray):
@@ -43,22 +48,28 @@ def ensure_image_dims(im: T, mode: Optional[str] = None, size: Optional[tuple[in
     else:
         return tmp_im
 
+
 def generate_noise_image(size: tuple[int, int], seed: Optional[int] = None) -> PILImage:
     return np_to_pil(generate_noise((size[1], size[0], 3), seed))
+
 
 def generate_value_noise_image(size: tuple[int, int], channels: int, scale: float, octaves: int, lacunarity: float, persistence: float, seed: Optional[int] = None) -> PILImage:
     return np_to_pil(generate_value_noise((size[1], size[0], channels), scale, octaves, lacunarity, persistence, seed))
 
+
 def get_rgb_array(color: str) -> NDArray[np.float_]:
     return np.array(ImageColor.getrgb(color), dtype = np.float_) / 255.0
 
+
 def join_hsv_to_rgb(h: NumpyImage, s: NumpyImage, v: NumpyImage) -> NumpyImage:
     return skimage.color.hsv2rgb(np.stack([h, s, v], axis = -1), channel_axis = -1)
+
 
 def load_image(path: str | Path) -> PILImage:
     im = Image.open(path)
     im.load()
     return im
+
 
 def match_image(im: T, reference: PILImage | NumpyImage, mode: bool = True, size: bool = True) -> T:
     if isinstance(reference, np.ndarray):
@@ -70,17 +81,20 @@ def match_image(im: T, reference: PILImage | NumpyImage, mode: bool = True, size
 
     return ensure_image_dims(im, ref_mode if mode else None, ref_size if size else None)
 
+
 def np_to_pil(npim: NumpyImage) -> PILImage:
     if isinstance(npim, Image.Image):
         return npim
 
     return Image.fromarray(skimage.util.img_as_ubyte(npim))
 
+
 def pil_to_np(im: PILImage) -> NumpyImage:
     if isinstance(im, np.ndarray):
         return im
 
     return skimage.util.img_as_float(im)
+
 
 def save_image(im: PILImage, path: Path, archive_mode: bool = False) -> None:
     tmp_path = path.with_suffix(".tmp")
@@ -96,6 +110,7 @@ def save_image(im: PILImage, path: Path, archive_mode: bool = False) -> None:
         compress_level = 9,
     ) if archive_mode else {}))
     tmp_path.rename(path)
+
 
 def split_hsv(npim: NumpyImage) -> tuple[NumpyImage, NumpyImage, NumpyImage]:
     hsv = skimage.color.rgb2hsv(npim, channel_axis = -1)

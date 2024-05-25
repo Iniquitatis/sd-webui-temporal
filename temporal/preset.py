@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from temporal.serialization import load_dict, save_object
 from temporal.utils.fs import load_json, recreate_directory, save_json
 
+
 class Preset:
     def __init__(self, path: Path) -> None:
         self.path = path

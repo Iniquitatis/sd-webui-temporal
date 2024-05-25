@@ -8,21 +8,26 @@ from PIL import Image
 from temporal.utils.image import load_image, save_image
 from temporal.utils.numpy import load_array, save_array
 
+
 def load_dict(d: dict[str, Any], data: dict[str, Any], data_dir: Path, existing_only: bool = True) -> None:
     for key, value in data.items():
         if not existing_only or key in d:
             d[key] = _load_value(value, data_dir)
 
+
 def save_dict(d: dict[str, Any], data_dir: Path, filter: Optional[Container[str]] = None) -> dict[str, Any]:
     return {k: _save_value(v, data_dir) for k, v in d.items() if not filter or k in filter}
+
 
 def load_object(obj: Any, data: dict[str, Any], data_dir: Path, existing_only: bool = True) -> None:
     for key, value in data.items():
         if not existing_only or hasattr(obj, key):
             setattr(obj, key, _load_value(value, data_dir))
 
+
 def save_object(obj: Any, data_dir: Path, filter: Optional[Container[str]] = None) -> dict[str, Any]:
     return {k: _save_value(v, data_dir) for k, v in vars(obj).items() if not filter or k in filter}
+
 
 def _load_value(value: Any, data_dir: Path) -> Any:
     if isinstance(value, bool | int | float | str | None):
@@ -48,6 +53,7 @@ def _load_value(value: Any, data_dir: Path) -> Any:
 
         else:
             print(f"WARNING: Cannot load value of type {type}")
+
 
 def _save_value(value: Any, data_dir: Path) -> Any:
     if isinstance(value, bool | int | float | str | None):

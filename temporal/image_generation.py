@@ -25,9 +25,11 @@ from temporal.utils.math import quantize
 from temporal.utils.object import copy_with_overrides
 from temporal.utils.time import wait_until
 
+
 GENERATION_MODES, generation_mode = make_func_registerer(name = "")
 
 image_save_queue = ThreadQueue()
+
 
 @generation_mode("image", "Image")
 def _(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNamespace) -> Processed:
@@ -80,6 +82,7 @@ def _(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNamespace) -> Proce
     opts.data.update(opts_backup)
 
     return last_processed
+
 
 @generation_mode("sequence", "Sequence")
 def _(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNamespace) -> Processed:
@@ -180,6 +183,7 @@ def _(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNamespace) -> Proce
 
     return last_processed
 
+
 def _process_image(job_title: str, p: StableDiffusionProcessingImg2Img, use_sd: bool = True, preview: bool = True) -> Optional[Processed]:
     state.job = job_title
 
@@ -206,10 +210,12 @@ def _process_image(job_title: str, p: StableDiffusionProcessingImg2Img, use_sd: 
 
     return processed
 
+
 def _apply_prompt_styles(p: StableDiffusionProcessingImg2Img) -> None:
     p.prompt = prompt_styles.apply_styles_to_prompt(p.prompt, p.styles)
     p.negative_prompt = prompt_styles.apply_negative_styles_to_prompt(p.negative_prompt, p.styles)
     p.styles.clear()
+
 
 def _setup_processing(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNamespace) -> bool:
     processing.fix_seed(p)
@@ -240,6 +246,7 @@ def _setup_processing(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNam
 
     return True
 
+
 def _make_image_buffer(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNamespace) -> ImageBuffer:
     width = p.width
     height = p.height
@@ -253,10 +260,12 @@ def _make_image_buffer(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNa
 
     return buffer
 
+
 def _apply_relative_params(ext_params: SimpleNamespace, denoising_strength: float) -> None:
     for key in PREPROCESSORS.keys():
         if getattr(ext_params, f"{key}_amount_relative"):
             setattr(ext_params, f"{key}_amount", getattr(ext_params, f"{key}_amount") * denoising_strength)
+
 
 def _process_iteration(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNamespace, image_buffer: ImageBuffer, image: PILImage, i: int, frame_index: int) -> Optional[Processed]:
     batch_count = ceil(ext_params.multisampling_samples / ext_params.multisampling_batch_size)
@@ -320,6 +329,7 @@ def _process_iteration(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNa
 
     return copy_with_overrides(processed, images = [merged_image])
 
+
 _last_preview_image = None
 
 def _set_preview_image(image: Optional[PILImage] = None) -> None:
@@ -333,6 +343,7 @@ def _set_preview_image(image: Optional[PILImage] = None) -> None:
 
     state.assign_current_image(image)
     _last_preview_image = image
+
 
 def _save_processed_image(p: StableDiffusionProcessingImg2Img, processed: Processed, output_dir: Path, file_name: Optional[str] = None, archive_mode: bool = False) -> None:
     if file_name and archive_mode:

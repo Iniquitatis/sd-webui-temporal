@@ -5,6 +5,7 @@ from temporal.compat import VERSION, upgrade_project
 from temporal.utils.fs import clear_directory, is_directory_empty, load_json, remove_entry, save_text
 from temporal.utils.image import PILImage, load_image
 
+
 FRAME_NAME_FORMAT = "{index:05d}"
 FRAME_EXTENSION = "png"
 VIDEO_NAME_FORMAT = "{name}-{suffix}"
@@ -12,11 +13,14 @@ VIDEO_EXTENSION = "mp4"
 VIDEO_DRAFT_SUFFIX = "draft"
 VIDEO_FINAL_SUFFIX = "final"
 
+
 def make_frame_name(index: int) -> str:
     return FRAME_NAME_FORMAT.format(index = index)
 
+
 def make_frame_file_name(index: int) -> str:
     return f"{make_frame_name(index)}.{FRAME_EXTENSION}"
+
 
 def make_video_name(name: str, is_final: bool) -> str:
     return VIDEO_NAME_FORMAT.format(
@@ -24,8 +28,10 @@ def make_video_name(name: str, is_final: bool) -> str:
         suffix = VIDEO_FINAL_SUFFIX if is_final else VIDEO_DRAFT_SUFFIX,
     )
 
+
 def make_video_file_name(name: str, is_final: bool) -> str:
     return f"{make_video_name(name, is_final)}.{VIDEO_EXTENSION}"
+
 
 class Project:
     def __init__(self, path: Path) -> None:
@@ -120,6 +126,7 @@ class Project:
 
     def _iterate_frame_paths(self) -> Iterator[Path]:
         return self.path.glob(f"*.{FRAME_EXTENSION}")
+
 
 def _parse_frame_index(image_path: Path) -> int:
     if image_path.is_file():

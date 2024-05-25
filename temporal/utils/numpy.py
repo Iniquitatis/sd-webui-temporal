@@ -6,7 +6,9 @@ import skimage
 from numpy.typing import NDArray
 from scipy import stats
 
+
 FloatArray = NDArray[np.float_]
+
 
 def average_array(arr: FloatArray, axis: int, trim: float = 0.0, power: float = 1.0, weights: Optional[FloatArray] = None) -> FloatArray:
     if trim == 0.5:
@@ -40,8 +42,10 @@ def average_array(arr: FloatArray, axis: int, trim: float = 0.0, power: float = 
 
     return result
 
+
 def generate_noise(shape: tuple[int, ...], seed: Optional[int] = None) -> FloatArray:
     return np.random.default_rng(seed).uniform(low = 0.0, high = 1.0 + np.finfo(np.float_).eps, size = shape)
+
 
 def generate_value_noise(shape: tuple[int, ...], scale: float, octaves: int, lacunarity: float, persistence: float, seed: Optional[int] = None) -> FloatArray:
     noise = generate_noise(shape, seed)
@@ -61,17 +65,22 @@ def generate_value_noise(shape: tuple[int, ...], scale: float, octaves: int, lac
 
     return result / total_amplitude
 
+
 def make_eased_weight_array(count: int, easing: float) -> FloatArray:
     return (np.linspace(1, count, count, dtype = np.float_) / count) ** easing
+
 
 def match_array_dimensions(arr: FloatArray, ref: FloatArray, axis: int) -> FloatArray:
     return np.reshape(arr, (1,) * len(ref.shape[:axis]) + arr.shape + (1,) * len(ref.shape[axis + arr.ndim:]))
 
+
 def load_array(path: str | Path) -> FloatArray:
     return np.load(path)["arr_0"]
 
+
 def saturate_array(arr: FloatArray) -> FloatArray:
     return np.clip(arr, 0.0, 1.0)
+
 
 def save_array(arr: FloatArray, path: str | Path) -> None:
     np.savez_compressed(path, arr)

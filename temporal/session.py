@@ -8,7 +8,9 @@ from modules.processing import StableDiffusionProcessingImg2Img
 from temporal.serialization import load_dict, load_object, save_dict, save_object
 from temporal.utils.fs import load_json, recreate_directory, save_json
 
+
 saved_ext_param_ids: list[str] = []
+
 
 class Session:
     def __init__(self, opts: Optional[Options] = None, p: Optional[StableDiffusionProcessingImg2Img] = None, cn_units: Optional[list[Any]] = None, ext_params: Optional[SimpleNamespace] = None) -> None:
