@@ -1,3 +1,4 @@
+from temporal.collection_utils import natural_sort
 from temporal.fs import iterate_subdirectories, remove_entry
 from temporal.preset import Preset
 
@@ -9,7 +10,7 @@ class PresetStore:
     def refresh_presets(self):
         self.preset_names.clear()
         self.preset_names.extend(x.name for x in iterate_subdirectories(self.path))
-        self.preset_names.sort()
+        self.preset_names[:] = natural_sort(self.preset_names)
 
     def open_preset(self, name):
         return Preset(self.path / name)
@@ -20,7 +21,7 @@ class PresetStore:
 
         if name not in self.preset_names:
             self.preset_names.append(name)
-            self.preset_names.sort()
+            self.preset_names[:] = natural_sort(self.preset_names)
 
     def delete_preset(self, name):
         remove_entry(self.path / name)
