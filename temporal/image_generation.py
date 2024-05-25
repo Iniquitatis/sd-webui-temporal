@@ -4,7 +4,7 @@ from math import ceil
 from pathlib import Path
 from time import perf_counter
 from types import SimpleNamespace
-from typing import Optional
+from typing import Any, Optional
 
 from PIL import Image
 
@@ -29,6 +29,12 @@ from temporal.utils.time import wait_until
 GENERATION_MODES, generation_mode = make_func_registerer(name = "")
 
 image_save_queue = ThreadQueue()
+
+
+# FIXME: To shut up the type checker
+opts: Any
+prompt_styles: Any
+state: Any
 
 
 @generation_mode("image", "Image")
