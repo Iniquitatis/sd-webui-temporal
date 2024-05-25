@@ -2,10 +2,11 @@ from shutil import copy2
 
 import numpy as np
 
-from temporal.fs import ensure_directory_exists, load_json, load_text, save_json, save_text
+from temporal.fs import ensure_directory_exists, load_json, load_text, move_entry, save_json, save_text
 from temporal.func_utils import make_func_registerer
 from temporal.image_utils import load_image, pil_to_np
 
+VERSION = 15
 UPGRADERS, upgrader = make_func_registerer()
 
 def upgrade_project(path):
@@ -477,5 +478,22 @@ def _(path):
 
     save_json(params_path, data)
     save_text(version_path, "14")
+
+    return True
+
+@upgrader(15)
+def _(path):
+    version_path = path / "session" / "version.txt"
+
+    if int(load_text(version_path, "0")) != 14:
+        return False
+
+    project_data_dir = ensure_directory_exists(path / "project")
+    move_entry(path / "metrics", project_data_dir / "metrics")
+    move_entry(path / "session" / "buffer", project_data_dir / "buffer")
+    move_entry(path / "session", project_data_dir / "session")
+    move_entry(version_path, project_data_dir / "version.txt")
+
+    save_text(project_data_dir / "version.txt", "15")
 
     return True

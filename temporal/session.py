@@ -1,109 +1,87 @@
-from modules.shared import opts
-
-from temporal.compat import upgrade_project
-from temporal.fs import load_json, recreate_directory, save_json, save_text
-from temporal.image_utils import load_image
-from temporal.interop import import_cn
+from temporal.fs import load_json, recreate_directory, save_json
 from temporal.serialization import load_dict, load_object, save_dict, save_object
 
 saved_ext_param_ids = []
 
-def get_last_frame_index(frame_dir):
-    def get_index(path):
-        if path.is_file():
-            try:
-                return int(path.stem)
-            except:
-                print(f"WARNING: {path} doesn't match the frame name format")
+class Session:
+    def __init__(self, opts = None, p = None, cn_units = None, ext_params = None):
+        self.opts = opts
+        self.p = p
+        self.cn_units = cn_units
+        self.ext_params = ext_params
 
-        return 0
+    def load(self, path):
+        if not (data := load_json(path / "parameters.json")):
+            return
 
-    return max((get_index(path) for path in frame_dir.glob("*.png")), default = 0)
+        # NOTE: `p.override_settings` juggles VAEs back-and-forth, slowing down the process considerably
+        if self.opts is not None:
+            load_dict(self.opts.data, data.get("shared_params", {}), path)
 
-def load_last_frame(frame_dir):
-    if index := get_last_frame_index(frame_dir):
-        return load_image(frame_dir / f"{index:05d}.png")
+        if self.p is not None:
+            load_object(self.p, data.get("generation_params", {}), path)
 
-    return None
+        if self.cn_units is not None:
+            for unit_data, cn_unit in zip(data.get("controlnet_params", []), self.cn_units):
+                load_object(cn_unit, unit_data, path)
 
-def load_session(p, ext_params, project_dir):
-    if not (session_dir := (project_dir / "session")).is_dir():
-        return
+        if self.ext_params is not None:
+            load_object(self.ext_params, data.get("extension_params", {}), path)
 
-    if not (params_path := (session_dir / "parameters.json")).is_file():
-        return
-
-    upgrade_project(project_dir)
-
-    data = load_json(params_path, {})
-
-    # NOTE: `p.override_settings` juggles VAEs back-and-forth, slowing down the process considerably
-    load_dict(opts.data, data.get("shared_params", {}), session_dir)
-
-    load_object(p, data.get("generation_params", {}), session_dir)
-
-    if external_code := import_cn():
-        for unit_data, cn_unit in zip(data.get("controlnet_params", []), external_code.get_all_units_in_processing(p)):
-            load_object(cn_unit, unit_data, session_dir)
-
-    load_object(ext_params, data.get("extension_params", {}), session_dir)
-
-def save_session(p, ext_params, project_dir):
-    session_dir = recreate_directory(project_dir / "session")
-
-    save_json(session_dir / "parameters.json", dict(
-        shared_params = save_dict(opts.data, session_dir, [
-            "sd_model_checkpoint",
-            "sd_vae",
-            "CLIP_stop_at_last_layers",
-            "always_discard_next_to_last_sigma",
-        ]),
-        generation_params = save_object(p, session_dir, [
-            "prompt",
-            "negative_prompt",
-            "init_images",
-            "image_mask",
-            "resize_mode",
-            "mask_blur_x",
-            "mask_blur_y",
-            "inpainting_mask_invert",
-            "inpainting_fill",
-            "inpaint_full_res",
-            "inpaint_full_res_padding",
-            "sampler_name",
-            "steps",
-            "refiner_checkpoint",
-            "refiner_switch_at",
-            "width",
-            "height",
-            "cfg_scale",
-            "denoising_strength",
-            "seed",
-            "seed_enable_extras",
-            "subseed",
-            "subseed_strength",
-            "seed_resize_from_w",
-            "seed_resize_from_h",
-        ]),
-        controlnet_params = list(
-            save_object(cn_unit, session_dir, [
-                "image",
-                "enabled",
-                "low_vram",
-                "pixel_perfect",
-                "module",
-                "model",
-                "weight",
-                "guidance_start",
-                "guidance_end",
-                "processor_res",
-                "threshold_a",
-                "threshold_b",
-                "control_mode",
+    def save(self, path):
+        recreate_directory(path)
+        save_json(path / "parameters.json", dict(
+            shared_params = save_dict(self.opts.data, path, [
+                "sd_model_checkpoint",
+                "sd_vae",
+                "CLIP_stop_at_last_layers",
+                "always_discard_next_to_last_sigma",
+            ]) if self.opts is not None else {},
+            generation_params = save_object(self.p, path, [
+                "prompt",
+                "negative_prompt",
+                "init_images",
+                "image_mask",
                 "resize_mode",
-            ])
-            for cn_unit in external_code.get_all_units_in_processing(p)
-        ) if (external_code := import_cn()) else [],
-        extension_params = save_object(ext_params, session_dir, saved_ext_param_ids),
-    ))
-    save_text(session_dir / "version.txt", "13")
+                "mask_blur_x",
+                "mask_blur_y",
+                "inpainting_mask_invert",
+                "inpainting_fill",
+                "inpaint_full_res",
+                "inpaint_full_res_padding",
+                "sampler_name",
+                "steps",
+                "refiner_checkpoint",
+                "refiner_switch_at",
+                "width",
+                "height",
+                "cfg_scale",
+                "denoising_strength",
+                "seed",
+                "seed_enable_extras",
+                "subseed",
+                "subseed_strength",
+                "seed_resize_from_w",
+                "seed_resize_from_h",
+            ]) if self.p is not None else {},
+            controlnet_params = list(
+                save_object(cn_unit, path, [
+                    "image",
+                    "enabled",
+                    "low_vram",
+                    "pixel_perfect",
+                    "module",
+                    "model",
+                    "weight",
+                    "guidance_start",
+                    "guidance_end",
+                    "processor_res",
+                    "threshold_a",
+                    "threshold_b",
+                    "control_mode",
+                    "resize_mode",
+                ])
+                for cn_unit in self.cn_units
+            ) if self.cn_units is not None else [],
+            extension_params = save_object(self.ext_params, path, saved_ext_param_ids) if self.ext_params is not None else {},
+        ))

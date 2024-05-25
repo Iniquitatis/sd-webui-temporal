@@ -8,15 +8,16 @@ from PIL import Image
 from modules import images, processing
 from modules.shared import opts, prompt_styles, state
 
-from temporal.fs import clear_directory, ensure_directory_exists, remove_directory
 from temporal.func_utils import make_func_registerer
 from temporal.image_buffer import ImageBuffer
 from temporal.image_preprocessing import PREPROCESSORS, preprocess_image
 from temporal.image_utils import average_images, ensure_image_dims, generate_value_noise_image, save_image
+from temporal.interop import get_cn_units
 from temporal.math import quantize
 from temporal.metrics import Metrics
 from temporal.object_utils import copy_with_overrides
-from temporal.session import get_last_frame_index, load_last_frame, load_session, save_session
+from temporal.project import make_frame_name, Project
+from temporal.session import Session
 from temporal.thread_queue import ThreadQueue
 from temporal.time_utils import wait_until
 
@@ -79,17 +80,19 @@ def _(p, ext_params):
     if ext_params.show_only_finalized_frames:
         opts.show_progress_every_n_steps = -1
 
-    project_dir = ensure_directory_exists(Path(ext_params.output_dir) / ext_params.project_subdir)
+    project = Project(Path(ext_params.output_dir) / ext_params.project_subdir)
+    project.load()
 
     if not ext_params.continue_from_last_frame:
-        clear_directory(project_dir, "*.png")
-        remove_directory(project_dir / "session" / "buffer")
-        remove_directory(project_dir / "metrics")
+        project.delete_all_frames()
+        project.delete_session_data()
 
     _apply_prompt_styles(p)
 
+    session = Session(opts, p, get_cn_units(p), ext_params)
+
     if ext_params.load_parameters:
-        load_session(p, ext_params, project_dir)
+        session.load(project.session_path)
 
     if not _setup_processing(p, ext_params):
         return processing.Processed(p, p.init_images)
@@ -97,22 +100,23 @@ def _(p, ext_params):
     image_buffer = _make_image_buffer(p, ext_params)
 
     if ext_params.continue_from_last_frame:
-        image_buffer.load(project_dir)
+        image_buffer.load(project.buffer_path)
 
     metrics = Metrics()
-    last_index = get_last_frame_index(project_dir)
+    last_index = project.get_last_frame_index()
 
     if ext_params.metrics_enabled:
-        metrics.load(project_dir)
+        metrics.load(project.metrics_path)
 
         if last_index == 0:
             metrics.measure(p.init_images[0])
 
-    save_session(p, ext_params, project_dir)
+    session.save(project.session_path)
+    project.save()
 
     _apply_relative_params(ext_params, p.denoising_strength)
 
-    if last_frame := load_last_frame(project_dir):
+    if last_frame := project.load_frame(last_index):
         last_processed = processing.Processed(p, [last_frame])
     else:
         last_processed = processing.Processed(p, [p.init_images[0]])
@@ -138,8 +142,8 @@ def _(p, ext_params):
             _save_processed_image(
                 p = p,
                 processed = last_processed,
-                output_dir = project_dir,
-                file_name = f"{frame_index:05d}",
+                output_dir = project.path,
+                file_name = make_frame_name(index = frame_index),
                 archive_mode = ext_params.archive_mode,
             )
 
@@ -147,12 +151,12 @@ def _(p, ext_params):
 
         if ext_params.metrics_enabled:
             metrics.measure(last_processed.images[0])
-            metrics.save(project_dir)
+            metrics.save(project.metrics_path)
 
             if frame_index % ext_params.metrics_save_plots_every_nth_frame == 0:
-                metrics.plot(project_dir, save_images = True)
+                metrics.plot_to_directory(project.metrics_path)
 
-    image_buffer_to_save.save(project_dir)
+    image_buffer_to_save.save(project.buffer_path)
 
     wait_until(lambda: not image_save_queue.busy)
 

@@ -48,6 +48,12 @@ def ensure_directory_exists(path):
 
     return path
 
+def is_directory_empty(path):
+    if not path.is_dir():
+        return True
+
+    return sum(1 for _ in path.iterdir()) == 0
+
 def iterate_subdirectories(path):
     if not path.is_dir():
         return
@@ -55,6 +61,14 @@ def iterate_subdirectories(path):
     for entry in path.iterdir():
         if entry.is_dir():
             yield entry
+
+def move_entry(old_path, new_path):
+    if not old_path.exists():
+        return old_path
+
+    old_path.rename(new_path)
+
+    return new_path
 
 def recreate_directory(path):
     remove_directory(path)

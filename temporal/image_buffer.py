@@ -1,6 +1,6 @@
 import numpy as np
 
-from temporal.fs import ensure_directory_exists, load_json, save_json
+from temporal.fs import load_json, recreate_directory, save_json
 from temporal.image_utils import ensure_image_dims, np_to_pil, pil_to_np
 from temporal.numpy_utils import average_array, make_eased_weight_array, saturate_array
 from temporal.serialization import load_object, save_object
@@ -47,16 +47,13 @@ class ImageBuffer:
             weights = np.roll(make_eased_weight_array(self.count, easing), self.last_index),
         )))
 
-    def load(self, project_dir):
-        buffer_dir = project_dir / "session" / "buffer"
+    def load(self, path):
+        if data := load_json(path / "data.json"):
+            load_object(self, data, path)
 
-        if data := load_json(buffer_dir / "data.json"):
-            load_object(self, data, buffer_dir)
-
-    def save(self, project_dir):
-        buffer_dir = ensure_directory_exists(project_dir / "session" / "buffer")
-
-        save_json(buffer_dir / "data.json", save_object(self, buffer_dir))
+    def save(self, path):
+        recreate_directory(path)
+        save_json(path / "data.json", save_object(self, path))
 
     def _convert_image_to_np(self, im):
         return pil_to_np(ensure_image_dims(

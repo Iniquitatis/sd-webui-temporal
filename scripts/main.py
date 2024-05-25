@@ -15,11 +15,12 @@ from temporal.image_preprocessing import PREPROCESSORS
 from temporal.interop import EXTENSION_DIR
 from temporal.metrics import Metrics
 from temporal.preset_store import PresetStore
-from temporal.session import saved_ext_param_ids
+from temporal.project import Project, make_video_file_name
+from temporal.session import Session, saved_ext_param_ids
 from temporal.string_utils import match_mask
 from temporal.time_utils import wait_until
 from temporal.video_filtering import FILTERS
-from temporal.video_rendering import start_video_render, video_render_queue
+from temporal.video_rendering import enqueue_video_render, video_render_queue
 
 class UI:
     def __init__(self, id_formatter):
@@ -237,10 +238,10 @@ class TemporalScript(scripts.Script):
 
                         ext_params = ui.unpack_values(["group:params"], *args)
 
-                        start_video_render(ext_params, is_final)
+                        self._start_video_render(ext_params, is_final)
                         wait_until(lambda: not video_render_queue.busy)
 
-                        yield gr.update(interactive = True), gr.update(interactive = True), f"{ext_params.output_dir}/{ext_params.project_subdir}-{'final' if is_final else 'draft'}.mp4"
+                        yield gr.update(interactive = True), gr.update(interactive = True), f"{ext_params.output_dir}/{make_video_file_name(ext_params.project_subdir, is_final)}"
 
                     return callback
 
@@ -254,10 +255,10 @@ class TemporalScript(scripts.Script):
         with ui.elem("", gr.Tab, label = "Metrics"):
             def render_plots_callback(*args):
                 ext_params = ui.unpack_values(["group:params"], *args)
-                project_dir = Path(ext_params.output_dir) / ext_params.project_subdir
+                project = Project(Path(ext_params.output_dir) / ext_params.project_subdir)
                 metrics = Metrics()
-                metrics.load(project_dir)
-                return gr.update(value = metrics.plot(project_dir))
+                metrics.load(project.metrics_path)
+                return gr.update(value = list(metrics.plot().values()))
 
             ui.elem("metrics_enabled", gr.Checkbox, label = "Enabled", value = False, groups = ["params", "mode_sequence"])
             ui.elem("metrics_save_plots_every_nth_frame", gr.Number, label = "Save plots every N-th frame", precision = 0, minimum = 1, step = 1, value = 10, groups = ["params", "mode_sequence"])
@@ -284,10 +285,17 @@ class TemporalScript(scripts.Script):
         ext_params = self._ui.unpack_values(["group:params"], *args)
         processed = GENERATION_MODES[ext_params.mode].func(p, ext_params)
 
-        if ext_params.render_draft_on_finish:
-            start_video_render(ext_params, False)
+        # FIXME: Feels somewhat hacky
+        if ext_params.mode == "sequence":
+            if ext_params.render_draft_on_finish:
+                self._start_video_render(ext_params, False)
 
-        if ext_params.render_final_on_finish:
-            start_video_render(ext_params, True)
+            if ext_params.render_final_on_finish:
+                self._start_video_render(ext_params, True)
 
         return processed
+
+    def _start_video_render(self, ext_params, is_final):
+        output_dir = Path(ext_params.output_dir)
+        project = Project(output_dir / ext_params.project_subdir)
+        enqueue_video_render(output_dir / make_video_file_name(project.name, is_final), project.list_all_frame_paths(), ext_params, is_final)

@@ -30,24 +30,19 @@ class Metrics:
         self.color_level_std.append([np.std(red), np.std(green), np.std(blue)])
         self.noise_sigma.append(skimage.restoration.estimate_sigma(npim, average_sigmas = True, channel_axis = 2))
 
-    def load(self, project_dir):
-        metrics_dir = project_dir / "metrics"
+    def load(self, path):
+        if data := load_json(path / "data.json"):
+            load_object(self, data, path)
 
-        if data := load_json(metrics_dir / "data.json"):
-            load_object(self, data, metrics_dir)
+    def save(self, path):
+        ensure_directory_exists(path)
+        save_json(path / "data.json", save_object(self, path))
 
-    def save(self, project_dir):
-        metrics_dir = ensure_directory_exists(project_dir / "metrics")
-
-        save_json(metrics_dir / "data.json", save_object(self, metrics_dir))
-
-    def plot(self, project_dir, save_images = False):
-        metrics_dir = ensure_directory_exists(project_dir / "metrics")
-
-        result = []
+    def plot(self):
+        result = {}
 
         @contextmanager
-        def figure(title, path):
+        def figure(key, title):
             plt.title(title)
             plt.xlabel("Frame")
             plt.ylabel("Level")
@@ -64,11 +59,7 @@ class Metrics:
 
                 im = Image.open(buffer)
                 im.load()
-
-                if save_images:
-                    save_image(im, path)
-
-                result.append(im)
+                result[key] = im
 
                 plt.close()
 
@@ -80,23 +71,29 @@ class Metrics:
             if data.size > 3:
                 plt.plot(scipy.signal.savgol_filter(data, min(data.size, 51), 3), color = color, label = f"{label} (smoothed)", linestyle = "-")
 
-        with figure("Luminance mean", metrics_dir / "luminance_mean.png"):
+        with figure("luminance_mean", "Luminance mean"):
             plot_noise_graph(np.array(self.luminance_mean), "Luminance", "gray")
 
-        with figure("Luminance standard deviation", metrics_dir / "luminance_std.png"):
+        with figure("luminance_std", "Luminance standard deviation"):
             plot_noise_graph(np.array(self.luminance_std), "Luminance", "gray")
 
-        with figure("Color level mean", metrics_dir / "color_level_mean.png"):
+        with figure("color_level_mean", "Color level mean"):
             plot_noise_graph(np.array(self.color_level_mean)[..., 0], "Red", "darkred")
             plot_noise_graph(np.array(self.color_level_mean)[..., 1], "Green", "darkgreen")
             plot_noise_graph(np.array(self.color_level_mean)[..., 2], "Blue", "darkblue")
 
-        with figure("Color level standard deviation", metrics_dir / "color_level_std.png"):
+        with figure("color_level_std", "Color level standard deviation"):
             plot_noise_graph(np.array(self.color_level_std)[..., 0], "Red", "darkred")
             plot_noise_graph(np.array(self.color_level_std)[..., 1], "Green", "darkgreen")
             plot_noise_graph(np.array(self.color_level_std)[..., 2], "Blue", "darkblue")
 
-        with figure("Noise sigma", metrics_dir / "noise_sigma.png"):
+        with figure("noise_sigma", "Noise sigma"):
             plot_noise_graph(np.array(self.noise_sigma), "Noise sigma", "royalblue")
 
         return result
+
+    def plot_to_directory(self, dir):
+        ensure_directory_exists(dir)
+
+        for key, im in self.plot().keys():
+            save_image(im, dir / f"{key}.png")
