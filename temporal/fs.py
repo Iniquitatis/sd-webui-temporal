@@ -66,3 +66,11 @@ def remove_directory(path):
         rmtree(path)
 
     return path
+
+def remove_entry(path):
+    if path.is_file():
+        path.unlink()
+    elif path.is_dir():
+        rmtree(path)
+
+    return path

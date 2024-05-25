@@ -14,7 +14,7 @@ from temporal.image_generation import GENERATION_MODES
 from temporal.image_preprocessing import PREPROCESSORS
 from temporal.interop import EXTENSION_DIR
 from temporal.metrics import Metrics
-from temporal.presets import delete_preset, load_preset, preset_names, refresh_presets, save_preset
+from temporal.preset_store import PresetStore
 from temporal.session import saved_ext_param_ids
 from temporal.string_utils import match_mask
 from temporal.time_utils import wait_until
@@ -94,7 +94,8 @@ class UI:
 class TemporalScript(scripts.Script):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        refresh_presets()
+        self._preset_store = PresetStore(EXTENSION_DIR / "presets")
+        self._preset_store.refresh_presets()
 
     def title(self):
         return "Temporal"
@@ -107,24 +108,24 @@ class TemporalScript(scripts.Script):
 
         with ui.elem("", gr.Row):
             def refresh_presets_callback():
-                refresh_presets()
-                return gr.update(choices = preset_names)
+                self._preset_store.refresh_presets()
+                return gr.update(choices = self._preset_store.preset_names)
 
             def load_preset_callback(preset, *args):
                 ext_params = ui.unpack_values(["group:params"], *args)
-                load_preset(preset, ext_params)
+                self._preset_store.open_preset(preset).read_ext_params(ext_params)
                 return [gr.update(value = v) for v in vars(ext_params).values()]
 
             def save_preset_callback(preset, *args):
                 ext_params = ui.unpack_values(["group:params"], *args)
-                save_preset(preset, ext_params)
-                return gr.update(choices = preset_names, value = preset)
+                self._preset_store.open_preset(preset).write_ext_params(ext_params)
+                return gr.update(choices = self._preset_store.preset_names, value = preset)
 
             def delete_preset_callback(preset):
-                delete_preset(preset)
-                return gr.update(choices = preset_names, value = get_first_element(preset_names, ""))
+                self._preset_store.delete_preset(preset)
+                return gr.update(choices = self._preset_store.preset_names, value = get_first_element(self._preset_store.preset_names, ""))
 
-            ui.elem("preset", gr.Dropdown, label = "Preset", choices = preset_names, allow_custom_value = True, value = get_first_element(preset_names, ""))
+            ui.elem("preset", gr.Dropdown, label = "Preset", choices = self._preset_store.preset_names, allow_custom_value = True, value = get_first_element(self._preset_store.preset_names, ""))
             ui.elem("refresh_presets", ToolButton, value = "\U0001f504")
             ui.callback("refresh_presets", "click", refresh_presets_callback, [], ["preset"])
             ui.elem("load_preset", ToolButton, value = "\U0001f4c2")
