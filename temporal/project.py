@@ -1,5 +1,5 @@
 from temporal.compat import VERSION, upgrade_project
-from temporal.fs import clear_directory, is_directory_empty, remove_entry, save_text
+from temporal.fs import clear_directory, is_directory_empty, load_json, remove_entry, save_text
 from temporal.image_utils import load_image
 
 FRAME_NAME_FORMAT = "{index:05d}"
@@ -56,6 +56,20 @@ class Project:
 
     def save(self):
         save_text(self.data_path / "version.txt", str(VERSION))
+
+    def get_description(self):
+        params = load_json(self.session_path / "parameters.json", {})
+        shared_params = params.get("shared_params", {})
+        generation_params = params.get("generation_params", {})
+        values = {
+            "Name": self.name,
+            "Prompt": generation_params.get("prompt", None),
+            "Negative prompt": generation_params.get("negative_prompt", None),
+            "Checkpoint": shared_params.get("sd_model_checkpoint", None),
+            "Last frame": self.get_last_frame_index(),
+            "Saved frames": self.get_actual_frame_count(),
+        }
+        return "\n\n".join(f"{k}: {v}" for k, v in values.items() if v is not None)
 
     def get_first_frame_index(self):
         return min((_parse_frame_index(x) for x in self._iterate_frame_paths()), default = 0)

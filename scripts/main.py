@@ -23,6 +23,8 @@ from temporal.time_utils import wait_until
 from temporal.video_filtering import FILTERS
 from temporal.video_rendering import enqueue_video_render, video_render_queue
 
+PROJECT_GALLERY_SIZE = 10
+
 class UI:
     def __init__(self, id_formatter):
         self._id_formatter = id_formatter
@@ -271,6 +273,14 @@ class TemporalScript(scripts.Script):
 
         with ui.elem("", gr.Tab, label = "Project Management"):
             with ui.elem("", gr.Row):
+                def managed_project_callback(output_dir, project_name):
+                    if project_name not in self._project_store.project_names:
+                        return gr.update(), gr.update()
+
+                    self._project_store.path = Path(output_dir)
+                    project = self._project_store.open_project(project_name)
+                    return gr.update(value = project.get_description()), gr.update(value = project.list_all_frame_paths()[-PROJECT_GALLERY_SIZE:])
+
                 def refresh_projects_callback(output_dir):
                     self._project_store.path = Path(output_dir)
                     self._project_store.refresh_projects()
@@ -290,6 +300,8 @@ class TemporalScript(scripts.Script):
                     return gr.update(choices = self._project_store.project_names, value = get_first_element(self._project_store.project_names, ""))
 
                 ui.elem("managed_project", gr.Dropdown, label = "Project", choices = self._project_store.project_names, allow_custom_value = True, value = get_first_element(self._project_store.project_names, ""))
+                # FIXME: `change` makes typing slower, but `select` won't work until user clicks an appropriate item
+                ui.callback("managed_project", "change", managed_project_callback, ["output_dir", "managed_project"], ["project_description", "project_gallery"])
                 ui.elem("refresh_projects", ToolButton, value = "\U0001f504")
                 ui.callback("refresh_projects", "click", refresh_projects_callback, ["output_dir"], ["managed_project"])
                 ui.elem("load_project", ToolButton, value = "\U0001f4c2")
@@ -297,28 +309,33 @@ class TemporalScript(scripts.Script):
                 ui.elem("delete_project", ToolButton, value = "\U0001f5d1\ufe0f")
                 ui.callback("delete_project", "click", delete_project_callback, ["output_dir", "managed_project"], ["managed_project"])
 
-            with ui.elem("", gr.Row):
-                def rename_project_callback(output_dir, old_name, new_name):
+            with ui.elem("", gr.Accordion, label = "Information", open = False):
+                ui.elem("project_description", gr.Textbox, label = "Description", lines = 5, max_lines = 5, interactive = False)
+                ui.elem("project_gallery", gr.Gallery, label = f"Last {PROJECT_GALLERY_SIZE} images", columns = 4, object_fit = "contain", preview = True)
+
+            with ui.elem("", gr.Accordion, label = "Tools", open = False):
+                with ui.elem("", gr.Row):
+                    def rename_project_callback(output_dir, old_name, new_name):
+                        self._project_store.path = Path(output_dir)
+                        self._project_store.rename_project(old_name, new_name)
+                        return gr.update(choices = self._project_store.project_names, value = new_name)
+
+                    ui.elem("new_project_name", gr.Textbox, label = "New name", value = "")
+                    ui.elem("confirm_project_rename", ToolButton, value = "\U00002714\ufe0f")
+                    ui.callback("confirm_project_rename", "click", rename_project_callback, ["output_dir", "managed_project", "new_project_name"], ["managed_project"])
+
+                def delete_intermediate_frames_callback(output_dir, project_name):
                     self._project_store.path = Path(output_dir)
-                    self._project_store.rename_project(old_name, new_name)
-                    return gr.update(choices = self._project_store.project_names, value = new_name)
+                    self._project_store.open_project(project_name).delete_intermediate_frames()
 
-                ui.elem("new_project_name", gr.Textbox, label = "New name", value = "")
-                ui.elem("confirm_project_rename", ToolButton, value = "\U00002714\ufe0f")
-                ui.callback("confirm_project_rename", "click", rename_project_callback, ["output_dir", "managed_project", "new_project_name"], ["managed_project"])
+                def delete_session_data_callback(output_dir, project_name):
+                    self._project_store.path = Path(output_dir)
+                    self._project_store.open_project(project_name).delete_session_data()
 
-            def delete_intermediate_frames_callback(output_dir, project_name):
-                self._project_store.path = Path(output_dir)
-                self._project_store.open_project(project_name).delete_intermediate_frames()
-
-            def delete_session_data_callback(output_dir, project_name):
-                self._project_store.path = Path(output_dir)
-                self._project_store.open_project(project_name).delete_session_data()
-
-            ui.elem("delete_intermediate_frames", gr.Button, value = "Delete intermediate frames")
-            ui.callback("delete_intermediate_frames", "click", delete_intermediate_frames_callback, ["output_dir", "managed_project"], [])
-            ui.elem("delete_session_data", gr.Button, value = "Delete session data")
-            ui.callback("delete_session_data", "click", delete_session_data_callback, ["output_dir", "managed_project"], [])
+                ui.elem("delete_intermediate_frames", gr.Button, value = "Delete intermediate frames")
+                ui.callback("delete_intermediate_frames", "click", delete_intermediate_frames_callback, ["output_dir", "managed_project"], [])
+                ui.elem("delete_session_data", gr.Button, value = "Delete session data")
+                ui.callback("delete_session_data", "click", delete_session_data_callback, ["output_dir", "managed_project"], [])
 
         with ui.elem("", gr.Tab, label = "Help"):
             for file_name, title in [
