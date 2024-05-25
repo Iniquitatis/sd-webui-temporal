@@ -1,9 +1,14 @@
+from collections.abc import Iterable
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any, Callable, Type, TypeVar
 
 import gradio as gr
+from gradio.blocks import Block
+from gradio.components import Component
 
 from modules import scripts
+from modules.processing import StableDiffusionProcessingImg2Img
 from modules.sd_samplers import visible_sampler_names
 from modules.ui_components import InputAccordion, ToolButton
 
@@ -25,8 +30,10 @@ from temporal.video_rendering import enqueue_video_render, video_render_queue
 
 PROJECT_GALLERY_SIZE = 10
 
+T = TypeVar("T", bound = Block | Component)
+
 class UI:
-    def __init__(self, id_formatter):
+    def __init__(self, id_formatter: Callable[[str], str]) -> None:
         self._id_formatter = id_formatter
         self._elems = {}
         self._ids = []
@@ -34,7 +41,7 @@ class UI:
         self._callbacks = {}
         self._existing_labels = set()
 
-    def parse_ids(self, ids):
+    def parse_ids(self, ids: Iterable[str]) -> list[str]:
         result = []
 
         for id in ids:
@@ -46,10 +53,10 @@ class UI:
 
         return result
 
-    def is_in_group(self, id, group):
+    def is_in_group(self, id: str, group: str) -> bool:
         return any(match_mask(x, group) for x in self._groups[id])
 
-    def elem(self, id, constructor, *args, groups = [], **kwargs):
+    def elem(self, id: str, constructor: Type[T], *args: Any, groups: list[str] = [], **kwargs: Any) -> T:
         def unique_label(string):
             if string in self._existing_labels:
                 string = unique_label(string + " ")
@@ -71,10 +78,10 @@ class UI:
 
         return elem
 
-    def callback(self, id, event, func, inputs, outputs):
+    def callback(self, id: str, event: str, func: Callable[..., Any], inputs: Iterable[str], outputs: Iterable[str]) -> None:
         self._callbacks[id].append((event, func, inputs, outputs))
 
-    def finalize(self, ids):
+    def finalize(self, ids: Iterable[str]) -> list[Any]:
         for id, callbacks in self._callbacks.items():
             for event, func, inputs, outputs in callbacks:
                 event_func = getattr(self._elems[id], event)
@@ -86,30 +93,30 @@ class UI:
 
         result = [self._elems[x] for x in self.parse_ids(ids)]
 
-        self._id_formatter = None
+        self._id_formatter = lambda x: x
         self._elems.clear()
         self._existing_labels.clear()
 
         return result
 
-    def unpack_values(self, ids, *args):
+    def unpack_values(self, ids: Iterable[str], *args: Any) -> SimpleNamespace:
         return SimpleNamespace(**{name: arg for name, arg in zip(self.parse_ids(ids), args)})
 
 class TemporalScript(scripts.Script):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._preset_store = PresetStore(EXTENSION_DIR / "presets")
         self._preset_store.refresh_presets()
         self._project_store = ProjectStore(Path("outputs") / "temporal")
         self._project_store.refresh_projects()
 
-    def title(self):
+    def title(self) -> str:
         return "Temporal"
 
-    def show(self, is_img2img):
+    def show(self, is_img2img: bool) -> Any:
         return is_img2img
 
-    def ui(self, is_img2img):
+    def ui(self, is_img2img: bool) -> Any:
         self._ui = ui = UI(self.elem_id)
 
         with ui.elem("", gr.Row):
@@ -352,7 +359,7 @@ class TemporalScript(scripts.Script):
 
         return ui.finalize(["group:params"])
 
-    def run(self, p, *args):
+    def run(self, p: StableDiffusionProcessingImg2Img, *args: Any) -> Any:
         saved_ext_param_ids[:] = self._ui.parse_ids(["group:session"])
         ext_params = self._ui.unpack_values(["group:params"], *args)
         processed = GENERATION_MODES[ext_params.mode].func(p, ext_params)
@@ -367,7 +374,7 @@ class TemporalScript(scripts.Script):
 
         return processed
 
-    def _start_video_render(self, ext_params, is_final):
+    def _start_video_render(self, ext_params: SimpleNamespace, is_final: bool) -> None:
         output_dir = Path(ext_params.output_dir)
         project = Project(output_dir / ext_params.project_subdir)
         enqueue_video_render(output_dir / make_video_file_name(project.name, is_final), project.list_all_frame_paths(), ext_params, is_final)

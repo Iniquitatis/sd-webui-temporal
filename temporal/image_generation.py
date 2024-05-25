@@ -3,10 +3,13 @@ from itertools import count
 from math import ceil
 from pathlib import Path
 from time import perf_counter
+from types import SimpleNamespace
+from typing import Optional
 
 from PIL import Image
 
 from modules import images, processing
+from modules.processing import Processed, StableDiffusionProcessingImg2Img
 from modules.shared import opts, prompt_styles, state
 
 from temporal.image_buffer import ImageBuffer
@@ -17,7 +20,7 @@ from temporal.project import make_frame_name, Project
 from temporal.session import Session
 from temporal.thread_queue import ThreadQueue
 from temporal.utils.func import make_func_registerer
-from temporal.utils.image import average_images, ensure_image_dims, generate_value_noise_image, save_image
+from temporal.utils.image import PILImage, average_images, ensure_image_dims, generate_value_noise_image, save_image
 from temporal.utils.math import quantize
 from temporal.utils.object import copy_with_overrides
 from temporal.utils.time import wait_until
@@ -27,7 +30,7 @@ GENERATION_MODES, generation_mode = make_func_registerer(name = "")
 image_save_queue = ThreadQueue()
 
 @generation_mode("image", "Image")
-def _(p, ext_params):
+def _(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNamespace) -> Processed:
     opts_backup = opts.data.copy()
 
     if ext_params.show_only_finalized_frames:
@@ -79,7 +82,7 @@ def _(p, ext_params):
     return last_processed
 
 @generation_mode("sequence", "Sequence")
-def _(p, ext_params):
+def _(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNamespace) -> Processed:
     opts_backup = opts.data.copy()
 
     opts.save_to_dirs = False
@@ -177,7 +180,7 @@ def _(p, ext_params):
 
     return last_processed
 
-def _process_image(job_title, p, use_sd = True, preview = True):
+def _process_image(job_title: str, p: StableDiffusionProcessingImg2Img, use_sd: bool = True, preview: bool = True) -> Optional[Processed]:
     state.job = job_title
 
     p = copy(p)
@@ -203,12 +206,12 @@ def _process_image(job_title, p, use_sd = True, preview = True):
 
     return processed
 
-def _apply_prompt_styles(p):
+def _apply_prompt_styles(p: StableDiffusionProcessingImg2Img) -> None:
     p.prompt = prompt_styles.apply_styles_to_prompt(p.prompt, p.styles)
     p.negative_prompt = prompt_styles.apply_negative_styles_to_prompt(p.negative_prompt, p.styles)
     p.styles.clear()
 
-def _setup_processing(p, ext_params):
+def _setup_processing(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNamespace) -> bool:
     processing.fix_seed(p)
 
     if not p.init_images or not isinstance(p.init_images[0], Image.Image):
@@ -237,7 +240,7 @@ def _setup_processing(p, ext_params):
 
     return True
 
-def _make_image_buffer(p, ext_params):
+def _make_image_buffer(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNamespace) -> ImageBuffer:
     width = p.width
     height = p.height
 
@@ -250,12 +253,12 @@ def _make_image_buffer(p, ext_params):
 
     return buffer
 
-def _apply_relative_params(ext_params, denoising_strength):
+def _apply_relative_params(ext_params: SimpleNamespace, denoising_strength: float) -> None:
     for key in PREPROCESSORS.keys():
         if getattr(ext_params, f"{key}_amount_relative"):
             setattr(ext_params, f"{key}_amount", getattr(ext_params, f"{key}_amount") * denoising_strength)
 
-def _process_iteration(p, ext_params, image_buffer, image, i, frame_index):
+def _process_iteration(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNamespace, image_buffer: ImageBuffer, image: PILImage, i: int, frame_index: int) -> Optional[Processed]:
     batch_count = ceil(ext_params.multisampling_samples / ext_params.multisampling_batch_size)
     total_sample_count = ext_params.multisampling_batch_size * batch_count
 
@@ -319,7 +322,7 @@ def _process_iteration(p, ext_params, image_buffer, image, i, frame_index):
 
 _last_preview_image = None
 
-def _set_preview_image(image = None):
+def _set_preview_image(image: Optional[PILImage] = None) -> None:
     global _last_preview_image
 
     if image is None:
@@ -331,8 +334,8 @@ def _set_preview_image(image = None):
     state.assign_current_image(image)
     _last_preview_image = image
 
-def _save_processed_image(p, processed, output_dir, file_name = None, archive_mode = False):
-    if archive_mode:
+def _save_processed_image(p: StableDiffusionProcessingImg2Img, processed: Processed, output_dir: Path, file_name: Optional[str] = None, archive_mode: bool = False) -> None:
+    if file_name and archive_mode:
         image_save_queue.enqueue(
             save_image,
             processed.images[0],

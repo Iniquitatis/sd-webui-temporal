@@ -1,5 +1,7 @@
 from contextlib import contextmanager
 from io import BytesIO
+from pathlib import Path
+from typing import Iterator
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,17 +11,17 @@ from PIL import Image
 
 from temporal.serialization import load_object, save_object
 from temporal.utils.fs import ensure_directory_exists, load_json, save_json
-from temporal.utils.image import pil_to_np, save_image
+from temporal.utils.image import PILImage, pil_to_np, save_image
 
 class Metrics:
-    def __init__(self):
+    def __init__(self) -> None:
         self.luminance_mean = []
         self.luminance_std = []
         self.color_level_mean = []
         self.color_level_std = []
         self.noise_sigma = []
 
-    def measure(self, im):
+    def measure(self, im: PILImage) -> None:
         npim = pil_to_np(im)
         grayscale = skimage.color.rgb2gray(npim[..., :3], channel_axis = 2)
         red, green, blue = npim[..., 0], npim[..., 1], npim[..., 2]
@@ -30,19 +32,19 @@ class Metrics:
         self.color_level_std.append([np.std(red), np.std(green), np.std(blue)])
         self.noise_sigma.append(skimage.restoration.estimate_sigma(npim, average_sigmas = True, channel_axis = 2))
 
-    def load(self, path):
+    def load(self, path: Path) -> None:
         if data := load_json(path / "data.json"):
             load_object(self, data, path)
 
-    def save(self, path):
+    def save(self, path: Path) -> None:
         ensure_directory_exists(path)
         save_json(path / "data.json", save_object(self, path))
 
-    def plot(self):
+    def plot(self) -> dict[str, PILImage]:
         result = {}
 
         @contextmanager
-        def figure(key, title):
+        def figure(key: str, title: str) -> Iterator[None]:
             plt.title(title)
             plt.xlabel("Frame")
             plt.ylabel("Level")
@@ -92,8 +94,8 @@ class Metrics:
 
         return result
 
-    def plot_to_directory(self, dir):
+    def plot_to_directory(self, dir: Path) -> None:
         ensure_directory_exists(dir)
 
-        for key, im in self.plot().keys():
+        for key, im in self.plot().items():
             save_image(im, dir / f"{key}.png")

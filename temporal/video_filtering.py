@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from typing import Any, Type
 
 import gradio as gr
 
@@ -7,7 +8,7 @@ from temporal.utils.func import make_func_registerer
 
 FILTERS, filter = make_func_registerer(name = "", params = [])
 
-def build_filter(ext_params):
+def build_filter(ext_params: SimpleNamespace) -> str:
     return ",".join([
         filter.func(ext_params.video_fps, SimpleNamespace(**{
             x.key: getattr(ext_params, f"video_{key}_{x.key}")
@@ -18,7 +19,7 @@ def build_filter(ext_params):
     ] or ["null"])
 
 class UIParam:
-    def __init__(self, type, key, name, **kwargs):
+    def __init__(self, type: Type[gr.components.Component], key: str, name: str, **kwargs: Any) -> None:
         self.type = type
         self.key = key
         self.name = name
@@ -27,7 +28,7 @@ class UIParam:
 @filter("chromatic_aberration", "Chromatic aberration", [
     UIParam(gr.Slider, "distance", "Distance", minimum = 1, maximum = 512, step = 1, value = 1),
 ])
-def _(fps, params):
+def _(fps: int, params: SimpleNamespace) -> str:
     return f"rgbashift='rh=-{params.distance}:bh={params.distance}'"
 
 @filter("color_balancing", "Color balancing", [
@@ -35,20 +36,20 @@ def _(fps, params):
     UIParam(gr.Slider, "contrast", "Contrast", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0),
     UIParam(gr.Slider, "saturation", "Saturation", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0),
 ])
-def _(fps, params):
+def _(fps: int, params: SimpleNamespace) -> str:
     return f"eq='contrast={params.contrast}:brightness={params.brightness - 1.0}:saturation={params.saturation}'"
 
 @filter("deflickering", "Deflickering", [
     UIParam(gr.Slider, "frames", "Frames", minimum = 2, maximum = 120, step = 1, value = 60),
 ])
-def _(fps, params):
+def _(fps: int, params: SimpleNamespace) -> str:
     return f"deflicker='size={params.frames}:mode=am'"
 
 @filter("interpolation", "Interpolation", [
     UIParam(gr.Slider, "fps", "Frames per second", minimum = 1, maximum = 60, step = 1, value = 60),
     UIParam(gr.Slider, "mb_subframes", "Motion blur subframes", minimum = 0, maximum = 15, step = 1, value = 0),
 ])
-def _(fps, params):
+def _(fps: int, params: SimpleNamespace) -> str:
     parts = []
     parts.append(f"minterpolate='fps={params.fps * (params.mb_subframes + 1)}:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1:scd=none'")
 
@@ -67,7 +68,7 @@ def _(fps, params):
     UIParam(gr.Slider, "backdrop_brightness", "Backdrop brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 0.5),
     UIParam(gr.Slider, "backdrop_blurring", "Backdrop blurring", minimum = 0.0, maximum = 50.0, step = 1.0, value = 0.0),
 ])
-def _(fps, params):
+def _(fps: int, params: SimpleNamespace) -> str:
     parts = []
 
     if params.padded:
@@ -105,7 +106,7 @@ def _(fps, params):
     UIParam(gr.Slider, "strength", "Strength", minimum = 0.0, maximum = 1.0, step = 0.1, value = 0.0),
     UIParam(gr.Slider, "radius", "Radius", minimum = 3, maximum = 13, step = 2, value = 3),
 ])
-def _(fps, params):
+def _(fps: int, params: SimpleNamespace) -> str:
     return f"unsharp='luma_msize_x={params.radius}:luma_msize_y={params.radius}:luma_amount={params.strength}:chroma_msize_x={params.radius}:chroma_msize_y={params.radius}:chroma_amount={params.strength}'"
 
 @filter("temporal_averaging", "Temporal averaging", [
@@ -113,7 +114,7 @@ def _(fps, params):
     UIParam(gr.Dropdown, "algorithm", "Algorithm", choices = ["mean", "median"], value = "mean"),
     UIParam(gr.Slider, "easing", "Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0),
 ])
-def _(fps, params):
+def _(fps: int, params: SimpleNamespace) -> str:
     if params.algorithm == "mean":
         weights = [((x + 1) / (params.radius + 1)) ** params.easing for x in range(params.radius + 1)]
         weights += reversed(weights[:-1])
@@ -139,7 +140,7 @@ def _(fps, params):
     UIParam(gr.ColorPicker, "shadow_color", "Shadow color", value = "#000000"),
     UIParam(gr.Slider, "shadow_alpha", "Shadow alpha", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0),
 ])
-def _(fps, params):
+def _(fps: int, params: SimpleNamespace) -> str:
     text = (
         params.text
         .format(

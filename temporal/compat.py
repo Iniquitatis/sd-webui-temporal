@@ -1,4 +1,6 @@
+from pathlib import Path
 from shutil import copy2
+from typing import Any
 
 import numpy as np
 
@@ -9,7 +11,7 @@ from temporal.utils.image import load_image, pil_to_np
 VERSION = 15
 UPGRADERS, upgrader = make_func_registerer()
 
-def upgrade_project(path):
+def upgrade_project(path: Path) -> None:
     last_version = 0
 
     for version, upgrader in UPGRADERS.items():
@@ -20,8 +22,8 @@ def upgrade_project(path):
         print(f"Upgraded project to version {last_version}")
 
 @upgrader(1)
-def _(path):
-    def upgrade_value(value):
+def _(path: Path) -> bool:
+    def upgrade_value(value: Any) -> Any:
         if isinstance(value, list):
             return {"type": "list", "data": [upgrade_value(x) for x in value]}
         elif isinstance(value, dict):
@@ -32,7 +34,7 @@ def _(path):
         else:
             return value
 
-    def upgrade_values(d):
+    def upgrade_values(d: dict[str, Any]) -> dict[str, Any]:
         return {k: upgrade_value(v) for k, v in d.items()}
 
     version_path = path / "session" / "version.txt"
@@ -57,7 +59,7 @@ def _(path):
     return True
 
 @upgrader(2)
-def _(path):
+def _(path: Path) -> bool:
     version_path = path / "session" / "version.txt"
     params_path = path / "session" / "parameters.json"
 
@@ -105,7 +107,7 @@ def _(path):
     return True
 
 @upgrader(3)
-def _(path):
+def _(path: Path) -> bool:
     version_path = path / "session" / "version.txt"
 
     if int(load_text(version_path, "0")) != 2:
@@ -119,8 +121,8 @@ def _(path):
     return True
 
 @upgrader(4)
-def _(path):
-    def upgrade_value(value):
+def _(path: Path) -> bool:
+    def upgrade_value(value: Any) -> Any:
         if isinstance(value, dict):
             type = value.get("type", None)
 
@@ -139,7 +141,7 @@ def _(path):
         else:
             return value
 
-    def upgrade_values(d):
+    def upgrade_values(d: dict[str, Any]) -> dict[str, Any]:
         return {k: upgrade_value(v) for k, v in d.items()}
 
     version_path = path / "session" / "version.txt"
@@ -164,8 +166,8 @@ def _(path):
     return True
 
 @upgrader(5)
-def _(path):
-    def upgrade_value(value):
+def _(path: Path) -> bool:
+    def upgrade_value(value: Any) -> Any:
         if isinstance(value, dict):
             type = value.get("type", None)
 
@@ -184,7 +186,7 @@ def _(path):
         else:
             return value
 
-    def upgrade_values(d):
+    def upgrade_values(d: dict[str, Any]) -> dict[str, Any]:
         return {k: upgrade_value(v) for k, v in d.items()}
 
     version_path = path / "session" / "version.txt"
@@ -229,7 +231,7 @@ def _(path):
     return True
 
 @upgrader(6)
-def _(path):
+def _(path: Path) -> bool:
     version_path = path / "session" / "version.txt"
     params_path = path / "session" / "parameters.json"
 
@@ -255,7 +257,7 @@ def _(path):
     return True
 
 @upgrader(7)
-def _(path):
+def _(path: Path) -> bool:
     version_path = path / "session" / "version.txt"
     params_path = path / "session" / "parameters.json"
 
@@ -288,7 +290,7 @@ def _(path):
     return True
 
 @upgrader(8)
-def _(path):
+def _(path: Path) -> bool:
     version_path = path / "session" / "version.txt"
     params_path = path / "session" / "parameters.json"
 
@@ -309,7 +311,7 @@ def _(path):
     return True
 
 @upgrader(9)
-def _(path):
+def _(path: Path) -> bool:
     version_path = path / "session" / "version.txt"
     params_path = path / "session" / "parameters.json"
 
@@ -338,7 +340,7 @@ def _(path):
     return True
 
 @upgrader(10)
-def _(path):
+def _(path: Path) -> bool:
     version_path = path / "session" / "version.txt"
     params_path = path / "session" / "parameters.json"
 
@@ -362,7 +364,7 @@ def _(path):
     return True
 
 @upgrader(11)
-def _(path):
+def _(path: Path) -> bool:
     version_path = path / "session" / "version.txt"
     params_path = path / "session" / "parameters.json"
 
@@ -416,7 +418,7 @@ def _(path):
     return True
 
 @upgrader(12)
-def _(path):
+def _(path: Path) -> bool:
     version_path = path / "session" / "version.txt"
     params_path = path / "session" / "parameters.json"
 
@@ -441,7 +443,7 @@ def _(path):
     return True
 
 @upgrader(13)
-def _(path):
+def _(path: Path) -> bool:
     version_path = path / "session" / "version.txt"
     params_path = path / "session" / "parameters.json"
 
@@ -462,7 +464,7 @@ def _(path):
     return True
 
 @upgrader(14)
-def _(path):
+def _(path: Path) -> bool:
     version_path = path / "session" / "version.txt"
     params_path = path / "session" / "parameters.json"
 
@@ -482,7 +484,7 @@ def _(path):
     return True
 
 @upgrader(15)
-def _(path):
+def _(path: Path) -> bool:
     version_path = path / "session" / "version.txt"
 
     if int(load_text(version_path, "0")) != 14:

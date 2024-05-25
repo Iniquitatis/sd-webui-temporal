@@ -1,16 +1,23 @@
+from pathlib import Path
+from types import SimpleNamespace
+from typing import Any, Optional
+
+from modules.options import Options
+from modules.processing import StableDiffusionProcessingImg2Img
+
 from temporal.serialization import load_dict, load_object, save_dict, save_object
 from temporal.utils.fs import load_json, recreate_directory, save_json
 
-saved_ext_param_ids = []
+saved_ext_param_ids: list[str] = []
 
 class Session:
-    def __init__(self, opts = None, p = None, cn_units = None, ext_params = None):
+    def __init__(self, opts: Optional[Options] = None, p: Optional[StableDiffusionProcessingImg2Img] = None, cn_units: Optional[list[Any]] = None, ext_params: Optional[SimpleNamespace] = None) -> None:
         self.opts = opts
         self.p = p
         self.cn_units = cn_units
         self.ext_params = ext_params
 
-    def load(self, path):
+    def load(self, path: Path) -> None:
         if not (data := load_json(path / "parameters.json")):
             return
 
@@ -28,7 +35,7 @@ class Session:
         if self.ext_params is not None:
             load_object(self.ext_params, data.get("extension_params", {}), path)
 
-    def save(self, path):
+    def save(self, path: Path) -> None:
         recreate_directory(path)
         save_json(path / "parameters.json", dict(
             shared_params = save_dict(self.opts.data, path, [

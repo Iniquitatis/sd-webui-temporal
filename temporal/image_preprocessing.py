@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from typing import Any, Optional, Type
 
 import gradio as gr
 import numpy as np
@@ -9,13 +10,13 @@ from PIL import Image
 from temporal.image_blending import blend_images
 from temporal.utils.collection import reorder_dict
 from temporal.utils.func import make_func_registerer
-from temporal.utils.image import apply_channelwise, ensure_image_dims, get_rgb_array, join_hsv_to_rgb, match_image, np_to_pil, pil_to_np, split_hsv
+from temporal.utils.image import NumpyImage, PILImage, apply_channelwise, ensure_image_dims, get_rgb_array, join_hsv_to_rgb, match_image, np_to_pil, pil_to_np, split_hsv
 from temporal.utils.math import lerp, normalize, remap_range
 from temporal.utils.numpy import generate_value_noise, saturate_array
 
 PREPROCESSORS, preprocessor = make_func_registerer(name = "", params = [])
 
-def preprocess_image(im, ext_params, seed):
+def preprocess_image(im: PILImage, ext_params: SimpleNamespace, seed: int) -> PILImage:
     im = ensure_image_dims(im, "RGB")
     npim = pil_to_np(im)
 
@@ -38,7 +39,7 @@ def preprocess_image(im, ext_params, seed):
     return np_to_pil(saturate_array(npim))
 
 class UIParam:
-    def __init__(self, type, key, name, **kwargs):
+    def __init__(self, type: Type[gr.components.Component], key: str, name: str, **kwargs: Any) -> None:
         self.type = type
         self.key = key
         self.name = name
@@ -47,7 +48,7 @@ class UIParam:
 @preprocessor("blurring", "Blurring", [
     UIParam(gr.Slider, "radius", "Radius", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0),
 ])
-def _(npim, seed, params):
+def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
     return skimage.filters.gaussian(npim, params.radius, channel_axis = 2)
 
 @preprocessor("color_balancing", "Color balancing", [
@@ -55,7 +56,7 @@ def _(npim, seed, params):
     UIParam(gr.Slider, "contrast", "Contrast", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0),
     UIParam(gr.Slider, "saturation", "Saturation", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0),
 ])
-def _(npim, seed, params):
+def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
     npim = remap_range(npim, npim.min(), npim.max(), 0.0, params.brightness)
 
     npim = remap_range(npim, npim.min(), npim.max(), 0.5 - params.contrast / 2, 0.5 + params.contrast / 2)
@@ -70,7 +71,7 @@ def _(npim, seed, params):
     UIParam(gr.Checkbox, "normalize_contrast", "Normalize contrast", value = False),
     UIParam(gr.Checkbox, "equalize_histogram", "Equalize histogram", value = False),
 ])
-def _(npim, seed, params):
+def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
     if params.image is not None:
         npim = skimage.exposure.match_histograms(npim, pil_to_np(match_image(params.image, npim, size = False)), channel_axis = 2)
 
@@ -85,14 +86,14 @@ def _(npim, seed, params):
 @preprocessor("color_overlay", "Color overlay", [
     UIParam(gr.ColorPicker, "color", "Color", value = "#ffffff"),
 ])
-def _(npim, seed, params):
+def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
     return np.full_like(npim, get_rgb_array(params.color))
 
 @preprocessor("custom_code", "Custom code", [
     UIParam(gr.Code, "code", "Code", language = "python"),
 ])
-def _(npim, seed, params):
-    code_globals = dict(
+def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
+    code_globals: dict[str, Any] = dict(
         np = np,
         scipy = scipy,
         skimage = skimage,
@@ -105,7 +106,7 @@ def _(npim, seed, params):
     UIParam(gr.Pil, "image", "Image"),
     UIParam(gr.Slider, "blurring", "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0),
 ])
-def _(npim, seed, params):
+def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
     if params.image is None:
         return npim
 
@@ -115,7 +116,7 @@ def _(npim, seed, params):
     UIParam(gr.Slider, "radius", "Radius", minimum = 0, maximum = 50, step = 1, value = 0),
     UIParam(gr.Slider, "percentile", "Percentile", minimum = 0.0, maximum = 100.0, step = 0.1, value = 50.0),
 ])
-def _(npim, seed, params):
+def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
     footprint = skimage.morphology.disk(params.radius)
 
     if params.percentile == 50.0:
@@ -129,7 +130,7 @@ def _(npim, seed, params):
     UIParam(gr.Dropdown, "mode", "Mode", choices = ["erosion", "dilation", "opening", "closing"], value = "erosion"),
     UIParam(gr.Slider, "radius", "Radius", minimum = 0, maximum = 50, step = 1, value = 0),
 ])
-def _(npim, seed, params):
+def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
     func = (
         skimage.morphology.erosion  if params.mode == "erosion"  else
         skimage.morphology.dilation if params.mode == "dilation" else
@@ -144,7 +145,7 @@ def _(npim, seed, params):
     UIParam(gr.Slider, "constant", "Constant", minimum = 0.0, maximum = 1.0, step = 1e-5, value = 0.0),
     UIParam(gr.Slider, "adaptive", "Adaptive", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0),
 ])
-def _(npim, seed, params):
+def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
     weight = 0.0
 
     if params.constant > 0.0:
@@ -163,7 +164,7 @@ def _(npim, seed, params):
     UIParam(gr.Number, "seed", "Seed", precision = 0, minimum = 0, step = 1, value = 0),
     UIParam(gr.Checkbox, "use_dynamic_seed", "Use dynamic seed", value = False),
 ])
-def _(npim, seed, params):
+def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
     return generate_value_noise(
         npim.shape,
         params.scale,
@@ -178,7 +179,7 @@ def _(npim, seed, params):
     UIParam(gr.Checkbox, "stretch", "Stretch", value = False),
     UIParam(gr.Checkbox, "dithering", "Dithering", value = False),
 ])
-def _(npim, seed, params):
+def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
     def stretch_array(arr, new_length):
         return np.interp(np.arange(new_length), np.linspace(0, new_length - 1, len(arr)), arr)
 
@@ -200,14 +201,14 @@ def _(npim, seed, params):
     UIParam(gr.Slider, "strength", "Strength", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0),
     UIParam(gr.Slider, "radius", "Radius", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0),
 ])
-def _(npim, seed, params):
+def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
     return skimage.filters.unsharp_mask(npim, params.radius, params.strength, channel_axis = 2)
 
 @preprocessor("symmetry", "Symmetry", [
     UIParam(gr.Checkbox, "horizontal", "Horizontal", value = False),
     UIParam(gr.Checkbox, "vertical", "Vertical", value = False),
 ])
-def _(npim, seed, params):
+def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
     height, width = npim.shape[:2]
     npim = npim.copy()
 
@@ -225,7 +226,7 @@ def _(npim, seed, params):
     UIParam(gr.Slider, "rotation", "Rotation", minimum = -90.0, maximum = 90.0, step = 0.1, value = 0.0),
     UIParam(gr.Slider, "scaling", "Scaling", minimum = 0.0, maximum = 2.0, step = 0.001, value = 1.0),
 ])
-def _(npim, seed, params):
+def _(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
     height, width = npim.shape[:2]
 
     o_transform = skimage.transform.AffineTransform(translation = (-width / 2, -height / 2))
@@ -235,7 +236,7 @@ def _(npim, seed, params):
 
     return skimage.transform.warp(npim, skimage.transform.AffineTransform(t_transform.params @ np.linalg.inv(o_transform.params) @ s_transform.params @ r_transform.params @ o_transform.params).inverse, mode = "symmetric")
 
-def _apply_mask(npim, processed, amount, blend_mode, mask, normalized, inverted, blurring, reference):
+def _apply_mask(npim: NumpyImage, processed: NumpyImage, amount: float, blend_mode: str, mask: Optional[PILImage], normalized: bool, inverted: bool, blurring: float, reference: PILImage) -> NumpyImage:
     if npim is processed or amount == 0.0:
         return npim
 
@@ -254,7 +255,7 @@ def _apply_mask(npim, processed, amount, blend_mode, mask, normalized, inverted,
             factor = 1.0 - factor
 
         if blurring:
-            factor = skimage.filters.gaussian(factor, blurring, channel_axis = 2)
+            factor = skimage.filters.gaussian(factor, round(blurring), channel_axis = 2)
 
     else:
         factor = 1.0

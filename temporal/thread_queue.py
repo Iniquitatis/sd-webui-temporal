@@ -1,18 +1,19 @@
 from threading import Lock, Thread
+from typing import Any, Callable
 
 class ThreadQueue:
-    def __init__(self):
+    def __init__(self) -> None:
         self._queue = []
         self._execution_lock = Lock()
         self._queue_lock = Lock()
 
     @property
-    def busy(self):
+    def busy(self) -> bool:
         with self._queue_lock:
             return len(self._queue) > 0
 
-    def enqueue(self, target, *args, **kwargs):
-        def callback():
+    def enqueue(self, target: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
+        def callback() -> None:
             with self._execution_lock:
                 target(*args, **kwargs)
 
