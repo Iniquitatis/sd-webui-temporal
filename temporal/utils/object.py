@@ -1,6 +1,9 @@
 from copy import copy
+from typing import Any, TypeVar
 
-def copy_with_overrides(obj, **overrides):
+T = TypeVar("T")
+
+def copy_with_overrides(obj: T, **overrides: Any) -> T:
     instance = copy(obj)
 
     for key, value in overrides.items():
