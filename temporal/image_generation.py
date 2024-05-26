@@ -1,10 +1,11 @@
+from abc import abstractmethod
 from copy import copy, deepcopy
 from itertools import count
 from math import ceil
 from pathlib import Path
 from time import perf_counter
 from types import SimpleNamespace
-from typing import Any, Optional
+from typing import Any, Optional, Type
 
 from PIL import Image
 
@@ -15,18 +16,18 @@ from modules.shared import opts, prompt_styles, state
 from temporal.image_buffer import ImageBuffer
 from temporal.image_preprocessing import PREPROCESSORS, preprocess_image
 from temporal.interop import get_cn_units
+from temporal.meta.registerable import Registerable
 from temporal.metrics import Metrics
 from temporal.project import make_frame_name, Project
 from temporal.session import Session
 from temporal.thread_queue import ThreadQueue
-from temporal.utils.func import make_func_registerer
 from temporal.utils.image import PILImage, average_images, ensure_image_dims, generate_value_noise_image, save_image
 from temporal.utils.math import quantize
 from temporal.utils.object import copy_with_overrides
 from temporal.utils.time import wait_until
 
 
-GENERATION_MODES, generation_mode = make_func_registerer(name = "")
+GENERATION_MODES: dict[str, Type["GenerationMode"]] = {}
 
 image_save_queue = ThreadQueue()
 
@@ -37,157 +38,174 @@ prompt_styles: Any
 state: Any
 
 
-@generation_mode("image", "Image")
-def _(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNamespace) -> Processed:
-    opts_backup = opts.data.copy()
+class GenerationMode(Registerable, abstract = True):
+    store = GENERATION_MODES
 
-    if ext_params.show_only_finalized_frames:
-        opts.show_progress_every_n_steps = -1
-
-    _apply_prompt_styles(p)
-
-    if not _setup_processing(p, ext_params):
-        return processing.Processed(p, p.init_images)
-
-    image_buffer = _make_image_buffer(p, ext_params)
-
-    _apply_relative_params(ext_params, p.denoising_strength)
-
-    last_processed = processing.Processed(p, [p.init_images[0]])
-    canceled = False
-
-    for i in range(ext_params.frame_count):
-        start_time = perf_counter()
-
-        if not (processed := _process_iteration(
-            p = p,
-            ext_params = ext_params,
-            image_buffer = image_buffer,
-            image = last_processed.images[0],
-            i = i,
-            frame_index = i + 1,
-        )):
-            canceled = True
-            break
-
-        last_processed = processed
-
-        _set_preview_image(last_processed.images[0])
-
-        end_time = perf_counter()
-
-        print(f"[Temporal] Iteration took {end_time - start_time:.6f} seconds")
-
-    if not canceled or opts.save_incomplete_images:
-        _save_processed_image(
-            p = p,
-            processed = last_processed,
-            output_dir = ext_params.output_dir,
-        )
-
-    opts.data.update(opts_backup)
-
-    return last_processed
+    @staticmethod
+    @abstractmethod
+    def process(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNamespace) -> Processed:
+        raise NotImplementedError
 
 
-@generation_mode("sequence", "Sequence")
-def _(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNamespace) -> Processed:
-    opts_backup = opts.data.copy()
+class ImageMode(GenerationMode):
+    id = "image"
+    name = "Image"
 
-    opts.save_to_dirs = False
+    @staticmethod
+    def process(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNamespace) -> Processed:
+        opts_backup = opts.data.copy()
 
-    if ext_params.show_only_finalized_frames:
-        opts.show_progress_every_n_steps = -1
+        if ext_params.show_only_finalized_frames:
+            opts.show_progress_every_n_steps = -1
 
-    project = Project(Path(ext_params.output_dir) / ext_params.project_subdir)
-    project.load()
+        _apply_prompt_styles(p)
 
-    if not ext_params.continue_from_last_frame:
-        project.delete_all_frames()
-        project.delete_session_data()
+        if not _setup_processing(p, ext_params):
+            return processing.Processed(p, p.init_images)
 
-    _apply_prompt_styles(p)
+        image_buffer = _make_image_buffer(p, ext_params)
 
-    session = Session(opts, p, get_cn_units(p), ext_params)
+        _apply_relative_params(ext_params, p.denoising_strength)
 
-    if ext_params.load_parameters:
-        session.load(project.session_path)
-
-    if not _setup_processing(p, ext_params):
-        return processing.Processed(p, p.init_images)
-
-    image_buffer = _make_image_buffer(p, ext_params)
-
-    if ext_params.continue_from_last_frame:
-        image_buffer.load(project.buffer_path)
-
-    metrics = Metrics()
-    last_index = project.get_last_frame_index()
-
-    if ext_params.metrics_enabled:
-        metrics.load(project.metrics_path)
-
-        if last_index == 0:
-            metrics.measure(p.init_images[0])
-
-    session.save(project.session_path)
-    project.save()
-
-    _apply_relative_params(ext_params, p.denoising_strength)
-
-    if last_frame := project.load_frame(last_index):
-        last_processed = processing.Processed(p, [last_frame])
-    else:
         last_processed = processing.Processed(p, [p.init_images[0]])
+        canceled = False
 
-    image_buffer_to_save = deepcopy(image_buffer)
+        for i in range(ext_params.frame_count):
+            start_time = perf_counter()
 
-    for i, frame_index in zip(range(ext_params.frame_count), count(last_index + 1)):
-        start_time = perf_counter()
+            if not (processed := _process_iteration(
+                p = p,
+                ext_params = ext_params,
+                image_buffer = image_buffer,
+                image = last_processed.images[0],
+                i = i,
+                frame_index = i + 1,
+            )):
+                canceled = True
+                break
 
-        if not (processed := _process_iteration(
-            p = p,
-            ext_params = ext_params,
-            image_buffer = image_buffer,
-            image = last_processed.images[0],
-            i = i,
-            frame_index = frame_index,
-        )):
-            break
+            last_processed = processed
 
-        last_processed = processed
+            _set_preview_image(last_processed.images[0])
 
-        _set_preview_image(last_processed.images[0])
+            end_time = perf_counter()
 
-        if frame_index % ext_params.save_every_nth_frame == 0:
+            print(f"[Temporal] Iteration took {end_time - start_time:.6f} seconds")
+
+        if not canceled or opts.save_incomplete_images:
             _save_processed_image(
                 p = p,
                 processed = last_processed,
-                output_dir = project.path,
-                file_name = make_frame_name(index = frame_index),
-                archive_mode = ext_params.archive_mode,
+                output_dir = ext_params.output_dir,
             )
 
-            image_buffer_to_save = deepcopy(image_buffer)
+        opts.data.update(opts_backup)
+
+        return last_processed
+
+
+class SequenceMode(GenerationMode):
+    id = "sequence"
+    name = "Sequence"
+
+    @staticmethod
+    def process(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNamespace) -> Processed:
+        opts_backup = opts.data.copy()
+
+        opts.save_to_dirs = False
+
+        if ext_params.show_only_finalized_frames:
+            opts.show_progress_every_n_steps = -1
+
+        project = Project(Path(ext_params.output_dir) / ext_params.project_subdir)
+        project.load()
+
+        if not ext_params.continue_from_last_frame:
+            project.delete_all_frames()
+            project.delete_session_data()
+
+        _apply_prompt_styles(p)
+
+        session = Session(opts, p, get_cn_units(p), ext_params)
+
+        if ext_params.load_parameters:
+            session.load(project.session_path)
+
+        if not _setup_processing(p, ext_params):
+            return processing.Processed(p, p.init_images)
+
+        image_buffer = _make_image_buffer(p, ext_params)
+
+        if ext_params.continue_from_last_frame:
+            image_buffer.load(project.buffer_path)
+
+        metrics = Metrics()
+        last_index = project.get_last_frame_index()
 
         if ext_params.metrics_enabled:
-            metrics.measure(last_processed.images[0])
-            metrics.save(project.metrics_path)
+            metrics.load(project.metrics_path)
 
-            if frame_index % ext_params.metrics_save_plots_every_nth_frame == 0:
-                metrics.plot_to_directory(project.metrics_path)
+            if last_index == 0:
+                metrics.measure(p.init_images[0])
 
-        end_time = perf_counter()
+        session.save(project.session_path)
+        project.save()
 
-        print(f"[Temporal] Iteration took {end_time - start_time:.6f} seconds")
+        _apply_relative_params(ext_params, p.denoising_strength)
 
-    image_buffer_to_save.save(project.buffer_path)
+        if last_frame := project.load_frame(last_index):
+            last_processed = processing.Processed(p, [last_frame])
+        else:
+            last_processed = processing.Processed(p, [p.init_images[0]])
 
-    wait_until(lambda: not image_save_queue.busy)
+        image_buffer_to_save = deepcopy(image_buffer)
 
-    opts.data.update(opts_backup)
+        for i, frame_index in zip(range(ext_params.frame_count), count(last_index + 1)):
+            start_time = perf_counter()
 
-    return last_processed
+            if not (processed := _process_iteration(
+                p = p,
+                ext_params = ext_params,
+                image_buffer = image_buffer,
+                image = last_processed.images[0],
+                i = i,
+                frame_index = frame_index,
+            )):
+                break
+
+            last_processed = processed
+
+            _set_preview_image(last_processed.images[0])
+
+            if frame_index % ext_params.save_every_nth_frame == 0:
+                _save_processed_image(
+                    p = p,
+                    processed = last_processed,
+                    output_dir = project.path,
+                    file_name = make_frame_name(index = frame_index),
+                    archive_mode = ext_params.archive_mode,
+                )
+
+                image_buffer_to_save = deepcopy(image_buffer)
+
+            if ext_params.metrics_enabled:
+                metrics.measure(last_processed.images[0])
+                metrics.save(project.metrics_path)
+
+                if frame_index % ext_params.metrics_save_plots_every_nth_frame == 0:
+                    metrics.plot_to_directory(project.metrics_path)
+
+            end_time = perf_counter()
+
+            print(f"[Temporal] Iteration took {end_time - start_time:.6f} seconds")
+
+        image_buffer_to_save.save(project.buffer_path)
+
+        wait_until(lambda: not image_save_queue.busy)
+
+        opts.data.update(opts_backup)
+
+        return last_processed
 
 
 def _process_image(job_title: str, p: StableDiffusionProcessingImg2Img, use_sd: bool = True, preview: bool = True) -> Optional[Processed]:
@@ -268,9 +286,9 @@ def _make_image_buffer(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNa
 
 
 def _apply_relative_params(ext_params: SimpleNamespace, denoising_strength: float) -> None:
-    for key in PREPROCESSORS.keys():
-        if getattr(ext_params, f"{key}_amount_relative"):
-            setattr(ext_params, f"{key}_amount", getattr(ext_params, f"{key}_amount") * denoising_strength)
+    for id in PREPROCESSORS.keys():
+        if getattr(ext_params, f"{id}_amount_relative"):
+            setattr(ext_params, f"{id}_amount", getattr(ext_params, f"{id}_amount") * denoising_strength)
 
 
 def _process_iteration(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNamespace, image_buffer: ImageBuffer, image: PILImage, i: int, frame_index: int) -> Optional[Processed]:

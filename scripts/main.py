@@ -210,26 +210,26 @@ class TemporalScript(scripts.Script):
         with ui.elem("", gr.Tab, label = "Frame Preprocessing"):
             ui.elem("preprocessing_order", gr.Dropdown, label = "Order", multiselect = True, choices = list(PREPROCESSORS.keys()), value = [], groups = ["params", "session"])
 
-            for key, processor in PREPROCESSORS.items():
-                with ui.elem(f"{key}_enabled", InputAccordion, label = processor.name, value = False, groups = ["params", "session"]):
+            for id, processor in PREPROCESSORS.items():
+                with ui.elem(f"{id}_enabled", InputAccordion, label = processor.name, value = False, groups = ["params", "session"]):
                     with ui.elem("", gr.Row):
-                        ui.elem(f"{key}_amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0, groups = ["params", "session"])
-                        ui.elem(f"{key}_amount_relative", gr.Checkbox, label = "Relative", value = False, groups = ["params", "session"])
+                        ui.elem(f"{id}_amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0, groups = ["params", "session"])
+                        ui.elem(f"{id}_amount_relative", gr.Checkbox, label = "Relative", value = False, groups = ["params", "session"])
 
-                    ui.elem(f"{key}_blend_mode", gr.Dropdown, label = "Blend mode", choices = list(BLEND_MODES.keys()), value = get_first_element(BLEND_MODES), groups = ["params", "session"])
+                    ui.elem(f"{id}_blend_mode", gr.Dropdown, label = "Blend mode", choices = list(BLEND_MODES.keys()), value = get_first_element(BLEND_MODES), groups = ["params", "session"])
 
                     with ui.elem("", gr.Tab, label = "Parameters"):
                         if processor.params:
-                            for param in processor.params:
-                                ui.elem(f"{key}_{param.key}", param.type, label = param.name, **param.kwargs, groups = ["params", "session"])
+                            for param in processor.params.values():
+                                ui.elem(f"{id}_{param.id}", param.type, label = param.name, **param.kwargs, groups = ["params", "session"])
                         else:
                             ui.elem("", gr.Markdown, value = "_This effect has no available parameters._")
 
                     with ui.elem("", gr.Tab, label = "Mask"):
-                        ui.elem(f"{key}_mask", gr.Pil, label = "Mask", image_mode = "L", interactive = True, groups = ["params", "session"])
-                        ui.elem(f"{key}_mask_normalized", gr.Checkbox, label = "Normalized", value = False, groups = ["params", "session"])
-                        ui.elem(f"{key}_mask_inverted", gr.Checkbox, label = "Inverted", value = False, groups = ["params", "session"])
-                        ui.elem(f"{key}_mask_blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, groups = ["params", "session"])
+                        ui.elem(f"{id}_mask", gr.Pil, label = "Mask", image_mode = "L", interactive = True, groups = ["params", "session"])
+                        ui.elem(f"{id}_mask_normalized", gr.Checkbox, label = "Normalized", value = False, groups = ["params", "session"])
+                        ui.elem(f"{id}_mask_inverted", gr.Checkbox, label = "Inverted", value = False, groups = ["params", "session"])
+                        ui.elem(f"{id}_mask_blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, groups = ["params", "session"])
 
         # FIXME: `Tab` cannot be hidden; an error is thrown regarding an inability to send it as an input component
         with ui.elem("", gr.Tab, label = "Video Rendering"):
@@ -237,11 +237,11 @@ class TemporalScript(scripts.Script):
             ui.elem("video_looping", gr.Checkbox, label = "Looping", value = False, groups = ["params", "mode_sequence"])
             ui.elem("video_filtering_order", gr.Dropdown, label = "Order", multiselect = True, choices = list(FILTERS.keys()), value = [], groups = ["params", "mode_sequence"])
 
-            for key, filter in FILTERS.items():
+            for id, filter in FILTERS.items():
                 # FIXME: `InputAccordion` cannot be hidden; behaves in a broken way when its visibility is changed
-                with ui.elem(f"video_{key}_enabled", InputAccordion, label = filter.name, value = False, groups = ["params"]):
-                    for param in filter.params:
-                        ui.elem(f"video_{key}_{param.key}", param.type, label = param.name, **param.kwargs, groups = ["params", "mode_sequence"])
+                with ui.elem(f"video_{id}_enabled", InputAccordion, label = filter.name, value = False, groups = ["params"]):
+                    for param in filter.params.values():
+                        ui.elem(f"video_{id}_{param.id}", param.type, label = param.name, **param.kwargs, groups = ["params", "mode_sequence"])
 
             with ui.elem("", gr.Row):
                 ui.elem("render_draft_on_finish", gr.Checkbox, label = "Render draft when finished", value = False, groups = ["params", "mode_sequence"])
@@ -366,7 +366,7 @@ class TemporalScript(scripts.Script):
     def run(self, p: StableDiffusionProcessingImg2Img, *args: Any) -> Any:
         saved_ext_param_ids[:] = self._ui.parse_ids(["group:session"])
         ext_params = self._ui.unpack_values(["group:params"], *args)
-        processed = GENERATION_MODES[ext_params.mode].func(p, ext_params)
+        processed = GENERATION_MODES[ext_params.mode].process(p, ext_params)
 
         # FIXME: Feels somewhat hacky
         if ext_params.mode == "sequence":
