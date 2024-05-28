@@ -1,0 +1,37 @@
+.temporal-module-list-dropdown {
+    display: none;
+}
+
+.temporal-module-list-textbox {
+    display: none;
+}
+
+.temporal-module-list .temporal-module-accordion {
+    user-select: none;
+}
+
+.temporal-module-list .temporal-module-accordion .temporal-module-accordion-dragger {
+    align-self: center;
+    color: gray;
+    cursor: move;
+    margin-right: 0.25rem;
+    text-align: center;
+    width: 1.25rem;
+}
+
+.temporal-module-list .temporal-module-accordion div.form:has(> .temporal-module-accordion-checkbox) {
+    margin-right: auto;
+}
+
+.temporal-module-list .temporal-module-accordion .temporal-module-accordion-checkbox {
+    align-self: center;
+    font-size: 0 !important;
+}
+
+.temporal-module-list .temporal-module-accordion .temporal-module-accordion-checkbox * {
+    font-size: var(--section-header-text-size) !important;
+}
+
+.temporal-dragged {
+    opacity: 0.5;
+}

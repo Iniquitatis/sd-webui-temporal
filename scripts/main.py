@@ -21,6 +21,7 @@ from temporal.preset_store import PresetStore
 from temporal.project import Project, make_video_file_name
 from temporal.project_store import ProjectStore
 from temporal.session import Session, saved_ext_param_ids
+from temporal.ui.module_list import ModuleAccordion, ModuleList
 from temporal.utils.collection import get_first_element
 from temporal.utils.fs import load_text
 from temporal.utils.string import match_mask
@@ -208,40 +209,38 @@ class TemporalScript(scripts.Script):
                 ui.elem("continue_from_last_frame", gr.Checkbox, label = "Continue from last frame", value = True, groups = ["params"])
 
         with ui.elem("", gr.Tab, label = "Frame Preprocessing"):
-            ui.elem("preprocessing_order", gr.Dropdown, label = "Order", multiselect = True, choices = list(PREPROCESSORS.keys()), value = [], groups = ["params", "session"])
+            with ui.elem("preprocessing_order", ModuleList, keys = PREPROCESSORS.keys(), groups = ["params", "session"]):
+                for id, processor in PREPROCESSORS.items():
+                    with ui.elem(f"{id}_enabled", ModuleAccordion, label = processor.name, key = id, value = False, open = False, groups = ["params", "session"]):
+                        with ui.elem("", gr.Row):
+                            ui.elem(f"{id}_amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0, groups = ["params", "session"])
+                            ui.elem(f"{id}_amount_relative", gr.Checkbox, label = "Relative", value = False, groups = ["params", "session"])
 
-            for id, processor in PREPROCESSORS.items():
-                with ui.elem(f"{id}_enabled", InputAccordion, label = processor.name, value = False, groups = ["params", "session"]):
-                    with ui.elem("", gr.Row):
-                        ui.elem(f"{id}_amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0, groups = ["params", "session"])
-                        ui.elem(f"{id}_amount_relative", gr.Checkbox, label = "Relative", value = False, groups = ["params", "session"])
+                        ui.elem(f"{id}_blend_mode", gr.Dropdown, label = "Blend mode", choices = list(BLEND_MODES.keys()), value = get_first_element(BLEND_MODES), groups = ["params", "session"])
 
-                    ui.elem(f"{id}_blend_mode", gr.Dropdown, label = "Blend mode", choices = list(BLEND_MODES.keys()), value = get_first_element(BLEND_MODES), groups = ["params", "session"])
+                        with ui.elem("", gr.Tab, label = "Parameters"):
+                            if processor.params:
+                                for param in processor.params.values():
+                                    ui.elem(f"{id}_{param.id}", param.type, label = param.name, **param.kwargs, groups = ["params", "session"])
+                            else:
+                                ui.elem("", gr.Markdown, value = "_This effect has no available parameters._")
 
-                    with ui.elem("", gr.Tab, label = "Parameters"):
-                        if processor.params:
-                            for param in processor.params.values():
-                                ui.elem(f"{id}_{param.id}", param.type, label = param.name, **param.kwargs, groups = ["params", "session"])
-                        else:
-                            ui.elem("", gr.Markdown, value = "_This effect has no available parameters._")
-
-                    with ui.elem("", gr.Tab, label = "Mask"):
-                        ui.elem(f"{id}_mask", gr.Pil, label = "Mask", image_mode = "L", interactive = True, groups = ["params", "session"])
-                        ui.elem(f"{id}_mask_normalized", gr.Checkbox, label = "Normalized", value = False, groups = ["params", "session"])
-                        ui.elem(f"{id}_mask_inverted", gr.Checkbox, label = "Inverted", value = False, groups = ["params", "session"])
-                        ui.elem(f"{id}_mask_blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, groups = ["params", "session"])
+                        with ui.elem("", gr.Tab, label = "Mask"):
+                            ui.elem(f"{id}_mask", gr.Pil, label = "Mask", image_mode = "L", interactive = True, groups = ["params", "session"])
+                            ui.elem(f"{id}_mask_normalized", gr.Checkbox, label = "Normalized", value = False, groups = ["params", "session"])
+                            ui.elem(f"{id}_mask_inverted", gr.Checkbox, label = "Inverted", value = False, groups = ["params", "session"])
+                            ui.elem(f"{id}_mask_blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, groups = ["params", "session"])
 
         # FIXME: `Tab` cannot be hidden; an error is thrown regarding an inability to send it as an input component
         with ui.elem("", gr.Tab, label = "Video Rendering"):
             ui.elem("video_fps", gr.Slider, label = "Frames per second", minimum = 1, maximum = 60, step = 1, value = 30, groups = ["params", "mode_sequence"])
             ui.elem("video_looping", gr.Checkbox, label = "Looping", value = False, groups = ["params", "mode_sequence"])
-            ui.elem("video_filtering_order", gr.Dropdown, label = "Order", multiselect = True, choices = list(FILTERS.keys()), value = [], groups = ["params", "mode_sequence"])
 
-            for id, filter in FILTERS.items():
-                # FIXME: `InputAccordion` cannot be hidden; behaves in a broken way when its visibility is changed
-                with ui.elem(f"video_{id}_enabled", InputAccordion, label = filter.name, value = False, groups = ["params"]):
-                    for param in filter.params.values():
-                        ui.elem(f"video_{id}_{param.id}", param.type, label = param.name, **param.kwargs, groups = ["params", "mode_sequence"])
+            with ui.elem("video_filtering_order", ModuleList, keys = FILTERS.keys(), groups = ["params", "mode_sequence"]):
+                for id, filter in FILTERS.items():
+                    with ui.elem(f"video_{id}_enabled", ModuleAccordion, label = filter.name, key = id, value = False, open = False, groups = ["params"]):
+                        for param in filter.params.values():
+                            ui.elem(f"video_{id}_{param.id}", param.type, label = param.name, **param.kwargs, groups = ["params", "mode_sequence"])
 
             with ui.elem("", gr.Row):
                 ui.elem("render_draft_on_finish", gr.Checkbox, label = "Render draft when finished", value = False, groups = ["params", "mode_sequence"])
