@@ -1,7 +1,9 @@
 from collections.abc import Iterable
+from copy import copy
+from inspect import isgeneratorfunction
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Callable, Type, TypeVar
+from typing import Any, Callable, Iterator, Type, TypeVar
 
 import gradio as gr
 from gradio.blocks import Block
@@ -82,17 +84,38 @@ class UI:
 
         return elem
 
-    def callback(self, id: str, event: str, func: Callable[..., Any], inputs: Iterable[str], outputs: Iterable[str]) -> None:
+    def callback(self, id: str, event: str, func: Callable[[dict[str, Any]], dict[str, Any] | Iterator[dict[str, Any]]], inputs: Iterable[str], outputs: Iterable[str]) -> None:
         self._callbacks[id].append((event, func, inputs, outputs))
 
     def finalize(self, ids: Iterable[str]) -> list[Any]:
+        elems = copy(self._elems)
+        elem_keys = {v: k for k, v in self._elems.items()}
+
+        def make_wrapper_func(user_func):
+            if isgeneratorfunction(user_func):
+                def generator_wrapper(inputs):
+                    inputs_dict = {elem_keys[k]: v for k, v in inputs.items()}
+
+                    for outputs_dict in user_func(inputs_dict):
+                        yield {elems[k]: v for k, v in outputs_dict.items()}
+
+                return generator_wrapper
+
+            else:
+                def normal_wrapper(inputs):
+                    inputs_dict = {elem_keys[k]: v for k, v in inputs.items()}
+                    outputs_dict = user_func(inputs_dict)
+                    return {elems[k]: v for k, v in outputs_dict.items()}
+
+                return normal_wrapper
+
         for id, callbacks in self._callbacks.items():
             for event, func, inputs, outputs in callbacks:
                 event_func = getattr(self._elems[id], event)
                 event_func(
-                    func,
-                    inputs = [self._elems[x] for x in self.parse_ids(inputs)],
-                    outputs = [self._elems[x] for x in self.parse_ids(outputs)],
+                    make_wrapper_func(func),
+                    inputs = {self._elems[x] for x in self.parse_ids(inputs)},
+                    outputs = {self._elems[x] for x in self.parse_ids(outputs)},
                 )
 
         result = [self._elems[x] for x in self.parse_ids(ids)]
@@ -102,9 +125,6 @@ class UI:
         self._existing_labels.clear()
 
         return result
-
-    def unpack_values(self, ids: Iterable[str], *args: Any) -> SimpleNamespace:
-        return SimpleNamespace(**{name: arg for name, arg in zip(self.parse_ids(ids), args)})
 
 
 class TemporalScript(scripts.Script):
@@ -125,23 +145,23 @@ class TemporalScript(scripts.Script):
         self._ui = ui = UI(self.elem_id)
 
         with ui.elem("", gr.Row):
-            def refresh_presets_callback():
+            def refresh_presets_callback(_):
                 self._preset_store.refresh_presets()
-                return gr.update(choices = self._preset_store.preset_names)
+                return {"preset": gr.update(choices = self._preset_store.preset_names)}
 
-            def load_preset_callback(preset, *args):
-                ext_params = ui.unpack_values(["group:params"], *args)
-                self._preset_store.open_preset(preset).read_ext_params(ext_params)
-                return [gr.update(value = v) for v in vars(ext_params).values()]
+            def load_preset_callback(inputs):
+                ext_params = SimpleNamespace(**{x: inputs[x] for x in ui.parse_ids(["group:params"])})
+                self._preset_store.open_preset(inputs["preset"]).read_ext_params(ext_params)
+                return {k: gr.update(value = v) for k, v in vars(ext_params).items()}
 
-            def save_preset_callback(preset, *args):
-                ext_params = ui.unpack_values(["group:params"], *args)
-                self._preset_store.open_preset(preset).write_ext_params(ext_params)
-                return gr.update(choices = self._preset_store.preset_names, value = preset)
+            def save_preset_callback(inputs):
+                ext_params = SimpleNamespace(**{x: inputs[x] for x in ui.parse_ids(["group:params"])})
+                self._preset_store.open_preset(inputs["preset"]).write_ext_params(ext_params)
+                return {"preset": gr.update(choices = self._preset_store.preset_names, value = inputs["preset"])}
 
-            def delete_preset_callback(preset):
-                self._preset_store.delete_preset(preset)
-                return gr.update(choices = self._preset_store.preset_names, value = get_first_element(self._preset_store.preset_names, ""))
+            def delete_preset_callback(inputs):
+                self._preset_store.delete_preset(inputs["preset"])
+                return {"preset": gr.update(choices = self._preset_store.preset_names, value = get_first_element(self._preset_store.preset_names, ""))}
 
             ui.elem("preset", gr.Dropdown, label = "Preset", choices = self._preset_store.preset_names, allow_custom_value = True, value = get_first_element(self._preset_store.preset_names, ""))
             ui.elem("refresh_presets", ToolButton, value = "\U0001f504")
@@ -153,8 +173,8 @@ class TemporalScript(scripts.Script):
             ui.elem("delete_preset", ToolButton, value = "\U0001f5d1\ufe0f")
             ui.callback("delete_preset", "click", delete_preset_callback, ["preset"], ["preset"])
 
-        def mode_callback(mode):
-            return [gr.update(visible = ui.is_in_group(x, f"mode_{mode}")) for x in ui.parse_ids(["group:mode_*"])]
+        def mode_callback(inputs):
+            return {x: gr.update(visible = ui.is_in_group(x, f"mode_{inputs['mode']}")) for x in ui.parse_ids(["group:mode_*"])}
 
         ui.elem("mode", gr.Dropdown, label = "Mode", choices = list(GENERATION_MODES.keys()), value = "sequence", groups = ["params"])
         ui.callback("mode", "change", mode_callback, ["mode"], ["group:mode_*"])
@@ -248,15 +268,22 @@ class TemporalScript(scripts.Script):
 
             with ui.elem("", gr.Row):
                 def make_render_callback(is_final):
-                    def callback(*args):
-                        yield gr.update(interactive = False), gr.update(interactive = False), gr.update()
+                    def callback(inputs):
+                        yield {
+                            "render_draft": gr.update(interactive = False),
+                            "render_final": gr.update(interactive = False),
+                        }
 
-                        ext_params = ui.unpack_values(["group:params"], *args)
+                        ext_params = SimpleNamespace(**{x: inputs[x] for x in ui.parse_ids(["group:params"])})
 
                         self._start_video_render(ext_params, is_final)
                         wait_until(lambda: not video_render_queue.busy)
 
-                        yield gr.update(interactive = True), gr.update(interactive = True), f"{ext_params.output_dir}/{make_video_file_name(ext_params.project_subdir, is_final)}"
+                        yield {
+                            "render_draft": gr.update(interactive = True),
+                            "render_final": gr.update(interactive = True),
+                            "video_preview": f"{ext_params.output_dir}/{make_video_file_name(ext_params.project_subdir, is_final)}",
+                        }
 
                     return callback
 
@@ -268,12 +295,12 @@ class TemporalScript(scripts.Script):
             ui.elem("video_preview", gr.Video, label = "Preview", format = "mp4", interactive = False, groups = ["mode_sequence"])
 
         with ui.elem("", gr.Tab, label = "Metrics"):
-            def render_plots_callback(*args):
-                ext_params = ui.unpack_values(["group:params"], *args)
+            def render_plots_callback(inputs):
+                ext_params = SimpleNamespace(**{x: inputs[x] for x in ui.parse_ids(["group:params"])})
                 project = Project(Path(ext_params.output_dir) / ext_params.project_subdir)
                 metrics = Metrics()
                 metrics.load(project.metrics_path)
-                return gr.update(value = list(metrics.plot().values()))
+                return {"metrics_plots": gr.update(value = list(metrics.plot().values()))}
 
             ui.elem("metrics_enabled", gr.Checkbox, label = "Enabled", value = False, groups = ["params", "mode_sequence"])
             ui.elem("metrics_save_plots_every_nth_frame", gr.Number, label = "Save plots every N-th frame", precision = 0, minimum = 1, step = 1, value = 10, groups = ["params", "mode_sequence"])
@@ -283,31 +310,34 @@ class TemporalScript(scripts.Script):
 
         with ui.elem("", gr.Tab, label = "Project Management"):
             with ui.elem("", gr.Row):
-                def managed_project_callback(output_dir, project_name):
-                    if project_name not in self._project_store.project_names:
-                        return gr.update(), gr.update()
+                def managed_project_callback(inputs):
+                    if inputs["managed_project"] not in self._project_store.project_names:
+                        return {}
 
-                    self._project_store.path = Path(output_dir)
-                    project = self._project_store.open_project(project_name)
-                    return gr.update(value = project.get_description()), gr.update(value = project.list_all_frame_paths()[-PROJECT_GALLERY_SIZE:])
+                    self._project_store.path = Path(inputs["output_dir"])
+                    project = self._project_store.open_project(inputs["managed_project"])
+                    return {
+                        "project_description": gr.update(value = project.get_description()),
+                        "project_gallery": gr.update(value = project.list_all_frame_paths()[-PROJECT_GALLERY_SIZE:]),
+                    }
 
-                def refresh_projects_callback(output_dir):
-                    self._project_store.path = Path(output_dir)
+                def refresh_projects_callback(inputs):
+                    self._project_store.path = Path(inputs["output_dir"])
                     self._project_store.refresh_projects()
-                    return gr.update(choices = self._project_store.project_names)
+                    return {"managed_project": gr.update(choices = self._project_store.project_names)}
 
-                def load_project_callback(output_dir, project_name, *args):
-                    ext_params = ui.unpack_values(["group:session"], *args)
-                    self._project_store.path = Path(output_dir)
-                    project = self._project_store.open_project(project_name)
+                def load_project_callback(inputs):
+                    ext_params = SimpleNamespace(**{x: inputs[x] for x in ui.parse_ids(["group:session"])})
+                    self._project_store.path = Path(inputs["output_dir"])
+                    project = self._project_store.open_project(inputs["managed_project"])
                     session = Session(ext_params = ext_params)
                     session.load(project.session_path)
-                    return [gr.update(value = v) for v in vars(ext_params).values()]
+                    return {k: gr.update(value = v) for k, v in vars(ext_params).items()}
 
-                def delete_project_callback(output_dir, project_name):
-                    self._project_store.path = Path(output_dir)
-                    self._project_store.delete_project(project_name)
-                    return gr.update(choices = self._project_store.project_names, value = get_first_element(self._project_store.project_names, ""))
+                def delete_project_callback(inputs):
+                    self._project_store.path = Path(inputs["output_dir"])
+                    self._project_store.delete_project(inputs["managed_project"])
+                    return {"managed_project": gr.update(choices = self._project_store.project_names, value = get_first_element(self._project_store.project_names, ""))}
 
                 ui.elem("managed_project", gr.Dropdown, label = "Project", choices = self._project_store.project_names, allow_custom_value = True, value = get_first_element(self._project_store.project_names, ""))
                 # FIXME: `change` makes typing slower, but `select` won't work until user clicks an appropriate item
@@ -325,22 +355,24 @@ class TemporalScript(scripts.Script):
 
             with ui.elem("", gr.Accordion, label = "Tools", open = False):
                 with ui.elem("", gr.Row):
-                    def rename_project_callback(output_dir, old_name, new_name):
-                        self._project_store.path = Path(output_dir)
-                        self._project_store.rename_project(old_name, new_name)
-                        return gr.update(choices = self._project_store.project_names, value = new_name)
+                    def rename_project_callback(inputs):
+                        self._project_store.path = Path(inputs["output_dir"])
+                        self._project_store.rename_project(inputs["managed_project"], inputs["new_project_name"])
+                        return {"managed_project": gr.update(choices = self._project_store.project_names, value = inputs["new_project_name"])}
 
                     ui.elem("new_project_name", gr.Textbox, label = "New name", value = "")
                     ui.elem("confirm_project_rename", ToolButton, value = "\U00002714\ufe0f")
                     ui.callback("confirm_project_rename", "click", rename_project_callback, ["output_dir", "managed_project", "new_project_name"], ["managed_project"])
 
-                def delete_intermediate_frames_callback(output_dir, project_name):
-                    self._project_store.path = Path(output_dir)
-                    self._project_store.open_project(project_name).delete_intermediate_frames()
+                def delete_intermediate_frames_callback(inputs):
+                    self._project_store.path = Path(inputs["output_dir"])
+                    self._project_store.open_project(inputs["managed_project"]).delete_intermediate_frames()
+                    return {}
 
-                def delete_session_data_callback(output_dir, project_name):
-                    self._project_store.path = Path(output_dir)
-                    self._project_store.open_project(project_name).delete_session_data()
+                def delete_session_data_callback(inputs):
+                    self._project_store.path = Path(inputs["output_dir"])
+                    self._project_store.open_project(inputs["managed_project"]).delete_session_data()
+                    return {}
 
                 ui.elem("delete_intermediate_frames", gr.Button, value = "Delete intermediate frames")
                 ui.callback("delete_intermediate_frames", "click", delete_intermediate_frames_callback, ["output_dir", "managed_project"], [])
@@ -364,7 +396,7 @@ class TemporalScript(scripts.Script):
 
     def run(self, p: StableDiffusionProcessingImg2Img, *args: Any) -> Any:
         saved_ext_param_ids[:] = self._ui.parse_ids(["group:session"])
-        ext_params = self._ui.unpack_values(["group:params"], *args)
+        ext_params = SimpleNamespace(**{name: arg for name, arg in zip(self._ui.parse_ids(["group:params"]), args)})
         processed = GENERATION_MODES[ext_params.mode].process(p, ext_params)
 
         # FIXME: Feels somewhat hacky
