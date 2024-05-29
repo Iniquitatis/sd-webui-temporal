@@ -14,7 +14,7 @@ from modules.processing import Processed, StableDiffusionProcessingImg2Img
 from modules.shared import opts, prompt_styles, state
 
 from temporal.image_buffer import ImageBuffer
-from temporal.image_preprocessing import PREPROCESSORS, preprocess_image
+from temporal.image_filtering import IMAGE_FILTERS, filter_image
 from temporal.interop import get_cn_units
 from temporal.meta.registerable import Registerable
 from temporal.metrics import Metrics
@@ -286,7 +286,7 @@ def _make_image_buffer(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNa
 
 
 def _apply_relative_params(ext_params: SimpleNamespace, denoising_strength: float) -> None:
-    for id in PREPROCESSORS.keys():
+    for id in IMAGE_FILTERS.keys():
         if getattr(ext_params, f"{id}_amount_relative"):
             setattr(ext_params, f"{id}_amount", getattr(ext_params, f"{id}_amount") * denoising_strength)
 
@@ -303,7 +303,7 @@ def _process_iteration(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNa
     seed = p.seed + frame_index
 
     if not (processed := _process_image(f"Frame {i + 1} / {ext_params.frame_count}", copy_with_overrides(p,
-        init_images = [preprocess_image(image, ext_params, seed)],
+        init_images = [filter_image(image, ext_params, seed)],
         n_iter = batch_count,
         batch_size = ext_params.multisampling_batch_size,
         seed = seed,

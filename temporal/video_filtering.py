@@ -8,7 +8,7 @@ from temporal.meta.configurable import Configurable, UIParam
 from temporal.utils.collection import reorder_dict
 
 
-FILTERS: dict[str, Type["VideoFilter"]] = {}
+VIDEO_FILTERS: dict[str, Type["VideoFilter"]] = {}
 
 
 def build_filter(ext_params: SimpleNamespace) -> str:
@@ -17,13 +17,13 @@ def build_filter(ext_params: SimpleNamespace) -> str:
             x.id: getattr(ext_params, f"video_{id}_{x.id}")
             for x in filter.params.values()
         }))
-        for id, filter in reorder_dict(FILTERS, ext_params.video_filtering_order or []).items()
+        for id, filter in reorder_dict(VIDEO_FILTERS, ext_params.video_filtering_order or []).items()
         if getattr(ext_params, f"video_{id}_enabled")
     ] or ["null"])
 
 
 class VideoFilter(Configurable, abstract = True):
-    store = FILTERS
+    store = VIDEO_FILTERS
 
     @staticmethod
     @abstractmethod

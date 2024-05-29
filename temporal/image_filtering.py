@@ -16,20 +16,20 @@ from temporal.utils.math import lerp, normalize, remap_range
 from temporal.utils.numpy import generate_value_noise, saturate_array
 
 
-PREPROCESSORS: dict[str, Type["Preprocessor"]] = {}
+IMAGE_FILTERS: dict[str, Type["ImageFilter"]] = {}
 
 
-def preprocess_image(im: PILImage, ext_params: SimpleNamespace, seed: int) -> PILImage:
+def filter_image(im: PILImage, ext_params: SimpleNamespace, seed: int) -> PILImage:
     im = ensure_image_dims(im, "RGB")
     npim = pil_to_np(im)
 
-    for id, preprocessor in reorder_dict(PREPROCESSORS, ext_params.preprocessing_order or []).items():
+    for id, filter in reorder_dict(IMAGE_FILTERS, ext_params.image_filtering_order or []).items():
         if not getattr(ext_params, f"{id}_enabled"):
             continue
 
         npim = _apply_mask(
             npim,
-            preprocessor.preprocess(npim, seed, SimpleNamespace(**{x.id: getattr(ext_params, f"{id}_{x.id}") for x in preprocessor.params.values()})),
+            filter.process(npim, seed, SimpleNamespace(**{x.id: getattr(ext_params, f"{id}_{x.id}") for x in filter.params.values()})),
             getattr(ext_params, f"{id}_amount"),
             getattr(ext_params, f"{id}_blend_mode"),
             getattr(ext_params, f"{id}_mask"),
@@ -42,16 +42,16 @@ def preprocess_image(im: PILImage, ext_params: SimpleNamespace, seed: int) -> PI
     return np_to_pil(saturate_array(npim))
 
 
-class Preprocessor(Configurable, abstract = True):
-    store = PREPROCESSORS
+class ImageFilter(Configurable, abstract = True):
+    store = IMAGE_FILTERS
 
     @staticmethod
     @abstractmethod
-    def preprocess(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
+    def process(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
         raise NotImplementedError
 
 
-class BlurringPreprocessor(Preprocessor):
+class BlurringFilter(ImageFilter):
     id = "blurring"
     name = "Blurring"
     params = {
@@ -59,11 +59,11 @@ class BlurringPreprocessor(Preprocessor):
     }
 
     @staticmethod
-    def preprocess(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
+    def process(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
         return skimage.filters.gaussian(npim, params.radius, channel_axis = 2)
 
 
-class ColorBalancingPreprocessor(Preprocessor):
+class ColorBalancingFilter(ImageFilter):
     id = "color_balancing"
     name = "Color balancing"
     params = {
@@ -73,7 +73,7 @@ class ColorBalancingPreprocessor(Preprocessor):
     }
 
     @staticmethod
-    def preprocess(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
+    def process(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
         npim = remap_range(npim, npim.min(), npim.max(), 0.0, params.brightness)
 
         npim = remap_range(npim, npim.min(), npim.max(), 0.5 - params.contrast / 2, 0.5 + params.contrast / 2)
@@ -84,7 +84,7 @@ class ColorBalancingPreprocessor(Preprocessor):
         return join_hsv_to_rgb(h, s, v)
 
 
-class ColorCorrectionPreprocessor(Preprocessor):
+class ColorCorrectionFilter(ImageFilter):
     id = "color_correction"
     name = "Color correction"
     params = {
@@ -94,7 +94,7 @@ class ColorCorrectionPreprocessor(Preprocessor):
     }
 
     @staticmethod
-    def preprocess(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
+    def process(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
         if params.image is not None:
             npim = skimage.exposure.match_histograms(npim, pil_to_np(match_image(params.image, npim, size = False)), channel_axis = 2)
 
@@ -107,7 +107,7 @@ class ColorCorrectionPreprocessor(Preprocessor):
         return npim
 
 
-class ColorOverlayPreprocessor(Preprocessor):
+class ColorOverlayFilter(ImageFilter):
     id = "color_overlay"
     name = "Color overlay"
     params = {
@@ -115,11 +115,11 @@ class ColorOverlayPreprocessor(Preprocessor):
     }
 
     @staticmethod
-    def preprocess(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
+    def process(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
         return np.full_like(npim, get_rgb_array(params.color))
 
 
-class CustomCodePreprocessor(Preprocessor):
+class CustomCodeFilter(ImageFilter):
     id = "custom_code"
     name = "Custom code"
     params = {
@@ -127,7 +127,7 @@ class CustomCodePreprocessor(Preprocessor):
     }
 
     @staticmethod
-    def preprocess(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
+    def process(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
         code_globals: dict[str, Any] = dict(
             np = np,
             scipy = scipy,
@@ -138,7 +138,7 @@ class CustomCodePreprocessor(Preprocessor):
         return code_globals.get("output", npim)
 
 
-class ImageOverlayPreprocessor(Preprocessor):
+class ImageOverlayFilter(ImageFilter):
     id = "image_overlay"
     name = "Image overlay"
     params = {
@@ -147,14 +147,14 @@ class ImageOverlayPreprocessor(Preprocessor):
     }
 
     @staticmethod
-    def preprocess(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
+    def process(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
         if params.image is None:
             return npim
 
         return skimage.filters.gaussian(pil_to_np(match_image(params.image, npim)), params.blurring, channel_axis = 2)
 
 
-class MedianPreprocessor(Preprocessor):
+class MedianFilter(ImageFilter):
     id = "median"
     name = "Median"
     params = {
@@ -163,7 +163,7 @@ class MedianPreprocessor(Preprocessor):
     }
 
     @staticmethod
-    def preprocess(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
+    def process(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
         footprint = skimage.morphology.disk(params.radius)
 
         if params.percentile == 50.0:
@@ -174,7 +174,7 @@ class MedianPreprocessor(Preprocessor):
         return apply_channelwise(npim, filter)
 
 
-class MorphologyPreprocessor(Preprocessor):
+class MorphologyFilter(ImageFilter):
     id = "morphology"
     name = "Morphology"
     params = {
@@ -183,7 +183,7 @@ class MorphologyPreprocessor(Preprocessor):
     }
 
     @staticmethod
-    def preprocess(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
+    def process(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
         func = (
             skimage.morphology.erosion  if params.mode == "erosion"  else
             skimage.morphology.dilation if params.mode == "dilation" else
@@ -195,7 +195,7 @@ class MorphologyPreprocessor(Preprocessor):
         return apply_channelwise(npim, lambda x: func(x, footprint))
 
 
-class NoiseCompressionPreprocessor(Preprocessor):
+class NoiseCompressionFilter(ImageFilter):
     id = "noise_compression"
     name = "Noise compression"
     params = {
@@ -204,7 +204,7 @@ class NoiseCompressionPreprocessor(Preprocessor):
     }
 
     @staticmethod
-    def preprocess(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
+    def process(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
         weight = 0.0
 
         if params.constant > 0.0:
@@ -216,7 +216,7 @@ class NoiseCompressionPreprocessor(Preprocessor):
         return skimage.restoration.denoise_tv_chambolle(npim, weight = max(weight, 1e-5), channel_axis = 2)
 
 
-class NoiseOverlayPreprocessor(Preprocessor):
+class NoiseOverlayFilter(ImageFilter):
     id = "noise_overlay"
     name = "Noise overlay"
     params = {
@@ -229,7 +229,7 @@ class NoiseOverlayPreprocessor(Preprocessor):
     }
 
     @staticmethod
-    def preprocess(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
+    def process(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
         return generate_value_noise(
             npim.shape,
             params.scale,
@@ -240,7 +240,7 @@ class NoiseOverlayPreprocessor(Preprocessor):
         )
 
 
-class PalettizationPreprocessor(Preprocessor):
+class PalettizationFilter(ImageFilter):
     id = "palettization"
     name = "Palettization"
     params = {
@@ -250,7 +250,7 @@ class PalettizationPreprocessor(Preprocessor):
     }
 
     @staticmethod
-    def preprocess(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
+    def process(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
         def stretch_array(arr, new_length):
             return np.interp(np.arange(new_length), np.linspace(0, new_length - 1, len(arr)), arr)
 
@@ -269,7 +269,7 @@ class PalettizationPreprocessor(Preprocessor):
         ).convert("RGB"))
 
 
-class SharpeningPreprocessor(Preprocessor):
+class SharpeningFilter(ImageFilter):
     id = "sharpening"
     name = "Sharpening"
     params = {
@@ -278,11 +278,11 @@ class SharpeningPreprocessor(Preprocessor):
     }
 
     @staticmethod
-    def preprocess(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
+    def process(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
         return skimage.filters.unsharp_mask(npim, params.radius, params.strength, channel_axis = 2)
 
 
-class SymmetryPreprocessor(Preprocessor):
+class SymmetryFilter(ImageFilter):
     id = "symmetry"
     name = "Symmetry"
     params = {
@@ -291,7 +291,7 @@ class SymmetryPreprocessor(Preprocessor):
     }
 
     @staticmethod
-    def preprocess(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
+    def process(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
         height, width = npim.shape[:2]
         npim = npim.copy()
 
@@ -304,7 +304,7 @@ class SymmetryPreprocessor(Preprocessor):
         return npim
 
 
-class TransformationPreprocessor(Preprocessor):
+class TransformationFilter(ImageFilter):
     id = "transformation"
     name = "Transformation"
     params = {
@@ -315,7 +315,7 @@ class TransformationPreprocessor(Preprocessor):
     }
 
     @staticmethod
-    def preprocess(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
+    def process(npim: NumpyImage, seed: int, params: SimpleNamespace) -> NumpyImage:
         height, width = npim.shape[:2]
 
         o_transform = skimage.transform.AffineTransform(translation = (-width / 2, -height / 2))

@@ -13,8 +13,8 @@ from modules.sd_samplers import visible_sampler_names
 from modules.ui_components import InputAccordion, ToolButton
 
 from temporal.image_blending import BLEND_MODES
+from temporal.image_filtering import IMAGE_FILTERS
 from temporal.image_generation import GENERATION_MODES
-from temporal.image_preprocessing import PREPROCESSORS
 from temporal.interop import EXTENSION_DIR
 from temporal.metrics import Metrics
 from temporal.preset_store import PresetStore
@@ -26,7 +26,7 @@ from temporal.utils.collection import get_first_element
 from temporal.utils.fs import load_text
 from temporal.utils.string import match_mask
 from temporal.utils.time import wait_until
-from temporal.video_filtering import FILTERS
+from temporal.video_filtering import VIDEO_FILTERS
 from temporal.video_rendering import enqueue_video_render, video_render_queue
 
 
@@ -208,10 +208,10 @@ class TemporalScript(scripts.Script):
                 ui.elem("load_parameters", gr.Checkbox, label = "Load parameters", value = True, groups = ["params"])
                 ui.elem("continue_from_last_frame", gr.Checkbox, label = "Continue from last frame", value = True, groups = ["params"])
 
-        with ui.elem("", gr.Tab, label = "Frame Preprocessing"):
-            with ui.elem("preprocessing_order", ModuleList, keys = PREPROCESSORS.keys(), groups = ["params", "session"]):
-                for id, processor in PREPROCESSORS.items():
-                    with ui.elem(f"{id}_enabled", ModuleAccordion, label = processor.name, key = id, value = False, open = False, groups = ["params", "session"]):
+        with ui.elem("", gr.Tab, label = "Image Filtering"):
+            with ui.elem("image_filtering_order", ModuleList, keys = IMAGE_FILTERS.keys(), groups = ["params", "session"]):
+                for id, filter in IMAGE_FILTERS.items():
+                    with ui.elem(f"{id}_enabled", ModuleAccordion, label = filter.name, key = id, value = False, open = False, groups = ["params", "session"]):
                         with ui.elem("", gr.Row):
                             ui.elem(f"{id}_amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0, groups = ["params", "session"])
                             ui.elem(f"{id}_amount_relative", gr.Checkbox, label = "Relative", value = False, groups = ["params", "session"])
@@ -219,8 +219,8 @@ class TemporalScript(scripts.Script):
                         ui.elem(f"{id}_blend_mode", gr.Dropdown, label = "Blend mode", choices = list(BLEND_MODES.keys()), value = get_first_element(BLEND_MODES), groups = ["params", "session"])
 
                         with ui.elem("", gr.Tab, label = "Parameters"):
-                            if processor.params:
-                                for param in processor.params.values():
+                            if filter.params:
+                                for param in filter.params.values():
                                     ui.elem(f"{id}_{param.id}", param.type, label = param.name, **param.kwargs, groups = ["params", "session"])
                             else:
                                 ui.elem("", gr.Markdown, value = "_This effect has no available parameters._")
@@ -236,8 +236,8 @@ class TemporalScript(scripts.Script):
             ui.elem("video_fps", gr.Slider, label = "Frames per second", minimum = 1, maximum = 60, step = 1, value = 30, groups = ["params", "mode_sequence"])
             ui.elem("video_looping", gr.Checkbox, label = "Looping", value = False, groups = ["params", "mode_sequence"])
 
-            with ui.elem("video_filtering_order", ModuleList, keys = FILTERS.keys(), groups = ["params", "mode_sequence"]):
-                for id, filter in FILTERS.items():
+            with ui.elem("video_filtering_order", ModuleList, keys = VIDEO_FILTERS.keys(), groups = ["params", "mode_sequence"]):
+                for id, filter in VIDEO_FILTERS.items():
                     with ui.elem(f"video_{id}_enabled", ModuleAccordion, label = filter.name, key = id, value = False, open = False, groups = ["params"]):
                         for param in filter.params.values():
                             ui.elem(f"video_{id}_{param.id}", param.type, label = param.name, **param.kwargs, groups = ["params", "mode_sequence"])

@@ -10,7 +10,7 @@ from temporal.utils.fs import ensure_directory_exists, load_json, load_text, mov
 from temporal.utils.image import load_image, pil_to_np
 
 
-VERSION = 15
+VERSION = 16
 
 UPGRADERS: dict[int, Type["Upgrader"]] = {}
 
@@ -570,5 +570,29 @@ class _(Upgrader):
         move_entry(version_path, project_data_dir / "version.txt")
 
         save_text(project_data_dir / "version.txt", "15")
+
+        return True
+
+
+class _(Upgrader):
+    id = 16
+
+    @staticmethod
+    def upgrade(path: Path) -> bool:
+        version_path = path / "project" / "version.txt"
+        params_path = path / "project" / "session" / "parameters.json"
+
+        if int(load_text(version_path, "0")) != 15:
+            return False
+
+        data = load_json(params_path, {})
+
+        ext_params = data["extension_params"]
+        ext_params.update({
+            "image_filtering_order": ext_params.pop("preprocessing_order"),
+        })
+
+        save_json(params_path, data)
+        save_text(version_path, "16")
 
         return True
