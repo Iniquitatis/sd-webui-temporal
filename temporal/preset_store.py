@@ -1,5 +1,5 @@
 from pathlib import Path
-from types import SimpleNamespace
+from typing import Any
 
 from temporal.preset import Preset
 from temporal.utils.collection import natural_sort
@@ -17,11 +17,13 @@ class PresetStore:
         self.preset_names[:] = natural_sort(self.preset_names)
 
     def open_preset(self, name: str) -> Preset:
-        return Preset(self.path / name)
+        result = Preset()
+        result.load(self.path / name)
+        return result
 
-    def save_preset(self, name: str, ext_params: SimpleNamespace) -> None:
-        preset = Preset(self.path / name)
-        preset.write_ext_params(ext_params)
+    def save_preset(self, name: str, data: dict[str, Any]) -> None:
+        preset = Preset(data = data)
+        preset.save(self.path / name)
 
         if name not in self.preset_names:
             self.preset_names.append(name)

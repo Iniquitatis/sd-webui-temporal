@@ -4,6 +4,7 @@ from typing import Type
 
 import gradio as gr
 
+from temporal.data import VideoRenderingParams
 from temporal.meta.configurable import Configurable, UIParam
 from temporal.utils.collection import reorder_dict
 
@@ -11,14 +12,11 @@ from temporal.utils.collection import reorder_dict
 VIDEO_FILTERS: dict[str, Type["VideoFilter"]] = {}
 
 
-def build_filter(ext_params: SimpleNamespace) -> str:
+def build_filter(data: VideoRenderingParams) -> str:
     return ",".join([
-        filter.print(ext_params.video_fps, SimpleNamespace(**{
-            x.id: getattr(ext_params, f"video_{id}_{x.id}")
-            for x in filter.params.values()
-        }))
-        for id, filter in reorder_dict(VIDEO_FILTERS, ext_params.video_filtering_order or []).items()
-        if getattr(ext_params, f"video_{id}_enabled")
+        filter.print(data.fps, data.filter_data[id].params)
+        for id, filter in reorder_dict(VIDEO_FILTERS, data.filter_order or []).items()
+        if data.filter_data[id].enabled
     ] or ["null"])
 
 

@@ -8,6 +8,7 @@ import scipy
 import skimage
 from PIL import Image
 
+from temporal.data import ImageFilteringParams
 from temporal.image_blending import blend_images
 from temporal.meta.configurable import Configurable, UIParam
 from temporal.utils.collection import reorder_dict
@@ -19,23 +20,25 @@ from temporal.utils.numpy import generate_value_noise, saturate_array
 IMAGE_FILTERS: dict[str, Type["ImageFilter"]] = {}
 
 
-def filter_image(im: PILImage, ext_params: SimpleNamespace, seed: int) -> PILImage:
+def filter_image(im: PILImage, data: ImageFilteringParams, seed: int) -> PILImage:
     im = ensure_image_dims(im, "RGB")
     npim = pil_to_np(im)
 
-    for id, filter in reorder_dict(IMAGE_FILTERS, ext_params.image_filtering_order or []).items():
-        if not getattr(ext_params, f"{id}_enabled"):
+    for id, filter in reorder_dict(IMAGE_FILTERS, data.filter_order or []).items():
+        filter_data = data.filter_data[id]
+
+        if not filter_data.enabled:
             continue
 
         npim = _apply_mask(
             npim,
-            filter.process(npim, seed, SimpleNamespace(**{x.id: getattr(ext_params, f"{id}_{x.id}") for x in filter.params.values()})),
-            getattr(ext_params, f"{id}_amount"),
-            getattr(ext_params, f"{id}_blend_mode"),
-            getattr(ext_params, f"{id}_mask"),
-            getattr(ext_params, f"{id}_mask_normalized"),
-            getattr(ext_params, f"{id}_mask_inverted"),
-            getattr(ext_params, f"{id}_mask_blurring"),
+            filter.process(npim, seed, filter_data.params),
+            filter_data.amount,
+            filter_data.blend_mode,
+            filter_data.mask.image,
+            filter_data.mask.normalized,
+            filter_data.mask.inverted,
+            filter_data.mask.blurring,
             im,
         )
 

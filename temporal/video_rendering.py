@@ -2,8 +2,8 @@ from collections.abc import Sequence
 from itertools import chain
 from pathlib import Path
 from subprocess import run
-from types import SimpleNamespace
 
+from temporal.data import VideoRenderingParams
 from temporal.thread_queue import ThreadQueue
 from temporal.utils.fs import save_text
 from temporal.video_filtering import build_filter
@@ -12,12 +12,12 @@ from temporal.video_filtering import build_filter
 video_render_queue = ThreadQueue()
 
 
-def enqueue_video_render(path: Path, frame_paths: Sequence[Path], ext_params: SimpleNamespace, is_final: bool) -> None:
-    video_render_queue.enqueue(render_video, path, frame_paths, ext_params, is_final)
+def enqueue_video_render(path: Path, frame_paths: Sequence[Path], data: VideoRenderingParams, is_final: bool) -> None:
+    video_render_queue.enqueue(render_video, path, frame_paths, data, is_final)
 
 
-def render_video(path: Path, frame_paths: Sequence[Path], ext_params: SimpleNamespace, is_final: bool) -> None:
-    if ext_params.video_looping:
+def render_video(path: Path, frame_paths: Sequence[Path], data: VideoRenderingParams, is_final: bool) -> None:
+    if data.looping:
         final_frame_paths = chain(frame_paths, reversed(frame_paths[:-1]))
     else:
         final_frame_paths = frame_paths
@@ -27,12 +27,12 @@ def render_video(path: Path, frame_paths: Sequence[Path], ext_params: SimpleName
     run([
         "ffmpeg",
         "-y",
-        "-r", str(ext_params.video_fps),
+        "-r", str(data.fps),
         "-f", "concat",
         "-safe", "0",
         "-i", frame_list_path,
-        "-framerate", str(ext_params.video_fps),
-        "-vf", build_filter(ext_params) if is_final else "null",
+        "-framerate", str(data.fps),
+        "-vf", build_filter(data) if is_final else "null",
         "-c:v", "libx264",
         "-crf", "14",
         "-preset", "slow" if is_final else "veryfast",

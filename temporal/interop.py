@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Optional
@@ -9,6 +10,11 @@ from modules.processing import StableDiffusionProcessing
 EXTENSION_DIR = Path(scripts.basedir())
 
 
+@dataclass
+class ControlNetUnitWrapper:
+    instance: Any = None
+
+
 def import_cn() -> Optional[ModuleType]:
     try:
         from scripts import external_code
@@ -18,8 +24,8 @@ def import_cn() -> Optional[ModuleType]:
     return external_code
 
 
-def get_cn_units(p: StableDiffusionProcessing) -> Optional[list[Any]]:
+def get_cn_units(p: StableDiffusionProcessing) -> Optional[list[ControlNetUnitWrapper]]:
     if not (external_code := import_cn()):
         return None
 
-    return external_code.get_all_units_in_processing(p)
+    return [ControlNetUnitWrapper(x) for x in external_code.get_all_units_in_processing(p)]

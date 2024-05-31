@@ -1,14 +1,15 @@
-from pathlib import Path
-
 import numpy as np
+from numpy.typing import NDArray
 
-from temporal.serialization import load_object, save_object
-from temporal.utils.fs import load_json, recreate_directory, save_json
+from temporal.meta.serializable import Serializable, field
 from temporal.utils.image import NumpyImage, PILImage, ensure_image_dims, np_to_pil, pil_to_np
 from temporal.utils.numpy import average_array, make_eased_weight_array, saturate_array
 
 
-class ImageBuffer:
+class ImageBuffer(Serializable, init = False):
+    array: NDArray[np.float_] = field()
+    last_index: int = field()
+
     def __init__(self, width: int, height: int, channels: int, count: int) -> None:
         self.array = np.zeros((count, height, width, channels))
         self.last_index = 0
@@ -49,14 +50,6 @@ class ImageBuffer:
             power = preference + 1.0,
             weights = np.roll(make_eased_weight_array(self.count, easing), self.last_index),
         )))
-
-    def load(self, path: Path) -> None:
-        if data := load_json(path / "data.json"):
-            load_object(self, data, path)
-
-    def save(self, path: Path) -> None:
-        recreate_directory(path)
-        save_json(path / "data.json", save_object(self, path))
 
     def _convert_image_to_np(self, im: PILImage) -> NumpyImage:
         return pil_to_np(ensure_image_dims(

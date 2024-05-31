@@ -4,7 +4,6 @@ from itertools import count
 from math import ceil
 from pathlib import Path
 from time import perf_counter
-from types import SimpleNamespace
 from typing import Any, Optional, Type
 
 from PIL import Image
@@ -13,14 +12,16 @@ from modules import images, processing
 from modules.processing import Processed, StableDiffusionProcessingImg2Img
 from modules.shared import opts, prompt_styles, state
 
+from temporal.data import ExtensionData
 from temporal.image_buffer import ImageBuffer
-from temporal.image_filtering import IMAGE_FILTERS, filter_image
+from temporal.image_filtering import filter_image
 from temporal.interop import get_cn_units
 from temporal.meta.registerable import Registerable
 from temporal.metrics import Metrics
 from temporal.project import make_frame_name, Project
 from temporal.session import Session
 from temporal.thread_queue import ThreadQueue
+from temporal.utils import logging
 from temporal.utils.image import PILImage, average_images, ensure_image_dims, generate_value_noise_image, save_image
 from temporal.utils.math import quantize
 from temporal.utils.object import copy_with_overrides
@@ -43,7 +44,7 @@ class GenerationMode(Registerable, abstract = True):
 
     @staticmethod
     @abstractmethod
-    def process(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNamespace) -> Processed:
+    def process(p: StableDiffusionProcessingImg2Img, data: ExtensionData) -> Processed:
         raise NotImplementedError
 
 
@@ -52,30 +53,30 @@ class ImageMode(GenerationMode):
     name = "Image"
 
     @staticmethod
-    def process(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNamespace) -> Processed:
+    def process(p: StableDiffusionProcessingImg2Img, data: ExtensionData) -> Processed:
         opts_backup = opts.data.copy()
 
-        if ext_params.show_only_finalized_frames:
+        if data.processing.show_only_finalized_frames:
             opts.show_progress_every_n_steps = -1
 
         _apply_prompt_styles(p)
 
-        if not _setup_processing(p, ext_params):
+        if not _setup_processing(p, data):
             return processing.Processed(p, p.init_images)
 
-        image_buffer = _make_image_buffer(p, ext_params)
+        image_buffer = _make_image_buffer(p, data)
 
-        _apply_relative_params(ext_params, p.denoising_strength)
+        _apply_relative_params(data, p.denoising_strength)
 
         last_processed = processing.Processed(p, [p.init_images[0]])
         canceled = False
 
-        for i in range(ext_params.frame_count):
+        for i in range(data.output.frame_count):
             start_time = perf_counter()
 
             if not (processed := _process_iteration(
                 p = p,
-                ext_params = ext_params,
+                data = data,
                 image_buffer = image_buffer,
                 image = last_processed.images[0],
                 i = i,
@@ -90,13 +91,13 @@ class ImageMode(GenerationMode):
 
             end_time = perf_counter()
 
-            print(f"[Temporal] Iteration took {end_time - start_time:.6f} seconds")
+            logging.info(f"Iteration took {end_time - start_time:.6f} seconds")
 
         if not canceled or opts.save_incomplete_images:
             _save_processed_image(
                 p = p,
                 processed = last_processed,
-                output_dir = ext_params.output_dir,
+                output_dir = data.output.output_dir,
             )
 
         opts.data.update(opts_backup)
@@ -109,40 +110,40 @@ class SequenceMode(GenerationMode):
     name = "Sequence"
 
     @staticmethod
-    def process(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNamespace) -> Processed:
+    def process(p: StableDiffusionProcessingImg2Img, data: ExtensionData) -> Processed:
         opts_backup = opts.data.copy()
 
         opts.save_to_dirs = False
 
-        if ext_params.show_only_finalized_frames:
+        if data.processing.show_only_finalized_frames:
             opts.show_progress_every_n_steps = -1
 
-        project = Project(Path(ext_params.output_dir) / ext_params.project_subdir)
+        project = Project(data.output.output_dir / data.output.project_subdir)
         project.load()
 
-        if not ext_params.continue_from_last_frame:
+        if not data.project.continue_from_last_frame:
             project.delete_all_frames()
             project.delete_session_data()
 
         _apply_prompt_styles(p)
 
-        session = Session(opts, p, get_cn_units(p), ext_params)
+        session = Session(opts, p, get_cn_units(p), data)
 
-        if ext_params.load_parameters:
+        if data.project.load_parameters and project.session_path.exists():
             session.load(project.session_path)
 
-        if not _setup_processing(p, ext_params):
+        if not _setup_processing(p, data):
             return processing.Processed(p, p.init_images)
 
-        image_buffer = _make_image_buffer(p, ext_params)
+        image_buffer = _make_image_buffer(p, data)
 
-        if ext_params.continue_from_last_frame:
+        if data.project.continue_from_last_frame and project.buffer_path.exists():
             image_buffer.load(project.buffer_path)
 
         metrics = Metrics()
         last_index = project.get_last_frame_index()
 
-        if ext_params.metrics_enabled:
+        if data.measuring.enabled and project.metrics_path.exists():
             metrics.load(project.metrics_path)
 
             if last_index == 0:
@@ -151,7 +152,7 @@ class SequenceMode(GenerationMode):
         session.save(project.session_path)
         project.save()
 
-        _apply_relative_params(ext_params, p.denoising_strength)
+        _apply_relative_params(data, p.denoising_strength)
 
         if last_frame := project.load_frame(last_index):
             last_processed = processing.Processed(p, [last_frame])
@@ -160,12 +161,12 @@ class SequenceMode(GenerationMode):
 
         image_buffer_to_save = deepcopy(image_buffer)
 
-        for i, frame_index in zip(range(ext_params.frame_count), count(last_index + 1)):
+        for i, frame_index in zip(range(data.output.frame_count), count(last_index + 1)):
             start_time = perf_counter()
 
             if not (processed := _process_iteration(
                 p = p,
-                ext_params = ext_params,
+                data = data,
                 image_buffer = image_buffer,
                 image = last_processed.images[0],
                 i = i,
@@ -177,27 +178,27 @@ class SequenceMode(GenerationMode):
 
             _set_preview_image(last_processed.images[0])
 
-            if frame_index % ext_params.save_every_nth_frame == 0:
+            if frame_index % data.output.save_every_nth_frame == 0:
                 _save_processed_image(
                     p = p,
                     processed = last_processed,
                     output_dir = project.path,
                     file_name = make_frame_name(index = frame_index),
-                    archive_mode = ext_params.archive_mode,
+                    archive_mode = data.output.archive_mode,
                 )
 
                 image_buffer_to_save = deepcopy(image_buffer)
 
-            if ext_params.metrics_enabled:
+            if data.measuring.enabled:
                 metrics.measure(last_processed.images[0])
                 metrics.save(project.metrics_path)
 
-                if frame_index % ext_params.metrics_save_plots_every_nth_frame == 0:
+                if frame_index % data.measuring.plot_every_nth_frame == 0:
                     metrics.plot_to_directory(project.metrics_path)
 
             end_time = perf_counter()
 
-            print(f"[Temporal] Iteration took {end_time - start_time:.6f} seconds")
+            logging.info(f"Iteration took {end_time - start_time:.6f} seconds")
 
         image_buffer_to_save.save(project.buffer_path)
 
@@ -241,7 +242,7 @@ def _apply_prompt_styles(p: StableDiffusionProcessingImg2Img) -> None:
     p.styles.clear()
 
 
-def _setup_processing(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNamespace) -> bool:
+def _setup_processing(p: StableDiffusionProcessingImg2Img, data: ExtensionData) -> bool:
     processing.fix_seed(p)
 
     if not p.init_images or not isinstance(p.init_images[0], Image.Image):
@@ -249,18 +250,18 @@ def _setup_processing(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNam
             init_images = [generate_value_noise_image(
                 (p.width, p.height),
                 3,
-                ext_params.initial_noise_scale,
-                ext_params.initial_noise_octaves,
-                ext_params.initial_noise_lacunarity,
-                ext_params.initial_noise_persistence,
+                data.initial_noise.scale,
+                data.initial_noise.octaves,
+                data.initial_noise.lacunarity,
+                data.initial_noise.persistence,
                 p.seed,
             )],
             n_iter = 1,
             batch_size = 1,
-            denoising_strength = 1.0 - ext_params.initial_noise_factor,
+            denoising_strength = 1.0 - data.initial_noise.factor,
             do_not_save_samples = True,
             do_not_save_grid = True,
-        ), ext_params.initial_noise_factor < 1.0, not ext_params.show_only_finalized_frames)) or not processed.images:
+        ), data.initial_noise.factor < 1.0, not data.processing.show_only_finalized_frames)) or not processed.images:
             return False
 
         p.init_images = [processed.images[0]]
@@ -271,84 +272,84 @@ def _setup_processing(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNam
     return True
 
 
-def _make_image_buffer(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNamespace) -> ImageBuffer:
+def _make_image_buffer(p: StableDiffusionProcessingImg2Img, data: ExtensionData) -> ImageBuffer:
     width = p.width
     height = p.height
 
-    if ext_params.detailing_scale_buffer:
-        width = quantize(width * ext_params.detailing_scale, 8)
-        height = quantize(height * ext_params.detailing_scale, 8)
+    if data.detailing.scale_buffer:
+        width = int(quantize(width * data.detailing.scale, 8))
+        height = int(quantize(height * data.detailing.scale, 8))
 
-    buffer = ImageBuffer(width, height, 3, ext_params.frame_merging_frames)
+    buffer = ImageBuffer(width, height, 3, data.frame_merging.frames)
     buffer.init(p.init_images[0])
 
     return buffer
 
 
-def _apply_relative_params(ext_params: SimpleNamespace, denoising_strength: float) -> None:
-    for id in IMAGE_FILTERS.keys():
-        if getattr(ext_params, f"{id}_amount_relative"):
-            setattr(ext_params, f"{id}_amount", getattr(ext_params, f"{id}_amount") * denoising_strength)
+def _apply_relative_params(data: ExtensionData, denoising_strength: float) -> None:
+    for id, filter_data in data.filtering.filter_data.items():
+        if filter_data.amount_relative:
+            filter_data.amount *= denoising_strength
 
 
-def _process_iteration(p: StableDiffusionProcessingImg2Img, ext_params: SimpleNamespace, image_buffer: ImageBuffer, image: PILImage, i: int, frame_index: int) -> Optional[Processed]:
-    batch_count = ceil(ext_params.multisampling_samples / ext_params.multisampling_batch_size)
-    total_sample_count = ext_params.multisampling_batch_size * batch_count
+def _process_iteration(p: StableDiffusionProcessingImg2Img, data: ExtensionData, image_buffer: ImageBuffer, image: PILImage, i: int, frame_index: int) -> Optional[Processed]:
+    batch_count = ceil(data.multisampling.samples / data.multisampling.batch_size)
+    total_sample_count = data.multisampling.batch_size * batch_count
 
-    state.job_count = ext_params.frame_count * batch_count
+    state.job_count = data.output.frame_count * batch_count
 
-    if ext_params.detailing_enabled:
+    if data.detailing.enabled:
         state.job_count *= 2
 
     seed = p.seed + frame_index
 
-    if not (processed := _process_image(f"Frame {i + 1} / {ext_params.frame_count}", copy_with_overrides(p,
-        init_images = [filter_image(image, ext_params, seed)],
+    if not (processed := _process_image(f"Frame {i + 1} / {data.output.frame_count}", copy_with_overrides(p,
+        init_images = [filter_image(image, data.filtering, seed)],
         n_iter = batch_count,
-        batch_size = ext_params.multisampling_batch_size,
+        batch_size = data.multisampling.batch_size,
         seed = seed,
         do_not_save_samples = True,
         do_not_save_grid = True,
-    ), ext_params.use_sd, not ext_params.show_only_finalized_frames)) or not processed.images:
+    ), data.processing.use_sd, not data.processing.show_only_finalized_frames)) or not processed.images:
         return None
 
     samples = processed.images[:total_sample_count]
 
-    if ext_params.detailing_enabled:
+    if data.detailing.enabled:
         detailed_samples = []
 
         for j in range(batch_count):
-            offset_from = j * ext_params.multisampling_batch_size
-            offset_to = (j + 1) * ext_params.multisampling_batch_size
+            offset_from = j * data.multisampling.batch_size
+            offset_to = (j + 1) * data.multisampling.batch_size
 
             if not (detailed := _process_image("Detailing", copy_with_overrides(p,
                 init_images = samples[offset_from:offset_to],
-                sampler_name = ext_params.detailing_sampler,
-                steps = ext_params.detailing_steps,
-                width = quantize(p.width * ext_params.detailing_scale, 8),
-                height = quantize(p.height * ext_params.detailing_scale, 8),
+                sampler_name = data.detailing.sampler,
+                steps = data.detailing.steps,
+                width = quantize(p.width * data.detailing.scale, 8),
+                height = quantize(p.height * data.detailing.scale, 8),
                 n_iter = 1,
-                batch_size = ext_params.multisampling_batch_size,
-                denoising_strength = ext_params.detailing_denoising_strength,
+                batch_size = data.multisampling.batch_size,
+                denoising_strength = data.detailing.denoising_strength,
                 seed = seed + total_sample_count + offset_from,
                 seed_enable_extras = True,
                 seed_resize_from_w = p.seed_resize_from_w or p.width,
                 seed_resize_from_h = p.seed_resize_from_h or p.height,
                 do_not_save_samples = True,
                 do_not_save_grid = True,
-            ), ext_params.use_sd, not ext_params.show_only_finalized_frames)) or not detailed.images:
+            ), data.processing.use_sd, not data.processing.show_only_finalized_frames)) or not detailed.images:
                 return None
 
             detailed_samples.extend(
                 ensure_image_dims(x, x.mode, (image_buffer.width, image_buffer.height))
-                for x in detailed.images[:ext_params.multisampling_batch_size]
+                for x in detailed.images[:data.multisampling.batch_size]
             )
 
         samples = detailed_samples
 
-    multisampled_image = average_images(samples, ext_params.multisampling_trimming, ext_params.multisampling_easing, ext_params.multisampling_preference)
+    multisampled_image = average_images(samples, data.multisampling.trimming, data.multisampling.easing, data.multisampling.preference)
     image_buffer.add(multisampled_image)
-    merged_image = image_buffer.average(ext_params.frame_merging_trimming, ext_params.frame_merging_easing, ext_params.frame_merging_preference)
+    merged_image = image_buffer.average(data.frame_merging.trimming, data.frame_merging.easing, data.frame_merging.preference)
     merged_image = ensure_image_dims(merged_image, merged_image.mode, (p.width, p.height))
 
     return copy_with_overrides(processed, images = [merged_image])

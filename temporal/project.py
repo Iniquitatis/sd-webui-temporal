@@ -1,8 +1,10 @@
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Iterator, Optional
 
 from temporal.compat import VERSION, upgrade_project
-from temporal.utils.fs import clear_directory, is_directory_empty, load_json, remove_entry, save_text
+from temporal.utils import logging
+from temporal.utils.fs import clear_directory, is_directory_empty, remove_entry, save_text
 from temporal.utils.image import PILImage, load_image
 
 
@@ -67,14 +69,15 @@ class Project:
         save_text(self.data_path / "version.txt", str(VERSION))
 
     def get_description(self) -> str:
-        params = load_json(self.session_path / "parameters.json", {})
-        shared_params = params.get("shared_params", {})
-        generation_params = params.get("generation_params", {})
+        if not (path := self.session_path / "data.xml").is_file():
+            return "Cannot read project data"
+
+        tree = ET.ElementTree(file = path)
         values = {
             "Name": self.name,
-            "Prompt": generation_params.get("prompt", None),
-            "Negative prompt": generation_params.get("negative_prompt", None),
-            "Checkpoint": shared_params.get("sd_model_checkpoint", None),
+            "Prompt": tree.findtext("*[@key='processing']/*[@key='prompt']"),
+            "Negative prompt": tree.findtext("*[@key='processing']/*[@key='negative_prompt']"),
+            "Checkpoint": tree.findtext("*[@key='options']/*[@key='sd_model_checkpoint']"),
             "Last frame": self.get_last_frame_index(),
             "Saved frames": self.get_actual_frame_count(),
         }
@@ -133,6 +136,6 @@ def _parse_frame_index(image_path: Path) -> int:
         try:
             return int(image_path.stem)
         except:
-            print(f"WARNING: {image_path.stem} doesn't match the frame name format")
+            logging.warning(f"{image_path.stem} doesn't match the frame name format")
 
     return 0

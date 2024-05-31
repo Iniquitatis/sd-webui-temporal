@@ -1,21 +1,7 @@
-from pathlib import Path
-from types import SimpleNamespace
+from typing import Any
 
-from temporal.serialization import load_dict, save_object
-from temporal.utils.fs import load_json, recreate_directory, save_json
+from temporal.meta.serializable import Serializable, field
 
 
-class Preset:
-    def __init__(self, path: Path) -> None:
-        self.path = path
-
-    def read_ext_params(self, ext_params: SimpleNamespace) -> None:
-        data = {}
-        load_dict(data, load_json(self.path / "parameters.json", {}), self.path, False)
-
-        for k, v in data.items():
-            setattr(ext_params, k, v)
-
-    def write_ext_params(self, ext_params: SimpleNamespace) -> None:
-        recreate_directory(self.path)
-        save_json(self.path / "parameters.json", save_object(ext_params, self.path))
+class Preset(Serializable):
+    data: dict[str, Any] = field(factory = dict)
