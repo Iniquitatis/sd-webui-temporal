@@ -7,7 +7,9 @@ class Registerable:
     id: Any = "UNDEFINED"
     name: str = "UNDEFINED"
 
-    def __init_subclass__(cls: Type["Registerable"], abstract: bool = False) -> None:
+    def __init_subclass__(cls: Type["Registerable"], abstract: bool = False, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+
         if abstract or cls.store is None:
             return
 

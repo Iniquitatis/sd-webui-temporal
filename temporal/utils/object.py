@@ -20,6 +20,16 @@ def copy_with_overrides(obj: T, **overrides: Any) -> T:
     return instance
 
 
+def get_with_overrides(obj: T, **overrides: Any) -> T:
+    for key, value in overrides.items():
+        if hasattr(obj, key):
+            setattr(obj, key, value)
+        else:
+            logging.warning(f"Key {key} doesn't exist in {obj.__class__.__name__}")
+
+    return obj
+
+
 def get_property_by_path(obj: Any, path: str) -> Any:
     stack = [obj]
 

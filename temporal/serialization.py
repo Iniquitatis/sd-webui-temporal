@@ -98,8 +98,18 @@ _serializers: dict[str, Type["Serializer[Any]"]] = {}
 
 
 class Serializer(Generic[T]):
-    def __init_subclass__(cls, alias: Optional[str] = None) -> None:
-        _type_aliases[cls.get_type()] = actual_alias = alias if alias is not None else getattr(cls.get_type(), "__name__", "_")
+    def __init_subclass__(cls, alias: Optional[str] = None, abstract: bool = False) -> None:
+        if abstract:
+            return
+
+        serialized_type = cls.get_type()
+        full_name = f"{serialized_type.__module__}.{serialized_type.__qualname__}" if serialized_type.__module__ != "builtins" else serialized_type.__name__
+
+        _type_aliases[serialized_type] = actual_alias = alias if alias is not None else full_name
+
+        if actual_alias in _serializers:
+            raise Exception(f"{actual_alias} is already registered")
+
         _serializers[actual_alias] = cls
 
     @classmethod
@@ -124,7 +134,7 @@ class Serializer(Generic[T]):
         raise NotImplementedError
 
 
-class BasicObjectSerializer(Serializer[T]):
+class BasicObjectSerializer(Serializer[T], abstract = True):
     keys: list[Any] = []
 
     def __init_subclass__(cls, alias: Optional[str] = None, create: bool = True) -> None:

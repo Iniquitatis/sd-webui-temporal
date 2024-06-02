@@ -6,13 +6,9 @@ from temporal.utils.image import NumpyImage, PILImage, ensure_image_dims, np_to_
 from temporal.utils.numpy import average_array, make_eased_weight_array, saturate_array
 
 
-class ImageBuffer(Serializable, init = False):
-    array: NDArray[np.float_] = field()
-    last_index: int = field()
-
-    def __init__(self, width: int, height: int, channels: int, count: int) -> None:
-        self.array = np.zeros((count, height, width, channels))
-        self.last_index = 0
+class ImageBuffer(Serializable):
+    array: NDArray[np.float_] = field(factory = lambda: np.empty((0, 0, 0, 0)))
+    last_index: int = field(0)
 
     @property
     def width(self) -> int:
@@ -30,7 +26,9 @@ class ImageBuffer(Serializable, init = False):
     def count(self) -> int:
         return self.array.shape[0]
 
-    def init(self, im: PILImage) -> None:
+    def init(self, width: int, height: int, channels: int, count: int, im: PILImage) -> None:
+        self.array = np.zeros((count, height, width, channels))
+
         npim = self._convert_image_to_np(im)
 
         for i in range(self.count):

@@ -1,37 +1,47 @@
 from collections.abc import Iterable
 from copy import copy
 from inspect import isgeneratorfunction
+from itertools import count
 from pathlib import Path
+from time import perf_counter
 from typing import Any, Callable, Iterator, Type, TypeVar
 
 import gradio as gr
 from gradio.blocks import Block
 from gradio.components import Component
 
-from modules import scripts
-from modules.processing import StableDiffusionProcessingImg2Img
-from modules.sd_samplers import visible_sampler_names
-from modules.ui_components import InputAccordion, ToolButton
+from modules import processing, scripts, shared
+from modules.options import Options
+from modules.processing import Processed, StableDiffusionProcessingImg2Img
+from modules.styles import StyleDatabase
+from modules.shared_state import State
+from modules.ui_components import ToolButton
 
-from temporal.data import ExtensionData
-from temporal.image_blending import BLEND_MODES
-from temporal.image_filtering import IMAGE_FILTERS
-from temporal.image_generation import GENERATION_MODES
-from temporal.interop import EXTENSION_DIR
-from temporal.metrics import Metrics
+from temporal.blend_modes import BLEND_MODES
+from temporal.image_filters import IMAGE_FILTERS
+from temporal.interop import EXTENSION_DIR, get_cn_units
+from temporal.pipeline import PIPELINE_MODULES
 from temporal.preset_store import PresetStore
-from temporal.project import Project, make_video_file_name
+from temporal.project import Project, make_video_file_name, render_project_video
 from temporal.project_store import ProjectStore
-from temporal.session import Session
+from temporal.session import InitialNoiseParams, Session
 from temporal.ui.module_list import ModuleAccordion, ModuleList
 from temporal.utils import logging
 from temporal.utils.collection import get_first_element
 from temporal.utils.fs import load_text
-from temporal.utils.object import get_property_by_path, set_property_by_path
+from temporal.utils.image import PILImage, generate_value_noise_image
+from temporal.utils.object import copy_with_overrides, get_property_by_path, set_property_by_path
 from temporal.utils.string import match_mask
 from temporal.utils.time import wait_until
-from temporal.video_filtering import VIDEO_FILTERS
-from temporal.video_rendering import enqueue_video_render, video_render_queue
+from temporal.video_filters import VIDEO_FILTERS
+from temporal.video_renderer import video_render_queue
+from temporal.web_ui import process_image
+
+
+# FIXME: To shut up the type checker
+opts: Options = getattr(shared, "opts")
+prompt_styles: StyleDatabase = getattr(shared, "prompt_styles")
+state: State = getattr(shared, "state")
 
 
 PROJECT_GALLERY_SIZE = 10
@@ -178,98 +188,67 @@ class TemporalScript(scripts.Script):
             ui.elem("delete_preset", ToolButton, value = "\U0001f5d1\ufe0f")
             ui.callback("delete_preset", "click", delete_preset_callback, ["preset"], ["preset"])
 
-        def mode_callback(inputs):
-            return {x: gr.update(visible = ui.is_in_group(x, f"mode_{inputs['mode']}")) for x in ui.parse_ids(["group:mode_*"])}
-
-        ui.elem("mode", gr.Dropdown, label = "Mode", choices = list(GENERATION_MODES.keys()), value = "sequence", groups = ["params"])
-        ui.callback("mode", "change", mode_callback, ["mode"], ["group:mode_*"])
-
         with ui.elem("", gr.Tab, label = "General"):
             with ui.elem("", gr.Accordion, label = "Output"):
                 with ui.elem("", gr.Row):
                     ui.elem("output.output_dir", gr.Textbox, label = "Output directory", value = "outputs/temporal", groups = ["params"])
-                    ui.elem("output.project_subdir", gr.Textbox, label = "Project subdirectory", value = "untitled", groups = ["params", "mode_sequence"])
+                    ui.elem("output.project_subdir", gr.Textbox, label = "Project subdirectory", value = "untitled", groups = ["params"])
 
-                with ui.elem("", gr.Row):
-                    ui.elem("output.frame_count", gr.Number, label = "Frame count", precision = 0, minimum = 1, step = 1, value = 100, groups = ["params"])
-                    ui.elem("output.save_every_nth_frame", gr.Number, label = "Save every N-th frame", precision = 0, minimum = 1, step = 1, value = 1, groups = ["params", "session", "mode_sequence"])
+                ui.elem("frame_count", gr.Number, label = "Frame count", precision = 0, minimum = 1, step = 1, value = 100, groups = ["params"])
+                ui.elem("show_only_finalized_frames", gr.Checkbox, label = "Show only finalized frames", value = False, groups = ["params"])
 
-                ui.elem("output.archive_mode", gr.Checkbox, label = "Archive mode", value = False, groups = ["params", "session", "mode_sequence"])
+            with ui.elem("", gr.Accordion, label = "Project"):
+                ui.elem("load_parameters", gr.Checkbox, label = "Load parameters", value = True, groups = ["params"])
+                ui.elem("continue_from_last_frame", gr.Checkbox, label = "Continue from last frame", value = True, groups = ["params"])
 
+        with ui.elem("", gr.Tab, label = "Pipeline"):
             with ui.elem("", gr.Accordion, label = "Initial noise", open = False):
                 ui.elem("initial_noise.factor", gr.Slider, label = "Factor", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, groups = ["params", "session"])
-                ui.elem("initial_noise.scale", gr.Slider, label = "Scale", minimum = 1, maximum = 1024, step = 1, value = 1, groups = ["params", "session"])
-                ui.elem("initial_noise.octaves", gr.Slider, label = "Octaves", minimum = 1, maximum = 10, step = 1, value = 1, groups = ["params", "session"])
+                ui.elem("initial_noise.scale", gr.Slider, label = "Scale", precision = 0, minimum = 1, maximum = 1024, step = 1, value = 1, groups = ["params", "session"])
+                ui.elem("initial_noise.octaves", gr.Slider, label = "Octaves", precision = 0, minimum = 1, maximum = 10, step = 1, value = 1, groups = ["params", "session"])
                 ui.elem("initial_noise.lacunarity", gr.Slider, label = "Lacunarity", minimum = 0.01, maximum = 4.0, step = 0.01, value = 2.0, groups = ["params", "session"])
                 ui.elem("initial_noise.persistence", gr.Slider, label = "Persistence", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.5, groups = ["params", "session"])
 
-            with ui.elem("", gr.Accordion, label = "Processing", open = False):
-                ui.elem("processing.use_sd", gr.Checkbox, label = "Use Stable Diffusion", value = True, groups = ["params", "session"])
-                ui.elem("processing.show_only_finalized_frames", gr.Checkbox, label = "Show only finalized frames", value = False, groups = ["params"])
+            with ui.elem("pipeline.module_order", ModuleList, label = "Order", keys = PIPELINE_MODULES.keys(), groups = ["params", "session"]):
+                for id, module in PIPELINE_MODULES.items():
+                    with ui.elem(f"pipeline.modules['{id}'].enabled", ModuleAccordion, label = module.name, key = id, value = False, open = False, groups = ["params", "session"]):
+                        ui.elem(f"pipeline.modules['{id}'].preview", gr.Checkbox, label = "Preview", value = True, groups = ["params"])
 
-            with ui.elem("", gr.Accordion, label = "Multisampling", open = False):
-                with ui.elem("", gr.Row):
-                    ui.elem("multisampling.samples", gr.Number, label = "Sample count", precision = 0, minimum = 1, value = 1, groups = ["params", "session"])
-                    ui.elem("multisampling.batch_size", gr.Number, label = "Batch size", precision = 0, minimum = 1, value = 1, groups = ["params", "session"])
-
-                ui.elem("multisampling.trimming", gr.Slider, label = "Trimming", minimum = 0.0, maximum = 0.5, step = 0.01, value = 0.0, groups = ["params", "session"])
-                ui.elem("multisampling.easing", gr.Slider, label = "Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0, groups = ["params", "session"])
-                ui.elem("multisampling.preference", gr.Slider, label = "Preference", minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0, groups = ["params", "session"])
-
-            with ui.elem("detailing.enabled", InputAccordion, label = "Detailing", value = False, groups = ["params", "session"]):
-                ui.elem("detailing.scale", gr.Slider, label = "Scale", minimum = 1.0, maximum = 4.0, step = 0.25, value = 1.0, groups = ["params", "session"])
-                ui.elem("detailing.scale_buffer", gr.Checkbox, label = "Scale buffer", value = False, groups = ["params", "session"])
-                ui.elem("detailing.sampler", gr.Dropdown, label = "Sampling method", choices = visible_sampler_names(), value = "Euler a", groups = ["params", "session"])
-                ui.elem("detailing.steps", gr.Slider, label = "Steps", minimum = 1, maximum = 150, step = 1, value = 15, groups = ["params", "session"])
-                ui.elem("detailing.denoising_strength", gr.Slider, label = "Denoising strength", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.2, groups = ["params", "session"])
-
-            with ui.elem("", gr.Accordion, label = "Frame merging", open = False):
-                ui.elem("frame_merging.frames", gr.Number, label = "Frame count", precision = 0, minimum = 1, step = 1, value = 1, groups = ["params", "session"])
-                ui.elem("frame_merging.trimming", gr.Slider, label = "Trimming", minimum = 0.0, maximum = 0.5, step = 0.01, value = 0.0, groups = ["params", "session"])
-                ui.elem("frame_merging.easing", gr.Slider, label = "Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0, groups = ["params", "session"])
-                ui.elem("frame_merging.preference", gr.Slider, label = "Preference", minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0, groups = ["params", "session"])
-
-            with ui.elem("project_params", gr.Accordion, label = "Project", groups = ["mode_sequence"]):
-                ui.elem("project.load_parameters", gr.Checkbox, label = "Load parameters", value = True, groups = ["params"])
-                ui.elem("project.continue_from_last_frame", gr.Checkbox, label = "Continue from last frame", value = True, groups = ["params"])
+                        for param in module.__ui_params__.values():
+                            ui.elem(f"pipeline.modules['{id}'].{param.key}", param.type, label = param.name, **param.kwargs, groups = ["params", "session"])
 
         with ui.elem("", gr.Tab, label = "Image Filtering"):
-            with ui.elem("filtering.filter_order", ModuleList, keys = IMAGE_FILTERS.keys(), groups = ["params", "session"]):
+            with ui.elem("image_filterer.filter_order", ModuleList, keys = IMAGE_FILTERS.keys(), groups = ["params", "session"]):
                 for id, filter in IMAGE_FILTERS.items():
-                    with ui.elem(f"filtering.filter_data['{id}'].enabled", ModuleAccordion, label = filter.name, key = id, value = False, open = False, groups = ["params", "session"]):
+                    with ui.elem(f"image_filterer.filters['{id}'].enabled", ModuleAccordion, label = filter.name, key = id, value = False, open = False, groups = ["params", "session"]):
                         with ui.elem("", gr.Row):
-                            ui.elem(f"filtering.filter_data['{id}'].amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0, groups = ["params", "session"])
-                            ui.elem(f"filtering.filter_data['{id}'].amount_relative", gr.Checkbox, label = "Relative", value = False, groups = ["params", "session"])
+                            ui.elem(f"image_filterer.filters['{id}'].amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0, groups = ["params", "session"])
+                            ui.elem(f"image_filterer.filters['{id}'].amount_relative", gr.Checkbox, label = "Relative", value = False, groups = ["params", "session"])
 
-                        ui.elem(f"filtering.filter_data['{id}'].blend_mode", gr.Dropdown, label = "Blend mode", choices = list(BLEND_MODES.keys()), value = get_first_element(BLEND_MODES), groups = ["params", "session"])
+                        ui.elem(f"image_filterer.filters['{id}'].blend_mode", gr.Dropdown, label = "Blend mode", choices = list(BLEND_MODES.keys()), value = get_first_element(BLEND_MODES), groups = ["params", "session"])
 
                         with ui.elem("", gr.Tab, label = "Parameters"):
-                            if filter.params:
-                                for param in filter.params.values():
-                                    ui.elem(f"filtering.filter_data['{id}'].params.{param.id}", param.type, label = param.name, **param.kwargs, groups = ["params", "session"])
+                            if filter.__ui_params__:
+                                for param in filter.__ui_params__.values():
+                                    ui.elem(f"image_filterer.filters['{id}'].{param.key}", param.type, label = param.name, **param.kwargs, groups = ["params", "session"])
                             else:
-                                ui.elem("", gr.Markdown, value = "_This effect has no available parameters._")
+                                ui.elem("", gr.Markdown, value = "_This filter has no available parameters._")
 
                         with ui.elem("", gr.Tab, label = "Mask"):
-                            ui.elem(f"filtering.filter_data['{id}'].mask.image", gr.Pil, label = "Image", image_mode = "L", interactive = True, groups = ["params", "session"])
-                            ui.elem(f"filtering.filter_data['{id}'].mask.normalized", gr.Checkbox, label = "Normalized", value = False, groups = ["params", "session"])
-                            ui.elem(f"filtering.filter_data['{id}'].mask.inverted", gr.Checkbox, label = "Inverted", value = False, groups = ["params", "session"])
-                            ui.elem(f"filtering.filter_data['{id}'].mask.blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, groups = ["params", "session"])
+                            ui.elem(f"image_filterer.filters['{id}'].mask.image", gr.Pil, label = "Image", image_mode = "L", interactive = True, groups = ["params", "session"])
+                            ui.elem(f"image_filterer.filters['{id}'].mask.normalized", gr.Checkbox, label = "Normalized", value = False, groups = ["params", "session"])
+                            ui.elem(f"image_filterer.filters['{id}'].mask.inverted", gr.Checkbox, label = "Inverted", value = False, groups = ["params", "session"])
+                            ui.elem(f"image_filterer.filters['{id}'].mask.blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, groups = ["params", "session"])
 
-        # FIXME: `Tab` cannot be hidden; an error is thrown regarding an inability to send it as an input component
         with ui.elem("", gr.Tab, label = "Video Rendering"):
-            ui.elem("video.fps", gr.Slider, label = "Frames per second", minimum = 1, maximum = 60, step = 1, value = 30, groups = ["params", "mode_sequence"])
-            ui.elem("video.looping", gr.Checkbox, label = "Looping", value = False, groups = ["params", "mode_sequence"])
+            ui.elem("video_renderer.fps", gr.Slider, label = "Frames per second", precision = 0, minimum = 1, maximum = 60, step = 1, value = 30, groups = ["params"])
+            ui.elem("video_renderer.looping", gr.Checkbox, label = "Looping", value = False, groups = ["params"])
 
-            with ui.elem("video.filter_order", ModuleList, keys = VIDEO_FILTERS.keys(), groups = ["params", "mode_sequence"]):
+            with ui.elem("video_renderer.filter_order", ModuleList, keys = VIDEO_FILTERS.keys(), groups = ["params"]):
                 for id, filter in VIDEO_FILTERS.items():
-                    with ui.elem(f"video.filter_data['{id}'].enabled", ModuleAccordion, label = filter.name, key = id, value = False, open = False, groups = ["params"]):
-                        for param in filter.params.values():
-                            ui.elem(f"video.filter_data['{id}'].params.{param.id}", param.type, label = param.name, **param.kwargs, groups = ["params", "mode_sequence"])
-
-            with ui.elem("", gr.Row):
-                ui.elem("render_draft_on_finish", gr.Checkbox, label = "Render draft when finished", value = False, groups = ["params", "mode_sequence"])
-                ui.elem("render_final_on_finish", gr.Checkbox, label = "Render final when finished", value = False, groups = ["params", "mode_sequence"])
+                    with ui.elem(f"video_renderer.filters['{id}'].enabled", ModuleAccordion, label = filter.name, key = id, value = False, open = False, groups = ["params"]):
+                        for param in filter.__ui_params__.values():
+                            ui.elem(f"video_renderer.filters['{id}'].{param.key}", param.type, label = param.name, **param.kwargs, groups = ["params"])
 
             with ui.elem("", gr.Row):
                 def make_render_callback(is_final):
@@ -279,39 +258,36 @@ class TemporalScript(scripts.Script):
                             "render_final": gr.update(interactive = False),
                         }
 
-                        data = self._ui_to_ext_data(inputs)
+                        session = self._ui_to_session(inputs)
 
-                        self._start_video_render(data, is_final)
+                        render_project_video(session.output.output_dir, session.output.project_subdir, session.video_renderer, is_final)
                         wait_until(lambda: not video_render_queue.busy)
 
                         yield {
                             "render_draft": gr.update(interactive = True),
                             "render_final": gr.update(interactive = True),
-                            "video_preview": f"{data.output.output_dir}/{make_video_file_name(data.output.project_subdir, is_final)}",
+                            "video_preview": (session.output.output_dir / make_video_file_name(session.output.project_subdir, is_final)).as_posix(),
                         }
 
                     return callback
 
-                ui.elem("render_draft", gr.Button, value = "Render draft", groups = ["mode_sequence"])
+                ui.elem("render_draft", gr.Button, value = "Render draft")
                 ui.callback("render_draft", "click", make_render_callback(False), ["group:params"], ["render_draft", "render_final", "video_preview"])
-                ui.elem("render_final", gr.Button, value = "Render final", groups = ["mode_sequence"])
+                ui.elem("render_final", gr.Button, value = "Render final")
                 ui.callback("render_final", "click", make_render_callback(True), ["group:params"], ["render_draft", "render_final", "video_preview"])
 
-            ui.elem("video_preview", gr.Video, label = "Preview", format = "mp4", interactive = False, groups = ["mode_sequence"])
+            ui.elem("video_preview", gr.Video, label = "Preview", format = "mp4", interactive = False)
 
-        with ui.elem("", gr.Tab, label = "Metrics"):
+        with ui.elem("", gr.Tab, label = "Measuring"):
             def render_plots_callback(inputs):
-                data = self._ui_to_ext_data(inputs)
-                project = Project(data.output.output_dir / data.output.project_subdir)
-                metrics = Metrics()
-                metrics.load(project.metrics_path)
-                return {"metrics_plots": gr.update(value = list(metrics.plot().values()))}
+                session = self._ui_to_session(inputs)
+                project = Project(session.output.output_dir / session.output.project_subdir)
+                session.load(project.session_path)
+                return {"metrics_plots": gr.update(value = list(session.pipeline.modules["measuring"].metrics.plot().values()))}
 
-            ui.elem("measuring.enabled", gr.Checkbox, label = "Enabled", value = False, groups = ["params", "mode_sequence"])
-            ui.elem("measuring.plot_every_nth_frame", gr.Number, label = "Save plots every N-th frame", precision = 0, minimum = 1, step = 1, value = 10, groups = ["params", "mode_sequence"])
-            ui.elem("render_plots", gr.Button, value = "Render plots", groups = ["mode_sequence"])
+            ui.elem("render_plots", gr.Button, value = "Render plots")
             ui.callback("render_plots", "click", render_plots_callback, ["group:params"], ["metrics_plots"])
-            ui.elem("metrics_plots", gr.Gallery, label = "Plots", columns = 4, object_fit = "contain", preview = True, groups = ["mode_sequence"])
+            ui.elem("metrics_plots", gr.Gallery, label = "Plots", columns = 4, object_fit = "contain", preview = True)
 
         with ui.elem("", gr.Tab, label = "Project Management"):
             with ui.elem("", gr.Row):
@@ -322,7 +298,7 @@ class TemporalScript(scripts.Script):
                     self._project_store.path = Path(inputs["output.output_dir"])
                     project = self._project_store.open_project(inputs["managed_project"])
                     return {
-                        "project_description": gr.update(value = project.get_description()),
+                        "project_description": gr.update(value = desc if (desc := project.get_description()) else "Cannot read project data"),
                         "project_gallery": gr.update(value = project.list_all_frame_paths()[-PROJECT_GALLERY_SIZE:]),
                     }
 
@@ -332,12 +308,11 @@ class TemporalScript(scripts.Script):
                     return {"managed_project": gr.update(choices = self._project_store.project_names)}
 
                 def load_project_callback(inputs):
-                    data = self._ui_to_ext_data(inputs)
-                    self._project_store.path = Path(data.output.output_dir)
+                    session = self._ui_to_session(inputs)
+                    self._project_store.path = session.output.output_dir
                     project = self._project_store.open_project(inputs["managed_project"])
-                    session = Session(ext_data = data)
                     session.load(project.session_path)
-                    return {k: gr.update(value = v) for k, v in self._ext_data_to_ui(data).items()}
+                    return {k: gr.update(value = v) for k, v in self._session_to_ui(session).items()}
 
                 def delete_project_callback(inputs):
                     self._project_store.path = Path(inputs["output.output_dir"])
@@ -400,26 +375,10 @@ class TemporalScript(scripts.Script):
         return ui.finalize(["group:params"])
 
     def run(self, p: StableDiffusionProcessingImg2Img, *args: Any) -> Any:
-        data = self._ui_to_ext_data({name: arg for name, arg in zip(self._ui.parse_ids(["group:params"]), args)})
-        processed = GENERATION_MODES[data.mode].process(p, data)
+        return self._process(p, {name: arg for name, arg in zip(self._ui.parse_ids(["group:params"]), args)})
 
-        # FIXME: Feels somewhat hacky
-        if data.mode == "sequence":
-            if data.render_draft_on_finish:
-                self._start_video_render(data, False)
-
-            if data.render_final_on_finish:
-                self._start_video_render(data, True)
-
-        return processed
-
-    def _start_video_render(self, data: ExtensionData, is_final: bool) -> None:
-        output_dir = Path(data.output.output_dir)
-        project = Project(output_dir / data.output.project_subdir)
-        enqueue_video_render(output_dir / make_video_file_name(project.name, is_final), project.list_all_frame_paths(), data.video, is_final)
-
-    def _ui_to_ext_data(self, inputs: dict[str, Any]) -> ExtensionData:
-        result = ExtensionData()
+    def _ui_to_session(self, inputs: dict[str, Any]) -> Session:
+        result = Session()
 
         for key, ui_value in inputs.items():
             try:
@@ -436,12 +395,12 @@ class TemporalScript(scripts.Script):
 
         return result
 
-    def _ext_data_to_ui(self, ext_data: ExtensionData) -> dict[str, Any]:
+    def _session_to_ui(self, session: Session) -> dict[str, Any]:
         result = {}
 
         for id in self._ui._ids:
             try:
-                data_value = get_property_by_path(ext_data, id)
+                data_value = get_property_by_path(session, id)
             except:
                 logging.warning(f"{id} couldn't be found in {result.__class__.__name__}")
 
@@ -453,3 +412,115 @@ class TemporalScript(scripts.Script):
                 result[id] = data_value
 
         return result
+
+    def _process(self, p: StableDiffusionProcessingImg2Img, inputs: dict[str, Any]) -> Processed:
+        opts_backup = opts.data.copy()
+
+        opts.save_to_dirs = False
+
+        if inputs["show_only_finalized_frames"]:
+            opts.show_progress_every_n_steps = -1
+
+        p.prompt = prompt_styles.apply_styles_to_prompt(p.prompt, p.styles)
+        p.negative_prompt = prompt_styles.apply_negative_styles_to_prompt(p.negative_prompt, p.styles)
+        p.styles.clear()
+
+        processing.fix_seed(p)
+
+        project = Project(Path(inputs["output.output_dir"]) / inputs["output.project_subdir"])
+        project.load()
+
+        if not inputs["continue_from_last_frame"]:
+            project.delete_all_frames()
+            project.delete_session_data()
+
+        session = self._ui_to_session(inputs)
+
+        if not self._verify_image_existence(p, session.initial_noise):
+            opts.data.update(opts_backup)
+
+            return Processed(p, p.init_images)
+
+        session.init(
+            options = opts,
+            processing = p,
+            controlnet_units = get_cn_units(p),
+        )
+
+        if inputs["load_parameters"] and project.session_path.exists():
+            session.load(project.session_path)
+
+            if not self._verify_image_existence(p, session.initial_noise):
+                opts.data.update(opts_backup)
+
+                return Processed(p, p.init_images)
+
+        last_index = project.get_last_frame_index()
+        last_processed = Processed(p, [project.load_frame(last_index) or p.init_images[0]])
+
+        state.job_count = inputs["frame_count"]
+
+        for i, frame_index in zip(range(inputs["frame_count"]), count(last_index + 1)):
+            start_time = perf_counter()
+
+            state.job = f"Frame {frame_index + 1} / {inputs['frame_count']}"
+            state.job_no = i
+
+            if not (processed := session.pipeline.run(
+                session,
+                last_processed,
+                frame_index,
+                inputs["frame_count"],
+                p.seed + frame_index,
+                inputs["show_only_finalized_frames"],
+            )) or state.interrupted or state.skipped:
+                break
+
+            last_processed = processed
+
+            end_time = perf_counter()
+
+            logging.info(f"[Temporal] Iteration took {end_time - start_time:.6f} second(s)")
+
+        session.pipeline.finalize(session, last_processed)
+        session.save(project.session_path)
+        project.save()
+
+        state.end()
+
+        opts.data.update(opts_backup)
+
+        return last_processed
+
+    @staticmethod
+    def _verify_image_existence(p: StableDiffusionProcessingImg2Img, initial_noise: InitialNoiseParams) -> bool:
+        if not p.init_images or not isinstance(p.init_images[0], PILImage):
+            noise = generate_value_noise_image(
+                (p.width, p.height),
+                3,
+                initial_noise.scale,
+                initial_noise.octaves,
+                initial_noise.lacunarity,
+                initial_noise.persistence,
+                p.seed,
+            )
+
+            if initial_noise.factor < 1.0:
+                if not (processed := process_image(copy_with_overrides(p,
+                    init_images = [noise],
+                    n_iter = 1,
+                    batch_size = 1,
+                    denoising_strength = 1.0 - initial_noise.factor,
+                    do_not_save_samples = True,
+                    do_not_save_grid = True,
+                ), True)) or not processed.images:
+                    return False
+
+                p.init_images = [processed.images[0]]
+            else:
+                p.init_images = [noise]
+
+        if opts.img2img_color_correction:
+            p.color_corrections = [processing.setup_color_correction(p.init_images[0])]
+
+        return True

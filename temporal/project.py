@@ -4,8 +4,9 @@ from typing import Iterator, Optional
 
 from temporal.compat import VERSION, upgrade_project
 from temporal.utils import logging
-from temporal.utils.fs import clear_directory, is_directory_empty, remove_entry, save_text
+from temporal.utils.fs import clear_directory, is_directory_empty, remove_directory, remove_entry, save_text
 from temporal.utils.image import PILImage, load_image
+from temporal.video_renderer import VideoRenderer
 
 
 FRAME_NAME_FORMAT = "{index:05d}"
@@ -35,6 +36,11 @@ def make_video_file_name(name: str, is_final: bool) -> str:
     return f"{make_video_name(name, is_final)}.{VIDEO_EXTENSION}"
 
 
+def render_project_video(output_dir: Path, project_subdir: str, renderer: VideoRenderer, is_final: bool) -> None:
+    project = Project(output_dir / project_subdir)
+    renderer.enqueue_video_render(output_dir / make_video_file_name(project.name, is_final), project.list_all_frame_paths(), is_final)
+
+
 class Project:
     def __init__(self, path: Path) -> None:
         self.path = path
@@ -51,14 +57,6 @@ class Project:
     def session_path(self) -> Path:
         return self.data_path / "session"
 
-    @property
-    def buffer_path(self) -> Path:
-        return self.data_path / "buffer"
-
-    @property
-    def metrics_path(self) -> Path:
-        return self.data_path / "metrics"
-
     def load(self) -> None:
         if is_directory_empty(self.path):
             return
@@ -68,9 +66,9 @@ class Project:
     def save(self) -> None:
         save_text(self.data_path / "version.txt", str(VERSION))
 
-    def get_description(self) -> str:
+    def get_description(self) -> Optional[str]:
         if not (path := self.session_path / "data.xml").is_file():
-            return "Cannot read project data"
+            return None
 
         tree = ET.ElementTree(file = path)
         values = {
@@ -124,8 +122,25 @@ class Project:
                 remove_entry(image_path)
 
     def delete_session_data(self) -> None:
-        remove_entry(self.buffer_path)
-        remove_entry(self.metrics_path)
+        if not (session_data_path := (self.session_path / "data.xml")).exists():
+            return
+
+        tree = ET.ElementTree(file = session_data_path)
+        root = tree.getroot()
+
+        if (measurements_elem := root.find("*[@key='modules']/*[@key='measuring']/*[@key='metrics']/*[@key='measurements']")) is not None:
+            for child in list(measurements_elem):
+                measurements_elem.remove(child)
+
+        if (buffer_elem := root.find("*[@key='modules']/*[@key='frame_merging']/*[@key='buffer']")) is not None:
+            if (array_path := buffer_elem.findtext("*[@key='array']")) is not None:
+                remove_entry(Path(array_path))
+
+            root.remove(buffer_elem)
+
+        tree.write(session_data_path)
+
+        remove_directory(self.session_path / "metrics")
 
     def _iterate_frame_paths(self) -> Iterator[Path]:
         return self.path.glob(f"*.{FRAME_EXTENSION}")

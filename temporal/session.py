@@ -1,19 +1,52 @@
-from typing import Optional
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Optional
 
 from modules.options import Options
 from modules.processing import StableDiffusionProcessingImg2Img
 
-from temporal.data import ExtensionData
+from temporal.image_filterer import ImageFilterer
 from temporal.interop import ControlNetUnitWrapper
 from temporal.meta.serializable import Serializable, field
+if TYPE_CHECKING:
+    from temporal.pipeline import Pipeline
 from temporal.serialization import BasicObjectSerializer
+from temporal.video_renderer import VideoRenderer
+
+
+class OutputParams(Serializable):
+    output_dir: Path = field(Path("outputs/temporal"))
+    project_subdir: str = field("untitled")
+
+
+class InitialNoiseParams(Serializable):
+    factor: float = field(0.0)
+    scale: int = field(1)
+    octaves: int = field(1)
+    lacunarity: float = field(2.0)
+    persistence: float = field(0.5)
 
 
 class Session(Serializable):
-    options: Optional[Options] = field(None)
-    processing: Optional[StableDiffusionProcessingImg2Img] = field(None)
-    controlnet_units: Optional[list[ControlNetUnitWrapper]] = field(None)
-    ext_data: Optional[ExtensionData] = field(None)
+    options: Options = field()
+    processing: StableDiffusionProcessingImg2Img = field()
+    controlnet_units: Optional[list[ControlNetUnitWrapper]] = field()
+    output: OutputParams = field(factory = OutputParams, saved = False)
+    initial_noise: InitialNoiseParams = field(factory = InitialNoiseParams)
+    pipeline: "Pipeline" = field()
+    image_filterer: ImageFilterer = field(factory = ImageFilterer)
+    video_renderer: VideoRenderer = field(factory = VideoRenderer, saved = False)
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        from temporal.pipeline import Pipeline
+
+        super().__init__(*args, **kwargs)
+        self.pipeline = Pipeline()
+
+    def init(self, options: Options, processing: StableDiffusionProcessingImg2Img, controlnet_units: Optional[list[ControlNetUnitWrapper]]) -> None:
+        self.options = options
+        self.processing = processing
+        self.controlnet_units = controlnet_units
+        self.pipeline.init(self)
 
 
 class _(BasicObjectSerializer[Options], create = False):

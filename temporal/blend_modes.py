@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Optional, Type
+from typing import Type
 
 import numpy as np
 
@@ -8,13 +8,6 @@ from temporal.utils.image import NumpyImage, join_hsv_to_rgb, split_hsv
 
 
 BLEND_MODES: dict[str, Type["BlendMode"]] = {}
-
-
-def blend_images(npim: NumpyImage, modulator: Optional[NumpyImage], mode: str) -> NumpyImage:
-    if modulator is None:
-        return npim
-
-    return BLEND_MODES[mode].blend(npim, modulator)
 
 
 class BlendMode(Registerable, abstract = True):

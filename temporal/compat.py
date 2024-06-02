@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 from abc import abstractmethod
 from pathlib import Path
-from shutil import copy2
+from shutil import copy2, rmtree
 from typing import Any, Optional, Type
 
 import numpy as np
@@ -12,7 +12,7 @@ from temporal.utils.fs import ensure_directory_exists, load_json, load_text, mov
 from temporal.utils.image import load_image, pil_to_np
 
 
-VERSION = 17
+VERSION = 18
 
 UPGRADERS: dict[int, Type["Upgrader"]] = {}
 
@@ -635,22 +635,22 @@ class _(Upgrader):
 
         root = tree.getroot()
 
-        options = elem(root, "options", "Options")
+        options = elem(root, "options", "modules.options.Options")
         elem(options, "sd_model_checkpoint", "str", j_options)
         elem(options, "sd_vae", "str", j_options)
         elem(options, "CLIP_stop_at_last_layers", "int", j_options)
         elem(options, "always_discard_next_to_last_sigma", "bool", j_options)
 
-        processing = elem(root, "processing", "StableDiffusionProcessingImg2Img")
+        processing = elem(root, "processing", "modules.processing.StableDiffusionProcessingImg2Img")
         elem(processing, "prompt", "str", j_processing)
         elem(processing, "negative_prompt", "str", j_processing)
 
         init_images = elem(processing, "init_images", "list")
 
         for j_data in j_processing["init_images"]["data"]:
-            elem(init_images, "", "Image").text = str(j_data.get("filename", ""))
+            elem(init_images, "", "PIL.Image.Image").text = str(j_data.get("filename", ""))
 
-        elem(processing, "image_mask", "Image" if j_processing["image_mask"] else "NoneType", j_processing)
+        elem(processing, "image_mask", "PIL.Image.Image" if j_processing["image_mask"] else "NoneType", j_processing)
         elem(processing, "resize_mode", "int", j_processing)
         elem(processing, "mask_blur_x", "int", j_processing)
         elem(processing, "mask_blur_y", "int", j_processing)
@@ -673,10 +673,10 @@ class _(Upgrader):
         elem(processing, "seed_resize_from_w", "int", j_processing)
         elem(processing, "seed_resize_from_h", "int", j_processing)
 
-        controlnet_units = elem(root, "", type = "list" if j_controlnet_units else "NoneType")
+        controlnet_units = elem(root, "controlnet_units", "list" if j_controlnet_units else "NoneType")
 
         for j_unit in j_controlnet_units:
-            unit = elem(controlnet_units, "", "ControlNetUnitWrapper")
+            unit = elem(controlnet_units, "", "temporal.interop.ControlNetUnitWrapper")
 
             elem(unit, "instance.enabled", "bool").text = str(j_unit.get("enabled", False))
             elem(unit, "instance.module", "str").text = str(j_unit.get("module", "none"))
@@ -686,8 +686,8 @@ class _(Upgrader):
             image = elem(unit, "instance.image", "dict" if j_unit["image"]["data"] else "NoneType")
 
             for j_image in j_unit["image"]["data"].items():
-                elem(image, "image", "ndarray").text = str(j_image.get("filename", ""))
-                elem(image, "mask", "ndarray").text = str(j_image.get("filename", ""))
+                elem(image, "image", "numpy.ndarray").text = str(j_image.get("filename", ""))
+                elem(image, "mask", "numpy.ndarray").text = str(j_image.get("filename", ""))
 
             elem(unit, "instance.resize_mode", "str").text = str(j_unit.get("resize_mode", "Crop and Resize"))
             elem(unit, "instance.low_vram", "bool").text = str(j_unit.get("low_vram", False))
@@ -699,30 +699,30 @@ class _(Upgrader):
             elem(unit, "instance.pixel_perfect", "bool").text = str(j_unit.get("pixel_perfect", False))
             elem(unit, "instance.control_mode", "str").text = str(j_unit.get("control_mode", "Balanced"))
 
-        ext_data = elem(root, "ext_data", "ExtensionData")
+        ext_data = elem(root, "ext_data", "temporal.data.ExtensionData")
 
-        output = elem(ext_data, "output", "OutputParams")
+        output = elem(ext_data, "output", "temporal.data.OutputParams")
         elem(output, "save_every_nth_frame", "int").text = str(j_ext_data.get("save_every_nth_frame", 1))
         elem(output, "archive_mode", "bool").text = str(j_ext_data.get("archive_mode", False))
 
-        initial_noise = elem(ext_data, "initial_noise", "InitialNoiseParams")
+        initial_noise = elem(ext_data, "initial_noise", "temporal.data.InitialNoiseParams")
         elem(initial_noise, "factor", "float").text = str(j_ext_data.get("initial_noise_factor", 0.0))
         elem(initial_noise, "scale", "int").text = str(j_ext_data.get("initial_noise_scale", 1))
         elem(initial_noise, "octaves", "int").text = str(j_ext_data.get("initial_noise_octaves", 1))
         elem(initial_noise, "lacunarity", "float").text = str(j_ext_data.get("initial_noise_lacunarity", 2.0))
         elem(initial_noise, "persistence", "float").text = str(j_ext_data.get("initial_noise_persistence", 0.5))
 
-        processing = elem(ext_data, "processing", "ProcessingParams")
+        processing = elem(ext_data, "processing", "temporal.data.ProcessingParams")
         elem(processing, "use_sd", "bool").text = str(j_ext_data.get("use_sd", True))
 
-        multisampling = elem(ext_data, "multisampling", "MultisamplingParams")
+        multisampling = elem(ext_data, "multisampling", "temporal.data.MultisamplingParams")
         elem(multisampling, "samples", "int").text = str(j_ext_data.get("multisampling_samples", 1))
         elem(multisampling, "batch_size", "int").text = str(j_ext_data.get("multisampling_batch_size", 1))
         elem(multisampling, "trimming", "float").text = str(j_ext_data.get("multisampling_trimming", 0.0))
         elem(multisampling, "easing", "float").text = str(j_ext_data.get("multisampling_easing", 0.0))
         elem(multisampling, "preference", "float").text = str(j_ext_data.get("multisampling_preference", 0.0))
 
-        detailing = elem(ext_data, "detailing", "DetailingParams")
+        detailing = elem(ext_data, "detailing", "temporal.data.DetailingParams")
         elem(detailing, "enabled", "bool").text = str(j_ext_data.get("detailing_enabled", False))
         elem(detailing, "scale", "float").text = str(j_ext_data.get("detailing_scale", 1.0))
         elem(detailing, "scale_buffer", "bool").text = str(j_ext_data.get("detailing_scale_buffer", False))
@@ -730,13 +730,13 @@ class _(Upgrader):
         elem(detailing, "steps", "int").text = str(j_ext_data.get("detailing_steps", 15))
         elem(detailing, "denoising_strength", "float").text = str(j_ext_data.get("detailing_denoising_strength", 0.2))
 
-        frame_merging = elem(ext_data, "frame_merging", "FrameMergingParams")
+        frame_merging = elem(ext_data, "frame_merging", "temporal.data.FrameMergingParams")
         elem(frame_merging, "frames", "int").text = str(j_ext_data.get("frame_merging_frames", 1))
         elem(frame_merging, "trimming", "float").text = str(j_ext_data.get("frame_merging_trimming", 0.0))
         elem(frame_merging, "easing", "float").text = str(j_ext_data.get("frame_merging_easing", 0.0))
         elem(frame_merging, "preference", "float").text = str(j_ext_data.get("frame_merging_preference", 0.0))
 
-        filtering = elem(ext_data, "filtering", "ImageFilteringParams")
+        filtering = elem(ext_data, "filtering", "temporal.data.ImageFilteringParams")
 
         filter_order = elem(filtering, "filter_order", "list")
 
@@ -761,18 +761,18 @@ class _(Upgrader):
             "symmetry",
             "transformation",
         ):
-            filter = elem(filter_data, filter_name, "ImageFilterParams")
+            filter = elem(filter_data, filter_name, "temporal.data.ImageFilterParams")
             elem(filter, "enabled", "bool").text = str(j_ext_data.get(f"{filter_name}_enabled", False))
             elem(filter, "amount", "float").text = str(j_ext_data.get(f"{filter_name}_amount", 1.0))
             elem(filter, "amount_relative", "bool").text = str(j_ext_data.get(f"{filter_name}_amount_relative", False))
             elem(filter, "blend_mode", "str").text = str(j_ext_data.get(f"{filter_name}_blend_mode", "normal"))
 
-            params = elem(filter, "params", "SimpleNamespace")
+            params = elem(filter, "params", "types.SimpleNamespace")
 
-            mask = elem(filter, "mask", "MaskParams")
+            mask = elem(filter, "mask", "temporal.data.MaskParams")
 
             if j_ext_data[f"{filter_name}_mask"]:
-                elem(mask, "image", "Image").text = str(j_ext_data.get(f"{filter_name}_mask", {}).get("filename", ""))
+                elem(mask, "image", "PIL.Image.Image").text = str(j_ext_data.get(f"{filter_name}_mask", {}).get("filename", ""))
             else:
                 elem(mask, "image", "NoneType")
 
@@ -790,7 +790,7 @@ class _(Upgrader):
 
             elif filter_name == "color_correction":
                 if j_ext_data[f"{filter_name}_image"]:
-                    elem(params, "image", "Image").text = str(j_ext_data.get(f"{filter_name}_image", {}).get("filename", ""))
+                    elem(params, "image", "PIL.Image.Image").text = str(j_ext_data.get(f"{filter_name}_image", {}).get("filename", ""))
                 else:
                     elem(params, "image", "NoneType")
 
@@ -805,7 +805,7 @@ class _(Upgrader):
 
             elif filter_name == "image_overlay":
                 if j_ext_data[f"{filter_name}_image"]:
-                    elem(params, "image", "Image").text = str(j_ext_data.get(f"{filter_name}_image", {}).get("filename", ""))
+                    elem(params, "image", "PIL.Image.Image").text = str(j_ext_data.get(f"{filter_name}_image", {}).get("filename", ""))
                 else:
                     elem(params, "image", "NoneType")
 
@@ -833,7 +833,7 @@ class _(Upgrader):
 
             elif filter_name == "palettization":
                 if j_ext_data[f"{filter_name}_palette"]:
-                    elem(params, "palette", "Image").text = str(j_ext_data.get(f"{filter_name}_palette", {}).get("filename", ""))
+                    elem(params, "palette", "PIL.Image.Image").text = str(j_ext_data.get(f"{filter_name}_palette", {}).get("filename", ""))
                 else:
                     elem(params, "palette", "NoneType")
 
@@ -860,15 +860,212 @@ class _(Upgrader):
         # NOTE: Buffer
         j_data = load_json(path / "project" / "buffer" / "data.json", {})
 
-        tree = ET.ElementTree(ET.Element("object", {"type": "ImageBuffer"}))
+        tree = ET.ElementTree(ET.Element("object", {"type": "temporal.image_buffer.ImageBuffer"}))
 
         root = tree.getroot()
-        elem(root, "array", "ndarray").text = str(j_data.get("array", {}).get("filename", ""))
+        elem(root, "array", "numpy.ndarray").text = str(j_data.get("array", {}).get("filename", ""))
         elem(root, "last_index", "int").text = str(j_data.get("last_index", 0))
 
         ET.indent(tree)
         tree.write(path / "project" / "buffer" / "data.xml", "utf-8")
 
         save_text(version_path, "17")
+
+        return True
+
+
+class _(Upgrader):
+    id = 18
+
+    @staticmethod
+    def upgrade(path: Path) -> bool:
+        def obj(parent: Optional[ET.Element], key: str = "", type: str = "", text: str = "") -> Optional[ET.Element]:
+            if parent is None:
+                return None
+
+            attrs = {
+                "key": key or None,
+                "type": type or None,
+            }
+
+            result = ET.SubElement(parent, "object", {k: v for k, v in attrs.items() if v is not None})
+
+            if text:
+                result.text = text
+
+            return result
+
+        def find(parent: Optional[ET.Element], key: str | list[str]) -> Optional[ET.Element]:
+            if parent is None:
+                return None
+
+            if isinstance(key, str):
+                key = [key]
+
+            return parent.find("/".join(f"object[@key='{x}']" for x in key))
+
+        def move(elem: Optional[ET.Element], old_parent: Optional[ET.Element], new_parent: Optional[ET.Element]) -> None:
+            if elem is None or old_parent is None or new_parent is None:
+                return None
+
+            new_parent.append(elem)
+            old_parent.remove(elem)
+
+        def override(elem: Optional[ET.Element], **kwargs: Any) -> None:
+            if elem is None:
+                return
+
+            for key, value in kwargs.items():
+                elem.set(key, value)
+
+        def value(parent: Optional[ET.Element], key: str | list[str], fallback: str = "") -> str:
+            if parent is None:
+                return ""
+
+            if (elem := find(parent, key)) is not None:
+                return elem.text or fallback
+            else:
+                return fallback
+
+        version_path = path / "project" / "version.txt"
+        session_data_path = path / "project" / "session" / "data.xml"
+        buffer_path = path / "project" / "buffer"
+
+        if int(load_text(version_path, "0")) != 17:
+            return False
+
+        tree = ET.ElementTree(file = session_data_path)
+
+        root = tree.getroot()
+
+        ext_data = find(root, "ext_data")
+
+        initial_noise = find(ext_data, "initial_noise")
+        override(initial_noise, type = "temporal.session.InitialNoiseParams")
+        move(initial_noise, ext_data, root)
+
+        pipeline = obj(root, "pipeline", "temporal.pipeline.Pipeline")
+
+        module_order = obj(pipeline, "module_order", "list")
+        obj(module_order, "", "str", "image_filtering")
+        obj(module_order, "", "str", "processing")
+        obj(module_order, "", "str", "detailing")
+        obj(module_order, "", "str", "frame_merging")
+        obj(module_order, "", "str", "saving")
+        obj(module_order, "", "str", "measuring")
+        obj(module_order, "", "str", "dampening")
+        obj(module_order, "", "str", "video_rendering")
+
+        modules = obj(pipeline, "modules", "dict")
+
+        dampening = obj(modules, "dampening", "temporal.pipeline_modules.DampeningModule")
+        obj(dampening, "enabled", "bool", "False")
+        obj(dampening, "preview", "bool", "True")
+        obj(dampening, "rate", "int", "1")
+        obj(dampening, "buffer", "NoneType")
+
+        detailing = find(ext_data, "detailing")
+        override(detailing, type = "temporal.pipeline_modules.DetailingModule")
+        move(detailing, ext_data, modules)
+        obj(detailing, "preview", "bool", "True")
+
+        frame_merging = find(ext_data, "frame_merging")
+        override(frame_merging, type = "temporal.pipeline_modules.FrameMergingModule")
+        move(frame_merging, ext_data, modules)
+        obj(frame_merging, "enabled", "bool", "True" if value(frame_merging, "frames", "1") != "1" else "False")
+        obj(frame_merging, "preview", "bool", "True")
+        obj(frame_merging, "buffer_scale", "float", value(detailing, "scale", "1.0") if value(detailing, "scale_buffer", "") == "True" else "1.0")
+
+        if (buffer_data_path := buffer_path / "data.xml").exists():
+            buffer_tree = ET.ElementTree(file = buffer_data_path)
+            buffer = buffer_tree.getroot()
+            override(buffer, key = "buffer")
+
+            if frame_merging is not None:
+                frame_merging.append(buffer)
+
+            copy2(buffer_path / value(buffer, "array"), path / "project" / "session")
+        else:
+            obj(frame_merging, "buffer", "temporal.image_buffer.ImageBuffer")
+
+        image_filtering = obj(modules, "image_filtering", "temporal.pipeline_modules.ImageFilteringModule")
+        obj(image_filtering, "enabled", "bool", "True")
+        obj(image_filtering, "preview", "bool", "True")
+
+        measuring = obj(modules, "measuring", "temporal.pipeline_modules.MeasuringModule")
+        obj(measuring, "enabled", "bool", "False")
+        obj(measuring, "preview", "bool", "True")
+        obj(measuring, "plot_every_nth_frame", "int", "10")
+        obj(measuring, "metrics", "temporal.metrics.Metrics")
+
+        processing = find(ext_data, "multisampling")
+        override(processing, key = "processing", type = "temporal.pipeline_modules.ProcessingModule")
+        move(processing, ext_data, modules)
+        obj(processing, "enabled", "bool", value(ext_data, ["processing", "use_sd"], "False"))
+        obj(processing, "preview", "bool", "True")
+
+        saving = find(ext_data, "output")
+        override(saving, key = "saving", type = "temporal.pipeline_modules.SavingModule")
+        move(saving, ext_data, modules)
+        obj(saving, "enabled", "bool", "True")
+        obj(saving, "preview", "bool", "True")
+        obj(saving, "scale", "float", "1.0")
+        obj(saving, "save_final", "bool", "False")
+
+        video_rendering = obj(modules, "video_rendering", "temporal.pipeline_modules.VideoRenderingModule")
+        obj(video_rendering, "enabled", "bool", "False")
+        obj(video_rendering, "preview", "bool", "True")
+        obj(video_rendering, "render_draft_every_nth_frame", "int", "100")
+        obj(video_rendering, "render_final_every_nth_frame", "int", "1000")
+        obj(video_rendering, "render_draft_on_finish", "bool", "False")
+        obj(video_rendering, "render_final_on_finish", "bool", "False")
+
+        image_filterer = find(ext_data, "filtering")
+        override(image_filterer, key = "image_filterer", type = "temporal.image_filterer.ImageFilterer")
+        move(image_filterer, ext_data, root)
+
+        filters = find(image_filterer, "filter_data")
+        override(filters, key = "filters")
+
+        for key, new_type in (
+            ("blurring", "temporal.image_filters.BlurringFilter"),
+            ("color_balancing", "temporal.image_filters.ColorBalancingFilter"),
+            ("color_correction", "temporal.image_filters.ColorCorrectionFilter"),
+            ("color_overlay", "temporal.image_filters.ColorOverlayFilter"),
+            ("custom_code", "temporal.image_filters.CustomCodeFilter"),
+            ("image_overlay", "temporal.image_filters.ImageOverlayFilter"),
+            ("median", "temporal.image_filters.MedianFilter"),
+            ("morphology", "temporal.image_filters.MorphologyFilter"),
+            ("noise_compression", "temporal.image_filters.NoiseCompressionFilter"),
+            ("noise_overlay", "temporal.image_filters.NoiseOverlayFilter"),
+            ("palettization", "temporal.image_filters.PalettizationFilter"),
+            ("sharpening", "temporal.image_filters.SharpeningFilter"),
+            ("symmetry", "temporal.image_filters.SymmetryFilter"),
+            ("transformation", "temporal.image_filters.TransformationFilter"),
+        ):
+            filter = find(filters, key)
+            override(filter, type = new_type)
+
+            if filter is None:
+                continue
+
+            mask = find(filter, "mask")
+            override(mask, type = "temporal.image_mask.ImageMask")
+
+            for params in filter.findall("*[@key='params']"):
+                for param in list(params):
+                    move(param, params, filter)
+
+                filter.remove(params)
+
+        if ext_data is not None:
+            root.remove(ext_data)
+
+        ET.indent(tree)
+        tree.write(session_data_path, "utf-8")
+
+        rmtree(buffer_path)
+
+        save_text(version_path, "18")
 
         return True

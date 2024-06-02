@@ -1,35 +1,32 @@
-from typing import Any, Iterator, Type
+from typing import Any, Type
 
 import gradio as gr
 
 from temporal.meta.registerable import Registerable
+from temporal.meta.serializable import Serializable, SerializableField
 
 
-class UIParam:
+class UIParam(SerializableField):
     def __init__(self, name: str, type: Type[gr.components.Component], **kwargs: Any) -> None:
-        self.id = ""
+        super().__init__(default = kwargs.get("value", None))
         self.name = name
         self.type = type
         self.kwargs = kwargs
 
 
-class Configurable(Registerable):
-    params: dict[str, UIParam] = {}
-
-    def __init_subclass__(cls: Type["Configurable"], abstract: bool = False) -> None:
-        super().__init_subclass__(abstract)
-
-        cls.params = {id: param for id, param in _iter_all_params(cls)}
-
-        for id, param in cls.params.items():
-            param.id = id
+def ui_param(name: str, type: Type[gr.components.Component], **kwargs: Any) -> Any:
+    return UIParam(name, type, **kwargs)
 
 
-def _iter_all_params(cls: type) -> Iterator[tuple[str, UIParam]]:
-    for parent_cls in reversed(cls.__mro__):
-        if issubclass(parent_cls, Configurable):
-            for id, param in parent_cls.params.items():
-                yield id, param
+class Configurable(Registerable, Serializable):
+    __ui_params__: dict[str, UIParam]
 
-    for id, param in cls.params.items():
-        yield id, param
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+        cls.__ui_params__ = {
+            key: param
+            for base_cls in list(reversed(cls.__mro__)) + [cls]
+            if issubclass(base_cls, Configurable)
+            for key, param in base_cls.__dict__.items()
+            if isinstance(param, UIParam)
+        }

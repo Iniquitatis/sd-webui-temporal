@@ -32,7 +32,9 @@ def field(default: Optional[T] = None, *, factory: Optional[Callable[[], T]] = N
 class Serializable:
     __fields__: dict[str, SerializableField]
 
-    def __init_subclass__(cls, init: bool = True) -> None:
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+
         class _(Serializer[cls]):
             @classmethod
             def read(cls, obj, ar):
@@ -42,39 +44,24 @@ class Serializable:
             def write(cls, obj, ar):
                 obj.write(ar)
 
-        fields = {
+        cls.__fields__ = {
             key: field
-            for base_cls in reversed(list(cls.__mro__) + [cls])
+            for base_cls in list(reversed(cls.__mro__)) + [cls]
             if issubclass(base_cls, Serializable)
             for key, field in base_cls.__dict__.items()
             if isinstance(field, SerializableField)
         }
 
-        setattr(cls, "__fields__", fields)
-
-        if not init:
-            return
-
-        real_init_func = getattr(cls, "__init__", None)
-
-        def new_init_func(self, *args: Any, **kwargs: Any) -> None:
-            initialized_keys = set()
-
-            for key, value in chain(zip(fields.keys(), args), kwargs.items()):
-                setattr(self, key, value)
-                initialized_keys.add(key)
-
-            for key, field in fields.items():
-                if key not in initialized_keys:
-                    field.set_default_value(self)
-
-            if real_init_func is not None:
-                real_init_func(self, *args, **kwargs)
-
-        setattr(cls, "__init__", new_init_func)
-
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        pass
+        initialized_keys = set()
+
+        for key, value in chain(zip(self.__fields__.keys(), args), kwargs.items()):
+            setattr(self, key, value)
+            initialized_keys.add(key)
+
+        for key, field in self.__fields__.items():
+            if key not in initialized_keys:
+                field.set_default_value(self)
 
     def read(self, ar: Archive) -> None:
         for child in ar:
