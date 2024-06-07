@@ -1,13 +1,12 @@
-**NOTE:** Keep in mind that each option in this tab will be applied to _each_ subsequent frame before it will be fed to the inference engine. Given that this extension works as a loopback, it means that if you, for example, enable blurring, then it will be applied each time before Stable Diffusion does its magic. Therefore, if the blurring radius is too high, the resulting frames might start to get very blurry soon (which might be intended and preferable for some kind of artistic effect, of course).
+**NOTE:** Almost all accordions within this tab can be reordered manually (using mouse or touchscreen, for example) to determine the order in which the filters will be applied.  
+**NOTE:** Order matters a lot. For example, applying **Noise overlay** before **Color correction** will make the noise color corrected, but otherwise the noise will be applied _on top_ of a color corrected image.  
 
-* **Order** — order in which the preprocessing effects will be applied. Every effect that is not listed will be applied after the listed ones in the alphabetical order.
-    * **NOTE:** Order matters a lot. Applying, for example, noise before tinting will make the noise tinted, but otherwise the noise will be applied on top of a tinted image.
-* Generic options, available to all preprocessing effects:
-    * **Enabled** — determines whether a preprocessing effect is turned on or not.
+* Generic options available to all filters:
+    * **(✔️ to the left of a filter name)** — determines if a filter is enabled.
     * **Amount** — amount of the processed image to be mixed in into the frame.
         * **Relative** — determines if the amount will be multiplied by the **img2img** denoising strength.
-    * **Mode** — blending mode of the processed image.
-    * **Mask** — an image that determines which areas will be processed by a preprocessing effect; black—unprocessed, white—fully processed.
+    * **Blend mode** — blending mode of the processed image.
+    * **Mask** — an image that determines which areas will be processed by a filter; black—unprocessed, white—fully processed.
         * **Normalized** — normalization of the mask image to use the full range from black to white.
         * **Inverted** — inversion of the mask image.
         * **Blurring** — blurring radius of the mask image.
@@ -43,13 +42,13 @@
 * **Noise compression** — basically, an actual algorithmical denoising, called noise compression to not be confused with the **img2img** denoising.
     * **Constant** — constant rate of the denoising. Generally should be very low, like 0.0002 or so, although it may vary.
     * **Adaptive** — adaptive rate of the denoising.
-* **Noise ovleray** — overlaying the random noise on top of the frame.
+* **Noise overlay** — overlaying the random noise on top of the frame.
     * **Scale** — scale of the noise pattern; pixels.
     * **Octaves** — amount of progressively downscaled noise layers that will be mixed into a single one.
     * **Lacunarity** — downscale factor of each subsequent noise layer compared to a previous one.
     * **Persistence** — amplitude factor of each subsequent noise layer compared to a previous one.
     * **Seed** — static seed that will be used for generating the noise pattern.
-    * **Use dynamic seed** — determines whether a currently processed frame's seed will be used or an effect's one.
+    * **Use dynamic seed** — determines whether a currently processed frame's seed will be used or a filter's one.
 * **Palettization** — applying a palette to the frame.
     * **Palette** — an image where _each_ pixel represents one color of a palette.
         * **NOTE:** Generally those images are very small (up to 256 pixels _total_) and contain just a few pixels representing the unique colors. For example, an 8x2 image contains 16 colors, and so on.

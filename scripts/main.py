@@ -380,9 +380,10 @@ class TemporalScript(scripts.Script):
             for file_name, title in [
                 ("main.md", "Main"),
                 ("tab_general.md", "General tab"),
-                ("tab_frame_preprocessing.md", "Frame Preprocessing tab"),
+                ("tab_pipeline.md", "Pipeline tab"),
+                ("tab_image_filtering.md", "Image Filtering tab"),
                 ("tab_video_rendering.md", "Video Rendering tab"),
-                ("tab_metrics.md", "Metrics tab"),
+                ("tab_measuring.md", "Measuring tab"),
                 ("tab_project_management.md", "Project Management tab"),
                 ("additional_notes.md", "Additional notes"),
             ]:
