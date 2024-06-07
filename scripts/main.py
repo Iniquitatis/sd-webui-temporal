@@ -201,6 +201,7 @@ class TemporalScript(scripts.Script):
             with ui.elem("", gr.Accordion, label = "Project"):
                 ui.elem("load_parameters", gr.Checkbox, label = "Load parameters", value = True, groups = ["params"])
                 ui.elem("continue_from_last_frame", gr.Checkbox, label = "Continue from last frame", value = True, groups = ["params"])
+                ui.elem("autosave_every_n_iterations", gr.Number, label = "Autosave every N iterations", precision = 0, minimum = 1, step = 1, value = 10, groups = ["params"])
 
         with ui.elem("", gr.Tab, label = "Pipeline"):
             with ui.elem("", gr.Accordion, label = "Initial noise", open = False):
@@ -491,6 +492,10 @@ class TemporalScript(scripts.Script):
                 inputs["show_only_finalized_frames"],
             )) or state.interrupted or state.skipped:
                 break
+
+            if i % inputs["autosave_every_n_iterations"] == 0:
+                session.save(project.session_path)
+                project.save()
 
             last_processed = processed
 
