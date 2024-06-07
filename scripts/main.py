@@ -18,6 +18,7 @@ from modules.shared_state import State
 from modules.ui_components import ToolButton
 
 from temporal.blend_modes import BLEND_MODES
+from temporal.compat import upgrade_project
 from temporal.image_filters import IMAGE_FILTERS
 from temporal.interop import EXTENSION_DIR, get_cn_units
 from temporal.pipeline import PIPELINE_MODULES
@@ -344,6 +345,15 @@ class TemporalScript(scripts.Script):
                     ui.elem("confirm_project_rename", ToolButton, value = "\U00002714\ufe0f")
                     ui.callback("confirm_project_rename", "click", rename_project_callback, ["output.output_dir", "managed_project", "new_project_name"], ["managed_project"])
 
+                def upgrade_project_callback(inputs):
+                    self._project_store.path = Path(inputs["output.output_dir"])
+                    project = self._project_store.open_project(inputs["managed_project"])
+                    upgrade_project(project.path)
+                    return {
+                        "project_description": gr.update(value = desc if (desc := project.get_description()) else "Cannot read project data"),
+                        "project_gallery": gr.update(value = project.list_all_frame_paths()[-PROJECT_GALLERY_SIZE:]),
+                    }
+
                 def delete_intermediate_frames_callback(inputs):
                     self._project_store.path = Path(inputs["output.output_dir"])
                     self._project_store.open_project(inputs["managed_project"]).delete_intermediate_frames()
@@ -354,6 +364,8 @@ class TemporalScript(scripts.Script):
                     self._project_store.open_project(inputs["managed_project"]).delete_session_data()
                     return {}
 
+                ui.elem("upgrade_project", gr.Button, value = "Upgrade")
+                ui.callback("upgrade_project", "click", upgrade_project_callback, ["output.output_dir", "managed_project"], ["project_description", "project_gallery"])
                 ui.elem("delete_intermediate_frames", gr.Button, value = "Delete intermediate frames")
                 ui.callback("delete_intermediate_frames", "click", delete_intermediate_frames_callback, ["output.output_dir", "managed_project"], [])
                 ui.elem("delete_session_data", gr.Button, value = "Delete session data")
