@@ -356,8 +356,12 @@ class TemporalScript(scripts.Script):
 
                 def delete_intermediate_frames_callback(inputs):
                     self._project_store.path = Path(inputs["output.output_dir"])
-                    self._project_store.open_project(inputs["managed_project"]).delete_intermediate_frames()
-                    return {}
+                    project = self._project_store.open_project(inputs["managed_project"])
+                    project.delete_intermediate_frames()
+                    return {
+                        "project_description": gr.update(value = desc if (desc := project.get_description()) else "Cannot read project data"),
+                        "project_gallery": gr.update(value = project.list_all_frame_paths()[-PROJECT_GALLERY_SIZE:]),
+                    }
 
                 def delete_session_data_callback(inputs):
                     self._project_store.path = Path(inputs["output.output_dir"])
@@ -367,7 +371,7 @@ class TemporalScript(scripts.Script):
                 ui.elem("upgrade_project", gr.Button, value = "Upgrade")
                 ui.callback("upgrade_project", "click", upgrade_project_callback, ["output.output_dir", "managed_project"], ["project_description", "project_gallery"])
                 ui.elem("delete_intermediate_frames", gr.Button, value = "Delete intermediate frames")
-                ui.callback("delete_intermediate_frames", "click", delete_intermediate_frames_callback, ["output.output_dir", "managed_project"], [])
+                ui.callback("delete_intermediate_frames", "click", delete_intermediate_frames_callback, ["output.output_dir", "managed_project"], ["project_gallery"])
                 ui.elem("delete_session_data", gr.Button, value = "Delete session data")
                 ui.callback("delete_session_data", "click", delete_session_data_callback, ["output.output_dir", "managed_project"], [])
 
