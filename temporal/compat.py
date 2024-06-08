@@ -12,7 +12,7 @@ from temporal.utils.fs import ensure_directory_exists, load_json, load_text, mov
 from temporal.utils.image import load_image, pil_to_np
 
 
-VERSION = 19
+VERSION = 20
 
 UPGRADERS: dict[int, Type["Upgrader"]] = {}
 
@@ -1099,5 +1099,37 @@ class _(Upgrader):
         ET.indent(tree)
         tree.write(session_data_path, "utf-8")
         save_text(version_path, "19")
+
+        return True
+
+
+
+class _(Upgrader):
+    id = 20
+
+    @staticmethod
+    def upgrade(path: Path) -> bool:
+        version_path = path / "project" / "version.txt"
+        session_data_path = path / "project" / "session" / "data.xml"
+
+        if int(load_text(version_path, "0")) != 19:
+            return False
+
+        tree = ET.ElementTree(file = session_data_path)
+
+        if (frame_merging := tree.find(".//*[@key='frame_merging']")) is not None:
+            if (buffer := frame_merging.find("*[@key='buffer']")) is not None:
+                for elem in list(buffer):
+                    frame_merging.append(elem)
+                    buffer.remove(elem)
+
+                frame_merging.remove(buffer)
+
+            if (array := frame_merging.find("*[@key='array']")) is not None:
+                array.set("key", "buffer")
+
+        ET.indent(tree)
+        tree.write(session_data_path, "utf-8")
+        save_text(version_path, "20")
 
         return True

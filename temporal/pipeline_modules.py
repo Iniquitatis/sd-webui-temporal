@@ -8,7 +8,6 @@ from numpy.typing import NDArray
 from modules.processing import Processed
 from modules.sd_samplers import visible_sampler_names
 
-from temporal.image_buffer import ImageBuffer
 from temporal.meta.configurable import Configurable, ui_param
 from temporal.meta.serializable import field
 from temporal.metrics import Metrics
@@ -17,7 +16,7 @@ from temporal.session import Session
 from temporal.utils.fs import ensure_directory_exists
 from temporal.utils.image import PILImage, average_images, ensure_image_dims, match_image, np_to_pil, pil_to_np
 from temporal.utils.math import lerp, quantize
-from temporal.utils.numpy import saturate_array
+from temporal.utils.numpy import average_array, make_eased_weight_array, saturate_array
 from temporal.utils.object import copy_with_overrides, get_with_overrides
 from temporal.utils.time import wait_until
 from temporal.video_renderer import video_render_queue
@@ -46,7 +45,7 @@ class DampeningModule(PipelineModule):
 
     rate: float = ui_param("Rate", gr.Slider, minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0)
 
-    buffer: NDArray[np.float_] = field(factory = lambda: np.empty((0, 0)))
+    buffer: NDArray[np.float_] = field(factory = lambda: np.empty((0,)))
 
     def forward(self, session: Session, processed: Processed, frame_index: int, frame_count: int, seed: int) -> Optional[Processed]:
         if self.buffer.shape[0] == 0:
@@ -99,24 +98,32 @@ class FrameMergingModule(PipelineModule):
     id = "frame_merging"
     name = "Frame merging"
 
-    buffer_scale: float = ui_param("Buffer scale", gr.Slider, minimum = 0.25, maximum = 4.0, step = 0.25, value = 1.0)
     frames: int = ui_param("Frame count", gr.Number, precision = 0, minimum = 1, step = 1, value = 1)
     trimming: float = ui_param("Trimming", gr.Slider, minimum = 0.0, maximum = 0.5, step = 0.01, value = 0.0)
     easing: float = ui_param("Easing", gr.Slider, minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0)
     preference: float = ui_param("Preference", gr.Slider, minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0)
 
-    buffer: ImageBuffer = field(factory = ImageBuffer)
+    buffer: NDArray[np.float_] = field(factory = lambda: np.empty((0,)))
+    last_index: int = field(0)
 
     def forward(self, session: Session, processed: Processed, frame_index: int, frame_count: int, seed: int) -> Optional[Processed]:
-        if self.buffer.array.shape[0] == 0:
-            self.buffer.init(
-                int(quantize(session.processing.width * self.buffer_scale, 8)),
-                int(quantize(session.processing.height * self.buffer_scale, 8)),
-            3, self.frames, processed.images[0])
+        if self.buffer.shape[0] == 0:
+            npim = pil_to_np(ensure_image_dims(processed.images[0], size = (session.processing.width, session.processing.height)))
+            self.buffer = np.repeat(npim[np.newaxis, ...], self.frames, axis = 0)
 
-        self.buffer.add(processed.images[0])
+        self.buffer[self.last_index] = pil_to_np(match_image(processed.images[0], self.buffer[0]))
+
+        self.last_index += 1
+        self.last_index %= self.frames
+
         return get_with_overrides(processed,
-            images = [self.buffer.average(self.trimming, self.easing, self.preference)],
+            images = [np_to_pil(self.buffer[0] if self.frames == 1 else saturate_array(average_array(
+                self.buffer,
+                axis = 0,
+                trim = self.trimming,
+                power = self.preference + 1.0,
+                weights = np.roll(make_eased_weight_array(self.frames, self.easing), self.last_index),
+            )))],
         )
 
 
@@ -137,7 +144,7 @@ class LimitingModule(PipelineModule):
     mode: str = ui_param("Mode", gr.Dropdown, choices = ["clamp", "compress"], value = "clamp")
     max_difference: float = ui_param("Maximum difference", gr.Slider, minimum = 0.001, maximum = 1.0, step = 0.001, value = 1.0)
 
-    buffer: NDArray[np.float_] = field(factory = lambda: np.empty((0, 0)))
+    buffer: NDArray[np.float_] = field(factory = lambda: np.empty((0,)))
 
     def forward(self, session: Session, processed: Processed, frame_index: int, frame_count: int, seed: int) -> Optional[Processed]:
         if self.buffer.shape[0] == 0:

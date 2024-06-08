@@ -19,8 +19,6 @@
     * **Steps** — same as the standard img2img option.
     * **Denoising strength** — same as the standard img2img option.
 * **Frame merging** — averaging of last generated frames.
-    * **Buffer scale** — pixel scale of the internal buffer. Essentially, the precision at which the merging happens.
-        * **NOTE:** It is uncertain whether it actually has a big impact on the result, but it certainly slows down the process a bit.
     * **Frame count** — amount of last generated frames to be blended together to produce a final frame.
         * **NOTE:** Slows down the morphing effect, increases the general middle-scale detail precision, and makes the resulting frames blurrier (can be somewhat mitigated by enabling the **Sharpening** filter).
     * **Trimming** — factor of distribution trimming (e.g. `0.25` trims 25% of the darkest and brightest colors), controlling the sharpness and bringing means closer to the median.
