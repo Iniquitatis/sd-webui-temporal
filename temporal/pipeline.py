@@ -13,10 +13,6 @@ class Pipeline(Serializable):
     module_order: list[str] = field(factory = list)
     modules: dict[str, PipelineModule] = field(factory = lambda: {id: cls() for id, cls in PIPELINE_MODULES.items()})
 
-    def init(self, session: Session) -> None:
-        for module in self.modules.values():
-            module.init(session)
-
     def run(self, session: Session, processed: Processed, frame_index: int, frame_count: int, seed: int, show_only_finalized_frames: bool) -> Optional[Processed]:
         last_processed = processed
 

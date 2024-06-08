@@ -42,12 +42,6 @@ class Session(Serializable):
         super().__init__(*args, **kwargs)
         self.pipeline = Pipeline()
 
-    def init(self, options: Options, processing: StableDiffusionProcessingImg2Img, controlnet_units: Optional[list[ControlNetUnitWrapper]]) -> None:
-        self.options = options
-        self.processing = processing
-        self.controlnet_units = controlnet_units
-        self.pipeline.init(self)
-
 
 class _(BasicObjectSerializer[Options], create = False):
     keys = [

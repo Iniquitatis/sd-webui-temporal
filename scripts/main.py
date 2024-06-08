@@ -4,7 +4,7 @@ from inspect import isgeneratorfunction
 from itertools import count
 from pathlib import Path
 from time import perf_counter
-from typing import Any, Callable, Iterator, Type, TypeVar
+from typing import Any, Callable, Iterator, Optional, Type, TypeVar
 
 import gradio as gr
 from gradio.blocks import Block
@@ -395,8 +395,12 @@ class TemporalScript(scripts.Script):
     def run(self, p: StableDiffusionProcessingImg2Img, *args: Any) -> Any:
         return self._process(p, {name: arg for name, arg in zip(self._ui.parse_ids(["group:params"]), args)})
 
-    def _ui_to_session(self, inputs: dict[str, Any]) -> Session:
-        result = Session()
+    def _ui_to_session(self, inputs: dict[str, Any], p: Optional[StableDiffusionProcessingImg2Img] = None) -> Session:
+        result = Session(
+            options = opts,
+            processing = p,
+            controlnet_units = get_cn_units(p),
+        ) if p is not None else Session()
 
         for key, ui_value in inputs.items():
             try:
@@ -452,26 +456,15 @@ class TemporalScript(scripts.Script):
             project.delete_all_frames()
             project.delete_session_data()
 
-        session = self._ui_to_session(inputs)
+        session = self._ui_to_session(inputs, p)
+
+        if inputs["load_parameters"] and project.session_path.exists():
+            session.load(project.session_path)
 
         if not self._verify_image_existence(p, session.initial_noise):
             opts.data.update(opts_backup)
 
             return Processed(p, p.init_images)
-
-        session.init(
-            options = opts,
-            processing = p,
-            controlnet_units = get_cn_units(p),
-        )
-
-        if inputs["load_parameters"] and project.session_path.exists():
-            session.load(project.session_path)
-
-            if not self._verify_image_existence(p, session.initial_noise):
-                opts.data.update(opts_backup)
-
-                return Processed(p, p.init_images)
 
         last_index = project.get_last_frame_index()
         last_processed = Processed(p, [project.load_frame(last_index) or p.init_images[0]])

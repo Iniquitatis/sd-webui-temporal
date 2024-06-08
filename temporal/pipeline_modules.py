@@ -33,9 +33,6 @@ class PipelineModule(Configurable, abstract = True):
     enabled: bool = field(False)
     preview: bool = field(True)
 
-    def init(self, session: Session) -> None:
-        pass
-
     def forward(self, session: Session, processed: Processed, frame_index: int, frame_count: int, seed: int) -> Optional[Processed]:
         return processed
 
@@ -51,10 +48,10 @@ class DampeningModule(PipelineModule):
 
     buffer: NDArray[np.float_] = field(factory = lambda: np.empty((0, 0)))
 
-    def init(self, session: Session) -> None:
-        self.buffer = pil_to_np(ensure_image_dims(session.processing.init_images[0], "RGB", (session.processing.width, session.processing.height)))
-
     def forward(self, session: Session, processed: Processed, frame_index: int, frame_count: int, seed: int) -> Optional[Processed]:
+        if self.buffer.shape[0] == 0:
+            self.buffer = pil_to_np(ensure_image_dims(processed.images[0], "RGB", (session.processing.width, session.processing.height)))
+
         self.buffer[:] = lerp(
             self.buffer,
             pil_to_np(match_image(processed.images[0], self.buffer)),
@@ -110,13 +107,13 @@ class FrameMergingModule(PipelineModule):
 
     buffer: ImageBuffer = field(factory = ImageBuffer)
 
-    def init(self, session: Session) -> None:
-        self.buffer.init(
-            int(quantize(session.processing.width * self.buffer_scale, 8)),
-            int(quantize(session.processing.height * self.buffer_scale, 8)),
-        3, self.frames, session.processing.init_images[0])
-
     def forward(self, session: Session, processed: Processed, frame_index: int, frame_count: int, seed: int) -> Optional[Processed]:
+        if self.buffer.array.shape[0] == 0:
+            self.buffer.init(
+                int(quantize(session.processing.width * self.buffer_scale, 8)),
+                int(quantize(session.processing.height * self.buffer_scale, 8)),
+            3, self.frames, processed.images[0])
+
         self.buffer.add(processed.images[0])
         return get_with_overrides(processed,
             images = [self.buffer.average(self.trimming, self.easing, self.preference)],
@@ -142,10 +139,10 @@ class LimitingModule(PipelineModule):
 
     buffer: NDArray[np.float_] = field(factory = lambda: np.empty((0, 0)))
 
-    def init(self, session: Session) -> None:
-        self.buffer = pil_to_np(ensure_image_dims(session.processing.init_images[0], "RGB", (session.processing.width, session.processing.height)))
-
     def forward(self, session: Session, processed: Processed, frame_index: int, frame_count: int, seed: int) -> Optional[Processed]:
+        if self.buffer.shape[0] == 0:
+            self.buffer = pil_to_np(ensure_image_dims(processed.images[0], "RGB", (session.processing.width, session.processing.height)))
+
         a = self.buffer
         b = pil_to_np(match_image(processed.images[0], self.buffer))
         diff = b - a
