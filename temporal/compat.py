@@ -12,7 +12,7 @@ from temporal.utils.fs import ensure_directory_exists, load_json, load_text, mov
 from temporal.utils.image import load_image, pil_to_np
 
 
-VERSION = 18
+VERSION = 19
 
 UPGRADERS: dict[int, Type["Upgrader"]] = {}
 
@@ -1067,5 +1067,37 @@ class _(Upgrader):
         rmtree(buffer_path)
 
         save_text(version_path, "18")
+
+        return True
+
+
+class _(Upgrader):
+    id = 19
+
+    @staticmethod
+    def upgrade(path: Path) -> bool:
+        version_path = path / "project" / "version.txt"
+        session_data_path = path / "project" / "session" / "data.xml"
+
+        if int(load_text(version_path, "0")) != 18:
+            return False
+
+        tree = ET.ElementTree(file = session_data_path)
+        root = tree.getroot()
+
+        if (modules := root.find(".//*[@key='pipeline']/*[@key='modules']")) is not None:
+            limiting = ET.SubElement(modules, "object", {"key": "limiting", "type": "temporal.pipeline_modules.LimitingModule"})
+            ET.SubElement(limiting, "object", {"key": "enabled", "type": "bool"}).text = "False"
+            ET.SubElement(limiting, "object", {"key": "preview", "type": "bool"}).text = "True"
+            ET.SubElement(limiting, "object", {"key": "mode", "type": "str"}).text = "clamp"
+            ET.SubElement(limiting, "object", {"key": "max_difference", "type": "float"}).text = "1.0"
+            ET.SubElement(limiting, "object", {"key": "buffer", "type": "NoneType"})
+
+        if (module_order := root.find(".//*[@key='pipeline']/*[@key='module_order']")) is not None:
+            ET.SubElement(module_order, "object", {"type": "str"}).text = "limiting"
+
+        ET.indent(tree)
+        tree.write(session_data_path, "utf-8")
+        save_text(version_path, "19")
 
         return True

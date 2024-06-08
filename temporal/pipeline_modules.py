@@ -17,6 +17,7 @@ from temporal.session import Session
 from temporal.utils.fs import ensure_directory_exists
 from temporal.utils.image import PILImage, average_images, ensure_image_dims, match_image, np_to_pil, pil_to_np
 from temporal.utils.math import lerp, quantize
+from temporal.utils.numpy import saturate_array
 from temporal.utils.object import copy_with_overrides, get_with_overrides
 from temporal.utils.time import wait_until
 from temporal.video_renderer import video_render_queue
@@ -129,6 +130,39 @@ class ImageFilteringModule(PipelineModule):
     def forward(self, session: Session, processed: Processed, frame_index: int, frame_count: int, seed: int) -> Optional[Processed]:
         return get_with_overrides(processed,
             images = [session.image_filterer.filter_image(x, session.processing.denoising_strength, seed) for x in processed.images],
+        )
+
+
+class LimitingModule(PipelineModule):
+    id = "limiting"
+    name = "Limiting"
+
+    mode: str = ui_param("Mode", gr.Dropdown, choices = ["clamp", "compress"], value = "clamp")
+    max_difference: float = ui_param("Maximum difference", gr.Slider, minimum = 0.001, maximum = 1.0, step = 0.001, value = 1.0)
+
+    buffer: NDArray[np.float_] = field(factory = lambda: np.empty((0, 0)))
+
+    def init(self, session: Session) -> None:
+        self.buffer = pil_to_np(ensure_image_dims(session.processing.init_images[0], "RGB", (session.processing.width, session.processing.height)))
+
+    def forward(self, session: Session, processed: Processed, frame_index: int, frame_count: int, seed: int) -> Optional[Processed]:
+        a = self.buffer
+        b = pil_to_np(match_image(processed.images[0], self.buffer))
+        diff = b - a
+
+        if self.mode == "clamp":
+            np.clip(diff, -self.max_difference, self.max_difference, out = diff)
+        elif self.mode == "compress":
+            diff_range = np.abs(diff.max() - diff.min())
+            max_diff_range = self.max_difference * 2.0
+
+            if diff_range > max_diff_range:
+                diff *= max_diff_range / diff_range
+
+        self.buffer[:] = saturate_array(a + diff)
+
+        return get_with_overrides(processed,
+            images = [np_to_pil(self.buffer)],
         )
 
 

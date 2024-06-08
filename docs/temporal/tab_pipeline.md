@@ -31,6 +31,12 @@
         * **NOTE:** The greater the **Trimming** is, the less this parameter will affect the result.
 * **Image filtering** — application of various filters to the image.
     * **NOTE:** All of the actual filter settings are located in the **Image Filtering** tab.
+* **Limiting** — limiting of the difference between the previous and the current image.
+    * **Mode** — limiting mode.
+        * **clamp** — clamp the difference, cutting off anything higher than **Maximum difference**.
+        * **compress** — compress the difference, "squashing" its range to **Maximum difference**.
+    * **Maximum difference** — maximum difference between the values of the individual color channels.
+        * **NOTE:** This value represents both positive and negative values.
 * **Measuring** — measuring various image values, such as mean luma or standard deviation among every color channel.
     * **Plot every N-th frame** — stride at which the plots will be rendered.
     * **NOTE:** Resulting plots will be placed into the `<project subdirectory>/session/metrics` directory.
