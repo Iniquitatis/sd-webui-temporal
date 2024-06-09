@@ -7,15 +7,15 @@ from temporal.meta.serializable import Serializable, SerializableField
 
 
 class UIParam(SerializableField):
-    def __init__(self, name: str, type: Type[gr.components.Component], **kwargs: Any) -> None:
+    def __init__(self, name: str, gr_type: Type[gr.components.Component], **kwargs: Any) -> None:
         super().__init__(default = kwargs.get("value", None))
         self.name = name
-        self.type = type
+        self.gr_type = gr_type
         self.kwargs = kwargs
 
 
-def ui_param(name: str, type: Type[gr.components.Component], **kwargs: Any) -> Any:
-    return UIParam(name, type, **kwargs)
+def ui_param(name: str, gr_type: Type[gr.components.Component], **kwargs: Any) -> Any:
+    return UIParam(name, gr_type, **kwargs)
 
 
 class Configurable(Registerable, Serializable):

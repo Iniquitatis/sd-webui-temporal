@@ -10,7 +10,7 @@ from PIL import Image
 from temporal.image_mask import ImageMask
 from temporal.meta.configurable import Configurable, ui_param
 from temporal.meta.serializable import field
-from temporal.utils.image import NumpyImage, PILImage, apply_channelwise, get_rgb_array, join_hsv_to_rgb, match_image, np_to_pil, pil_to_np, split_hsv
+from temporal.utils.image import NumpyImage, apply_channelwise, get_rgb_array, join_hsv_to_rgb, match_image, np_to_pil, pil_to_np, split_hsv
 from temporal.utils.math import remap_range
 from temporal.utils.numpy import generate_value_noise
 
@@ -39,7 +39,7 @@ class BlurringFilter(ImageFilter):
     radius: float = ui_param("Radius", gr.Slider, minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0)
 
     def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
-        return skimage.filters.gaussian(npim, self.radius, channel_axis = 2)
+        return skimage.filters.gaussian(npim, round(self.radius), channel_axis = 2)
 
 
 class ColorBalancingFilter(ImageFilter):
@@ -65,13 +65,13 @@ class ColorCorrectionFilter(ImageFilter):
     id = "color_correction"
     name = "Color correction"
 
-    image: Optional[PILImage] = ui_param("Image", gr.Pil)
+    image: Optional[NumpyImage] = ui_param("Image", gr.Image, type = "numpy", image_mode = "RGB")
     normalize_contrast: bool = ui_param("Normalize contrast", gr.Checkbox, value = False)
     equalize_histogram: bool = ui_param("Equalize histogram", gr.Checkbox, value = False)
 
     def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
         if self.image is not None:
-            npim = skimage.exposure.match_histograms(npim, pil_to_np(match_image(self.image, npim, size = False)), channel_axis = 2)
+            npim = skimage.exposure.match_histograms(npim, match_image(self.image, npim, size = False), channel_axis = 2)
 
         if self.normalize_contrast:
             npim = skimage.exposure.rescale_intensity(npim)
@@ -113,14 +113,14 @@ class ImageOverlayFilter(ImageFilter):
     id = "image_overlay"
     name = "Image overlay"
 
-    image: Optional[PILImage] = ui_param("Image", gr.Pil)
+    image: Optional[NumpyImage] = ui_param("Image", gr.Image, type = "numpy", image_mode = "RGB")
     blurring: float = ui_param("Blurring", gr.Slider, minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0)
 
     def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
         if self.image is None:
             return npim
 
-        return skimage.filters.gaussian(pil_to_np(match_image(self.image, npim)), self.blurring, channel_axis = 2)
+        return skimage.filters.gaussian(match_image(self.image, npim), round(self.blurring), channel_axis = 2)
 
 
 class MedianFilter(ImageFilter):
@@ -205,7 +205,7 @@ class PalettizationFilter(ImageFilter):
     id = "palettization"
     name = "Palettization"
 
-    palette: Optional[PILImage] = ui_param("Palette", gr.Pil, image_mode = "RGB")
+    palette: Optional[NumpyImage] = ui_param("Palette", gr.Image, type = "numpy", image_mode = "RGB")
     stretch: bool = ui_param("Stretch", gr.Checkbox, value = False)
     dithering: bool = ui_param("Dithering", gr.Checkbox, value = False)
 
@@ -216,7 +216,7 @@ class PalettizationFilter(ImageFilter):
         if self.palette is None:
             return npim
 
-        palette_arr = np.array(self.palette, dtype = np.float_).reshape((self.palette.width * self.palette.height, 3))
+        palette_arr = np.array(self.palette, dtype = np.float_).reshape((self.palette.shape[1] * self.palette.shape[0], 3))
 
         if self.stretch:
             palette_arr = apply_channelwise(palette_arr, lambda x: stretch_array(x, 256))

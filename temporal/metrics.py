@@ -12,7 +12,7 @@ from numpy.typing import NDArray
 
 from temporal.meta.serializable import Serializable, field
 from temporal.utils.fs import ensure_directory_exists
-from temporal.utils.image import PILImage, pil_to_np, save_image
+from temporal.utils.image import NumpyImage, PILImage, save_image
 
 
 class Measurement(Serializable):
@@ -26,8 +26,7 @@ class Measurement(Serializable):
 class Metrics(Serializable):
     measurements: list[Measurement] = field(factory = list)
 
-    def measure(self, im: PILImage) -> None:
-        npim = pil_to_np(im)
+    def measure(self, npim: NumpyImage) -> None:
         grayscale = skimage.color.rgb2gray(npim[..., :3], channel_axis = 2)
         red, green, blue = npim[..., 0], npim[..., 1], npim[..., 2]
 

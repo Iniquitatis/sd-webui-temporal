@@ -1,4 +1,3 @@
-from collections.abc import Sequence
 from pathlib import Path
 from typing import Callable, Optional, TypeVar
 
@@ -7,7 +6,7 @@ import skimage
 from PIL import Image, ImageColor
 from numpy.typing import NDArray
 
-from temporal.utils.numpy import average_array, generate_noise, generate_value_noise, make_eased_weight_array, saturate_array
+from temporal.utils.numpy import generate_noise, generate_value_noise
 
 
 PILImage = Image.Image
@@ -19,16 +18,6 @@ T = TypeVar("T", PILImage, NumpyImage)
 
 def apply_channelwise(npim: NumpyImage, func: Callable[[NumpyImage], NumpyImage]) -> NumpyImage:
     return np.stack([func(npim[..., i]) for i in range(npim.shape[-1])], axis = -1)
-
-
-def average_images(ims: Sequence[PILImage], trimming: float = 0.0, easing: float = 0.0, preference: float = 0.0) -> PILImage:
-    return ims[0] if len(ims) == 1 else np_to_pil(saturate_array(average_array(
-        np.stack([pil_to_np(im) for im in ims]),
-        axis = 0,
-        trim = trimming,
-        power = preference + 1.0,
-        weights = np.flip(make_eased_weight_array(len(ims), easing)),
-    )))
 
 
 def ensure_image_dims(im: T, mode: Optional[str] = None, size: Optional[tuple[int, int]] = None) -> T:

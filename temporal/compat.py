@@ -10,9 +10,10 @@ from temporal.meta.registerable import Registerable
 from temporal.utils import logging
 from temporal.utils.fs import ensure_directory_exists, load_json, load_text, move_entry, save_json, save_text
 from temporal.utils.image import load_image, pil_to_np
+from temporal.utils.numpy import save_array
 
 
-VERSION = 20
+VERSION = 21
 
 UPGRADERS: dict[int, Type["Upgrader"]] = {}
 
@@ -1131,5 +1132,51 @@ class _(Upgrader):
         ET.indent(tree)
         tree.write(session_data_path, "utf-8")
         save_text(version_path, "20")
+
+        return True
+
+
+class _(Upgrader):
+    id = 21
+
+    @staticmethod
+    def upgrade(path: Path) -> bool:
+        def convert(elem: Optional[ET.Element]) -> None:
+            if elem is None or elem.text is None:
+                return
+
+            im_path = path / "project" / "session" / Path(elem.text)
+
+            if not im_path.exists():
+                return
+
+            arr_path = im_path.with_suffix(".npz")
+
+            im = load_image(im_path)
+            save_array(pil_to_np(im), arr_path)
+
+            elem.set("type", "numpy.ndarray")
+            elem.text = arr_path.name
+
+            im_path.unlink()
+
+        version_path = path / "project" / "version.txt"
+        session_data_path = path / "project" / "session" / "data.xml"
+
+        if int(load_text(version_path, "0")) != 20:
+            return False
+
+        tree = ET.ElementTree(file = session_data_path)
+
+        for elem in tree.findall(".//*[@key='mask']/*[@key='image']"):
+            convert(elem)
+
+        convert(tree.find(".//*[@key='color_correction']/*[@key='image']"))
+        convert(tree.find(".//*[@key='image_overlay']/*[@key='image']"))
+        convert(tree.find(".//*[@key='palettization']/*[@key='palette']"))
+
+        ET.indent(tree)
+        tree.write(session_data_path, "utf-8")
+        save_text(version_path, "21")
 
         return True

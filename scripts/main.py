@@ -30,7 +30,7 @@ from temporal.ui.module_list import ModuleAccordion, ModuleList
 from temporal.utils import logging
 from temporal.utils.collection import get_first_element
 from temporal.utils.fs import load_text
-from temporal.utils.image import PILImage, generate_value_noise_image
+from temporal.utils.image import PILImage, generate_value_noise_image, np_to_pil, pil_to_np
 from temporal.utils.object import copy_with_overrides, get_property_by_path, set_property_by_path
 from temporal.utils.string import match_mask
 from temporal.utils.time import wait_until
@@ -217,7 +217,7 @@ class TemporalScript(scripts.Script):
                         ui.elem(f"pipeline.modules['{id}'].preview", gr.Checkbox, label = "Preview", value = True, groups = ["params"])
 
                         for param in module.__ui_params__.values():
-                            ui.elem(f"pipeline.modules['{id}'].{param.key}", param.type, label = param.name, **param.kwargs, groups = ["params", "session"])
+                            ui.elem(f"pipeline.modules['{id}'].{param.key}", param.gr_type, label = param.name, **param.kwargs, groups = ["params", "session"])
 
         with ui.elem("", gr.Tab, label = "Image Filtering"):
             with ui.elem("image_filterer.filter_order", ModuleList, keys = IMAGE_FILTERS.keys(), groups = ["params", "session"]):
@@ -232,12 +232,12 @@ class TemporalScript(scripts.Script):
                         with ui.elem("", gr.Tab, label = "Parameters"):
                             if filter.__ui_params__:
                                 for param in filter.__ui_params__.values():
-                                    ui.elem(f"image_filterer.filters['{id}'].{param.key}", param.type, label = param.name, **param.kwargs, groups = ["params", "session"])
+                                    ui.elem(f"image_filterer.filters['{id}'].{param.key}", param.gr_type, label = param.name, **param.kwargs, groups = ["params", "session"])
                             else:
                                 ui.elem("", gr.Markdown, value = "_This filter has no available parameters._")
 
                         with ui.elem("", gr.Tab, label = "Mask"):
-                            ui.elem(f"image_filterer.filters['{id}'].mask.image", gr.Pil, label = "Image", image_mode = "L", interactive = True, groups = ["params", "session"])
+                            ui.elem(f"image_filterer.filters['{id}'].mask.image", gr.Image, label = "Image", type = "numpy", image_mode = "L", interactive = True, groups = ["params", "session"])
                             ui.elem(f"image_filterer.filters['{id}'].mask.normalized", gr.Checkbox, label = "Normalized", value = False, groups = ["params", "session"])
                             ui.elem(f"image_filterer.filters['{id}'].mask.inverted", gr.Checkbox, label = "Inverted", value = False, groups = ["params", "session"])
                             ui.elem(f"image_filterer.filters['{id}'].mask.blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, groups = ["params", "session"])
@@ -250,7 +250,7 @@ class TemporalScript(scripts.Script):
                 for id, filter in VIDEO_FILTERS.items():
                     with ui.elem(f"video_renderer.filters['{id}'].enabled", ModuleAccordion, label = filter.name, key = id, value = False, open = False, groups = ["params"]):
                         for param in filter.__ui_params__.values():
-                            ui.elem(f"video_renderer.filters['{id}'].{param.key}", param.type, label = param.name, **param.kwargs, groups = ["params"])
+                            ui.elem(f"video_renderer.filters['{id}'].{param.key}", param.gr_type, label = param.name, **param.kwargs, groups = ["params"])
 
             with ui.elem("", gr.Row):
                 def make_render_callback(is_final):
@@ -467,7 +467,7 @@ class TemporalScript(scripts.Script):
             return Processed(p, p.init_images)
 
         last_index = project.get_last_frame_index()
-        last_processed = Processed(p, [project.load_frame(last_index) or p.init_images[0]])
+        last_images = [pil_to_np(project.load_frame(last_index) or p.init_images[0])]
 
         state.job_count = inputs["frame_count"]
 
@@ -477,9 +477,9 @@ class TemporalScript(scripts.Script):
             state.job = f"Frame {frame_index + 1} / {inputs['frame_count']}"
             state.job_no = i
 
-            if not (processed := session.pipeline.run(
+            if not (images := session.pipeline.run(
                 session,
-                last_processed,
+                last_images,
                 frame_index,
                 inputs["frame_count"],
                 p.seed + frame_index,
@@ -491,13 +491,13 @@ class TemporalScript(scripts.Script):
                 session.save(project.session_path)
                 project.save()
 
-            last_processed = processed
+            last_images = images
 
             end_time = perf_counter()
 
             logging.info(f"[Temporal] Iteration took {end_time - start_time:.6f} second(s)")
 
-        session.pipeline.finalize(session, last_processed)
+        session.pipeline.finalize(session, last_images)
         session.save(project.session_path)
         project.save()
 
@@ -505,7 +505,7 @@ class TemporalScript(scripts.Script):
 
         opts.data.update(opts_backup)
 
-        return last_processed
+        return Processed(p, [np_to_pil(x) for x in last_images])
 
     @staticmethod
     def _verify_image_existence(p: StableDiffusionProcessingImg2Img, initial_noise: InitialNoiseParams) -> bool:

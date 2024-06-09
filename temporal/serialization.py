@@ -339,6 +339,10 @@ class _(Serializer[Image.Image]):
 
 class _(Serializer[NDArray[np.float_]]):
     @classmethod
+    def create(cls, ar):
+        return cls.read(np.ndarray((0,)), ar)
+
+    @classmethod
     def read(cls, obj, ar):
         if ar.data_dir is not None:
             return load_array(ar.data_dir / ar.data)
