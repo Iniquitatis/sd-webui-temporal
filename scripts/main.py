@@ -19,7 +19,7 @@ from modules.ui_components import ToolButton
 
 from temporal.blend_modes import BLEND_MODES
 from temporal.compat import upgrade_project
-from temporal.image_filters import IMAGE_FILTERS
+from temporal.image_filters import ImageFilter
 from temporal.interop import EXTENSION_DIR, get_cn_units
 from temporal.pipeline import PIPELINE_MODULES
 from temporal.preset_store import PresetStore
@@ -211,36 +211,36 @@ class TemporalScript(scripts.Script):
                 ui.elem("initial_noise.lacunarity", gr.Slider, label = "Lacunarity", minimum = 0.01, maximum = 4.0, step = 0.01, value = 2.0, groups = ["params", "session"])
                 ui.elem("initial_noise.persistence", gr.Slider, label = "Persistence", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.5, groups = ["params", "session"])
 
-            with ui.elem("pipeline.module_order", ModuleList, label = "Order", keys = PIPELINE_MODULES.keys(), groups = ["params", "session"]):
+            with ui.elem("pipeline.module_order", ModuleList, keys = PIPELINE_MODULES.keys(), groups = ["params", "session"]):
                 for id, module in PIPELINE_MODULES.items():
-                    with ui.elem(f"pipeline.modules['{id}'].enabled", ModuleAccordion, label = module.name, key = id, value = False, open = False, groups = ["params", "session"]):
-                        ui.elem(f"pipeline.modules['{id}'].preview", gr.Checkbox, label = "Preview", value = True, groups = ["params"])
+                    prefix = "F" if issubclass(module, ImageFilter) else "G"
 
-                        for param in module.__ui_params__.values():
-                            ui.elem(f"pipeline.modules['{id}'].{param.key}", param.gr_type, label = param.name, **param.kwargs, groups = ["params", "session"])
+                    with ui.elem(f"pipeline.modules['{id}'].enabled", ModuleAccordion, label = f"{prefix}: {module.name}", key = id, value = False, open = False, groups = ["params", "session"]):
+                        ui.elem(f"pipeline.modules['{id}'].preview", gr.Checkbox, label = "Preview", value = True, groups = ["params", "session"])
 
-        with ui.elem("", gr.Tab, label = "Image Filtering"):
-            with ui.elem("image_filterer.filter_order", ModuleList, keys = IMAGE_FILTERS.keys(), groups = ["params", "session"]):
-                for id, filter in IMAGE_FILTERS.items():
-                    with ui.elem(f"image_filterer.filters['{id}'].enabled", ModuleAccordion, label = filter.name, key = id, value = False, open = False, groups = ["params", "session"]):
-                        with ui.elem("", gr.Row):
-                            ui.elem(f"image_filterer.filters['{id}'].amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0, groups = ["params", "session"])
-                            ui.elem(f"image_filterer.filters['{id}'].amount_relative", gr.Checkbox, label = "Relative", value = False, groups = ["params", "session"])
+                        if issubclass(module, ImageFilter):
+                            with ui.elem("", gr.Row):
+                                ui.elem(f"pipeline.modules['{id}'].amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0, groups = ["params", "session"])
+                                ui.elem(f"pipeline.modules['{id}'].amount_relative", gr.Checkbox, label = "Relative", value = False, groups = ["params", "session"])
 
-                        ui.elem(f"image_filterer.filters['{id}'].blend_mode", gr.Dropdown, label = "Blend mode", choices = list(BLEND_MODES.keys()), value = get_first_element(BLEND_MODES), groups = ["params", "session"])
+                            ui.elem(f"pipeline.modules['{id}'].blend_mode", gr.Dropdown, label = "Blend mode", choices = list(BLEND_MODES.keys()), value = get_first_element(BLEND_MODES), groups = ["params", "session"])
 
-                        with ui.elem("", gr.Tab, label = "Parameters"):
-                            if filter.__ui_params__:
-                                for param in filter.__ui_params__.values():
-                                    ui.elem(f"image_filterer.filters['{id}'].{param.key}", param.gr_type, label = param.name, **param.kwargs, groups = ["params", "session"])
-                            else:
-                                ui.elem("", gr.Markdown, value = "_This filter has no available parameters._")
+                            with ui.elem("", gr.Tab, label = "Parameters"):
+                                if module.__ui_params__:
+                                    for param in module.__ui_params__.values():
+                                        ui.elem(f"pipeline.modules['{id}'].{param.key}", param.gr_type, label = param.name, **param.kwargs, groups = ["params", "session"])
+                                else:
+                                    ui.elem("", gr.Markdown, value = "_This filter has no available parameters._")
 
-                        with ui.elem("", gr.Tab, label = "Mask"):
-                            ui.elem(f"image_filterer.filters['{id}'].mask.image", gr.Image, label = "Image", type = "numpy", image_mode = "L", interactive = True, groups = ["params", "session"])
-                            ui.elem(f"image_filterer.filters['{id}'].mask.normalized", gr.Checkbox, label = "Normalized", value = False, groups = ["params", "session"])
-                            ui.elem(f"image_filterer.filters['{id}'].mask.inverted", gr.Checkbox, label = "Inverted", value = False, groups = ["params", "session"])
-                            ui.elem(f"image_filterer.filters['{id}'].mask.blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, groups = ["params", "session"])
+                            with ui.elem("", gr.Tab, label = "Mask"):
+                                ui.elem(f"pipeline.modules['{id}'].mask.image", gr.Image, label = "Image", type = "numpy", image_mode = "L", interactive = True, groups = ["params", "session"])
+                                ui.elem(f"pipeline.modules['{id}'].mask.normalized", gr.Checkbox, label = "Normalized", value = False, groups = ["params", "session"])
+                                ui.elem(f"pipeline.modules['{id}'].mask.inverted", gr.Checkbox, label = "Inverted", value = False, groups = ["params", "session"])
+                                ui.elem(f"pipeline.modules['{id}'].mask.blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, groups = ["params", "session"])
+
+                        else:
+                            for param in module.__ui_params__.values():
+                                ui.elem(f"pipeline.modules['{id}'].{param.key}", param.gr_type, label = param.name, **param.kwargs, groups = ["params", "session"])
 
         with ui.elem("", gr.Tab, label = "Video Rendering"):
             ui.elem("video_renderer.fps", gr.Slider, label = "Frames per second", precision = 0, minimum = 1, maximum = 60, step = 1, value = 30, groups = ["params"])
@@ -381,7 +381,6 @@ class TemporalScript(scripts.Script):
                 ("main.md", "Main"),
                 ("tab_general.md", "General tab"),
                 ("tab_pipeline.md", "Pipeline tab"),
-                ("tab_image_filtering.md", "Image Filtering tab"),
                 ("tab_video_rendering.md", "Video Rendering tab"),
                 ("tab_measuring.md", "Measuring tab"),
                 ("tab_project_management.md", "Project Management tab"),

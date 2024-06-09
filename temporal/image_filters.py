@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Any, Optional, Type
+from typing import Any, Optional
 
 import gradio as gr
 import numpy as np
@@ -7,29 +7,62 @@ import scipy
 import skimage
 from PIL import Image
 
+from temporal.blend_modes import BLEND_MODES
 from temporal.image_mask import ImageMask
-from temporal.meta.configurable import Configurable, ui_param
+from temporal.meta.configurable import ui_param
 from temporal.meta.serializable import field
+from temporal.pipeline_modules import PipelineModule
+from temporal.session import Session
 from temporal.utils.image import NumpyImage, apply_channelwise, get_rgb_array, join_hsv_to_rgb, match_image, np_to_pil, pil_to_np, split_hsv
-from temporal.utils.math import remap_range
-from temporal.utils.numpy import generate_value_noise
+from temporal.utils.math import lerp, normalize, remap_range
+from temporal.utils.numpy import generate_value_noise, saturate_array
 
 
-IMAGE_FILTERS: dict[str, Type["ImageFilter"]] = {}
-
-
-class ImageFilter(Configurable, abstract = True):
-    store = IMAGE_FILTERS
-
-    enabled: bool = field(False)
+class ImageFilter(PipelineModule, abstract = True):
     amount: float = field(1.0)
     amount_relative: bool = field(False)
     blend_mode: str = field("normal")
     mask: ImageMask = field(factory = ImageMask)
 
+    def forward(self, images: list[NumpyImage], session: Session, frame_index: int, frame_count: int, seed: int) -> Optional[list[NumpyImage]]:
+        return [saturate_array(self._blend(x, self.process(x, seed), session)) for x in images]
+
     @abstractmethod
     def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
         raise NotImplementedError
+
+    def _blend(self, npim: NumpyImage, processed: NumpyImage, session: Session) -> NumpyImage:
+        if npim is processed:
+            return npim
+
+        amount = self.amount * (session.processing.denoising_strength if self.amount_relative else 1.0)
+
+        if amount == 0.0:
+            return npim
+
+        processed = BLEND_MODES[self.blend_mode].blend(npim, processed)
+
+        if amount == 1.0 and self.mask.image is None:
+            return processed
+
+        if self.mask.image is not None:
+            factor = match_image(self.mask.image, npim)
+
+            if self.mask.normalized:
+                factor = normalize(factor, factor.min(), factor.max())
+
+            if self.mask.inverted:
+                factor = 1.0 - factor
+
+            if self.mask.blurring:
+                factor = skimage.filters.gaussian(factor, round(self.mask.blurring), channel_axis = 2)
+
+        else:
+            factor = 1.0
+
+        factor *= amount
+
+        return lerp(npim, processed, factor)
 
 
 class BlurringFilter(ImageFilter):

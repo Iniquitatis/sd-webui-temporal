@@ -121,14 +121,6 @@ class FrameMergingModule(PipelineModule):
         ))]
 
 
-class ImageFilteringModule(PipelineModule):
-    id = "image_filtering"
-    name = "Image filtering"
-
-    def forward(self, images: list[NumpyImage], session: Session, frame_index: int, frame_count: int, seed: int) -> Optional[list[NumpyImage]]:
-        return [session.image_filterer.filter_image(x, session.processing.denoising_strength, seed) for x in images]
-
-
 class LimitingModule(PipelineModule):
     id = "limiting"
     name = "Limiting"

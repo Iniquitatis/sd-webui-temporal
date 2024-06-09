@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any, Optional
 from modules.options import Options
 from modules.processing import StableDiffusionProcessingImg2Img
 
-from temporal.image_filterer import ImageFilterer
 from temporal.interop import ControlNetUnitWrapper
 from temporal.meta.serializable import Serializable, field
 if TYPE_CHECKING:
@@ -33,7 +32,6 @@ class Session(Serializable):
     output: OutputParams = field(factory = OutputParams, saved = False)
     initial_noise: InitialNoiseParams = field(factory = InitialNoiseParams)
     pipeline: "Pipeline" = field()
-    image_filterer: ImageFilterer = field(factory = ImageFilterer)
     video_renderer: VideoRenderer = field(factory = VideoRenderer, saved = False)
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
