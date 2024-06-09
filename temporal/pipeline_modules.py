@@ -41,26 +41,36 @@ class PipelineModule(Configurable, abstract = True):
         pass
 
 
-class DampeningModule(PipelineModule):
-    id = "dampening"
-    name = "Dampening"
+class AveragingModule(PipelineModule):
+    id = "averaging"
+    name = "Averaging"
     icon = "\U0001f553"
 
-    rate: float = ui_param("Rate", gr.Slider, minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0)
+    frames: int = ui_param("Frame count", gr.Number, precision = 0, minimum = 1, step = 1, value = 1)
+    trimming: float = ui_param("Trimming", gr.Slider, minimum = 0.0, maximum = 0.5, step = 0.01, value = 0.0)
+    easing: float = ui_param("Easing", gr.Slider, minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0)
+    preference: float = ui_param("Preference", gr.Slider, minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0)
 
     buffer: NDArray[np.float_] = field(factory = lambda: np.empty((0,)))
+    last_index: int = field(0)
 
     def forward(self, images: list[NumpyImage], session: Session, frame_index: int, frame_count: int, seed: int) -> Optional[list[NumpyImage]]:
         if self.buffer.shape[0] == 0:
-            self.buffer = ensure_image_dims(images[0], "RGB", (session.processing.width, session.processing.height))
+            npim = ensure_image_dims(images[0], "RGB", (session.processing.width, session.processing.height))
+            self.buffer = np.repeat(npim[np.newaxis, ...], self.frames, axis = 0)
 
-        self.buffer[:] = lerp(
+        self.buffer[self.last_index] = match_image(images[0], self.buffer[0])
+
+        self.last_index += 1
+        self.last_index %= self.frames
+
+        return [self.buffer[0] if self.frames == 1 else saturate_array(average_array(
             self.buffer,
-            match_image(images[0], self.buffer),
-            self.rate,
-        )
-
-        return [self.buffer]
+            axis = 0,
+            trim = self.trimming,
+            power = self.preference + 1.0,
+            weights = np.roll(make_eased_weight_array(self.frames, self.easing), self.last_index),
+        ))]
 
 
 class DetailingModule(PipelineModule):
@@ -94,36 +104,26 @@ class DetailingModule(PipelineModule):
         return [pil_to_np(ensure_image_dims(x, "RGB", (session.processing.width, session.processing.height))) for x in processed.images]
 
 
-class FrameMergingModule(PipelineModule):
-    id = "frame_merging"
-    name = "Frame merging"
+class InterpolationModule(PipelineModule):
+    id = "interpolation"
+    name = "Interpolation"
     icon = "\U0001f553"
 
-    frames: int = ui_param("Frame count", gr.Number, precision = 0, minimum = 1, step = 1, value = 1)
-    trimming: float = ui_param("Trimming", gr.Slider, minimum = 0.0, maximum = 0.5, step = 0.01, value = 0.0)
-    easing: float = ui_param("Easing", gr.Slider, minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0)
-    preference: float = ui_param("Preference", gr.Slider, minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0)
+    rate: float = ui_param("Rate", gr.Slider, minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0)
 
     buffer: NDArray[np.float_] = field(factory = lambda: np.empty((0,)))
-    last_index: int = field(0)
 
     def forward(self, images: list[NumpyImage], session: Session, frame_index: int, frame_count: int, seed: int) -> Optional[list[NumpyImage]]:
         if self.buffer.shape[0] == 0:
-            npim = ensure_image_dims(images[0], "RGB", (session.processing.width, session.processing.height))
-            self.buffer = np.repeat(npim[np.newaxis, ...], self.frames, axis = 0)
+            self.buffer = ensure_image_dims(images[0], "RGB", (session.processing.width, session.processing.height))
 
-        self.buffer[self.last_index] = match_image(images[0], self.buffer[0])
-
-        self.last_index += 1
-        self.last_index %= self.frames
-
-        return [self.buffer[0] if self.frames == 1 else saturate_array(average_array(
+        self.buffer[:] = lerp(
             self.buffer,
-            axis = 0,
-            trim = self.trimming,
-            power = self.preference + 1.0,
-            weights = np.roll(make_eased_weight_array(self.frames, self.easing), self.last_index),
-        ))]
+            match_image(images[0], self.buffer),
+            self.rate,
+        )
+
+        return [self.buffer]
 
 
 class LimitingModule(PipelineModule):

@@ -132,7 +132,7 @@ class Project:
             for child in list(measurements_elem):
                 measurements_elem.remove(child)
 
-        if (buffer_elem := root.find("*[@key='modules']/*[@key='frame_merging']/*[@key='buffer']")) is not None:
+        if (buffer_elem := root.find("*[@key='modules']/*[@key='averaging']/*[@key='buffer']")) is not None:
             if (array_path := buffer_elem.findtext("*[@key='array']")) is not None:
                 remove_entry(Path(array_path))
 

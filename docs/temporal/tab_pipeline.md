@@ -24,6 +24,15 @@ All modules in this tab are marked with the following icons:
         * **Normalized** — normalization of the mask image to use the full range from black to white.
         * **Inverted** — inversion of the mask image.
         * **Blurring** — blurring radius of the mask image.
+* **Averaging** — averaging of last generated frames.
+    * **Frame count** — amount of last generated frames to be blended together to produce a final frame.
+        * **NOTE:** Slows down the morphing effect, increases the general middle-scale detail precision, and makes the resulting frames blurrier (can be somewhat mitigated by enabling the **Sharpening** filter).
+    * **Trimming** — factor of distribution trimming (e.g. `0.25` trims 25% of the darkest and brightest colors), controlling the sharpness and bringing means closer to the median.
+        * **NOTE:** The higher this value is, the longer it will take for any visible changes to occur: factor of `0.5` will require approximately half of **Frame count** first iterations.
+    * **Easing** — frame averaging easing factor. The more this value is, the sharper is the blending curve, leading to less contribution for each previous frame; at the value of `0` all frames will be blended evenly.
+        * **NOTE:** This parameter won't have any effect if **Trimming** is greater than `0`.
+    * **Preference** — "brightness preference" of the averaging algorithm. At minimum, it prefers the darkest colors, at maximum—the brightest ones.
+        * **NOTE:** The greater the **Trimming** is, the less this parameter will affect the result.
 * **Blurring** — frame blurring.
     * **Radius** — blurring radius.
 * **Color balancing** — common color balancing.
@@ -40,26 +49,17 @@ All modules in this tab are marked with the following icons:
     * **Code** — Python code that will be used to process the frame.
         * **NOTE:** It provides a global 3D numpy array (height, width, RGB) called `input` and expects a processed array to be assigned to a global variable called `output`. `np`, `scipy`, and `skimage` modules are imported by default.
         * **WARNING:** Don't run an untrusted code.
-* **Dampening** — blending of the current image towards the new image.
-    * **Rate** — amount of blending between the current image and the new image (e.g. `0.5` will blend 50% of the new image into the current one).
 * **Detailing** — an additional detailing pass that upscales the image and then scales it back, allowing for much higher precision at the cost of the processing speed.
     * **Scale** — upscaling factor.
         * **NOTE:** It doesn't affect the final output resolution, but rather the processing resolution itself.
     * **Sampling method** — same as the standard img2img option.
     * **Steps** — same as the standard img2img option.
     * **Denoising strength** — same as the standard img2img option.
-* **Frame merging** — averaging of last generated frames.
-    * **Frame count** — amount of last generated frames to be blended together to produce a final frame.
-        * **NOTE:** Slows down the morphing effect, increases the general middle-scale detail precision, and makes the resulting frames blurrier (can be somewhat mitigated by enabling the **Sharpening** filter).
-    * **Trimming** — factor of distribution trimming (e.g. `0.25` trims 25% of the darkest and brightest colors), controlling the sharpness and bringing means closer to the median.
-        * **NOTE:** The higher this value is, the longer it will take for any visible changes to occur: factor of `0.5` will require approximately half of **Frame count** first iterations.
-    * **Easing** — frame averaging easing factor. The more this value is, the sharper is the blending curve, leading to less contribution for each previous frame; at the value of `0` all frames will be blended evenly.
-        * **NOTE:** This parameter won't have any effect if **Trimming** is greater than `0`.
-    * **Preference** — "brightness preference" of the averaging algorithm. At minimum, it prefers the darkest colors, at maximum—the brightest ones.
-        * **NOTE:** The greater the **Trimming** is, the less this parameter will affect the result.
 * **Image overlay** — overlaying an image on top of the frame.
     * **Image** — an image that will be used to modulate the frame.
     * **Blurring** — blurring radius of the modulator image.
+* **Interpolation** — blending of the current image towards the new image.
+    * **Rate** — amount of blending between the current image and the new image (e.g. `0.5` will blend 50% of the new image into the current one).
 * **Limiting** — limiting of the difference between the previous and the current image.
     * **Mode** — limiting mode.
         * **clamp** — clamp the difference, cutting off anything higher than **Maximum difference**.

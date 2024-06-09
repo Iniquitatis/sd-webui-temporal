@@ -13,7 +13,7 @@ from temporal.utils.image import load_image, pil_to_np
 from temporal.utils.numpy import save_array
 
 
-VERSION = 22
+VERSION = 23
 
 UPGRADERS: dict[int, Type["Upgrader"]] = {}
 
@@ -1223,5 +1223,39 @@ class _(Upgrader):
         ET.indent(tree)
         tree.write(session_data_path, "utf-8")
         save_text(version_path, "22")
+
+        return True
+
+
+class _(Upgrader):
+    id = 23
+
+    @staticmethod
+    def upgrade(path: Path) -> bool:
+        version_path = path / "project" / "version.txt"
+        session_data_path = path / "project" / "session" / "data.xml"
+
+        if int(load_text(version_path, "0")) != 22:
+            return False
+
+        tree = ET.ElementTree(file = session_data_path)
+
+        if (frame_merging := tree.find(".//*[@key='frame_merging']")) is not None:
+            frame_merging.set("key", "averaging")
+            frame_merging.set("type", "temporal.pipeline_modules.AveragingModule")
+
+        if (dampening := tree.find(".//*[@key='dampening']")) is not None:
+            dampening.set("key", "interpolation")
+            dampening.set("type", "temporal.pipeline_modules.InterpolationModule")
+
+        if (frame_merging_id := tree.find(".//*[@key='pipeline']/*[@key='module_order']/*[.='frame_merging']")) is not None:
+            frame_merging_id.text = "averaging"
+
+        if (dampening_id := tree.find(".//*[@key='pipeline']/*[@key='module_order']/*[.='dampening']")) is not None:
+            dampening_id.text = "interpolation"
+
+        ET.indent(tree)
+        tree.write(session_data_path, "utf-8")
+        save_text(version_path, "23")
 
         return True
