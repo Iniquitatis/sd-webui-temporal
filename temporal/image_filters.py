@@ -19,6 +19,8 @@ from temporal.utils.numpy import generate_value_noise, saturate_array
 
 
 class ImageFilter(PipelineModule, abstract = True):
+    icon = "\U00002728"
+
     amount: float = field(1.0)
     amount_relative: bool = field(False)
     blend_mode: str = field("normal")

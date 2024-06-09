@@ -211,11 +211,11 @@ class TemporalScript(scripts.Script):
                 ui.elem("initial_noise.lacunarity", gr.Slider, label = "Lacunarity", minimum = 0.01, maximum = 4.0, step = 0.01, value = 2.0, groups = ["params", "session"])
                 ui.elem("initial_noise.persistence", gr.Slider, label = "Persistence", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.5, groups = ["params", "session"])
 
-            with ui.elem("pipeline.module_order", ModuleList, keys = PIPELINE_MODULES.keys(), groups = ["params", "session"]):
-                for id, module in PIPELINE_MODULES.items():
-                    prefix = "F" if issubclass(module, ImageFilter) else "G"
+            sorted_modules = dict(sorted(PIPELINE_MODULES.items(), key = lambda x: f"{x[1].icon} {x[1].id}"))
 
-                    with ui.elem(f"pipeline.modules['{id}'].enabled", ModuleAccordion, label = f"{prefix}: {module.name}", key = id, value = False, open = False, groups = ["params", "session"]):
+            with ui.elem("pipeline.module_order", ModuleList, keys = sorted_modules.keys(), groups = ["params", "session"]):
+                for id, module in sorted_modules.items():
+                    with ui.elem(f"pipeline.modules['{id}'].enabled", ModuleAccordion, label = f"{module.icon} {module.name}", key = id, value = False, open = False, groups = ["params", "session"]):
                         ui.elem(f"pipeline.modules['{id}'].preview", gr.Checkbox, label = "Preview", value = True, groups = ["params", "session"])
 
                         if issubclass(module, ImageFilter):

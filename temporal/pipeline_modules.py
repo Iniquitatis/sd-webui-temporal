@@ -29,6 +29,8 @@ PIPELINE_MODULES: dict[str, Type["PipelineModule"]] = {}
 class PipelineModule(Configurable, abstract = True):
     store = PIPELINE_MODULES
 
+    icon: str = "\U00002699"
+
     enabled: bool = field(False)
     preview: bool = field(True)
 
@@ -42,6 +44,7 @@ class PipelineModule(Configurable, abstract = True):
 class DampeningModule(PipelineModule):
     id = "dampening"
     name = "Dampening"
+    icon = "\U0001f553"
 
     rate: float = ui_param("Rate", gr.Slider, minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0)
 
@@ -63,6 +66,7 @@ class DampeningModule(PipelineModule):
 class DetailingModule(PipelineModule):
     id = "detailing"
     name = "Detailing"
+    icon = "\U0001f9ec"
 
     scale: float = ui_param("Scale", gr.Slider, minimum = 0.25, maximum = 4.0, step = 0.25, value = 1.0)
     sampler: str = ui_param("Sampling method", gr.Dropdown, choices = visible_sampler_names(), value = "Euler a")
@@ -93,6 +97,7 @@ class DetailingModule(PipelineModule):
 class FrameMergingModule(PipelineModule):
     id = "frame_merging"
     name = "Frame merging"
+    icon = "\U0001f553"
 
     frames: int = ui_param("Frame count", gr.Number, precision = 0, minimum = 1, step = 1, value = 1)
     trimming: float = ui_param("Trimming", gr.Slider, minimum = 0.0, maximum = 0.5, step = 0.01, value = 0.0)
@@ -124,6 +129,7 @@ class FrameMergingModule(PipelineModule):
 class LimitingModule(PipelineModule):
     id = "limiting"
     name = "Limiting"
+    icon = "\U0001f553"
 
     mode: str = ui_param("Mode", gr.Dropdown, choices = ["clamp", "compress"], value = "clamp")
     max_difference: float = ui_param("Maximum difference", gr.Slider, minimum = 0.001, maximum = 1.0, step = 0.001, value = 1.0)
@@ -155,6 +161,7 @@ class LimitingModule(PipelineModule):
 class MeasuringModule(PipelineModule):
     id = "measuring"
     name = "Measuring"
+    icon = "\U0001f6e0"
 
     plot_every_nth_frame: int = ui_param("Plot every N-th frame", gr.Number, precision = 0, minimum = 1, step = 1, value = 10)
 
@@ -172,6 +179,7 @@ class MeasuringModule(PipelineModule):
 class ProcessingModule(PipelineModule):
     id = "processing"
     name = "Processing"
+    icon = "\U0001f9ec"
 
     samples: int = ui_param("Sample count", gr.Number, precision = 0, minimum = 1, value = 1)
     batch_size: int = ui_param("Batch size", gr.Number, precision = 0, minimum = 1, value = 1)
@@ -206,6 +214,7 @@ class ProcessingModule(PipelineModule):
 class SavingModule(PipelineModule):
     id = "saving"
     name = "Saving"
+    icon = "\U0001f6e0"
 
     scale: float = ui_param("Scale", gr.Slider, minimum = 0.25, maximum = 4.0, step = 0.25, value = 1.0)
     save_every_nth_frame: int = ui_param("Save every N-th frame", gr.Number, precision = 0, minimum = 1, step = 1, value = 1)
@@ -256,6 +265,7 @@ class SavingModule(PipelineModule):
 class VideoRenderingModule(PipelineModule):
     id = "video_rendering"
     name = "Video rendering"
+    icon = "\U0001f6e0"
 
     render_draft_every_nth_frame: int = ui_param("Render draft every N-th frame", gr.Number, precision = 0, minimum = 1, step = 1, value = 100)
     render_final_every_nth_frame: int = ui_param("Render final every N-th frame", gr.Number, precision = 0, minimum = 1, step = 1, value = 1000)

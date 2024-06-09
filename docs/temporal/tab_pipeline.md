@@ -1,9 +1,11 @@
 **NOTE:** Almost all accordions within this tab can be reordered manually (using mouse or touchscreen, for example) to determine the order in which the modules will be invoked.  
 **NOTE:** Order matters a lot. For example, applying **Noise overlay** before **Color correction** will make the noise color corrected, but otherwise the noise will be applied _on top_ of a color corrected image.  
 
-All modules in this tab are marked with the following letters:
-* **F** — image filter that affects the image appearance directly.
-* **G** — generic module that does some action, including the invocation of Stable Diffusion and saving rendered images.
+All modules in this tab are marked with the following icons:
+* ✨ — image filter that affects the image appearance directly.
+* 🕓 — temporal module that takes multiple subsequent rendered frames into account in order to work. May take several iterations for the effect to be visible at all.
+* 🛠 — tool module that doesn't directly affect an image, but rather does some action such as saving an image.
+* 🧬 — neural network module that invokes Stable Diffusion in order to process an image.
 
 * **Initial noise** — parameters of noise to use in a generation of the initial image if it's absent.
     * **Factor** — amount of noise that will be left unprocessed.
