@@ -478,8 +478,8 @@ class TemporalScript(scripts.Script):
             state.job_no = i
 
             if not (images := session.pipeline.run(
-                session,
                 last_images,
+                session,
                 frame_index,
                 inputs["frame_count"],
                 p.seed + frame_index,
@@ -497,7 +497,7 @@ class TemporalScript(scripts.Script):
 
             logging.info(f"[Temporal] Iteration took {end_time - start_time:.6f} second(s)")
 
-        session.pipeline.finalize(session, last_images)
+        session.pipeline.finalize(last_images, session)
         session.save(project.session_path)
         project.save()
 

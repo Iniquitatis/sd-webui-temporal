@@ -12,14 +12,14 @@ class Pipeline(Serializable):
     module_order: list[str] = field(factory = list)
     modules: dict[str, PipelineModule] = field(factory = lambda: {id: cls() for id, cls in PIPELINE_MODULES.items()})
 
-    def run(self, session: Session, images: list[NumpyImage], frame_index: int, frame_count: int, seed: int, show_only_finalized_frames: bool) -> Optional[list[NumpyImage]]:
+    def run(self, images: list[NumpyImage], session: Session, frame_index: int, frame_count: int, seed: int, show_only_finalized_frames: bool) -> Optional[list[NumpyImage]]:
         last_images = images
 
         for module in reorder_dict(self.modules, self.module_order).values():
             if not module.enabled:
                 continue
 
-            if not (last_images := module.forward(session, last_images, frame_index, frame_count, seed)):
+            if not (last_images := module.forward(last_images, session, frame_index, frame_count, seed)):
                 return None
 
             if not show_only_finalized_frames and module.preview:
@@ -30,9 +30,9 @@ class Pipeline(Serializable):
 
         return last_images
 
-    def finalize(self, session: Session, images: list[NumpyImage]) -> None:
+    def finalize(self, images: list[NumpyImage], session: Session) -> None:
         for module in reorder_dict(self.modules, self.module_order).values():
             if not module.enabled:
                 continue
 
-            module.finalize(session, images)
+            module.finalize(images, session)
