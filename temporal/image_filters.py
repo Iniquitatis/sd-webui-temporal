@@ -124,7 +124,12 @@ class ColorOverlayFilter(ImageFilter):
     color: str = ui_param("Color", gr.ColorPicker, value = "#ffffff")
 
     def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
-        return np.full_like(npim, get_rgb_array(self.color))
+        color = get_rgb_array(self.color)
+
+        if npim.shape[-1] > color.shape[-1]:
+            color = np.stack([color, [1.0]])
+
+        return np.full_like(npim, color)
 
 
 class CustomCodeFilter(ImageFilter):
