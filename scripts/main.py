@@ -477,7 +477,7 @@ class TemporalScript(scripts.Script):
             state.job = "Temporal main loop"
             state.job_no = i
 
-            if not session.pipeline.run(session, inputs["frame_count"], inputs["show_only_finalized_frames"]):
+            if not session.pipeline.run(session, inputs["show_only_finalized_frames"]):
                 break
 
             if i % inputs["autosave_every_n_iterations"] == 0:

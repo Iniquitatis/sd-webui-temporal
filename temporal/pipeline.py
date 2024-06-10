@@ -17,7 +17,7 @@ class Pipeline(Serializable):
     module_order: list[str] = field(factory = list)
     modules: dict[str, PipelineModule] = field(factory = lambda: {id: cls() for id, cls in PIPELINE_MODULES.items()})
 
-    def run(self, session: Session, frame_count: int, show_only_finalized_frames: bool) -> bool:
+    def run(self, session: Session, show_only_finalized_frames: bool) -> bool:
         ordered_modules = reorder_dict(self.modules, self.module_order)
         ordered_keys = list(ordered_modules.keys())
 
@@ -34,7 +34,6 @@ class Pipeline(Serializable):
                 session.iteration.images,
                 session,
                 session.iteration.index,
-                frame_count,
                 session.processing.seed + session.iteration.index,
             )):
                 return False
