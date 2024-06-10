@@ -1,7 +1,6 @@
 from collections.abc import Iterable
 from copy import copy
 from inspect import isgeneratorfunction
-from itertools import count
 from pathlib import Path
 from time import perf_counter
 from typing import Any, Callable, Iterator, Optional, Type, TypeVar
@@ -465,38 +464,31 @@ class TemporalScript(scripts.Script):
 
             return Processed(p, p.init_images)
 
-        last_index = project.get_last_frame_index()
-        last_images = [pil_to_np(project.load_frame(last_index) or p.init_images[0])]
+        if not session.iteration.images:
+            session.iteration.images[:] = [pil_to_np(p.init_images[0])]
 
         state.job_count = inputs["frame_count"]
 
-        for i, frame_index in zip(range(inputs["frame_count"]), count(last_index + 1)):
+        for i in range(inputs["frame_count"]):
+            logging.info(f"Iteration {i + 1} / {inputs['frame_count']}")
+
             start_time = perf_counter()
 
-            state.job = f"Frame {frame_index + 1} / {inputs['frame_count']}"
+            state.job = "Temporal main loop"
             state.job_no = i
 
-            if not (images := session.pipeline.run(
-                last_images,
-                session,
-                frame_index,
-                inputs["frame_count"],
-                p.seed + frame_index,
-                inputs["show_only_finalized_frames"],
-            )) or state.interrupted or state.skipped:
+            if not session.pipeline.run(session, inputs["frame_count"], inputs["show_only_finalized_frames"]):
                 break
 
             if i % inputs["autosave_every_n_iterations"] == 0:
                 session.save(project.session_path)
                 project.save()
 
-            last_images = images
-
             end_time = perf_counter()
 
-            logging.info(f"[Temporal] Iteration took {end_time - start_time:.6f} second(s)")
+            logging.info(f"Iteration took {end_time - start_time:.6f} second(s)")
 
-        session.pipeline.finalize(last_images, session)
+        session.pipeline.finalize(session)
         session.save(project.session_path)
         project.save()
 
@@ -504,7 +496,7 @@ class TemporalScript(scripts.Script):
 
         opts.data.update(opts_backup)
 
-        return Processed(p, [np_to_pil(x) for x in last_images])
+        return Processed(p, [np_to_pil(x) for x in session.iteration.images])
 
     @staticmethod
     def _verify_image_existence(p: StableDiffusionProcessingImg2Img, initial_noise: InitialNoiseParams) -> bool:

@@ -5,7 +5,6 @@ from typing import Iterator, Optional
 from temporal.compat import VERSION, upgrade_project
 from temporal.utils import logging
 from temporal.utils.fs import clear_directory, is_directory_empty, remove_directory, remove_entry, save_text
-from temporal.utils.image import PILImage, load_image
 from temporal.video_renderer import VideoRenderer
 
 
@@ -92,12 +91,6 @@ class Project:
 
     def list_all_frame_paths(self) -> list[Path]:
         return sorted(self._iterate_frame_paths(), key = lambda x: x.name)
-
-    def load_frame(self, index: int) -> Optional[PILImage]:
-        if not (path := (self.path / make_frame_file_name(index))).is_file():
-            return None
-
-        return load_image(path)
 
     def delete_all_frames(self) -> None:
         clear_directory(self.path, f"*.{FRAME_EXTENSION}")

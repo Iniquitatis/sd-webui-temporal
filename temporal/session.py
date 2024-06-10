@@ -9,6 +9,7 @@ from temporal.meta.serializable import Serializable, field
 if TYPE_CHECKING:
     from temporal.pipeline import Pipeline
 from temporal.serialization import BasicObjectSerializer
+from temporal.utils.image import NumpyImage
 from temporal.video_renderer import VideoRenderer
 
 
@@ -25,6 +26,12 @@ class InitialNoiseParams(Serializable):
     persistence: float = field(0.5)
 
 
+class IterationData(Serializable):
+    images: list[NumpyImage] = field(factory = list)
+    index: int = field(1)
+    module_id: Optional[str] = field(None)
+
+
 class Session(Serializable):
     options: Options = field()
     processing: StableDiffusionProcessingImg2Img = field()
@@ -33,6 +40,7 @@ class Session(Serializable):
     initial_noise: InitialNoiseParams = field(factory = InitialNoiseParams)
     pipeline: "Pipeline" = field()
     video_renderer: VideoRenderer = field(factory = VideoRenderer, saved = False)
+    iteration: IterationData = field(factory = IterationData)
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         from temporal.pipeline import Pipeline
