@@ -274,18 +274,18 @@ class VideoRenderingModule(PipelineModule):
 
     def forward(self, images: list[NumpyImage], session: Session, frame_index: int, frame_count: int, seed: int) -> Optional[list[NumpyImage]]:
         if frame_index % self.render_draft_every_nth_frame == 0:
-            render_project_video(session.output.output_dir, session.output.project_subdir, session.video_renderer, False)
+            render_project_video(session.output.output_dir / session.output.project_subdir, session.video_renderer, False)
 
         if frame_index % self.render_final_every_nth_frame == 0:
-            render_project_video(session.output.output_dir, session.output.project_subdir, session.video_renderer, True)
+            render_project_video(session.output.output_dir / session.output.project_subdir, session.video_renderer, True)
 
         return images
 
     def finalize(self, images: list[NumpyImage], session: Session) -> None:
         if self.render_draft_on_finish:
-            render_project_video(session.output.output_dir, session.output.project_subdir, session.video_renderer, False)
+            render_project_video(session.output.output_dir / session.output.project_subdir, session.video_renderer, False)
 
         if self.render_final_on_finish:
-            render_project_video(session.output.output_dir, session.output.project_subdir, session.video_renderer, True)
+            render_project_video(session.output.output_dir / session.output.project_subdir, session.video_renderer, True)
 
         wait_until(lambda: not video_render_queue.busy)

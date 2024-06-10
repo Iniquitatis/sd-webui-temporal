@@ -22,7 +22,7 @@ from temporal.image_filters import ImageFilter
 from temporal.interop import EXTENSION_DIR, get_cn_units
 from temporal.pipeline import PIPELINE_MODULES
 from temporal.preset_store import PresetStore
-from temporal.project import Project, make_video_file_name, render_project_video
+from temporal.project import Project, render_project_video
 from temporal.project_store import ProjectStore
 from temporal.session import InitialNoiseParams, Session
 from temporal.ui.module_list import ModuleAccordion, ModuleList
@@ -261,13 +261,13 @@ class TemporalScript(scripts.Script):
 
                         session = self._ui_to_session(inputs)
 
-                        render_project_video(session.output.output_dir, session.output.project_subdir, session.video_renderer, is_final)
+                        video_path = render_project_video(session.output.output_dir / session.output.project_subdir, session.video_renderer, is_final)
                         wait_until(lambda: not video_render_queue.busy)
 
                         yield {
                             "render_draft": gr.update(interactive = True),
                             "render_final": gr.update(interactive = True),
-                            "video_preview": (session.output.output_dir / make_video_file_name(session.output.project_subdir, is_final)).as_posix(),
+                            "video_preview": video_path.as_posix(),
                         }
 
                     return callback

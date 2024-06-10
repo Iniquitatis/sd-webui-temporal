@@ -35,9 +35,11 @@ def make_video_file_name(name: str, is_final: bool) -> str:
     return f"{make_video_name(name, is_final)}.{VIDEO_EXTENSION}"
 
 
-def render_project_video(output_dir: Path, project_subdir: str, renderer: VideoRenderer, is_final: bool) -> None:
-    project = Project(output_dir / project_subdir)
-    renderer.enqueue_video_render(output_dir / make_video_file_name(project.name, is_final), project.list_all_frame_paths(), is_final)
+def render_project_video(project_dir: Path, renderer: VideoRenderer, is_final: bool) -> Path:
+    project = Project(project_dir)
+    video_path = project_dir / "videos" / make_video_file_name("video", is_final)
+    renderer.enqueue_video_render(video_path, project.list_all_frame_paths(), is_final)
+    return video_path
 
 
 class Project:

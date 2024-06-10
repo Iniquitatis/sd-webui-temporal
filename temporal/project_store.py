@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from temporal.project import Project, make_video_file_name
+from temporal.project import Project
 from temporal.utils.collection import natural_sort
 from temporal.utils.fs import iterate_subdirectories, remove_entry, rename_entry
 
@@ -20,13 +20,9 @@ class ProjectStore:
 
     def delete_project(self, name: str) -> None:
         remove_entry(self.path / name)
-        remove_entry(self.path / make_video_file_name(name, False))
-        remove_entry(self.path / make_video_file_name(name, True))
         self.project_names.remove(name)
 
     def rename_project(self, old_name: str, new_name: str) -> None:
         rename_entry(self.path, old_name, new_name)
-        rename_entry(self.path, make_video_file_name(old_name, False), make_video_file_name(new_name, False))
-        rename_entry(self.path, make_video_file_name(old_name, True), make_video_file_name(new_name, True))
         self.project_names[self.project_names.index(old_name)] = new_name
         self.project_names[:] = natural_sort(self.project_names)
