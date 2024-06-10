@@ -10,10 +10,10 @@ from temporal.meta.registerable import Registerable
 from temporal.utils import logging
 from temporal.utils.fs import ensure_directory_exists, load_json, load_text, move_entry, save_json, save_text
 from temporal.utils.image import load_image, pil_to_np
-from temporal.utils.numpy import save_array
+from temporal.utils.numpy import load_array, save_array
 
 
-VERSION = 24
+VERSION = 25
 
 UPGRADERS: dict[int, Type["Upgrader"]] = {}
 
@@ -1314,5 +1314,44 @@ class _(Upgrader):
         ET.indent(tree)
         tree.write(session_data_path, "utf-8")
         save_text(version_path, "24")
+
+        return True
+
+
+class _(Upgrader):
+    id = 25
+
+    @staticmethod
+    def upgrade(path: Path) -> bool:
+        def upgrade_buffer(elem: ET.Element) -> None:
+            if elem.text is not None and (arr_path := (path / "project" / "session" / elem.text)).is_file():
+                save_array(np.expand_dims(load_array(arr_path), 0), arr_path)
+
+        version_path = path / "project" / "version.txt"
+        session_data_path = path / "project" / "session" / "data.xml"
+
+        if int(load_text(version_path, "0")) != 24:
+            return False
+
+        tree = ET.ElementTree(file = session_data_path)
+
+        if (pipeline := tree.find(".//*[@key='pipeline']")) is not None:
+            ET.SubElement(pipeline, "object", {"key": "parallel", "type": "int"}).text = "1"
+
+        if (processing := tree.find(".//*[@key='pipeline']/*[@key='modules']/*[@key='processing']")) is not None:
+            ET.SubElement(processing, "object", {"key": "pixels_per_batch", "type": "int"}).text = "1048576"
+
+        if (buffer := tree.find(".//*[@key='pipeline']/*[@key='modules']/*[@key='averaging']/*[@key='buffer']")) is not None:
+            upgrade_buffer(buffer)
+
+        if (buffer := tree.find(".//*[@key='pipeline']/*[@key='modules']/*[@key='interpolation']/*[@key='buffer']")) is not None:
+            upgrade_buffer(buffer)
+
+        if (buffer := tree.find(".//*[@key='pipeline']/*[@key='modules']/*[@key='limiting']/*[@key='buffer']")) is not None:
+            upgrade_buffer(buffer)
+
+        ET.indent(tree)
+        tree.write(session_data_path, "utf-8")
+        save_text(version_path, "25")
 
         return True

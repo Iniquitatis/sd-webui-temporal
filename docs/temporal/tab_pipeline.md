@@ -13,6 +13,7 @@ All modules in this tab are marked with the following icons:
     * **Octaves** — amount of progressively downscaled noise layers that will be mixed into a single one.
     * **Lacunarity** — downscale factor of each subsequent noise layer compared to a previous one.
     * **Persistence** — amplitude factor of each subsequent noise layer compared to a previous one.
+* **Parallel** — amount of images to create/process in parallel.
 * Generic options available to all modules:
     * **(✔️ to the left of a module name)** — determines if a module is enabled.
     * **Preview** — determines if module's results will be displayed in the UI.
@@ -99,7 +100,7 @@ All modules in this tab are marked with the following icons:
     * **NOTE:** Currently, all of the settings listed here are related to the averaging of several samples generated from a single frame.
     * **Sample count** — amount of samples to take for generating a frame.
         * **NOTE:** Reduces the jittering between the consecutive frames, increases the general middle-scale detail precision, multiplies amount of work to process each frame correspondingly, and makes the resulting frames blurrier (can be somewhat mitigated by enabling the **Sharpening** preprocessing effect).
-    * **Batch size** — amount of samples to be calculated in parallel, potentially speeding up the process. If **Sample count** is not divisible by the batch size, it will be adjusted to the nearest divisible number (e.g. if **Sample count** is `9` and **Batch size** is `4`, then total sample count will equal to 12).
+    * **Pixels per batch** — upper limit of pixels (`width * height`) below which samples will be calculated in parallel, potentially speeding up the processing. For example, if this parameter is set to `1048576` (equals to an image of size `1024x1024`, `2048x512`, and so on), then exactly four images of size `512x512` can be processed in a single batch.
     * **Trimming** — factor of distribution trimming (e.g. `0.25` trims 25% of the darkest and brightest colors), controlling the sharpness and bringing means closer to the median.
     * **Easing** — sample averaging easing factor. The more this value is, the sharper is the blending curve, leading to less contribution for each subsequent sample; at the value of `0` all samples will be blended evenly.
         * **NOTE:** This parameter won't have any effect if **Trimming** is greater than `0`.

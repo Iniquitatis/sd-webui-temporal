@@ -57,5 +57,6 @@
     * **Shadow offset X/Y** — offset of the text shadow; pixels.
     * **Shadow color** — color of the text shadow.
     * **Shadow alpha** — opacity of the text shadow.
+* **Parallel index** — index of an image set to render.
 * **Render draft/final** — start the video rendering immediately.
 * **Preview** — a video player that will show the result after the _manually started_ video rendering finishes.

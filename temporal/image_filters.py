@@ -27,7 +27,7 @@ class ImageFilter(PipelineModule, abstract = True):
     mask: ImageMask = field(factory = ImageMask)
 
     def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
-        return [saturate_array(self._blend(x, self.process(x, seed), session)) for x in images]
+        return [saturate_array(self._blend(x, self.process(x, seed + i), session)) for i, x in enumerate(images)]
 
     @abstractmethod
     def process(self, npim: NumpyImage, seed: int) -> NumpyImage:

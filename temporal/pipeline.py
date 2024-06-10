@@ -14,6 +14,7 @@ state: State = getattr(shared, "state")
 
 
 class Pipeline(Serializable):
+    parallel: int = field(1)
     module_order: list[str] = field(factory = list)
     modules: dict[str, PipelineModule] = field(factory = lambda: {id: cls() for id, cls in PIPELINE_MODULES.items()})
 

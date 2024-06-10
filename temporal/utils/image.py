@@ -6,8 +6,6 @@ import skimage
 from PIL import Image, ImageColor
 from numpy.typing import NDArray
 
-from temporal.utils.numpy import generate_noise, generate_value_noise
-
 
 PILImage = Image.Image
 NumpyImage = NDArray[np.float_]
@@ -36,14 +34,6 @@ def ensure_image_dims(im: T, mode: Optional[str] = None, size: Optional[tuple[in
         return pil_to_np(tmp_im)
     else:
         return tmp_im
-
-
-def generate_noise_image(size: tuple[int, int], seed: Optional[int] = None) -> PILImage:
-    return np_to_pil(generate_noise((size[1], size[0], 3), seed))
-
-
-def generate_value_noise_image(size: tuple[int, int], channels: int, scale: float, octaves: int, lacunarity: float, persistence: float, seed: Optional[int] = None) -> PILImage:
-    return np_to_pil(generate_value_noise((size[1], size[0], channels), scale, octaves, lacunarity, persistence, seed))
 
 
 def get_rgb_array(color: str) -> NDArray[np.float_]:

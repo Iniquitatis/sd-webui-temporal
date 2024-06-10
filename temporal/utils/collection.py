@@ -1,10 +1,27 @@
 import re
 from collections.abc import Iterable
-from typing import TypeVar
+from typing import Iterator, TypeVar
 
 
 T = TypeVar("T")
 U = TypeVar("U")
+
+
+def batched(iterable: Iterable[T], size: int) -> Iterator[list[T]]:
+    batch = []
+
+    for item in iterable:
+        batch.append(item)
+
+        if len(batch) < size:
+            continue
+
+        yield batch
+
+        batch.clear()
+
+    if len(batch) > 0:
+        yield batch
 
 
 def get_first_element(iterable: Iterable[T], fallback: U = None) -> T | U:

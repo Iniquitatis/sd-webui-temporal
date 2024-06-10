@@ -4,7 +4,7 @@ from typing import Iterator, Optional
 
 from temporal.compat import VERSION, upgrade_project
 from temporal.utils import logging
-from temporal.utils.fs import clear_directory, is_directory_empty, remove_directory, remove_entry, save_text
+from temporal.utils.fs import clear_directory, ensure_directory_exists, is_directory_empty, remove_directory, remove_entry, save_text
 from temporal.video_renderer import VideoRenderer
 
 
@@ -35,10 +35,10 @@ def make_video_file_name(name: str, is_final: bool) -> str:
     return f"{make_video_name(name, is_final)}.{VIDEO_EXTENSION}"
 
 
-def render_project_video(project_dir: Path, renderer: VideoRenderer, is_final: bool) -> Path:
+def render_project_video(project_dir: Path, renderer: VideoRenderer, is_final: bool, parallel_index: int = 1) -> Path:
     project = Project(project_dir)
-    video_path = project_dir / "videos" / make_video_file_name("video", is_final)
-    renderer.enqueue_video_render(video_path, project.list_all_frame_paths(), is_final)
+    video_path = ensure_directory_exists(project_dir / "videos") / make_video_file_name(f"{parallel_index:02d}", is_final)
+    renderer.enqueue_video_render(video_path, project.list_all_frame_paths(parallel_index), is_final)
     return video_path
 
 
@@ -83,37 +83,27 @@ class Project:
         return "\n\n".join(f"{k}: {v}" for k, v in values.items() if v is not None)
 
     def get_first_frame_index(self) -> int:
-        return min((_parse_frame_index(x) for x in self._iterate_frame_paths()), default = 0)
+        return min((_parse_frame_index(x)[0] for x in self._iterate_frame_paths()), default = 0)
 
     def get_last_frame_index(self) -> int:
-        return max((_parse_frame_index(x) for x in self._iterate_frame_paths()), default = 0)
+        return max((_parse_frame_index(x)[0] for x in self._iterate_frame_paths()), default = 0)
 
-    def get_actual_frame_count(self) -> int:
-        return sum(1 for _ in self._iterate_frame_paths())
+    def get_actual_frame_count(self, parallel_index: int = 1) -> int:
+        return sum(_parse_frame_index(x)[1] == parallel_index for x in self._iterate_frame_paths())
 
-    def list_all_frame_paths(self) -> list[Path]:
-        return sorted(self._iterate_frame_paths(), key = lambda x: x.name)
+    def list_all_frame_paths(self, parallel_index: int = 1) -> list[Path]:
+        return sorted((x for x in self._iterate_frame_paths() if _parse_frame_index(x)[1] == parallel_index), key = lambda x: x.name)
 
     def delete_all_frames(self) -> None:
         clear_directory(self.path, f"*.{FRAME_EXTENSION}")
 
     def delete_intermediate_frames(self) -> None:
-        kept_paths = set()
-        min_index = int(1e9)
-        max_index = 0
+        kept_indices = self.get_first_frame_index(), self.get_last_frame_index()
 
         for image_path in self._iterate_frame_paths():
-            if frame_index := _parse_frame_index(image_path):
-                min_index = min(min_index, frame_index)
-                max_index = max(max_index, frame_index)
-            else:
-                kept_paths.add(image_path)
+            frame_index, _ = _parse_frame_index(image_path)
 
-        kept_paths.add(self.path / make_frame_file_name(min_index))
-        kept_paths.add(self.path / make_frame_file_name(max_index))
-
-        for image_path in self._iterate_frame_paths():
-            if image_path not in kept_paths:
+            if frame_index not in kept_indices:
                 remove_entry(image_path)
 
     def delete_session_data(self) -> None:
@@ -141,11 +131,19 @@ class Project:
         return self.path.glob(f"*.{FRAME_EXTENSION}")
 
 
-def _parse_frame_index(image_path: Path) -> int:
+def _parse_frame_index(image_path: Path) -> tuple[int, int]:
     if image_path.is_file():
         try:
-            return int(image_path.stem)
+            return int(image_path.stem), 1
         except:
-            logging.warning(f"{image_path.stem} doesn't match the frame name format")
+            pass
 
-    return 0
+        try:
+            frame_index, parallel_index = image_path.stem.split("-")
+            return int(frame_index), int(parallel_index)
+        except:
+            pass
+
+        logging.warning(f"{image_path.stem} doesn't match the frame name format")
+
+    return 0, 0

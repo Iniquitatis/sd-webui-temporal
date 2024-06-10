@@ -29,13 +29,14 @@ from temporal.ui.module_list import ModuleAccordion, ModuleList
 from temporal.utils import logging
 from temporal.utils.collection import get_first_element
 from temporal.utils.fs import load_text
-from temporal.utils.image import PILImage, generate_value_noise_image, np_to_pil, pil_to_np
+from temporal.utils.image import PILImage, np_to_pil, pil_to_np
+from temporal.utils.numpy import generate_value_noise
 from temporal.utils.object import copy_with_overrides, get_property_by_path, set_property_by_path
 from temporal.utils.string import match_mask
 from temporal.utils.time import wait_until
 from temporal.video_filters import VIDEO_FILTERS
 from temporal.video_renderer import video_render_queue
-from temporal.web_ui import process_image
+from temporal.web_ui import process_images
 
 
 # FIXME: To shut up the type checker
@@ -212,6 +213,8 @@ class TemporalScript(scripts.Script):
 
             sorted_modules = dict(sorted(PIPELINE_MODULES.items(), key = lambda x: f"{x[1].icon} {x[1].id}"))
 
+            ui.elem("pipeline.parallel", gr.Number, label = "Parallel", precision = 0, minimum = 1, step = 1, value = 1, groups = ["params", "session"])
+
             with ui.elem("pipeline.module_order", ModuleList, keys = sorted_modules.keys(), groups = ["params", "session"]):
                 for id, module in sorted_modules.items():
                     with ui.elem(f"pipeline.modules['{id}'].enabled", ModuleAccordion, label = f"{module.icon} {module.name}", key = id, value = False, open = False, groups = ["params", "session"]):
@@ -251,6 +254,8 @@ class TemporalScript(scripts.Script):
                         for param in filter.__ui_params__.values():
                             ui.elem(f"video_renderer.filters['{id}'].{param.key}", param.gr_type, label = param.name, **param.kwargs, groups = ["params"])
 
+            ui.elem("video_parallel_index", gr.Number, label = "Parallel index", precision = 0, minimum = 1, step = 1, value = 1, groups = ["params"])
+
             with ui.elem("", gr.Row):
                 def make_render_callback(is_final):
                     def callback(inputs):
@@ -261,7 +266,12 @@ class TemporalScript(scripts.Script):
 
                         session = self._ui_to_session(inputs)
 
-                        video_path = render_project_video(session.output.output_dir / session.output.project_subdir, session.video_renderer, is_final)
+                        video_path = render_project_video(
+                            session.output.output_dir / session.output.project_subdir,
+                            session.video_renderer,
+                            is_final,
+                            inputs["video_parallel_index"],
+                        )
                         wait_until(lambda: not video_render_queue.busy)
 
                         yield {
@@ -301,6 +311,7 @@ class TemporalScript(scripts.Script):
                     return {
                         "project_description": gr.update(value = desc if (desc := project.get_description()) else "Cannot read project data"),
                         "project_gallery": gr.update(value = project.list_all_frame_paths()[-PROJECT_GALLERY_SIZE:]),
+                        "project_gallery_parallel_index": gr.update(value = 1),
                     }
 
                 def refresh_projects_callback(inputs):
@@ -322,7 +333,7 @@ class TemporalScript(scripts.Script):
 
                 ui.elem("managed_project", gr.Dropdown, label = "Project", choices = self._project_store.project_names, allow_custom_value = True, value = get_first_element(self._project_store.project_names, ""))
                 # FIXME: `change` makes typing slower, but `select` won't work until user clicks an appropriate item
-                ui.callback("managed_project", "change", managed_project_callback, ["output.output_dir", "managed_project"], ["project_description", "project_gallery"])
+                ui.callback("managed_project", "change", managed_project_callback, ["output.output_dir", "managed_project"], ["project_description", "project_gallery", "project_gallery_parallel_index"])
                 ui.elem("refresh_projects", ToolButton, value = "\U0001f504")
                 ui.callback("refresh_projects", "click", refresh_projects_callback, ["output.output_dir"], ["managed_project"])
                 ui.elem("load_project", ToolButton, value = "\U0001f4c2")
@@ -331,8 +342,15 @@ class TemporalScript(scripts.Script):
                 ui.callback("delete_project", "click", delete_project_callback, ["output.output_dir", "managed_project"], ["managed_project"])
 
             with ui.elem("", gr.Accordion, label = "Information", open = False):
+                def project_gallery_parallel_index_callback(inputs):
+                    self._project_store.path = Path(inputs["output.output_dir"])
+                    project = self._project_store.open_project(inputs["managed_project"])
+                    return {"project_gallery": gr.update(value = project.list_all_frame_paths(inputs["project_gallery_parallel_index"])[-PROJECT_GALLERY_SIZE:])}
+
                 ui.elem("project_description", gr.Textbox, label = "Description", lines = 5, max_lines = 5, interactive = False)
                 ui.elem("project_gallery", gr.Gallery, label = f"Last {PROJECT_GALLERY_SIZE} images", columns = 4, object_fit = "contain", preview = True)
+                ui.elem("project_gallery_parallel_index", gr.Number, label = "Parallel index", precision = 0, minimum = 1, step = 1, value = 1)
+                ui.callback("project_gallery_parallel_index", "change", project_gallery_parallel_index_callback, ["output.output_dir", "managed_project", "project_gallery_parallel_index"], ["project_gallery"])
 
             with ui.elem("", gr.Accordion, label = "Tools", open = False):
                 with ui.elem("", gr.Row):
@@ -459,13 +477,13 @@ class TemporalScript(scripts.Script):
         if inputs["load_parameters"] and project.session_path.exists():
             session.load(project.session_path)
 
-        if not self._verify_image_existence(p, session.initial_noise):
+        if not self._verify_image_existence(p, session.initial_noise, session.pipeline.parallel):
             opts.data.update(opts_backup)
 
             return Processed(p, p.init_images)
 
         if not session.iteration.images:
-            session.iteration.images[:] = [pil_to_np(p.init_images[0])]
+            session.iteration.images[:] = [pil_to_np(x) for x in p.init_images]
 
         state.job_count = inputs["frame_count"]
 
@@ -499,34 +517,39 @@ class TemporalScript(scripts.Script):
         return Processed(p, [np_to_pil(x) for x in session.iteration.images])
 
     @staticmethod
-    def _verify_image_existence(p: StableDiffusionProcessingImg2Img, initial_noise: InitialNoiseParams) -> bool:
+    def _verify_image_existence(p: StableDiffusionProcessingImg2Img, initial_noise: InitialNoiseParams, count: int) -> bool:
         if not p.init_images or not isinstance(p.init_images[0], PILImage):
-            noise = generate_value_noise_image(
-                (p.width, p.height),
-                3,
+            noises = [generate_value_noise(
+                (p.height, p.width, 3),
                 initial_noise.scale,
                 initial_noise.octaves,
                 initial_noise.lacunarity,
                 initial_noise.persistence,
-                p.seed,
-            )
+                p.seed + i,
+            ) for i in range(count)]
 
             if initial_noise.factor < 1.0:
-                if not (processed := process_image(copy_with_overrides(p,
-                    init_images = [noise],
-                    n_iter = 1,
-                    batch_size = 1,
-                    denoising_strength = 1.0 - initial_noise.factor,
-                    do_not_save_samples = True,
-                    do_not_save_grid = True,
-                ), True)) or not processed.images:
+                if not (processed_images := process_images(
+                    copy_with_overrides(p,
+                        denoising_strength = 1.0 - initial_noise.factor,
+                        do_not_save_samples = True,
+                        do_not_save_grid = True,
+                    ),
+                    [(np_to_pil(x), p.seed + i, 1) for i, x in enumerate(noises)],
+                    1048576,  # FIXME: Dehardcode
+                    True,
+                )):
                     return False
 
-                p.init_images = [processed.images[0]]
+                p.init_images = [image_array[0] for image_array in processed_images]
+
             else:
-                p.init_images = [noise]
+                p.init_images = noises
+
+        elif len(p.init_images) != count:
+            p.init_images = [p.init_images[0]] * count
 
         if opts.img2img_color_correction:
-            p.color_corrections = [processing.setup_color_correction(p.init_images[0])]
+            p.color_corrections = [processing.setup_color_correction(x) for x in p.init_images]
 
         return True

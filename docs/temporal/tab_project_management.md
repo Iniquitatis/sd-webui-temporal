@@ -5,6 +5,7 @@
 * **Information** — information about the currently selected project.
     * **Description** — textual description of the currently selected project.
     * **Last 10 frames** — small gallery showing the last 10 rendered frames from the currently selected project.
+    * **Parallel index** — index of an image set to preview in the gallery.
 * **Tools** — various utilities for managing the currently selected project.
     * **New name** — new name for the currently selected project.
         * ✔️ — rename currently selected project.
