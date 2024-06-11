@@ -153,7 +153,7 @@ class TemporalScript(scripts.Script):
         global_options.load(EXTENSION_DIR / "settings")
         self._preset_store = PresetStore(EXTENSION_DIR / "presets")
         self._preset_store.refresh_presets()
-        self._project_store = ProjectStore(Path(global_options.output.output_dir))
+        self._project_store = ProjectStore()
         self._project_store.refresh_projects()
 
     def title(self) -> str:
@@ -207,7 +207,6 @@ class TemporalScript(scripts.Script):
                     if inputs["project_name"] not in self._project_store.project_names:
                         return {}
 
-                    self._project_store.path = Path(global_options.output.output_dir)
                     project = self._project_store.open_project(inputs["project_name"])
                     return {
                         "project_description": gr.update(value = desc if (desc := project.get_description()) else "Cannot read project data"),
@@ -217,13 +216,11 @@ class TemporalScript(scripts.Script):
 
                 @ui.callback("refresh_projects", "click", [], ["project_name"])
                 def _(_):
-                    self._project_store.path = Path(global_options.output.output_dir)
                     self._project_store.refresh_projects()
                     return {"project_name": gr.update(choices = self._project_store.project_names)}
 
                 @ui.callback("load_project", "click", ["project_name", "group:session"], ["group:session"])
                 def _(inputs):
-                    self._project_store.path = Path(global_options.output.output_dir)
                     project = self._project_store.open_project(inputs["project_name"])
                     session = self._ui_to_session(inputs)
                     session.load(project.session_path)
@@ -231,7 +228,6 @@ class TemporalScript(scripts.Script):
 
                 @ui.callback("delete_project", "click", ["project_name"], ["project_name"])
                 def _(inputs):
-                    self._project_store.path = Path(global_options.output.output_dir)
                     self._project_store.delete_project(inputs["project_name"])
                     return {"project_name": gr.update(choices = self._project_store.project_names, value = get_first_element(self._project_store.project_names, ""))}
 
@@ -247,7 +243,6 @@ class TemporalScript(scripts.Script):
 
                 @ui.callback("project_gallery_parallel_index", "change", ["project_name", "project_gallery_parallel_index"], ["project_gallery"])
                 def _(inputs):
-                    self._project_store.path = Path(global_options.output.output_dir)
                     project = self._project_store.open_project(inputs["project_name"])
                     return {"project_gallery": gr.update(value = project.list_all_frame_paths(inputs["project_gallery_parallel_index"])[-global_options.project_management.gallery_size:])}
 
@@ -258,7 +253,6 @@ class TemporalScript(scripts.Script):
 
                     @ui.callback("confirm_project_rename", "click", ["project_name", "new_project_name"], ["project_name"])
                     def _(inputs):
-                        self._project_store.path = Path(global_options.output.output_dir)
                         self._project_store.rename_project(inputs["project_name"], inputs["new_project_name"])
                         return {"project_name": gr.update(choices = self._project_store.project_names, value = inputs["new_project_name"])}
 
@@ -268,7 +262,6 @@ class TemporalScript(scripts.Script):
 
                 @ui.callback("upgrade_project", "click", ["project_name"], ["project_description", "project_gallery"])
                 def _(inputs):
-                    self._project_store.path = Path(global_options.output.output_dir)
                     project = self._project_store.open_project(inputs["project_name"])
                     upgrade_project(project.path)
                     return {
@@ -278,7 +271,6 @@ class TemporalScript(scripts.Script):
 
                 @ui.callback("delete_intermediate_frames", "click", ["project_name"], ["project_gallery"])
                 def _(inputs):
-                    self._project_store.path = Path(global_options.output.output_dir)
                     project = self._project_store.open_project(inputs["project_name"])
                     project.delete_intermediate_frames()
                     return {
@@ -288,7 +280,6 @@ class TemporalScript(scripts.Script):
 
                 @ui.callback("delete_session_data", "click", ["project_name"], [])
                 def _(inputs):
-                    self._project_store.path = Path(global_options.output.output_dir)
                     self._project_store.open_project(inputs["project_name"]).delete_session_data()
                     return {}
 
@@ -387,8 +378,8 @@ class TemporalScript(scripts.Script):
 
             @ui.callback("render_plots", "click", ["group:params"], ["metrics_plots"])
             def _(inputs):
+                project = self._project_store.open_project(inputs["project_name"])
                 session = self._ui_to_session(inputs)
-                project = Project(Path(global_options.output.output_dir) / session.project_name)
                 session.load(project.session_path)
                 return {"metrics_plots": gr.update(value = list(session.pipeline.modules["measuring"].metrics.plot().values()))}
 

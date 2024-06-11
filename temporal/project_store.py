@@ -1,14 +1,18 @@
 from pathlib import Path
 
+from temporal.global_options import global_options
 from temporal.project import Project
 from temporal.utils.collection import natural_sort
 from temporal.utils.fs import iterate_subdirectories, remove_entry, rename_entry
 
 
 class ProjectStore:
-    def __init__(self, path: Path) -> None:
-        self.path = path
+    def __init__(self) -> None:
         self.project_names = []
+
+    @property
+    def path(self) -> Path:
+        return Path(global_options.output.output_dir)
 
     def refresh_projects(self) -> None:
         self.project_names.clear()
