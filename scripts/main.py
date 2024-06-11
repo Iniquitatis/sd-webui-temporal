@@ -18,6 +18,7 @@ from modules.ui_components import ToolButton
 
 from temporal.blend_modes import BLEND_MODES
 from temporal.compat import upgrade_project
+from temporal.global_options import OptionCategory, global_options
 from temporal.image_filters import ImageFilter
 from temporal.interop import EXTENSION_DIR, get_cn_units
 from temporal.pipeline import PIPELINE_MODULES
@@ -43,9 +44,6 @@ from temporal.web_ui import process_images
 opts: Options = getattr(shared, "opts")
 prompt_styles: StyleDatabase = getattr(shared, "prompt_styles")
 state: State = getattr(shared, "state")
-
-
-PROJECT_GALLERY_SIZE = 10
 
 
 T = TypeVar("T", bound = Block | Component)
@@ -146,9 +144,10 @@ class UI:
 class TemporalScript(scripts.Script):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
+        global_options.load(EXTENSION_DIR / "settings")
         self._preset_store = PresetStore(EXTENSION_DIR / "presets")
         self._preset_store.refresh_presets()
-        self._project_store = ProjectStore(Path("outputs") / "temporal")
+        self._project_store = ProjectStore(Path(global_options.output.output_dir))
         self._project_store.refresh_projects()
 
     def title(self) -> str:
@@ -190,21 +189,10 @@ class TemporalScript(scripts.Script):
             ui.callback("delete_preset", "click", delete_preset_callback, ["preset"], ["preset"])
 
         with ui.elem("", gr.Tab, label = "General"):
-            with ui.elem("", gr.Accordion, label = "Output"):
-                with ui.elem("", gr.Row):
-                    ui.elem("output.output_dir", gr.Textbox, label = "Output directory", value = "outputs/temporal", groups = ["params"])
-                    ui.elem("output.project_subdir", gr.Textbox, label = "Project subdirectory", value = "untitled", groups = ["params"])
-
-                ui.elem("frame_count", gr.Number, label = "Frame count", precision = 0, minimum = 1, step = 1, value = 100, groups = ["params"])
-
-            with ui.elem("", gr.Accordion, label = "Project"):
-                ui.elem("load_parameters", gr.Checkbox, label = "Load parameters", value = True, groups = ["params"])
-                ui.elem("continue_from_last_frame", gr.Checkbox, label = "Continue from last frame", value = True, groups = ["params"])
-                ui.elem("autosave_every_n_iterations", gr.Number, label = "Autosave every N iterations", precision = 0, minimum = 1, step = 1, value = 10, groups = ["params"])
-
-            with ui.elem("", gr.Accordion, label = "Live preview"):
-                ui.elem("show_only_finalized_frames", gr.Checkbox, label = "Show only finalized frames", value = False, groups = ["params"])
-                ui.elem("preview_parallel_index", gr.Number, label = "Parallel index", precision = 0, minimum = 0, step = 1, value = 1, groups = ["params"])
+            ui.elem("output.project_subdir", gr.Textbox, label = "Project subdirectory", value = "untitled", groups = ["params"])
+            ui.elem("load_parameters", gr.Checkbox, label = "Load parameters", value = True, groups = ["params"])
+            ui.elem("continue_from_last_frame", gr.Checkbox, label = "Continue from last frame", value = True, groups = ["params"])
+            ui.elem("iter_count", gr.Number, label = "Iteration count", precision = 0, minimum = 1, step = 1, value = 100, groups = ["params"])
 
         with ui.elem("", gr.Tab, label = "Pipeline"):
             with ui.elem("", gr.Accordion, label = "Initial noise", open = False):
@@ -270,7 +258,7 @@ class TemporalScript(scripts.Script):
                         session = self._ui_to_session(inputs)
 
                         video_path = render_project_video(
-                            session.output.output_dir / session.output.project_subdir,
+                            Path(global_options.output.output_dir) / session.output.project_subdir,
                             session.video_renderer,
                             is_final,
                             inputs["video_parallel_index"],
@@ -295,7 +283,7 @@ class TemporalScript(scripts.Script):
         with ui.elem("", gr.Tab, label = "Measuring"):
             def render_plots_callback(inputs):
                 session = self._ui_to_session(inputs)
-                project = Project(session.output.output_dir / session.output.project_subdir)
+                project = Project(Path(global_options.output.output_dir) / session.output.project_subdir)
                 session.load(project.session_path)
                 return {"metrics_plots": gr.update(value = list(session.pipeline.modules["measuring"].metrics.plot().values()))}
 
@@ -309,92 +297,118 @@ class TemporalScript(scripts.Script):
                     if inputs["managed_project"] not in self._project_store.project_names:
                         return {}
 
-                    self._project_store.path = Path(inputs["output.output_dir"])
+                    self._project_store.path = Path(global_options.output.output_dir)
                     project = self._project_store.open_project(inputs["managed_project"])
                     return {
                         "project_description": gr.update(value = desc if (desc := project.get_description()) else "Cannot read project data"),
-                        "project_gallery": gr.update(value = project.list_all_frame_paths()[-PROJECT_GALLERY_SIZE:]),
+                        "project_gallery": gr.update(value = project.list_all_frame_paths()[-global_options.project_management.gallery_size:]),
                         "project_gallery_parallel_index": gr.update(value = 1),
                     }
 
                 def refresh_projects_callback(inputs):
-                    self._project_store.path = Path(inputs["output.output_dir"])
+                    self._project_store.path = Path(global_options.output.output_dir)
                     self._project_store.refresh_projects()
                     return {"managed_project": gr.update(choices = self._project_store.project_names)}
 
                 def load_project_callback(inputs):
-                    session = self._ui_to_session(inputs)
-                    self._project_store.path = session.output.output_dir
+                    self._project_store.path = Path(global_options.output.output_dir)
                     project = self._project_store.open_project(inputs["managed_project"])
+                    session = self._ui_to_session(inputs)
                     session.load(project.session_path)
                     return {k: gr.update(value = v) for k, v in self._session_to_ui(session).items()}
 
                 def delete_project_callback(inputs):
-                    self._project_store.path = Path(inputs["output.output_dir"])
+                    self._project_store.path = Path(global_options.output.output_dir)
                     self._project_store.delete_project(inputs["managed_project"])
                     return {"managed_project": gr.update(choices = self._project_store.project_names, value = get_first_element(self._project_store.project_names, ""))}
 
                 ui.elem("managed_project", gr.Dropdown, label = "Project", choices = self._project_store.project_names, allow_custom_value = True, value = get_first_element(self._project_store.project_names, ""))
                 # FIXME: `change` makes typing slower, but `select` won't work until user clicks an appropriate item
-                ui.callback("managed_project", "change", managed_project_callback, ["output.output_dir", "managed_project"], ["project_description", "project_gallery", "project_gallery_parallel_index"])
+                ui.callback("managed_project", "change", managed_project_callback, ["managed_project"], ["project_description", "project_gallery", "project_gallery_parallel_index"])
                 ui.elem("refresh_projects", ToolButton, value = "\U0001f504")
-                ui.callback("refresh_projects", "click", refresh_projects_callback, ["output.output_dir"], ["managed_project"])
+                ui.callback("refresh_projects", "click", refresh_projects_callback, [], ["managed_project"])
                 ui.elem("load_project", ToolButton, value = "\U0001f4c2")
-                ui.callback("load_project", "click", load_project_callback, ["output.output_dir", "managed_project", "group:session"], ["group:session"])
+                ui.callback("load_project", "click", load_project_callback, ["managed_project", "group:session"], ["group:session"])
                 ui.elem("delete_project", ToolButton, value = "\U0001f5d1\ufe0f")
-                ui.callback("delete_project", "click", delete_project_callback, ["output.output_dir", "managed_project"], ["managed_project"])
+                ui.callback("delete_project", "click", delete_project_callback, ["managed_project"], ["managed_project"])
 
             with ui.elem("", gr.Accordion, label = "Information", open = False):
                 def project_gallery_parallel_index_callback(inputs):
-                    self._project_store.path = Path(inputs["output.output_dir"])
+                    self._project_store.path = Path(global_options.output.output_dir)
                     project = self._project_store.open_project(inputs["managed_project"])
-                    return {"project_gallery": gr.update(value = project.list_all_frame_paths(inputs["project_gallery_parallel_index"])[-PROJECT_GALLERY_SIZE:])}
+                    return {"project_gallery": gr.update(value = project.list_all_frame_paths(inputs["project_gallery_parallel_index"])[-global_options.project_management.gallery_size:])}
 
                 ui.elem("project_description", gr.Textbox, label = "Description", lines = 5, max_lines = 5, interactive = False)
-                ui.elem("project_gallery", gr.Gallery, label = f"Last {PROJECT_GALLERY_SIZE} images", columns = 4, object_fit = "contain", preview = True)
+                ui.elem("project_gallery", gr.Gallery, label = "Last images", columns = 4, object_fit = "contain", preview = True)
                 ui.elem("project_gallery_parallel_index", gr.Number, label = "Parallel index", precision = 0, minimum = 1, step = 1, value = 1)
-                ui.callback("project_gallery_parallel_index", "change", project_gallery_parallel_index_callback, ["output.output_dir", "managed_project", "project_gallery_parallel_index"], ["project_gallery"])
+                ui.callback("project_gallery_parallel_index", "change", project_gallery_parallel_index_callback, ["managed_project", "project_gallery_parallel_index"], ["project_gallery"])
 
             with ui.elem("", gr.Accordion, label = "Tools", open = False):
                 with ui.elem("", gr.Row):
                     def rename_project_callback(inputs):
-                        self._project_store.path = Path(inputs["output.output_dir"])
+                        self._project_store.path = Path(global_options.output.output_dir)
                         self._project_store.rename_project(inputs["managed_project"], inputs["new_project_name"])
                         return {"managed_project": gr.update(choices = self._project_store.project_names, value = inputs["new_project_name"])}
 
                     ui.elem("new_project_name", gr.Textbox, label = "New name", value = "")
                     ui.elem("confirm_project_rename", ToolButton, value = "\U00002714\ufe0f")
-                    ui.callback("confirm_project_rename", "click", rename_project_callback, ["output.output_dir", "managed_project", "new_project_name"], ["managed_project"])
+                    ui.callback("confirm_project_rename", "click", rename_project_callback, ["managed_project", "new_project_name"], ["managed_project"])
 
                 def upgrade_project_callback(inputs):
-                    self._project_store.path = Path(inputs["output.output_dir"])
+                    self._project_store.path = Path(global_options.output.output_dir)
                     project = self._project_store.open_project(inputs["managed_project"])
                     upgrade_project(project.path)
                     return {
                         "project_description": gr.update(value = desc if (desc := project.get_description()) else "Cannot read project data"),
-                        "project_gallery": gr.update(value = project.list_all_frame_paths()[-PROJECT_GALLERY_SIZE:]),
+                        "project_gallery": gr.update(value = project.list_all_frame_paths()[-global_options.project_management.gallery_size:]),
                     }
 
                 def delete_intermediate_frames_callback(inputs):
-                    self._project_store.path = Path(inputs["output.output_dir"])
+                    self._project_store.path = Path(global_options.output.output_dir)
                     project = self._project_store.open_project(inputs["managed_project"])
                     project.delete_intermediate_frames()
                     return {
                         "project_description": gr.update(value = desc if (desc := project.get_description()) else "Cannot read project data"),
-                        "project_gallery": gr.update(value = project.list_all_frame_paths()[-PROJECT_GALLERY_SIZE:]),
+                        "project_gallery": gr.update(value = project.list_all_frame_paths()[-global_options.project_management.gallery_size:]),
                     }
 
                 def delete_session_data_callback(inputs):
-                    self._project_store.path = Path(inputs["output.output_dir"])
+                    self._project_store.path = Path(global_options.output.output_dir)
                     self._project_store.open_project(inputs["managed_project"]).delete_session_data()
                     return {}
 
                 ui.elem("upgrade_project", gr.Button, value = "Upgrade")
-                ui.callback("upgrade_project", "click", upgrade_project_callback, ["output.output_dir", "managed_project"], ["project_description", "project_gallery"])
+                ui.callback("upgrade_project", "click", upgrade_project_callback, ["managed_project"], ["project_description", "project_gallery"])
                 ui.elem("delete_intermediate_frames", gr.Button, value = "Delete intermediate frames")
-                ui.callback("delete_intermediate_frames", "click", delete_intermediate_frames_callback, ["output.output_dir", "managed_project"], ["project_gallery"])
+                ui.callback("delete_intermediate_frames", "click", delete_intermediate_frames_callback, ["managed_project"], ["project_gallery"])
                 ui.elem("delete_session_data", gr.Button, value = "Delete session data")
-                ui.callback("delete_session_data", "click", delete_session_data_callback, ["output.output_dir", "managed_project"], [])
+                ui.callback("delete_session_data", "click", delete_session_data_callback, ["managed_project"], [])
+
+        with ui.elem("", gr.Tab, label = "Settings"):
+            def apply_settings_callback(inputs):
+                for key, ui_value in inputs.items():
+                    set_property_by_path(global_options, key, ui_value)
+
+                global_options.save(EXTENSION_DIR / "settings")
+
+                return {}
+
+            ui.elem("apply_settings", gr.Button, value = "Apply")
+            ui.callback("apply_settings", "click", apply_settings_callback, ["group:options"], [])
+
+            for field in global_options.__fields__.values():
+                if not isinstance(category := getattr(global_options, field.key), OptionCategory):
+                    continue
+
+                with ui.elem("", gr.Accordion, label = category.name, open = False):
+                    def make_param_getter(category: OptionCategory, key: str) -> Callable[[], Any]:
+                        return lambda: getattr(category, key)
+
+                    for param in category.__ui_params__.values():
+                        kwargs = dict(param.kwargs)
+                        kwargs.pop("value")
+
+                        ui.elem(f"{field.key}.{param.key}", param.gr_type, label = param.name, value = make_param_getter(category, param.key), **kwargs, groups = ["options"])
 
         with ui.elem("", gr.Tab, label = "Help"):
             for file_name, title in [
@@ -404,6 +418,7 @@ class TemporalScript(scripts.Script):
                 ("tab_video_rendering.md", "Video Rendering tab"),
                 ("tab_measuring.md", "Measuring tab"),
                 ("tab_project_management.md", "Project Management tab"),
+                ("tab_settings.md", "Settings tab"),
                 ("additional_notes.md", "Additional notes"),
             ]:
                 with ui.elem("", gr.Accordion, label = title, open = False):
@@ -423,16 +438,11 @@ class TemporalScript(scripts.Script):
 
         for key, ui_value in inputs.items():
             try:
-                data_value = get_property_by_path(result, key)
+                get_property_by_path(result, key)
             except:
                 logging.warning(f"{key} couldn't be found in {result.__class__.__name__}")
 
-                data_value = None
-
-            if isinstance(data_value, Path):
-                set_property_by_path(result, key, Path(ui_value))
-            else:
-                set_property_by_path(result, key, ui_value)
+            set_property_by_path(result, key, ui_value)
 
         return result
 
@@ -447,10 +457,7 @@ class TemporalScript(scripts.Script):
 
                 data_value = None
 
-            if isinstance(data_value, Path):
-                result[id] = data_value.as_posix()
-            else:
-                result[id] = data_value
+            result[id] = data_value
 
         return result
 
@@ -459,7 +466,7 @@ class TemporalScript(scripts.Script):
 
         opts.save_to_dirs = False
 
-        if inputs["show_only_finalized_frames"]:
+        if global_options.live_preview.show_only_finished_images:
             opts.show_progress_every_n_steps = -1
 
         p.prompt = prompt_styles.apply_styles_to_prompt(p.prompt, p.styles)
@@ -468,7 +475,7 @@ class TemporalScript(scripts.Script):
 
         processing.fix_seed(p)
 
-        project = Project(Path(inputs["output.output_dir"]) / inputs["output.project_subdir"])
+        project = Project(Path(global_options.output.output_dir) / inputs["output.project_subdir"])
         project.load()
 
         if not inputs["continue_from_last_frame"]:
@@ -488,20 +495,20 @@ class TemporalScript(scripts.Script):
         if not session.iteration.images:
             session.iteration.images[:] = [pil_to_np(x) for x in p.init_images]
 
-        state.job_count = inputs["frame_count"]
+        state.job_count = inputs["iter_count"]
 
-        for i in range(inputs["frame_count"]):
-            logging.info(f"Iteration {i + 1} / {inputs['frame_count']}")
+        for i in range(inputs["iter_count"]):
+            logging.info(f"Iteration {i + 1} / {inputs['iter_count']}")
 
             start_time = perf_counter()
 
             state.job = "Temporal main loop"
             state.job_no = i
 
-            if not session.pipeline.run(session, inputs["show_only_finalized_frames"], inputs["preview_parallel_index"]):
+            if not session.pipeline.run(session):
                 break
 
-            if i % inputs["autosave_every_n_iterations"] == 0:
+            if i % global_options.output.autosave_every_n_iterations == 0:
                 session.save(project.session_path)
                 project.save()
 
@@ -539,7 +546,7 @@ class TemporalScript(scripts.Script):
                         do_not_save_grid = True,
                     ),
                     [(np_to_pil(x), p.seed + i, 1) for i, x in enumerate(noises)],
-                    1048576,  # FIXME: Dehardcode
+                    global_options.processing.pixels_per_batch,
                     True,
                 )):
                     return False

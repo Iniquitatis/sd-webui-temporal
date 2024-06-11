@@ -3,6 +3,7 @@ import skimage
 from modules import shared
 from modules.shared_state import State
 
+from temporal.global_options import global_options
 from temporal.meta.serializable import Serializable, field
 from temporal.pipeline_modules import PIPELINE_MODULES, PipelineModule
 from temporal.session import IterationData, Session
@@ -19,7 +20,7 @@ class Pipeline(Serializable):
     module_order: list[str] = field(factory = list)
     modules: dict[str, PipelineModule] = field(factory = lambda: {id: cls() for id, cls in PIPELINE_MODULES.items()})
 
-    def run(self, session: Session, show_only_finalized_frames: bool, preview_parallel_index: int) -> bool:
+    def run(self, session: Session) -> bool:
         ordered_modules = reorder_dict(self.modules, self.module_order)
         ordered_keys = list(ordered_modules.keys())
 
@@ -46,14 +47,14 @@ class Pipeline(Serializable):
             if state.interrupted or state.skipped:
                 return False
 
-            if not show_only_finalized_frames and module.preview:
-                self._show_images(session.iteration, preview_parallel_index)
+            if not global_options.live_preview.show_only_finished_images and module.preview:
+                self._show_images(session.iteration)
 
         session.iteration.index += 1
         session.iteration.module_id = None
 
-        if show_only_finalized_frames:
-            self._show_images(session.iteration, preview_parallel_index)
+        if global_options.live_preview.show_only_finished_images:
+            self._show_images(session.iteration)
 
         return True
 
@@ -64,10 +65,10 @@ class Pipeline(Serializable):
 
             module.finalize(session.iteration.images, session)
 
-    def _show_images(self, iteration: IterationData, parallel_index: int) -> None:
-        if parallel_index == 0:
+    def _show_images(self, iteration: IterationData) -> None:
+        if global_options.live_preview.preview_parallel_index == 0:
             preview = skimage.util.montage(iteration.images, channel_axis = -1)
         else:
-            preview = iteration.images[min(max(parallel_index - 1, 0), len(iteration.images) - 1)]
+            preview = iteration.images[min(max(global_options.live_preview.preview_parallel_index - 1, 0), len(iteration.images) - 1)]
 
         state.assign_current_image(np_to_pil(preview))

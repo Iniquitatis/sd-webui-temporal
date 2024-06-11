@@ -79,8 +79,12 @@ class Serializable:
                 ar[key].write(getattr(self, key))
 
     def load(self, dir: Path) -> None:
+        if not dir.is_dir() or not (xml_path := dir / "data.xml").is_file():
+            logging.warning(f"Cannot load {self.__class__.__name__} from {dir.as_posix()}")
+            return
+
         ar = Archive(data_dir = dir)
-        ar.parse_xml(ET.ElementTree(file = dir / "data.xml").getroot())
+        ar.parse_xml(ET.ElementTree(file = xml_path).getroot())
         self.read(ar)
 
     def save(self, dir: Path) -> None:

@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from modules.options import Options
@@ -14,7 +13,6 @@ from temporal.video_renderer import VideoRenderer
 
 
 class OutputParams(Serializable):
-    output_dir: Path = field(Path("outputs/temporal"))
     project_subdir: str = field("untitled")
 
 
