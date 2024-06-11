@@ -194,11 +194,103 @@ class TemporalScript(scripts.Script):
                 self._preset_store.delete_preset(inputs["preset"])
                 return {"preset": gr.update(choices = self._preset_store.preset_names, value = get_first_element(self._preset_store.preset_names, ""))}
 
-        with ui.elem("", gr.Tab, label = "General"):
-            ui.elem("output.project_subdir", gr.Textbox, label = "Project subdirectory", value = "untitled", groups = ["params"])
-            ui.elem("load_parameters", gr.Checkbox, label = "Load parameters", value = True, groups = ["params"])
-            ui.elem("continue_from_last_frame", gr.Checkbox, label = "Continue from last frame", value = True, groups = ["params"])
-            ui.elem("iter_count", gr.Number, label = "Iteration count", precision = 0, minimum = 1, step = 1, value = 100, groups = ["params"])
+        with ui.elem("", gr.Tab, label = "Project"):
+            with ui.elem("", gr.Row):
+                ui.elem("project_name", gr.Dropdown, label = "Project name", choices = self._project_store.project_names, allow_custom_value = True, value = get_first_element(self._project_store.project_names, ""), groups = ["params"])
+                ui.elem("refresh_projects", ToolButton, value = "\U0001f504")
+                ui.elem("load_project", ToolButton, value = "\U0001f4c2")
+                ui.elem("delete_project", ToolButton, value = "\U0001f5d1\ufe0f")
+
+                # FIXME: `change` makes typing slower, but `select` won't work until user clicks an appropriate item
+                @ui.callback("project_name", "change", ["project_name"], ["project_description", "project_gallery", "project_gallery_parallel_index"])
+                def _(inputs):
+                    if inputs["project_name"] not in self._project_store.project_names:
+                        return {}
+
+                    self._project_store.path = Path(global_options.output.output_dir)
+                    project = self._project_store.open_project(inputs["project_name"])
+                    return {
+                        "project_description": gr.update(value = desc if (desc := project.get_description()) else "Cannot read project data"),
+                        "project_gallery": gr.update(value = project.list_all_frame_paths()[-global_options.project_management.gallery_size:]),
+                        "project_gallery_parallel_index": gr.update(value = 1),
+                    }
+
+                @ui.callback("refresh_projects", "click", [], ["project_name"])
+                def _(_):
+                    self._project_store.path = Path(global_options.output.output_dir)
+                    self._project_store.refresh_projects()
+                    return {"project_name": gr.update(choices = self._project_store.project_names)}
+
+                @ui.callback("load_project", "click", ["project_name", "group:session"], ["group:session"])
+                def _(inputs):
+                    self._project_store.path = Path(global_options.output.output_dir)
+                    project = self._project_store.open_project(inputs["project_name"])
+                    session = self._ui_to_session(inputs)
+                    session.load(project.session_path)
+                    return {k: gr.update(value = v) for k, v in self._session_to_ui(session).items()}
+
+                @ui.callback("delete_project", "click", ["project_name"], ["project_name"])
+                def _(inputs):
+                    self._project_store.path = Path(global_options.output.output_dir)
+                    self._project_store.delete_project(inputs["project_name"])
+                    return {"project_name": gr.update(choices = self._project_store.project_names, value = get_first_element(self._project_store.project_names, ""))}
+
+            with ui.elem("", gr.Tab, label = "Session"):
+                ui.elem("load_parameters", gr.Checkbox, label = "Load parameters", value = True, groups = ["params"])
+                ui.elem("continue_from_last_frame", gr.Checkbox, label = "Continue from last frame", value = True, groups = ["params"])
+                ui.elem("iter_count", gr.Number, label = "Iteration count", precision = 0, minimum = 1, step = 1, value = 100, groups = ["params"])
+
+            with ui.elem("", gr.Tab, label = "Information"):
+                ui.elem("project_description", gr.Textbox, label = "Description", lines = 5, max_lines = 5, interactive = False)
+                ui.elem("project_gallery", gr.Gallery, label = "Last images", columns = 4, object_fit = "contain", preview = True)
+                ui.elem("project_gallery_parallel_index", gr.Number, label = "Parallel index", precision = 0, minimum = 1, step = 1, value = 1)
+
+                @ui.callback("project_gallery_parallel_index", "change", ["project_name", "project_gallery_parallel_index"], ["project_gallery"])
+                def _(inputs):
+                    self._project_store.path = Path(global_options.output.output_dir)
+                    project = self._project_store.open_project(inputs["project_name"])
+                    return {"project_gallery": gr.update(value = project.list_all_frame_paths(inputs["project_gallery_parallel_index"])[-global_options.project_management.gallery_size:])}
+
+            with ui.elem("", gr.Tab, label = "Tools"):
+                with ui.elem("", gr.Row):
+                    ui.elem("new_project_name", gr.Textbox, label = "New name", value = "")
+                    ui.elem("confirm_project_rename", ToolButton, value = "\U00002714\ufe0f")
+
+                    @ui.callback("confirm_project_rename", "click", ["project_name", "new_project_name"], ["project_name"])
+                    def _(inputs):
+                        self._project_store.path = Path(global_options.output.output_dir)
+                        self._project_store.rename_project(inputs["project_name"], inputs["new_project_name"])
+                        return {"project_name": gr.update(choices = self._project_store.project_names, value = inputs["new_project_name"])}
+
+                ui.elem("upgrade_project", gr.Button, value = "Upgrade")
+                ui.elem("delete_intermediate_frames", gr.Button, value = "Delete intermediate frames")
+                ui.elem("delete_session_data", gr.Button, value = "Delete session data")
+
+                @ui.callback("upgrade_project", "click", ["project_name"], ["project_description", "project_gallery"])
+                def _(inputs):
+                    self._project_store.path = Path(global_options.output.output_dir)
+                    project = self._project_store.open_project(inputs["project_name"])
+                    upgrade_project(project.path)
+                    return {
+                        "project_description": gr.update(value = desc if (desc := project.get_description()) else "Cannot read project data"),
+                        "project_gallery": gr.update(value = project.list_all_frame_paths()[-global_options.project_management.gallery_size:]),
+                    }
+
+                @ui.callback("delete_intermediate_frames", "click", ["project_name"], ["project_gallery"])
+                def _(inputs):
+                    self._project_store.path = Path(global_options.output.output_dir)
+                    project = self._project_store.open_project(inputs["project_name"])
+                    project.delete_intermediate_frames()
+                    return {
+                        "project_description": gr.update(value = desc if (desc := project.get_description()) else "Cannot read project data"),
+                        "project_gallery": gr.update(value = project.list_all_frame_paths()[-global_options.project_management.gallery_size:]),
+                    }
+
+                @ui.callback("delete_session_data", "click", ["project_name"], [])
+                def _(inputs):
+                    self._project_store.path = Path(global_options.output.output_dir)
+                    self._project_store.open_project(inputs["project_name"]).delete_session_data()
+                    return {}
 
         with ui.elem("", gr.Tab, label = "Pipeline"):
             with ui.elem("", gr.Accordion, label = "Initial noise", open = False):
@@ -266,7 +358,7 @@ class TemporalScript(scripts.Script):
                     session = self._ui_to_session(inputs)
 
                     video_path = render_project_video(
-                        Path(global_options.output.output_dir) / session.output.project_subdir,
+                        Path(global_options.output.output_dir) / session.project_name,
                         session.video_renderer,
                         is_final,
                         inputs["video_parallel_index"],
@@ -296,102 +388,9 @@ class TemporalScript(scripts.Script):
             @ui.callback("render_plots", "click", ["group:params"], ["metrics_plots"])
             def _(inputs):
                 session = self._ui_to_session(inputs)
-                project = Project(Path(global_options.output.output_dir) / session.output.project_subdir)
+                project = Project(Path(global_options.output.output_dir) / session.project_name)
                 session.load(project.session_path)
                 return {"metrics_plots": gr.update(value = list(session.pipeline.modules["measuring"].metrics.plot().values()))}
-
-        with ui.elem("", gr.Tab, label = "Project Management"):
-            with ui.elem("", gr.Row):
-                ui.elem("managed_project", gr.Dropdown, label = "Project", choices = self._project_store.project_names, allow_custom_value = True, value = get_first_element(self._project_store.project_names, ""))
-                ui.elem("refresh_projects", ToolButton, value = "\U0001f504")
-                ui.elem("load_project", ToolButton, value = "\U0001f4c2")
-                ui.elem("delete_project", ToolButton, value = "\U0001f5d1\ufe0f")
-
-                # FIXME: `change` makes typing slower, but `select` won't work until user clicks an appropriate item
-                @ui.callback("managed_project", "change", ["managed_project"], ["project_description", "project_gallery", "project_gallery_parallel_index"])
-                def _(inputs):
-                    if inputs["managed_project"] not in self._project_store.project_names:
-                        return {}
-
-                    self._project_store.path = Path(global_options.output.output_dir)
-                    project = self._project_store.open_project(inputs["managed_project"])
-                    return {
-                        "project_description": gr.update(value = desc if (desc := project.get_description()) else "Cannot read project data"),
-                        "project_gallery": gr.update(value = project.list_all_frame_paths()[-global_options.project_management.gallery_size:]),
-                        "project_gallery_parallel_index": gr.update(value = 1),
-                    }
-
-                @ui.callback("refresh_projects", "click", [], ["managed_project"])
-                def _(_):
-                    self._project_store.path = Path(global_options.output.output_dir)
-                    self._project_store.refresh_projects()
-                    return {"managed_project": gr.update(choices = self._project_store.project_names)}
-
-                @ui.callback("load_project", "click", ["managed_project", "group:session"], ["group:session"])
-                def _(inputs):
-                    self._project_store.path = Path(global_options.output.output_dir)
-                    project = self._project_store.open_project(inputs["managed_project"])
-                    session = self._ui_to_session(inputs)
-                    session.load(project.session_path)
-                    return {k: gr.update(value = v) for k, v in self._session_to_ui(session).items()}
-
-                @ui.callback("delete_project", "click", ["managed_project"], ["managed_project"])
-                def _(inputs):
-                    self._project_store.path = Path(global_options.output.output_dir)
-                    self._project_store.delete_project(inputs["managed_project"])
-                    return {"managed_project": gr.update(choices = self._project_store.project_names, value = get_first_element(self._project_store.project_names, ""))}
-
-            with ui.elem("", gr.Accordion, label = "Information", open = False):
-                ui.elem("project_description", gr.Textbox, label = "Description", lines = 5, max_lines = 5, interactive = False)
-                ui.elem("project_gallery", gr.Gallery, label = "Last images", columns = 4, object_fit = "contain", preview = True)
-                ui.elem("project_gallery_parallel_index", gr.Number, label = "Parallel index", precision = 0, minimum = 1, step = 1, value = 1)
-
-                @ui.callback("project_gallery_parallel_index", "change", ["managed_project", "project_gallery_parallel_index"], ["project_gallery"])
-                def _(inputs):
-                    self._project_store.path = Path(global_options.output.output_dir)
-                    project = self._project_store.open_project(inputs["managed_project"])
-                    return {"project_gallery": gr.update(value = project.list_all_frame_paths(inputs["project_gallery_parallel_index"])[-global_options.project_management.gallery_size:])}
-
-            with ui.elem("", gr.Accordion, label = "Tools", open = False):
-                with ui.elem("", gr.Row):
-                    ui.elem("new_project_name", gr.Textbox, label = "New name", value = "")
-                    ui.elem("confirm_project_rename", ToolButton, value = "\U00002714\ufe0f")
-
-                    @ui.callback("confirm_project_rename", "click", ["managed_project", "new_project_name"], ["managed_project"])
-                    def _(inputs):
-                        self._project_store.path = Path(global_options.output.output_dir)
-                        self._project_store.rename_project(inputs["managed_project"], inputs["new_project_name"])
-                        return {"managed_project": gr.update(choices = self._project_store.project_names, value = inputs["new_project_name"])}
-
-                ui.elem("upgrade_project", gr.Button, value = "Upgrade")
-                ui.elem("delete_intermediate_frames", gr.Button, value = "Delete intermediate frames")
-                ui.elem("delete_session_data", gr.Button, value = "Delete session data")
-
-                @ui.callback("upgrade_project", "click", ["managed_project"], ["project_description", "project_gallery"])
-                def _(inputs):
-                    self._project_store.path = Path(global_options.output.output_dir)
-                    project = self._project_store.open_project(inputs["managed_project"])
-                    upgrade_project(project.path)
-                    return {
-                        "project_description": gr.update(value = desc if (desc := project.get_description()) else "Cannot read project data"),
-                        "project_gallery": gr.update(value = project.list_all_frame_paths()[-global_options.project_management.gallery_size:]),
-                    }
-
-                @ui.callback("delete_intermediate_frames", "click", ["managed_project"], ["project_gallery"])
-                def _(inputs):
-                    self._project_store.path = Path(global_options.output.output_dir)
-                    project = self._project_store.open_project(inputs["managed_project"])
-                    project.delete_intermediate_frames()
-                    return {
-                        "project_description": gr.update(value = desc if (desc := project.get_description()) else "Cannot read project data"),
-                        "project_gallery": gr.update(value = project.list_all_frame_paths()[-global_options.project_management.gallery_size:]),
-                    }
-
-                @ui.callback("delete_session_data", "click", ["managed_project"], [])
-                def _(inputs):
-                    self._project_store.path = Path(global_options.output.output_dir)
-                    self._project_store.open_project(inputs["managed_project"]).delete_session_data()
-                    return {}
 
         with ui.elem("", gr.Tab, label = "Settings"):
             ui.elem("apply_settings", gr.Button, value = "Apply")
@@ -422,11 +421,10 @@ class TemporalScript(scripts.Script):
         with ui.elem("", gr.Tab, label = "Help"):
             for file_name, title in [
                 ("main.md", "Main"),
-                ("tab_general.md", "General tab"),
+                ("tab_project.md", "Project tab"),
                 ("tab_pipeline.md", "Pipeline tab"),
                 ("tab_video_rendering.md", "Video Rendering tab"),
                 ("tab_measuring.md", "Measuring tab"),
-                ("tab_project_management.md", "Project Management tab"),
                 ("tab_settings.md", "Settings tab"),
                 ("additional_notes.md", "Additional notes"),
             ]:
@@ -484,7 +482,7 @@ class TemporalScript(scripts.Script):
 
         processing.fix_seed(p)
 
-        project = Project(Path(global_options.output.output_dir) / inputs["output.project_subdir"])
+        project = Project(Path(global_options.output.output_dir) / inputs["project_name"])
         project.load()
 
         if not inputs["continue_from_last_frame"]:

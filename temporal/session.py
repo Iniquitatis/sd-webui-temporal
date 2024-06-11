@@ -12,10 +12,6 @@ from temporal.utils.image import NumpyImage
 from temporal.video_renderer import VideoRenderer
 
 
-class OutputParams(Serializable):
-    project_subdir: str = field("untitled")
-
-
 class InitialNoiseParams(Serializable):
     factor: float = field(0.0)
     scale: int = field(1)
@@ -34,7 +30,7 @@ class Session(Serializable):
     options: Options = field()
     processing: StableDiffusionProcessingImg2Img = field()
     controlnet_units: Optional[list[ControlNetUnitWrapper]] = field()
-    output: OutputParams = field(factory = OutputParams, saved = False)
+    project_name: str = field("untitled", saved = False)
     initial_noise: InitialNoiseParams = field(factory = InitialNoiseParams)
     pipeline: "Pipeline" = field()
     video_renderer: VideoRenderer = field(factory = VideoRenderer, saved = False)
