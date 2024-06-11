@@ -91,14 +91,3 @@ def save_processed_image(image: PILImage, p: StableDiffusionProcessing, processe
             forced_filename = file_name,
             extension = opts.samples_format or "png",
         )
-
-
-def set_preview_image(image: PILImage) -> None:
-    global _last_preview_image
-
-    if image is not _last_preview_image:
-        state.assign_current_image(image)
-        _last_preview_image = image
-
-
-_last_preview_image: Optional[PILImage] = None

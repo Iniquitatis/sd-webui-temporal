@@ -1,12 +1,13 @@
+import skimage
+
 from modules import shared
 from modules.shared_state import State
 
 from temporal.meta.serializable import Serializable, field
 from temporal.pipeline_modules import PIPELINE_MODULES, PipelineModule
-from temporal.session import Session
+from temporal.session import IterationData, Session
 from temporal.utils.collection import reorder_dict
 from temporal.utils.image import np_to_pil
-from temporal.web_ui import set_preview_image
 
 
 # FIXME: To shut up the type checker
@@ -18,7 +19,7 @@ class Pipeline(Serializable):
     module_order: list[str] = field(factory = list)
     modules: dict[str, PipelineModule] = field(factory = lambda: {id: cls() for id, cls in PIPELINE_MODULES.items()})
 
-    def run(self, session: Session, show_only_finalized_frames: bool) -> bool:
+    def run(self, session: Session, show_only_finalized_frames: bool, preview_parallel_index: int) -> bool:
         ordered_modules = reorder_dict(self.modules, self.module_order)
         ordered_keys = list(ordered_modules.keys())
 
@@ -46,13 +47,13 @@ class Pipeline(Serializable):
                 return False
 
             if not show_only_finalized_frames and module.preview:
-                set_preview_image(np_to_pil(session.iteration.images[0]))
+                self._show_images(session.iteration, preview_parallel_index)
 
         session.iteration.index += 1
         session.iteration.module_id = None
 
         if show_only_finalized_frames:
-            set_preview_image(np_to_pil(session.iteration.images[0]))
+            self._show_images(session.iteration, preview_parallel_index)
 
         return True
 
@@ -62,3 +63,11 @@ class Pipeline(Serializable):
                 continue
 
             module.finalize(session.iteration.images, session)
+
+    def _show_images(self, iteration: IterationData, parallel_index: int) -> None:
+        if parallel_index == 0:
+            preview = skimage.util.montage(iteration.images, channel_axis = -1)
+        else:
+            preview = iteration.images[min(max(parallel_index - 1, 0), len(iteration.images) - 1)]
+
+        state.assign_current_image(np_to_pil(preview))

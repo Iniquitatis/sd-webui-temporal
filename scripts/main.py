@@ -196,12 +196,15 @@ class TemporalScript(scripts.Script):
                     ui.elem("output.project_subdir", gr.Textbox, label = "Project subdirectory", value = "untitled", groups = ["params"])
 
                 ui.elem("frame_count", gr.Number, label = "Frame count", precision = 0, minimum = 1, step = 1, value = 100, groups = ["params"])
-                ui.elem("show_only_finalized_frames", gr.Checkbox, label = "Show only finalized frames", value = False, groups = ["params"])
 
             with ui.elem("", gr.Accordion, label = "Project"):
                 ui.elem("load_parameters", gr.Checkbox, label = "Load parameters", value = True, groups = ["params"])
                 ui.elem("continue_from_last_frame", gr.Checkbox, label = "Continue from last frame", value = True, groups = ["params"])
                 ui.elem("autosave_every_n_iterations", gr.Number, label = "Autosave every N iterations", precision = 0, minimum = 1, step = 1, value = 10, groups = ["params"])
+
+            with ui.elem("", gr.Accordion, label = "Live preview"):
+                ui.elem("show_only_finalized_frames", gr.Checkbox, label = "Show only finalized frames", value = False, groups = ["params"])
+                ui.elem("preview_parallel_index", gr.Number, label = "Parallel index", precision = 0, minimum = 0, step = 1, value = 1, groups = ["params"])
 
         with ui.elem("", gr.Tab, label = "Pipeline"):
             with ui.elem("", gr.Accordion, label = "Initial noise", open = False):
@@ -495,7 +498,7 @@ class TemporalScript(scripts.Script):
             state.job = "Temporal main loop"
             state.job_no = i
 
-            if not session.pipeline.run(session, inputs["show_only_finalized_frames"]):
+            if not session.pipeline.run(session, inputs["show_only_finalized_frames"], inputs["preview_parallel_index"]):
                 break
 
             if i % inputs["autosave_every_n_iterations"] == 0:
