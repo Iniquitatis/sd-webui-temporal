@@ -166,37 +166,37 @@ class TemporalScript(scripts.Script):
         self._ui = ui = UI(self.elem_id)
 
         with ui.elem("", gr.Row):
-            ui.elem("preset", gr.Dropdown, label = "Preset", choices = self._preset_store.preset_names, allow_custom_value = True, value = get_first_element(self._preset_store.preset_names, ""))
+            ui.elem("preset_name", gr.Dropdown, label = "Preset", choices = self._preset_store.preset_names, allow_custom_value = True, value = get_first_element(self._preset_store.preset_names, ""))
             ui.elem("refresh_presets", ToolButton, value = "\U0001f504")
             ui.elem("load_preset", ToolButton, value = "\U0001f4c2")
             ui.elem("save_preset", ToolButton, value = "\U0001f4be")
             ui.elem("delete_preset", ToolButton, value = "\U0001f5d1\ufe0f")
 
-            @ui.callback("refresh_presets", "click", [], ["preset"])
+            @ui.callback("refresh_presets", "click", [], ["preset_name"])
             def _(_):
                 self._preset_store.refresh_presets()
-                return {"preset": gr.update(choices = self._preset_store.preset_names)}
+                return {"preset_name": gr.update(choices = self._preset_store.preset_names)}
 
-            @ui.callback("load_preset", "click", ["preset", "group:params"], ["group:params"])
+            @ui.callback("load_preset", "click", ["preset_name", "group:preset"], ["group:preset"])
             def _(inputs):
-                preset = inputs.pop("preset")
-                inputs |= self._preset_store.open_preset(preset).data
+                preset_name = inputs.pop("preset_name")
+                inputs |= self._preset_store.open_preset(preset_name).data
                 return {k: gr.update(value = v) for k, v in inputs.items()}
 
-            @ui.callback("save_preset", "click", ["preset", "group:params"], ["preset"])
+            @ui.callback("save_preset", "click", ["preset_name", "group:preset"], ["preset_name"])
             def _(inputs):
-                preset = inputs.pop("preset")
-                self._preset_store.save_preset(preset, inputs)
-                return {"preset": gr.update(choices = self._preset_store.preset_names, value = preset)}
+                preset_name = inputs.pop("preset_name")
+                self._preset_store.save_preset(preset_name, inputs)
+                return {"preset_name": gr.update(choices = self._preset_store.preset_names, value = preset_name)}
 
-            @ui.callback("delete_preset", "click", ["preset"], ["preset"])
+            @ui.callback("delete_preset", "click", ["preset_name"], ["preset_name"])
             def _(inputs):
-                self._preset_store.delete_preset(inputs["preset"])
-                return {"preset": gr.update(choices = self._preset_store.preset_names, value = get_first_element(self._preset_store.preset_names, ""))}
+                self._preset_store.delete_preset(inputs["preset_name"])
+                return {"preset_name": gr.update(choices = self._preset_store.preset_names, value = get_first_element(self._preset_store.preset_names, ""))}
 
         with ui.elem("", gr.Tab, label = "Project"):
             with ui.elem("", gr.Row):
-                ui.elem("project_name", gr.Dropdown, label = "Project name", choices = self._project_store.project_names, allow_custom_value = True, value = get_first_element(self._project_store.project_names, ""), groups = ["params"])
+                ui.elem("project_name", gr.Dropdown, label = "Project name", choices = self._project_store.project_names, allow_custom_value = True, value = get_first_element(self._project_store.project_names, ""), groups = ["preset", "project", "session"])
                 ui.elem("refresh_projects", ToolButton, value = "\U0001f504")
                 ui.elem("load_project", ToolButton, value = "\U0001f4c2")
                 ui.elem("delete_project", ToolButton, value = "\U0001f5d1\ufe0f")
@@ -221,7 +221,7 @@ class TemporalScript(scripts.Script):
 
                 @ui.callback("load_project", "click", ["project_name", "group:session"], ["group:session"])
                 def _(inputs):
-                    project = self._project_store.open_project(inputs["project_name"])
+                    project = self._project_store.open_project(inputs.pop("project_name"))
                     session = self._ui_to_session(inputs)
                     session.load(project.session_path)
                     return {k: gr.update(value = v) for k, v in self._session_to_ui(session).items()}
@@ -232,9 +232,9 @@ class TemporalScript(scripts.Script):
                     return {"project_name": gr.update(choices = self._project_store.project_names, value = get_first_element(self._project_store.project_names, ""))}
 
             with ui.elem("", gr.Tab, label = "Session"):
-                ui.elem("load_parameters", gr.Checkbox, label = "Load parameters", value = True, groups = ["params"])
-                ui.elem("continue_from_last_frame", gr.Checkbox, label = "Continue from last frame", value = True, groups = ["params"])
-                ui.elem("iter_count", gr.Number, label = "Iteration count", precision = 0, minimum = 1, step = 1, value = 100, groups = ["params"])
+                ui.elem("load_parameters", gr.Checkbox, label = "Load parameters", value = True, groups = ["preset", "project"])
+                ui.elem("continue_from_last_frame", gr.Checkbox, label = "Continue from last frame", value = True, groups = ["preset", "project"])
+                ui.elem("iter_count", gr.Number, label = "Iteration count", precision = 0, minimum = 1, step = 1, value = 100, groups = ["preset", "project"])
 
             with ui.elem("", gr.Tab, label = "Information"):
                 ui.elem("project_description", gr.Textbox, label = "Description", lines = 5, max_lines = 5, interactive = False)
@@ -285,56 +285,56 @@ class TemporalScript(scripts.Script):
 
         with ui.elem("", gr.Tab, label = "Pipeline"):
             with ui.elem("", gr.Accordion, label = "Initial noise", open = False):
-                ui.elem("initial_noise.factor", gr.Slider, label = "Factor", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, groups = ["params", "session"])
-                ui.elem("initial_noise.scale", gr.Slider, label = "Scale", precision = 0, minimum = 1, maximum = 1024, step = 1, value = 1, groups = ["params", "session"])
-                ui.elem("initial_noise.octaves", gr.Slider, label = "Octaves", precision = 0, minimum = 1, maximum = 10, step = 1, value = 1, groups = ["params", "session"])
-                ui.elem("initial_noise.lacunarity", gr.Slider, label = "Lacunarity", minimum = 0.01, maximum = 4.0, step = 0.01, value = 2.0, groups = ["params", "session"])
-                ui.elem("initial_noise.persistence", gr.Slider, label = "Persistence", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.5, groups = ["params", "session"])
+                ui.elem("initial_noise.factor", gr.Slider, label = "Factor", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, groups = ["preset", "session"])
+                ui.elem("initial_noise.scale", gr.Slider, label = "Scale", precision = 0, minimum = 1, maximum = 1024, step = 1, value = 1, groups = ["preset", "session"])
+                ui.elem("initial_noise.octaves", gr.Slider, label = "Octaves", precision = 0, minimum = 1, maximum = 10, step = 1, value = 1, groups = ["preset", "session"])
+                ui.elem("initial_noise.lacunarity", gr.Slider, label = "Lacunarity", minimum = 0.01, maximum = 4.0, step = 0.01, value = 2.0, groups = ["preset", "session"])
+                ui.elem("initial_noise.persistence", gr.Slider, label = "Persistence", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.5, groups = ["preset", "session"])
 
             sorted_modules = dict(sorted(PIPELINE_MODULES.items(), key = lambda x: f"{x[1].icon} {x[1].id}"))
 
-            ui.elem("pipeline.parallel", gr.Number, label = "Parallel", precision = 0, minimum = 1, step = 1, value = 1, groups = ["params", "session"])
+            ui.elem("pipeline.parallel", gr.Number, label = "Parallel", precision = 0, minimum = 1, step = 1, value = 1, groups = ["preset", "session"])
 
-            with ui.elem("pipeline.module_order", ModuleList, keys = sorted_modules.keys(), groups = ["params", "session"]):
+            with ui.elem("pipeline.module_order", ModuleList, keys = sorted_modules.keys(), groups = ["preset", "session"]):
                 for id, module in sorted_modules.items():
-                    with ui.elem(f"pipeline.modules['{id}'].enabled", ModuleAccordion, label = f"{module.icon} {module.name}", key = id, value = False, open = False, groups = ["params", "session"]):
-                        ui.elem(f"pipeline.modules['{id}'].preview", gr.Checkbox, label = "Preview", value = True, groups = ["params", "session"])
+                    with ui.elem(f"pipeline.modules['{id}'].enabled", ModuleAccordion, label = f"{module.icon} {module.name}", key = id, value = False, open = False, groups = ["preset", "session"]):
+                        ui.elem(f"pipeline.modules['{id}'].preview", gr.Checkbox, label = "Preview", value = True, groups = ["preset", "session"])
 
                         if issubclass(module, ImageFilter):
                             with ui.elem("", gr.Row):
-                                ui.elem(f"pipeline.modules['{id}'].amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0, groups = ["params", "session"])
-                                ui.elem(f"pipeline.modules['{id}'].amount_relative", gr.Checkbox, label = "Relative", value = False, groups = ["params", "session"])
+                                ui.elem(f"pipeline.modules['{id}'].amount", gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0, groups = ["preset", "session"])
+                                ui.elem(f"pipeline.modules['{id}'].amount_relative", gr.Checkbox, label = "Relative", value = False, groups = ["preset", "session"])
 
-                            ui.elem(f"pipeline.modules['{id}'].blend_mode", gr.Dropdown, label = "Blend mode", choices = list(BLEND_MODES.keys()), value = get_first_element(BLEND_MODES), groups = ["params", "session"])
+                            ui.elem(f"pipeline.modules['{id}'].blend_mode", gr.Dropdown, label = "Blend mode", choices = list(BLEND_MODES.keys()), value = get_first_element(BLEND_MODES), groups = ["preset", "session"])
 
                             with ui.elem("", gr.Tab, label = "Parameters"):
                                 if module.__ui_params__:
                                     for param in module.__ui_params__.values():
-                                        ui.elem(f"pipeline.modules['{id}'].{param.key}", param.gr_type, label = param.name, **param.kwargs, groups = ["params", "session"])
+                                        ui.elem(f"pipeline.modules['{id}'].{param.key}", param.gr_type, label = param.name, **param.kwargs, groups = ["preset", "session"])
                                 else:
                                     ui.elem("", gr.Markdown, value = "_This filter has no available parameters._")
 
                             with ui.elem("", gr.Tab, label = "Mask"):
-                                ui.elem(f"pipeline.modules['{id}'].mask.image", gr.Image, label = "Image", type = "numpy", image_mode = "L", interactive = True, groups = ["params", "session"])
-                                ui.elem(f"pipeline.modules['{id}'].mask.normalized", gr.Checkbox, label = "Normalized", value = False, groups = ["params", "session"])
-                                ui.elem(f"pipeline.modules['{id}'].mask.inverted", gr.Checkbox, label = "Inverted", value = False, groups = ["params", "session"])
-                                ui.elem(f"pipeline.modules['{id}'].mask.blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, groups = ["params", "session"])
+                                ui.elem(f"pipeline.modules['{id}'].mask.image", gr.Image, label = "Image", type = "numpy", image_mode = "L", interactive = True, groups = ["preset", "session"])
+                                ui.elem(f"pipeline.modules['{id}'].mask.normalized", gr.Checkbox, label = "Normalized", value = False, groups = ["preset", "session"])
+                                ui.elem(f"pipeline.modules['{id}'].mask.inverted", gr.Checkbox, label = "Inverted", value = False, groups = ["preset", "session"])
+                                ui.elem(f"pipeline.modules['{id}'].mask.blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, groups = ["preset", "session"])
 
                         else:
                             for param in module.__ui_params__.values():
-                                ui.elem(f"pipeline.modules['{id}'].{param.key}", param.gr_type, label = param.name, **param.kwargs, groups = ["params", "session"])
+                                ui.elem(f"pipeline.modules['{id}'].{param.key}", param.gr_type, label = param.name, **param.kwargs, groups = ["preset", "session"])
 
         with ui.elem("", gr.Tab, label = "Video Rendering"):
-            ui.elem("video_renderer.fps", gr.Slider, label = "Frames per second", precision = 0, minimum = 1, maximum = 60, step = 1, value = 30, groups = ["params"])
-            ui.elem("video_renderer.looping", gr.Checkbox, label = "Looping", value = False, groups = ["params"])
+            ui.elem("video_renderer.fps", gr.Slider, label = "Frames per second", precision = 0, minimum = 1, maximum = 60, step = 1, value = 30, groups = ["preset", "session"])
+            ui.elem("video_renderer.looping", gr.Checkbox, label = "Looping", value = False, groups = ["preset", "session"])
 
-            with ui.elem("video_renderer.filter_order", ModuleList, keys = VIDEO_FILTERS.keys(), groups = ["params"]):
+            with ui.elem("video_renderer.filter_order", ModuleList, keys = VIDEO_FILTERS.keys(), groups = ["preset", "session"]):
                 for id, filter in VIDEO_FILTERS.items():
-                    with ui.elem(f"video_renderer.filters['{id}'].enabled", ModuleAccordion, label = filter.name, key = id, value = False, open = False, groups = ["params"]):
+                    with ui.elem(f"video_renderer.filters['{id}'].enabled", ModuleAccordion, label = filter.name, key = id, value = False, open = False, groups = ["preset", "session"]):
                         for param in filter.__ui_params__.values():
-                            ui.elem(f"video_renderer.filters['{id}'].{param.key}", param.gr_type, label = param.name, **param.kwargs, groups = ["params"])
+                            ui.elem(f"video_renderer.filters['{id}'].{param.key}", param.gr_type, label = param.name, **param.kwargs, groups = ["preset", "session"])
 
-            ui.elem("video_parallel_index", gr.Number, label = "Parallel index", precision = 0, minimum = 1, step = 1, value = 1, groups = ["params"])
+            ui.elem("video_parallel_index", gr.Number, label = "Parallel index", precision = 0, minimum = 1, step = 1, value = 1, groups = ["preset"])
 
             with ui.elem("", gr.Row):
                 ui.elem("render_draft", gr.Button, value = "Render draft")
@@ -346,13 +346,15 @@ class TemporalScript(scripts.Script):
                         "render_final": gr.update(interactive = False),
                     }
 
+                    parallel_index = inputs.pop("video_parallel_index")
+
                     session = self._ui_to_session(inputs)
 
                     video_path = render_project_video(
                         Path(global_options.output.output_dir) / session.project_name,
                         session.video_renderer,
                         is_final,
-                        inputs["video_parallel_index"],
+                        parallel_index,
                     )
                     wait_until(lambda: not video_render_queue.busy)
 
@@ -362,11 +364,11 @@ class TemporalScript(scripts.Script):
                         "video_preview": video_path.as_posix(),
                     }
 
-                @ui.callback("render_draft", "click", ["group:params"], ["render_draft", "render_final", "video_preview"])
+                @ui.callback("render_draft", "click", ["video_parallel_index", "group:session"], ["render_draft", "render_final", "video_preview"])
                 def _(inputs):
                     yield from render_video(inputs, False)
 
-                @ui.callback("render_final", "click", ["group:params"], ["render_draft", "render_final", "video_preview"])
+                @ui.callback("render_final", "click", ["video_parallel_index", "group:session"], ["render_draft", "render_final", "video_preview"])
                 def _(inputs):
                     yield from render_video(inputs, True)
 
@@ -376,9 +378,9 @@ class TemporalScript(scripts.Script):
             ui.elem("render_plots", gr.Button, value = "Render plots")
             ui.elem("metrics_plots", gr.Gallery, label = "Plots", columns = 4, object_fit = "contain", preview = True)
 
-            @ui.callback("render_plots", "click", ["group:params"], ["metrics_plots"])
+            @ui.callback("render_plots", "click", ["project_name", "group:session"], ["metrics_plots"])
             def _(inputs):
-                project = self._project_store.open_project(inputs["project_name"])
+                project = self._project_store.open_project(inputs.pop("project_name"))
                 session = self._ui_to_session(inputs)
                 session.load(project.session_path)
                 return {"metrics_plots": gr.update(value = list(session.pipeline.modules["measuring"].metrics.plot().values()))}
@@ -422,10 +424,10 @@ class TemporalScript(scripts.Script):
                 with ui.elem("", gr.Accordion, label = title, open = False):
                     ui.elem("", gr.Markdown, value = load_text(EXTENSION_DIR / "docs" / "temporal" / file_name, ""))
 
-        return ui.finalize(["group:params"])
+        return ui.finalize(["group:project", "group:session"])
 
     def run(self, p: StableDiffusionProcessingImg2Img, *args: Any) -> Any:
-        return self._process(p, {name: arg for name, arg in zip(self._ui.parse_ids(["group:params"]), args)})
+        return self._process(p, {name: arg for name, arg in zip(self._ui.parse_ids(["group:project", "group:session"]), args)})
 
     def _ui_to_session(self, inputs: dict[str, Any], p: Optional[StableDiffusionProcessingImg2Img] = None) -> Session:
         result = Session(
@@ -434,30 +436,17 @@ class TemporalScript(scripts.Script):
             controlnet_units = get_cn_units(p),
         ) if p is not None else Session()
 
-        for key, ui_value in inputs.items():
-            try:
-                get_property_by_path(result, key)
-            except:
-                logging.warning(f"{key} couldn't be found in {result.__class__.__name__}")
-
-            set_property_by_path(result, key, ui_value)
+        for id, value in inputs.items():
+            if self._ui.is_in_group(id, "session"):
+                set_property_by_path(result, id, value)
 
         return result
 
     def _session_to_ui(self, session: Session) -> dict[str, Any]:
-        result = {}
-
-        for id in self._ui._ids:
-            try:
-                data_value = get_property_by_path(session, id)
-            except:
-                logging.warning(f"{id} couldn't be found in {result.__class__.__name__}")
-
-                data_value = None
-
-            result[id] = data_value
-
-        return result
+        return {
+            id: get_property_by_path(session, id)
+            for id in self._ui.parse_ids(["group:session"])
+        }
 
     def _process(self, p: StableDiffusionProcessingImg2Img, inputs: dict[str, Any]) -> Processed:
         opts_backup = opts.data.copy()
