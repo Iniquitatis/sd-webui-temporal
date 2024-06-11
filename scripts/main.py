@@ -46,6 +46,8 @@ prompt_styles: StyleDatabase = getattr(shared, "prompt_styles")
 state: State = getattr(shared, "state")
 
 
+CallbackFunc = Callable[[dict[str, Any]], dict[str, Any] | Iterator[dict[str, Any]]]
+
 T = TypeVar("T", bound = Block | Component)
 
 
@@ -95,8 +97,12 @@ class UI:
 
         return elem
 
-    def callback(self, id: str, event: str, func: Callable[[dict[str, Any]], dict[str, Any] | Iterator[dict[str, Any]]], inputs: Iterable[str], outputs: Iterable[str]) -> None:
-        self._callbacks[id].append((event, func, inputs, outputs))
+    def callback(self, id: str, event: str, inputs: Iterable[str], outputs: Iterable[str]) -> Callable[[CallbackFunc], CallbackFunc]:
+        def decorator(func: CallbackFunc) -> CallbackFunc:
+            self._callbacks[id].append((event, func, inputs, outputs))
+            return func
+
+        return decorator
 
     def finalize(self, ids: Iterable[str]) -> list[Any]:
         elems = copy(self._elems)
@@ -160,33 +166,33 @@ class TemporalScript(scripts.Script):
         self._ui = ui = UI(self.elem_id)
 
         with ui.elem("", gr.Row):
-            def refresh_presets_callback(_):
+            ui.elem("preset", gr.Dropdown, label = "Preset", choices = self._preset_store.preset_names, allow_custom_value = True, value = get_first_element(self._preset_store.preset_names, ""))
+            ui.elem("refresh_presets", ToolButton, value = "\U0001f504")
+            ui.elem("load_preset", ToolButton, value = "\U0001f4c2")
+            ui.elem("save_preset", ToolButton, value = "\U0001f4be")
+            ui.elem("delete_preset", ToolButton, value = "\U0001f5d1\ufe0f")
+
+            @ui.callback("refresh_presets", "click", [], ["preset"])
+            def _(_):
                 self._preset_store.refresh_presets()
                 return {"preset": gr.update(choices = self._preset_store.preset_names)}
 
-            def load_preset_callback(inputs):
+            @ui.callback("load_preset", "click", ["preset", "group:params"], ["group:params"])
+            def _(inputs):
                 preset = inputs.pop("preset")
                 inputs |= self._preset_store.open_preset(preset).data
                 return {k: gr.update(value = v) for k, v in inputs.items()}
 
-            def save_preset_callback(inputs):
+            @ui.callback("save_preset", "click", ["preset", "group:params"], ["preset"])
+            def _(inputs):
                 preset = inputs.pop("preset")
                 self._preset_store.save_preset(preset, inputs)
                 return {"preset": gr.update(choices = self._preset_store.preset_names, value = preset)}
 
-            def delete_preset_callback(inputs):
+            @ui.callback("delete_preset", "click", ["preset"], ["preset"])
+            def _(inputs):
                 self._preset_store.delete_preset(inputs["preset"])
                 return {"preset": gr.update(choices = self._preset_store.preset_names, value = get_first_element(self._preset_store.preset_names, ""))}
-
-            ui.elem("preset", gr.Dropdown, label = "Preset", choices = self._preset_store.preset_names, allow_custom_value = True, value = get_first_element(self._preset_store.preset_names, ""))
-            ui.elem("refresh_presets", ToolButton, value = "\U0001f504")
-            ui.callback("refresh_presets", "click", refresh_presets_callback, [], ["preset"])
-            ui.elem("load_preset", ToolButton, value = "\U0001f4c2")
-            ui.callback("load_preset", "click", load_preset_callback, ["preset", "group:params"], ["group:params"])
-            ui.elem("save_preset", ToolButton, value = "\U0001f4be")
-            ui.callback("save_preset", "click", save_preset_callback, ["preset", "group:params"], ["preset"])
-            ui.elem("delete_preset", ToolButton, value = "\U0001f5d1\ufe0f")
-            ui.callback("delete_preset", "click", delete_preset_callback, ["preset"], ["preset"])
 
         with ui.elem("", gr.Tab, label = "General"):
             ui.elem("output.project_subdir", gr.Textbox, label = "Project subdirectory", value = "untitled", groups = ["params"])
@@ -248,52 +254,62 @@ class TemporalScript(scripts.Script):
             ui.elem("video_parallel_index", gr.Number, label = "Parallel index", precision = 0, minimum = 1, step = 1, value = 1, groups = ["params"])
 
             with ui.elem("", gr.Row):
-                def make_render_callback(is_final):
-                    def callback(inputs):
-                        yield {
-                            "render_draft": gr.update(interactive = False),
-                            "render_final": gr.update(interactive = False),
-                        }
-
-                        session = self._ui_to_session(inputs)
-
-                        video_path = render_project_video(
-                            Path(global_options.output.output_dir) / session.output.project_subdir,
-                            session.video_renderer,
-                            is_final,
-                            inputs["video_parallel_index"],
-                        )
-                        wait_until(lambda: not video_render_queue.busy)
-
-                        yield {
-                            "render_draft": gr.update(interactive = True),
-                            "render_final": gr.update(interactive = True),
-                            "video_preview": video_path.as_posix(),
-                        }
-
-                    return callback
-
                 ui.elem("render_draft", gr.Button, value = "Render draft")
-                ui.callback("render_draft", "click", make_render_callback(False), ["group:params"], ["render_draft", "render_final", "video_preview"])
                 ui.elem("render_final", gr.Button, value = "Render final")
-                ui.callback("render_final", "click", make_render_callback(True), ["group:params"], ["render_draft", "render_final", "video_preview"])
+
+                def render_video(inputs, is_final):
+                    yield {
+                        "render_draft": gr.update(interactive = False),
+                        "render_final": gr.update(interactive = False),
+                    }
+
+                    session = self._ui_to_session(inputs)
+
+                    video_path = render_project_video(
+                        Path(global_options.output.output_dir) / session.output.project_subdir,
+                        session.video_renderer,
+                        is_final,
+                        inputs["video_parallel_index"],
+                    )
+                    wait_until(lambda: not video_render_queue.busy)
+
+                    yield {
+                        "render_draft": gr.update(interactive = True),
+                        "render_final": gr.update(interactive = True),
+                        "video_preview": video_path.as_posix(),
+                    }
+
+                @ui.callback("render_draft", "click", ["group:params"], ["render_draft", "render_final", "video_preview"])
+                def _(inputs):
+                    yield from render_video(inputs, False)
+
+                @ui.callback("render_final", "click", ["group:params"], ["render_draft", "render_final", "video_preview"])
+                def _(inputs):
+                    yield from render_video(inputs, True)
 
             ui.elem("video_preview", gr.Video, label = "Preview", format = "mp4", interactive = False)
 
         with ui.elem("", gr.Tab, label = "Measuring"):
-            def render_plots_callback(inputs):
+            ui.elem("render_plots", gr.Button, value = "Render plots")
+            ui.elem("metrics_plots", gr.Gallery, label = "Plots", columns = 4, object_fit = "contain", preview = True)
+
+            @ui.callback("render_plots", "click", ["group:params"], ["metrics_plots"])
+            def _(inputs):
                 session = self._ui_to_session(inputs)
                 project = Project(Path(global_options.output.output_dir) / session.output.project_subdir)
                 session.load(project.session_path)
                 return {"metrics_plots": gr.update(value = list(session.pipeline.modules["measuring"].metrics.plot().values()))}
 
-            ui.elem("render_plots", gr.Button, value = "Render plots")
-            ui.callback("render_plots", "click", render_plots_callback, ["group:params"], ["metrics_plots"])
-            ui.elem("metrics_plots", gr.Gallery, label = "Plots", columns = 4, object_fit = "contain", preview = True)
-
         with ui.elem("", gr.Tab, label = "Project Management"):
             with ui.elem("", gr.Row):
-                def managed_project_callback(inputs):
+                ui.elem("managed_project", gr.Dropdown, label = "Project", choices = self._project_store.project_names, allow_custom_value = True, value = get_first_element(self._project_store.project_names, ""))
+                ui.elem("refresh_projects", ToolButton, value = "\U0001f504")
+                ui.elem("load_project", ToolButton, value = "\U0001f4c2")
+                ui.elem("delete_project", ToolButton, value = "\U0001f5d1\ufe0f")
+
+                # FIXME: `change` makes typing slower, but `select` won't work until user clicks an appropriate item
+                @ui.callback("managed_project", "change", ["managed_project"], ["project_description", "project_gallery", "project_gallery_parallel_index"])
+                def _(inputs):
                     if inputs["managed_project"] not in self._project_store.project_names:
                         return {}
 
@@ -305,56 +321,54 @@ class TemporalScript(scripts.Script):
                         "project_gallery_parallel_index": gr.update(value = 1),
                     }
 
-                def refresh_projects_callback(inputs):
+                @ui.callback("refresh_projects", "click", [], ["managed_project"])
+                def _(_):
                     self._project_store.path = Path(global_options.output.output_dir)
                     self._project_store.refresh_projects()
                     return {"managed_project": gr.update(choices = self._project_store.project_names)}
 
-                def load_project_callback(inputs):
+                @ui.callback("load_project", "click", ["managed_project", "group:session"], ["group:session"])
+                def _(inputs):
                     self._project_store.path = Path(global_options.output.output_dir)
                     project = self._project_store.open_project(inputs["managed_project"])
                     session = self._ui_to_session(inputs)
                     session.load(project.session_path)
                     return {k: gr.update(value = v) for k, v in self._session_to_ui(session).items()}
 
-                def delete_project_callback(inputs):
+                @ui.callback("delete_project", "click", ["managed_project"], ["managed_project"])
+                def _(inputs):
                     self._project_store.path = Path(global_options.output.output_dir)
                     self._project_store.delete_project(inputs["managed_project"])
                     return {"managed_project": gr.update(choices = self._project_store.project_names, value = get_first_element(self._project_store.project_names, ""))}
 
-                ui.elem("managed_project", gr.Dropdown, label = "Project", choices = self._project_store.project_names, allow_custom_value = True, value = get_first_element(self._project_store.project_names, ""))
-                # FIXME: `change` makes typing slower, but `select` won't work until user clicks an appropriate item
-                ui.callback("managed_project", "change", managed_project_callback, ["managed_project"], ["project_description", "project_gallery", "project_gallery_parallel_index"])
-                ui.elem("refresh_projects", ToolButton, value = "\U0001f504")
-                ui.callback("refresh_projects", "click", refresh_projects_callback, [], ["managed_project"])
-                ui.elem("load_project", ToolButton, value = "\U0001f4c2")
-                ui.callback("load_project", "click", load_project_callback, ["managed_project", "group:session"], ["group:session"])
-                ui.elem("delete_project", ToolButton, value = "\U0001f5d1\ufe0f")
-                ui.callback("delete_project", "click", delete_project_callback, ["managed_project"], ["managed_project"])
-
             with ui.elem("", gr.Accordion, label = "Information", open = False):
-                def project_gallery_parallel_index_callback(inputs):
+                ui.elem("project_description", gr.Textbox, label = "Description", lines = 5, max_lines = 5, interactive = False)
+                ui.elem("project_gallery", gr.Gallery, label = "Last images", columns = 4, object_fit = "contain", preview = True)
+                ui.elem("project_gallery_parallel_index", gr.Number, label = "Parallel index", precision = 0, minimum = 1, step = 1, value = 1)
+
+                @ui.callback("project_gallery_parallel_index", "change", ["managed_project", "project_gallery_parallel_index"], ["project_gallery"])
+                def _(inputs):
                     self._project_store.path = Path(global_options.output.output_dir)
                     project = self._project_store.open_project(inputs["managed_project"])
                     return {"project_gallery": gr.update(value = project.list_all_frame_paths(inputs["project_gallery_parallel_index"])[-global_options.project_management.gallery_size:])}
 
-                ui.elem("project_description", gr.Textbox, label = "Description", lines = 5, max_lines = 5, interactive = False)
-                ui.elem("project_gallery", gr.Gallery, label = "Last images", columns = 4, object_fit = "contain", preview = True)
-                ui.elem("project_gallery_parallel_index", gr.Number, label = "Parallel index", precision = 0, minimum = 1, step = 1, value = 1)
-                ui.callback("project_gallery_parallel_index", "change", project_gallery_parallel_index_callback, ["managed_project", "project_gallery_parallel_index"], ["project_gallery"])
-
             with ui.elem("", gr.Accordion, label = "Tools", open = False):
                 with ui.elem("", gr.Row):
-                    def rename_project_callback(inputs):
+                    ui.elem("new_project_name", gr.Textbox, label = "New name", value = "")
+                    ui.elem("confirm_project_rename", ToolButton, value = "\U00002714\ufe0f")
+
+                    @ui.callback("confirm_project_rename", "click", ["managed_project", "new_project_name"], ["managed_project"])
+                    def _(inputs):
                         self._project_store.path = Path(global_options.output.output_dir)
                         self._project_store.rename_project(inputs["managed_project"], inputs["new_project_name"])
                         return {"managed_project": gr.update(choices = self._project_store.project_names, value = inputs["new_project_name"])}
 
-                    ui.elem("new_project_name", gr.Textbox, label = "New name", value = "")
-                    ui.elem("confirm_project_rename", ToolButton, value = "\U00002714\ufe0f")
-                    ui.callback("confirm_project_rename", "click", rename_project_callback, ["managed_project", "new_project_name"], ["managed_project"])
+                ui.elem("upgrade_project", gr.Button, value = "Upgrade")
+                ui.elem("delete_intermediate_frames", gr.Button, value = "Delete intermediate frames")
+                ui.elem("delete_session_data", gr.Button, value = "Delete session data")
 
-                def upgrade_project_callback(inputs):
+                @ui.callback("upgrade_project", "click", ["managed_project"], ["project_description", "project_gallery"])
+                def _(inputs):
                     self._project_store.path = Path(global_options.output.output_dir)
                     project = self._project_store.open_project(inputs["managed_project"])
                     upgrade_project(project.path)
@@ -363,7 +377,8 @@ class TemporalScript(scripts.Script):
                         "project_gallery": gr.update(value = project.list_all_frame_paths()[-global_options.project_management.gallery_size:]),
                     }
 
-                def delete_intermediate_frames_callback(inputs):
+                @ui.callback("delete_intermediate_frames", "click", ["managed_project"], ["project_gallery"])
+                def _(inputs):
                     self._project_store.path = Path(global_options.output.output_dir)
                     project = self._project_store.open_project(inputs["managed_project"])
                     project.delete_intermediate_frames()
@@ -372,29 +387,23 @@ class TemporalScript(scripts.Script):
                         "project_gallery": gr.update(value = project.list_all_frame_paths()[-global_options.project_management.gallery_size:]),
                     }
 
-                def delete_session_data_callback(inputs):
+                @ui.callback("delete_session_data", "click", ["managed_project"], [])
+                def _(inputs):
                     self._project_store.path = Path(global_options.output.output_dir)
                     self._project_store.open_project(inputs["managed_project"]).delete_session_data()
                     return {}
 
-                ui.elem("upgrade_project", gr.Button, value = "Upgrade")
-                ui.callback("upgrade_project", "click", upgrade_project_callback, ["managed_project"], ["project_description", "project_gallery"])
-                ui.elem("delete_intermediate_frames", gr.Button, value = "Delete intermediate frames")
-                ui.callback("delete_intermediate_frames", "click", delete_intermediate_frames_callback, ["managed_project"], ["project_gallery"])
-                ui.elem("delete_session_data", gr.Button, value = "Delete session data")
-                ui.callback("delete_session_data", "click", delete_session_data_callback, ["managed_project"], [])
-
         with ui.elem("", gr.Tab, label = "Settings"):
-            def apply_settings_callback(inputs):
+            ui.elem("apply_settings", gr.Button, value = "Apply")
+
+            @ui.callback("apply_settings", "click", ["group:options"], [])
+            def _(inputs):
                 for key, ui_value in inputs.items():
                     set_property_by_path(global_options, key, ui_value)
 
                 global_options.save(EXTENSION_DIR / "settings")
 
                 return {}
-
-            ui.elem("apply_settings", gr.Button, value = "Apply")
-            ui.callback("apply_settings", "click", apply_settings_callback, ["group:options"], [])
 
             for field in global_options.__fields__.values():
                 if not isinstance(category := getattr(global_options, field.key), OptionCategory):
