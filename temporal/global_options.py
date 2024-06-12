@@ -31,7 +31,7 @@ class ProcessingCategory(OptionCategory):
 class ProjectManagementCategory(OptionCategory):
     name = "Project management"
 
-    gallery_size: int = ui_param("Gallery size", gr.Number, precision = 0, minimum = 1, maximum = 50, step = 1, value = 10)
+    gallery_size: int = ui_param("Gallery size", gr.Number, precision = 0, minimum = 1, maximum = 1000, step = 1, value = 10)
 
 
 class GlobalOptions(Serializable):

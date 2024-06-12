@@ -11,8 +11,9 @@
         * **NOTE:** This is _not_ a total amount of rendered frames. For example, if a project already has 57 frames rendered, then another `Iteration count` frames will be rendered before stopping the process.
 * **Information** — information about the currently selected project.
     * **Description** — textual description of the currently selected project.
-    * **Last frames** — small gallery showing the last rendered frames from the currently selected project.
-    * **Parallel index** — index of an image set to preview in the gallery.
+    * **Gallery** — gallery that displays the rendered frames from the currently selected project.
+    * **Page** — currently selected page of the gallery.
+    * **Parallel** — index of an image set to preview in the gallery.
 * **Tools** — various utilities for managing the currently selected project.
     * **New name** — new name for the currently selected project.
         * ✔️ — rename currently selected project.

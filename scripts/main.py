@@ -211,6 +211,7 @@ class TemporalScript(scripts.Script):
                     return {
                         "project_description": gr.update(value = desc if (desc := project.get_description()) else "Cannot read project data"),
                         "project_gallery": gr.update(value = project.list_all_frame_paths()[-global_options.project_management.gallery_size:]),
+                        "project_gallery_page_index": gr.update(value = 1),
                         "project_gallery_parallel_index": gr.update(value = 1),
                     }
 
@@ -238,13 +239,64 @@ class TemporalScript(scripts.Script):
 
             with ui.elem("", gr.Tab, label = "Information"):
                 ui.elem("project_description", gr.Textbox, label = "Description", lines = 5, max_lines = 5, interactive = False)
-                ui.elem("project_gallery", gr.Gallery, label = "Last images", columns = 4, object_fit = "contain", preview = True)
-                ui.elem("project_gallery_parallel_index", gr.Number, label = "Parallel index", precision = 0, minimum = 1, step = 1, value = 1)
+                ui.elem("project_gallery", gr.Gallery, label = "Gallery", columns = 4, object_fit = "contain", preview = True)
 
-                @ui.callback("project_gallery_parallel_index", "change", ["project_name", "project_gallery_parallel_index"], ["project_gallery"])
+                with gr.Row():
+                    ui.elem("project_gallery_page_previous", ToolButton, value = "<")
+                    ui.elem("project_gallery_page_index", gr.Number, label = "Page", precision = 0, minimum = 1, step = 1, value = 1)
+                    ui.elem("project_gallery_page_next", ToolButton, value = ">")
+
+                with gr.Row():
+                    ui.elem("project_gallery_parallel_previous", ToolButton, value = "<")
+                    ui.elem("project_gallery_parallel_index", gr.Number, label = "Parallel", precision = 0, minimum = 1, step = 1, value = 1)
+                    ui.elem("project_gallery_parallel_next", ToolButton, value = ">")
+
+                def navigate_gallery(inputs: dict[str, Any], page_offset: int, parallel_offset: int) -> dict[str, Any]:
+                    project_name = inputs["project_name"]
+                    page = max(inputs["project_gallery_page_index"] + page_offset, 1)
+                    parallel = max(inputs["project_gallery_parallel_index"] + parallel_offset, 1)
+                    gallery_size = global_options.project_management.gallery_size
+                    project = self._project_store.open_project(project_name)
+                    return {
+                        "project_gallery": gr.update(value = project.list_all_frame_paths(parallel)[page * gallery_size:(page + 1) * gallery_size]),
+                        "project_gallery_page_index": gr.update(value = page),
+                        "project_gallery_parallel_index": gr.update(value = parallel),
+                    }
+
+                inputs = [
+                    "project_name",
+                    "project_gallery_page_index",
+                    "project_gallery_parallel_index",
+                ]
+                outputs = [
+                    "project_gallery",
+                    "project_gallery_page_index",
+                    "project_gallery_parallel_index",
+                ]
+
+                @ui.callback("project_gallery_page_previous", "click", inputs, outputs)
                 def _(inputs):
-                    project = self._project_store.open_project(inputs["project_name"])
-                    return {"project_gallery": gr.update(value = project.list_all_frame_paths(inputs["project_gallery_parallel_index"])[-global_options.project_management.gallery_size:])}
+                    return navigate_gallery(inputs, -1, 0)
+
+                @ui.callback("project_gallery_page_index", "change", inputs, outputs)
+                def _(inputs):
+                    return navigate_gallery(inputs, 0, 0)
+
+                @ui.callback("project_gallery_page_next", "click", inputs, outputs)
+                def _(inputs):
+                    return navigate_gallery(inputs, 1, 0)
+
+                @ui.callback("project_gallery_parallel_previous", "click", inputs, outputs)
+                def _(inputs):
+                    return navigate_gallery(inputs, 0, -1)
+
+                @ui.callback("project_gallery_parallel_index", "change", inputs, outputs)
+                def _(inputs):
+                    return navigate_gallery(inputs, 0, 0)
+
+                @ui.callback("project_gallery_parallel_next", "click", inputs, outputs)
+                def _(inputs):
+                    return navigate_gallery(inputs, 0, 1)
 
             with ui.elem("", gr.Tab, label = "Tools"):
                 with ui.elem("", gr.Row):
