@@ -13,7 +13,7 @@ from temporal.utils.image import load_image, pil_to_np
 from temporal.utils.numpy import load_array, save_array
 
 
-VERSION = 25
+VERSION = 26
 
 UPGRADERS: dict[int, Type["Upgrader"]] = {}
 
@@ -1353,5 +1353,32 @@ class _(Upgrader):
         ET.indent(tree)
         tree.write(session_data_path, "utf-8")
         save_text(version_path, "25")
+
+        return True
+
+
+class _(Upgrader):
+    id = 26
+
+    @staticmethod
+    def upgrade(path: Path) -> bool:
+        version_path = path / "project" / "version.txt"
+        session_data_path = path / "project" / "session" / "data.xml"
+
+        if int(load_text(version_path, "0")) != 25:
+            return False
+
+        tree = ET.ElementTree(file = session_data_path)
+
+        if (interpolation := tree.find(".//*[@key='pipeline']/*[@key='modules']/*[@key='interpolation']")) is not None:
+            if (rate := interpolation.find("*[@key='rate']")) is not None:
+                rate.set("key", "blending")
+
+            ET.SubElement(interpolation, "object", {"key": "movement", "type": "float"}).text = "0.0"
+            ET.SubElement(interpolation, "object", {"key": "radius", "type": "int"}).text = "15"
+
+        ET.indent(tree)
+        tree.write(session_data_path, "utf-8")
+        save_text(version_path, "26")
 
         return True

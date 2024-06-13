@@ -3,6 +3,7 @@ from typing import Optional, Type
 
 import gradio as gr
 import numpy as np
+import skimage
 from numpy.typing import NDArray
 
 from modules.processing import Processed
@@ -15,7 +16,7 @@ from temporal.metrics import Metrics
 from temporal.project import render_project_video
 from temporal.session import Session
 from temporal.utils.fs import ensure_directory_exists
-from temporal.utils.image import NumpyImage, ensure_image_dims, match_image, np_to_pil, pil_to_np
+from temporal.utils.image import NumpyImage, apply_channelwise, ensure_image_dims, match_image, np_to_pil, pil_to_np
 from temporal.utils.math import lerp, quantize
 from temporal.utils.numpy import average_array, make_eased_weight_array, saturate_array
 from temporal.utils.object import copy_with_overrides
@@ -119,7 +120,9 @@ class InterpolationModule(PipelineModule):
     name = "Interpolation"
     icon = "\U0001f553"
 
-    rate: float = ui_param("Rate", gr.Slider, minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0)
+    blending: float = ui_param("Blending", gr.Slider, minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0)
+    movement: float = ui_param("Movement", gr.Slider, minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0)
+    radius: int = ui_param("Radius", gr.Slider, precision = 0, minimum = 7, maximum = 31, step = 2, value = 15)
 
     buffer: NDArray[np.float_] = field(factory = lambda: np.empty((0,)))
 
@@ -131,9 +134,26 @@ class InterpolationModule(PipelineModule):
             ], 0)
 
         for sub, image in zip(self.buffer, images):
-            sub[:] = lerp(sub, match_image(image, sub), self.rate)
+            a = sub
+            b = match_image(image, sub)
+
+            if self.movement > 0.0:
+                a, b = self._motion_warp(a, b)
+
+            sub[:] = lerp(a, b, self.blending)
 
         return [sub for sub in self.buffer]
+
+    def _motion_warp(self, base_im: NumpyImage, target_im: NumpyImage) -> tuple[NumpyImage, NumpyImage]:
+        def warp(im: NumpyImage, coords: NDArray[np.float_]) -> NumpyImage:
+            return apply_channelwise(im, lambda x: skimage.transform.warp(x, coords, mode = "symmetric"))
+
+        height, width = base_im.shape[:2]
+
+        coords = np.array(np.meshgrid(np.arange(height), np.arange(width), indexing = "ij")).astype(np.float_)
+        offsets = skimage.registration.optical_flow_ilk(skimage.color.rgb2gray(base_im), skimage.color.rgb2gray(target_im), radius = self.radius)
+
+        return warp(base_im, coords + offsets * -self.movement), warp(target_im, coords + -offsets * (-1.0 + self.movement))
 
 
 class LimitingModule(PipelineModule):

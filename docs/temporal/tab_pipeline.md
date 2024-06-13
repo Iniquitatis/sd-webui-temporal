@@ -59,8 +59,10 @@ All modules in this tab are marked with the following icons:
 * **Image overlay** — overlaying an image on top of the frame.
     * **Image** — an image that will be used to modulate the frame.
     * **Blurring** — blurring radius of the modulator image.
-* **Interpolation** — blending of the current image towards the new image.
-    * **Rate** — amount of blending between the current image and the new image (e.g. `0.5` will blend 50% of the new image into the current one).
+* **Interpolation** — interpolation of the current image towards the new image.
+    * **Blending** — rate of introduction of colors from the new image.
+    * **Movement** — rate of spatial shifting towards the similar areas of the new image.
+    * **Radius** — radius of similar area detection.
 * **Limiting** — limiting of the difference between the previous and the current image.
     * **Mode** — limiting mode.
         * **clamp** — clamp the difference, cutting off anything higher than **Maximum difference**.
