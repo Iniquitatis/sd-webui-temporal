@@ -13,7 +13,7 @@ from temporal.meta.configurable import ui_param
 from temporal.meta.serializable import field
 from temporal.pipeline_modules import PipelineModule
 from temporal.session import Session
-from temporal.utils.image import NumpyImage, apply_channelwise, get_rgb_array, join_hsv_to_rgb, match_image, np_to_pil, pil_to_np, split_hsv
+from temporal.utils.image import NumpyImage, alpha_blend, apply_channelwise, get_rgb_array, join_hsv_to_rgb, match_image, np_to_pil, pil_to_np, split_hsv
 from temporal.utils.math import lerp, normalize, remap_range
 from temporal.utils.numpy import generate_value_noise, saturate_array
 
@@ -153,14 +153,18 @@ class ImageOverlayFilter(ImageFilter):
     id = "image_overlay"
     name = "Image overlay"
 
-    image: Optional[NumpyImage] = ui_param("Image", gr.Image, type = "numpy", image_mode = "RGB")
+    image: Optional[NumpyImage] = ui_param("Image", gr.Image, type = "numpy", image_mode = "RGBA")
     blurring: float = ui_param("Blurring", gr.Slider, minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0)
 
     def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
         if self.image is None:
             return npim
 
-        return skimage.filters.gaussian(match_image(self.image, npim), round(self.blurring), channel_axis = 2)
+        return match_image(alpha_blend(npim, skimage.filters.gaussian(
+            match_image(self.image, npim, mode = False),
+            round(self.blurring),
+            channel_axis = 2,
+        )), npim)
 
 
 class MedianFilter(ImageFilter):

@@ -6,12 +6,21 @@ import skimage
 from PIL import Image, ImageColor
 from numpy.typing import NDArray
 
+from temporal.utils.math import lerp
+
 
 PILImage = Image.Image
 NumpyImage = NDArray[np.float_]
 
 
 T = TypeVar("T", PILImage, NumpyImage)
+
+
+def alpha_blend(a: NumpyImage, b: NumpyImage) -> NumpyImage:
+    if b.shape[2] == 3:
+        return b
+
+    return lerp(a[..., :3], b[..., :3], b[..., [3]])
 
 
 def apply_channelwise(npim: NumpyImage, func: Callable[[NumpyImage], NumpyImage]) -> NumpyImage:
