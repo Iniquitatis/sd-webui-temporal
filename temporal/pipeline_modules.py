@@ -6,7 +6,6 @@ import numpy as np
 import skimage
 from numpy.typing import NDArray
 
-from modules.processing import Processed
 from modules.sd_samplers import visible_sampler_names
 
 from temporal.global_options import global_options
@@ -264,7 +263,6 @@ class SavingModule(PipelineModule):
             save_processed_image(
                 image = np_to_pil(image),
                 p = session.processing,
-                processed = Processed(session.processing, []),
                 output_dir = ensure_directory_exists(Path(global_options.output.output_dir) / session.project_name),
                 file_name = file_name,
                 archive_mode = self.archive_mode,
@@ -278,7 +276,6 @@ class SavingModule(PipelineModule):
                 save_processed_image(
                     image = np_to_pil(image),
                     p = session.processing,
-                    processed = Processed(session.processing, []),
                     output_dir = ensure_directory_exists(Path(global_options.output.output_dir)),
                     file_name = None,
                     archive_mode = self.archive_mode,

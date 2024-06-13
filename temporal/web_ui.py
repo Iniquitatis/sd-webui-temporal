@@ -71,7 +71,7 @@ def process_images(p: StableDiffusionProcessingImg2Img, images: list[tuple[PILIm
     return list(result.values())
 
 
-def save_processed_image(image: PILImage, p: StableDiffusionProcessing, processed: Processed, output_dir: Path, file_name: Optional[str] = None, archive_mode: bool = False) -> None:
+def save_processed_image(image: PILImage, p: StableDiffusionProcessing, output_dir: Path, file_name: Optional[str] = None, archive_mode: bool = False) -> None:
     if file_name and archive_mode:
         image_save_queue.enqueue(
             save_image,
@@ -80,6 +80,8 @@ def save_processed_image(image: PILImage, p: StableDiffusionProcessing, processe
             archive_mode = True,
         )
     else:
+        processed = Processed(p, [image])
+
         images.save_image(
             image,
             output_dir,
