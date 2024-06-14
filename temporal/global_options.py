@@ -39,6 +39,3 @@ class GlobalOptions(Serializable):
     live_preview: LivePreviewCategory = field(factory = LivePreviewCategory)
     processing: ProcessingCategory = field(factory = ProcessingCategory)
     project_management: ProjectManagementCategory = field(factory = ProjectManagementCategory)
-
-
-global_options = GlobalOptions()

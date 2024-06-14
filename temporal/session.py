@@ -9,7 +9,6 @@ if TYPE_CHECKING:
     from temporal.pipeline import Pipeline
 from temporal.serialization import BasicObjectSerializer
 from temporal.utils.image import NumpyImage
-from temporal.video_renderer import VideoRenderer
 
 
 class InitialNoiseParams(Serializable):
@@ -33,7 +32,6 @@ class Session(Serializable):
     project_name: str = field("untitled", saved = False)
     initial_noise: InitialNoiseParams = field(factory = InitialNoiseParams)
     pipeline: "Pipeline" = field()
-    video_renderer: VideoRenderer = field(factory = VideoRenderer, saved = False)
     iteration: IterationData = field(factory = IterationData)
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

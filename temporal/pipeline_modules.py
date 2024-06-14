@@ -8,12 +8,12 @@ from numpy.typing import NDArray
 
 from modules.sd_samplers import visible_sampler_names
 
-from temporal.global_options import global_options
 from temporal.meta.configurable import Configurable, ui_param
 from temporal.meta.serializable import field
 from temporal.metrics import Metrics
 from temporal.project import render_project_video
 from temporal.session import Session
+from temporal.shared import shared
 from temporal.utils.fs import ensure_directory_exists
 from temporal.utils.image import NumpyImage, apply_channelwise, ensure_image_dims, match_image, np_to_pil, pil_to_np
 from temporal.utils.math import lerp, quantize
@@ -33,7 +33,6 @@ class PipelineModule(Configurable, abstract = True):
     icon: str = "\U00002699"
 
     enabled: bool = field(False)
-    preview: bool = field(True)
 
     def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         return images
@@ -103,8 +102,8 @@ class DetailingModule(PipelineModule):
                 do_not_save_grid = True,
             ),
             [(np_to_pil(x), seed + i, 1) for i, x in enumerate(images)],
-            global_options.processing.pixels_per_batch,
-            self.preview and not global_options.live_preview.show_only_finished_images,
+            shared.options.processing.pixels_per_batch,
+            shared.previewed_modules[self.id] and not shared.options.live_preview.show_only_finished_images,
         )):
             return None
 
@@ -204,7 +203,7 @@ class MeasuringModule(PipelineModule):
         self.metrics.measure(images[0])
 
         if frame_index % self.plot_every_nth_frame == 0:
-            self.metrics.plot_to_directory(ensure_directory_exists(Path(global_options.output.output_dir) / session.project_name / "metrics"))
+            self.metrics.plot_to_directory(ensure_directory_exists(Path(shared.options.output.output_dir) / session.project_name / "metrics"))
 
         return images
 
@@ -223,8 +222,8 @@ class ProcessingModule(PipelineModule):
         if not (processed_images := process_images(
             copy_with_overrides(session.processing, do_not_save_samples = True, do_not_save_grid = True),
             [(np_to_pil(x), seed + i, self.samples) for i, x in enumerate(images)],
-            global_options.processing.pixels_per_batch,
-            self.preview and not global_options.live_preview.show_only_finished_images,
+            shared.options.processing.pixels_per_batch,
+            shared.previewed_modules[self.id] and not shared.options.live_preview.show_only_finished_images,
         )):
             return None
 
@@ -263,7 +262,7 @@ class SavingModule(PipelineModule):
             save_processed_image(
                 image = np_to_pil(image),
                 p = session.processing,
-                output_dir = ensure_directory_exists(Path(global_options.output.output_dir) / session.project_name),
+                output_dir = ensure_directory_exists(Path(shared.options.output.output_dir) / session.project_name),
                 file_name = file_name,
                 archive_mode = self.archive_mode,
             )
@@ -276,7 +275,7 @@ class SavingModule(PipelineModule):
                 save_processed_image(
                     image = np_to_pil(image),
                     p = session.processing,
-                    output_dir = ensure_directory_exists(Path(global_options.output.output_dir)),
+                    output_dir = ensure_directory_exists(Path(shared.options.output.output_dir)),
                     file_name = None,
                     archive_mode = self.archive_mode,
                 )
@@ -303,19 +302,19 @@ class VideoRenderingModule(PipelineModule):
     def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         for i, _ in enumerate(images, 1):
             if frame_index % self.render_draft_every_nth_frame == 0:
-                render_project_video(Path(global_options.output.output_dir) / session.project_name, session.video_renderer, False, i)
+                render_project_video(Path(shared.options.output.output_dir) / session.project_name, shared.video_renderer, False, i)
 
             if frame_index % self.render_final_every_nth_frame == 0:
-                render_project_video(Path(global_options.output.output_dir) / session.project_name, session.video_renderer, True, i)
+                render_project_video(Path(shared.options.output.output_dir) / session.project_name, shared.video_renderer, True, i)
 
         return images
 
     def finalize(self, images: list[NumpyImage], session: Session) -> None:
         for i, _ in enumerate(images, 1):
             if self.render_draft_on_finish:
-                render_project_video(Path(global_options.output.output_dir) / session.project_name, session.video_renderer, False, i)
+                render_project_video(Path(shared.options.output.output_dir) / session.project_name, shared.video_renderer, False, i)
 
             if self.render_final_on_finish:
-                render_project_video(Path(global_options.output.output_dir) / session.project_name, session.video_renderer, True, i)
+                render_project_video(Path(shared.options.output.output_dir) / session.project_name, shared.video_renderer, True, i)
 
         wait_until(lambda: not video_render_queue.busy)
