@@ -44,6 +44,16 @@ function initializeModuleLists() {
                 labelWrap.insertBefore(checkbox.parentElement, labelWrap.firstChild);
                 labelWrap.insertBefore(dragger, labelWrap.firstChild);
 
+                let specialCheckbox = accordion.querySelector(".temporal-module-accordion-special-checkbox");
+
+                if (specialCheckbox != null) {
+                    specialCheckbox.addEventListener("click", (event) => {
+                        event.stopPropagation();
+                    });
+
+                    labelWrap.insertBefore(specialCheckbox, labelWrap.lastChild);
+                }
+
                 accordion.checkbox = checkbox;
                 accordion.moduleList = moduleList;
                 accordion.moduleListDropdown = moduleListDropdown;

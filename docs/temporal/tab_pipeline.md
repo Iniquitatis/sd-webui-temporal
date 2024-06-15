@@ -16,7 +16,7 @@ All modules in this tab are marked with the following icons:
 * **Parallel** — amount of images to create/process in parallel.
 * Generic options available to all modules:
     * **(✔️ to the left of a module name)** — determines if a module is enabled.
-    * **Preview** — determines if module's results will be displayed in the UI.
+    * **(Eye icon to the right of a module name)** — determines if the module's results will be shown as a live preview.
 * Generic options available to all filter modules:
     * **Amount** — amount of the processed image to be mixed in into the frame.
         * **Relative** — determines if the amount will be multiplied by the **img2img** denoising strength.

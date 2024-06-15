@@ -21,7 +21,7 @@ from temporal.project import Project, render_project_video
 from temporal.session import InitialNoiseParams, Session
 from temporal.shared import shared
 from temporal.ui import UI
-from temporal.ui.module_list import ModuleAccordion, ModuleList
+from temporal.ui.module_list import ModuleAccordion, ModuleAccordionSpecialCheckbox, ModuleList
 from temporal.utils import logging
 from temporal.utils.collection import get_first_element
 from temporal.utils.fs import load_text
@@ -244,7 +244,7 @@ class TemporalScript(scripts.Script):
                         def make_value_getter(id: str) -> Callable[[], bool]:
                             return lambda: shared.previewed_modules[id]
 
-                        ui.elem(elem_id, gr.Checkbox, label = "Preview", value = make_value_getter(id), groups = ["preset"])
+                        ui.elem(elem_id, ModuleAccordionSpecialCheckbox, label = "Preview", value = make_value_getter(id), elem_classes = ["temporal-visibility-checkbox"], groups = ["preset"])
 
                         def make_callback(id: str, elem_id: str) -> None:
                             @ui.callback(elem_id, "change", [elem_id], [])

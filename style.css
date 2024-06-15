@@ -32,6 +32,33 @@
     font-size: var(--section-header-text-size) !important;
 }
 
+.temporal-module-list .temporal-module-accordion .temporal-module-accordion-special-checkbox {
+    align-self: center;
+    margin: 0 !important;
+    margin-right: 1.5rem !important;
+    min-width: unset !important;
+    width: 0 !important;
+}
+
 .temporal-dragged {
     opacity: 0.5;
+}
+
+.temporal-visibility-checkbox * {
+    align-self: center;
+    font-size: 0 !important;
+}
+
+.temporal-visibility-checkbox input {
+    background-color: var(--button-secondary-text-color) !important;
+    background-image: none !important;
+    border: none !important;
+    mask-image: url("data:image/svg+xml;utf-8,%3Csvg%20version%3D%221.1%22%20viewBox%3D%220%200%2016%2016%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22m14%208s-2.93367%202.903009-6%203c-3.0663299%200.096991-6-3-6-3%22%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%222%22/%3E%3C/svg%3E") !important;
+}
+
+.temporal-visibility-checkbox input:checked {
+    background-color: var(--button-secondary-text-color) !important;
+    background-image: none !important;
+    border: none !important;
+    mask-image: url("data:image/svg+xml;utf-8,%3Csvg%20version%3D%221.1%22%20viewBox%3D%220%200%2016%2016%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22m2%208s3-3%206-3%206%203%206%203-2.93367%202.903009-6%203c-3.0663299%200.096991-6-3-6-3z%22%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%222%22/%3E%3Ccircle%20cx%3D%228%22%20cy%3D%228%22%20r%3D%223%22%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%222%22/%3E%3C/svg%3E") !important;
 }

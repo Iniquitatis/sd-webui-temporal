@@ -73,3 +73,15 @@ class ModuleAccordion(gr.Checkbox):
 
     def get_block_name(self) -> str:
         return "checkbox"
+
+
+class ModuleAccordionSpecialCheckbox(gr.Checkbox):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        classes = kwargs.pop("elem_classes", [])
+
+        super().__init__(*args, **kwargs,
+            elem_classes = classes + ["temporal-module-accordion-special-checkbox"],
+        )
+
+    def get_block_name(self) -> str:
+        return "checkbox"
