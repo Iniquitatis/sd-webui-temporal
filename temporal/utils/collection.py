@@ -28,6 +28,24 @@ def get_first_element(iterable: Iterable[T], fallback: U = None) -> T | U:
     return next(iter(iterable)) if iterable else fallback
 
 
+def get_next_element(iterable: Iterable[T], current: T, fallback: U = None) -> T | U:
+    iterator = iter(iterable)
+
+    while True:
+        try:
+            item = next(iterator)
+        except StopIteration:
+            return fallback
+
+        if item == current:
+            break
+
+    try:
+        return next(iterator)
+    except StopIteration:
+        return fallback
+
+
 def natural_sort(iterable: Iterable[str]) -> list[str]:
     return sorted(iterable, key = lambda item: tuple(int(x) if x.isdigit() else x for x in re.split(r"(\d+)", item)))
 

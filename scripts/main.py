@@ -23,7 +23,7 @@ from temporal.shared import shared
 from temporal.ui import UI
 from temporal.ui.module_list import ModuleAccordion, ModuleAccordionSpecialCheckbox, ModuleList
 from temporal.utils import logging
-from temporal.utils.collection import get_first_element
+from temporal.utils.collection import get_first_element, get_next_element
 from temporal.utils.fs import load_text
 from temporal.utils.image import PILImage, np_to_pil, pil_to_np
 from temporal.utils.numpy import generate_value_noise
@@ -64,24 +64,33 @@ class TemporalScript(scripts.Script):
             @ui.callback("refresh_presets", "click", [], ["preset_name"])
             def _(_):
                 shared.preset_store.refresh_presets()
+
                 return {"preset_name": gr.update(choices = shared.preset_store.preset_names)}
 
             @ui.callback("load_preset", "click", ["preset_name", "group:preset"], ["group:preset"])
             def _(inputs):
                 preset_name = inputs.pop("preset_name")
+
                 inputs |= shared.preset_store.open_preset(preset_name).data
+
                 return {k: gr.update(value = v) for k, v in inputs.items()}
 
             @ui.callback("save_preset", "click", ["preset_name", "group:preset"], ["preset_name"])
             def _(inputs):
                 preset_name = inputs.pop("preset_name")
+
                 shared.preset_store.save_preset(preset_name, inputs)
+
                 return {"preset_name": gr.update(choices = shared.preset_store.preset_names, value = preset_name)}
 
             @ui.callback("delete_preset", "click", ["preset_name"], ["preset_name"])
             def _(inputs):
-                shared.preset_store.delete_preset(inputs["preset_name"])
-                return {"preset_name": gr.update(choices = shared.preset_store.preset_names, value = get_first_element(shared.preset_store.preset_names, ""))}
+                preset_name = inputs["preset_name"]
+                new_name = get_next_element(shared.preset_store.preset_names, preset_name, "untitled")
+
+                shared.preset_store.delete_preset(preset_name)
+
+                return {"preset_name": gr.update(choices = shared.preset_store.preset_names, value = new_name)}
 
         with ui.elem("", gr.Tab, label = "Project"):
             with ui.elem("", gr.Row):
@@ -97,6 +106,7 @@ class TemporalScript(scripts.Script):
                         return {}
 
                     project = shared.project_store.open_project(inputs["project_name"])
+
                     return {
                         "project_description": gr.update(value = desc if (desc := project.get_description()) else "Cannot read project data"),
                         "project_gallery": gr.update(value = project.list_all_frame_paths()[-shared.options.project_management.gallery_size:]),
@@ -107,19 +117,31 @@ class TemporalScript(scripts.Script):
                 @ui.callback("refresh_projects", "click", [], ["project_name"])
                 def _(_):
                     shared.project_store.refresh_projects()
+
                     return {"project_name": gr.update(choices = shared.project_store.project_names)}
 
                 @ui.callback("load_project", "click", ["project_name", "group:session"], ["group:session"])
                 def _(inputs):
-                    project = shared.project_store.open_project(inputs.pop("project_name"))
+                    project_name = inputs.pop("project_name")
+
+                    project = shared.project_store.open_project(project_name)
+
                     session = self._ui_to_session(inputs)
                     session.load(project.session_path)
+                    # HACK: To prevent the dropdown's value being reset after
+                    # loading a project
+                    session.project_name = project_name
+
                     return {k: gr.update(value = v) for k, v in self._session_to_ui(session).items()}
 
                 @ui.callback("delete_project", "click", ["project_name"], ["project_name"])
                 def _(inputs):
-                    shared.project_store.delete_project(inputs["project_name"])
-                    return {"project_name": gr.update(choices = shared.project_store.project_names, value = get_first_element(shared.project_store.project_names, ""))}
+                    project_name = inputs["project_name"]
+                    new_name = get_next_element(shared.project_store.project_names, project_name, "untitled")
+
+                    shared.project_store.delete_project(project_name)
+
+                    return {"project_name": gr.update(choices = shared.project_store.project_names, value = new_name)}
 
             with ui.elem("", gr.Tab, label = "Session"):
                 ui.elem("load_parameters", gr.Checkbox, label = "Load parameters", value = True, groups = ["preset", "project"])
@@ -244,7 +266,7 @@ class TemporalScript(scripts.Script):
                         def make_value_getter(id: str) -> Callable[[], bool]:
                             return lambda: shared.previewed_modules[id]
 
-                        ui.elem(elem_id, ModuleAccordionSpecialCheckbox, label = "Preview", value = make_value_getter(id), elem_classes = ["temporal-visibility-checkbox"], groups = ["preset"])
+                        ui.elem(elem_id, ModuleAccordionSpecialCheckbox, value = make_value_getter(id), elem_classes = ["temporal-visibility-checkbox"], groups = ["preset"])
 
                         def make_callback(id: str, elem_id: str) -> None:
                             @ui.callback(elem_id, "change", [elem_id], [])
