@@ -51,16 +51,17 @@ class AveragingModule(PipelineModule):
     easing: float = ui_param("Easing", gr.Slider, minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0)
     preference: float = ui_param("Preference", gr.Slider, minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0)
 
-    buffer: NDArray[np.float_] = field(factory = lambda: np.empty((0,)))
+    buffer: Optional[NDArray[np.float_]] = field(None)
     last_index: int = field(0)
 
     def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
-        if self.buffer.shape[0] == 0:
+        if self.buffer is None:
             self.buffer = np.stack([np.repeat(
                 ensure_image_dims(image, "RGB", (session.processing.width, session.processing.height))[np.newaxis, ...],
                 self.frames,
                 axis = 0,
             ) for image in images], 0)
+            self.last_index = 0
 
         for sub, image in zip(self.buffer, images):
             sub[self.last_index] = match_image(image, sub[0])
@@ -122,10 +123,10 @@ class InterpolationModule(PipelineModule):
     movement: float = ui_param("Movement", gr.Slider, minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0)
     radius: int = ui_param("Radius", gr.Slider, precision = 0, minimum = 7, maximum = 31, step = 2, value = 15)
 
-    buffer: NDArray[np.float_] = field(factory = lambda: np.empty((0,)))
+    buffer: Optional[NDArray[np.float_]] = field(None)
 
     def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
-        if self.buffer.shape[0] == 0:
+        if self.buffer is None:
             self.buffer = np.stack([
                 ensure_image_dims(image, "RGB", (session.processing.width, session.processing.height))
                 for image in images
@@ -162,10 +163,10 @@ class LimitingModule(PipelineModule):
     mode: str = ui_param("Mode", gr.Dropdown, choices = ["clamp", "compress"], value = "clamp")
     max_difference: float = ui_param("Maximum difference", gr.Slider, minimum = 0.001, maximum = 1.0, step = 0.001, value = 1.0)
 
-    buffer: NDArray[np.float_] = field(factory = lambda: np.empty((0,)))
+    buffer: Optional[NDArray[np.float_]] = field(None)
 
     def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
-        if self.buffer.shape[0] == 0:
+        if self.buffer is None:
             self.buffer = np.stack([
                 ensure_image_dims(image, "RGB", (session.processing.width, session.processing.height))
                 for image in images

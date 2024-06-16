@@ -107,25 +107,48 @@ class Project:
                 remove_entry(image_path)
 
     def delete_session_data(self) -> None:
+        def remove_file(elem: Optional[ET.Element]) -> None:
+            if elem is None:
+                return
+
+            if elem.text is not None:
+                remove_entry(self.session_path / elem.text)
+
+            elem.set("type", "NoneType")
+            elem.text = ""
+
         if not (session_data_path := (self.session_path / "data.xml")).exists():
             return
 
         tree = ET.ElementTree(file = session_data_path)
         root = tree.getroot()
 
-        if (measurements_elem := root.find("*[@key='modules']/*[@key='measuring']/*[@key='metrics']/*[@key='measurements']")) is not None:
-            for child in list(measurements_elem):
-                measurements_elem.remove(child)
+        if (measurements := root.find("*[@key='pipeline']/*[@key='modules']/*[@key='measuring']/*[@key='metrics']/*[@key='measurements']")) is not None:
+            for measurement in reversed(measurements):
+                measurements.remove(measurement)
 
-        if (buffer_elem := root.find("*[@key='modules']/*[@key='averaging']/*[@key='buffer']")) is not None:
-            if (array_path := buffer_elem.findtext("*[@key='array']")) is not None:
-                remove_entry(Path(array_path))
+        remove_file(root.find("*[@key='pipeline']/*[@key='modules']/*[@key='averaging']/*[@key='buffer']"))
+        remove_file(root.find("*[@key='pipeline']/*[@key='modules']/*[@key='interpolation']/*[@key='buffer']"))
+        remove_file(root.find("*[@key='pipeline']/*[@key='modules']/*[@key='limiting']/*[@key='buffer']"))
 
-            root.remove(buffer_elem)
+        if (last_index := root.find("*[@key='pipeline']/*[@key='modules']/*[@key='averaging']/*[@key='last_index']")) is not None:
+            last_index.text = "0"
 
+        if (iteration := root.find("*[@key='iteration']")) is not None:
+            if (images := iteration.find("*[@key='images']")):
+                for image in reversed(images):
+                    remove_file(image)
+                    images.remove(image)
+
+            if (index := iteration.find("*[@key='index']")) is not None:
+                index.text = "1"
+
+            if (module_id := iteration.find("*[@key='module_id']")) is not None:
+                module_id.set("type", "NoneType")
+                module_id.text = ""
+
+        ET.indent(tree)
         tree.write(session_data_path)
-
-        remove_directory(self.session_path / "metrics")
 
     def _iterate_frame_paths(self) -> Iterator[Path]:
         return self.path.glob(f"*.{FRAME_EXTENSION}")
