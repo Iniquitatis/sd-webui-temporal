@@ -204,7 +204,7 @@ class MeasuringModule(PipelineModule):
         self.metrics.measure(images[0])
 
         if frame_index % self.plot_every_nth_frame == 0:
-            self.metrics.plot_to_directory(ensure_directory_exists(Path(shared.options.output.output_dir) / session.project_name / "metrics"))
+            self.metrics.plot_to_directory(ensure_directory_exists(session.project.path / "metrics"))
 
         return images
 
@@ -263,7 +263,7 @@ class SavingModule(PipelineModule):
             save_processed_image(
                 image = np_to_pil(image),
                 p = session.processing,
-                output_dir = ensure_directory_exists(Path(shared.options.output.output_dir) / session.project_name),
+                output_dir = ensure_directory_exists(session.project.path),
                 file_name = file_name,
                 archive_mode = self.archive_mode,
             )
@@ -303,19 +303,19 @@ class VideoRenderingModule(PipelineModule):
     def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         for i, _ in enumerate(images, 1):
             if frame_index % self.render_draft_every_nth_frame == 0:
-                render_project_video(Path(shared.options.output.output_dir) / session.project_name, shared.video_renderer, False, i)
+                render_project_video(session.project.path, shared.video_renderer, False, i)
 
             if frame_index % self.render_final_every_nth_frame == 0:
-                render_project_video(Path(shared.options.output.output_dir) / session.project_name, shared.video_renderer, True, i)
+                render_project_video(session.project.path, shared.video_renderer, True, i)
 
         return images
 
     def finalize(self, images: list[NumpyImage], session: Session) -> None:
         for i, _ in enumerate(images, 1):
             if self.render_draft_on_finish:
-                render_project_video(Path(shared.options.output.output_dir) / session.project_name, shared.video_renderer, False, i)
+                render_project_video(session.project.path, shared.video_renderer, False, i)
 
             if self.render_final_on_finish:
-                render_project_video(Path(shared.options.output.output_dir) / session.project_name, shared.video_renderer, True, i)
+                render_project_video(session.project.path, shared.video_renderer, True, i)
 
         wait_until(lambda: not video_render_queue.busy)

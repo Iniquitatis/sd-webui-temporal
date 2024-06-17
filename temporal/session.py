@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Any, Optional
 
+from modules import shared as webui_shared
 from modules.options import Options
 from modules.processing import StableDiffusionProcessingImg2Img
 
@@ -7,8 +8,14 @@ from temporal.interop import ControlNetUnitWrapper
 from temporal.meta.serializable import Serializable, field
 if TYPE_CHECKING:
     from temporal.pipeline import Pipeline
+    from temporal.project import Project
 from temporal.serialization import BasicObjectSerializer
 from temporal.utils.image import NumpyImage
+from temporal.utils.object import copy_with_overrides
+
+
+# FIXME: To shut up the type checker
+opts: Options = getattr(webui_shared, "opts")
 
 
 class InitialNoiseParams(Serializable):
@@ -26,10 +33,11 @@ class IterationData(Serializable):
 
 
 class Session(Serializable):
-    options: Options = field()
-    processing: StableDiffusionProcessingImg2Img = field()
-    controlnet_units: Optional[list[ControlNetUnitWrapper]] = field()
-    project_name: str = field("untitled", saved = False)
+    # NOTE: The next four fields should be assigned manually
+    options: Options = field(factory = lambda: copy_with_overrides(opts, data = opts.data.copy()))
+    processing: StableDiffusionProcessingImg2Img = field(factory = StableDiffusionProcessingImg2Img)
+    controlnet_units: Optional[list[ControlNetUnitWrapper]] = field(factory = list)
+    project: "Project" = field(None, saved = False)
     initial_noise: InitialNoiseParams = field(factory = InitialNoiseParams)
     pipeline: "Pipeline" = field()
     iteration: IterationData = field(factory = IterationData)

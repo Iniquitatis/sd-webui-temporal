@@ -1,10 +1,11 @@
-import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Iterator, Optional
+from typing import Iterator
 
 from temporal.compat import VERSION, upgrade_project
+from temporal.meta.serializable import Serializable, field
+from temporal.session import Session
 from temporal.utils import logging
-from temporal.utils.fs import clear_directory, ensure_directory_exists, is_directory_empty, remove_directory, remove_entry, save_text
+from temporal.utils.fs import clear_directory, ensure_directory_exists, remove_entry
 from temporal.video_renderer import VideoRenderer
 
 
@@ -42,45 +43,28 @@ def render_project_video(project_dir: Path, renderer: VideoRenderer, is_final: b
     return video_path
 
 
-class Project:
-    def __init__(self, path: Path) -> None:
-        self.path = path
+class Project(Serializable):
+    path: Path = field(Path("outputs/temporal/untitled"), saved = False)
+    name: str = field("untitled", saved = False)
+    version: int = field(VERSION)
+    session: Session = field(factory = Session)
 
-    @property
-    def name(self) -> str:
-        return self.path.name
+    def load(self, dir: Path) -> None:
+        upgrade_project(dir)
+        super().load(dir / "project")
 
-    @property
-    def data_path(self) -> Path:
-        return self.path / "project"
+    def save(self, dir: Path) -> None:
+        super().save(dir / "project")
 
-    @property
-    def session_path(self) -> Path:
-        return self.data_path / "session"
-
-    def load(self) -> None:
-        if is_directory_empty(self.path):
-            return
-
-        upgrade_project(self.path)
-
-    def save(self) -> None:
-        save_text(self.data_path / "version.txt", str(VERSION))
-
-    def get_description(self) -> Optional[str]:
-        if not (path := self.session_path / "data.xml").is_file():
-            return None
-
-        tree = ET.ElementTree(file = path)
-        values = {
+    def get_description(self) -> str:
+        return "\n\n".join(f"{k}: {v}" for k, v in {
             "Name": self.name,
-            "Prompt": tree.findtext("*[@key='processing']/*[@key='prompt']"),
-            "Negative prompt": tree.findtext("*[@key='processing']/*[@key='negative_prompt']"),
-            "Checkpoint": tree.findtext("*[@key='options']/*[@key='sd_model_checkpoint']"),
+            "Prompt": self.session.processing.prompt,
+            "Negative prompt": self.session.processing.negative_prompt,
+            "Checkpoint": self.session.options.sd_model_checkpoint,
             "Last frame": self.get_last_frame_index(),
             "Saved frames": self.get_actual_frame_count(),
-        }
-        return "\n\n".join(f"{k}: {v}" for k, v in values.items() if v is not None)
+        }.items())
 
     def get_first_frame_index(self) -> int:
         return min((_parse_frame_index(x)[0] for x in self._iterate_frame_paths()), default = 0)
@@ -107,48 +91,14 @@ class Project:
                 remove_entry(image_path)
 
     def delete_session_data(self) -> None:
-        def remove_file(elem: Optional[ET.Element]) -> None:
-            if elem is None:
-                return
-
-            if elem.text is not None:
-                remove_entry(self.session_path / elem.text)
-
-            elem.set("type", "NoneType")
-            elem.text = ""
-
-        if not (session_data_path := (self.session_path / "data.xml")).exists():
-            return
-
-        tree = ET.ElementTree(file = session_data_path)
-        root = tree.getroot()
-
-        if (measurements := root.find("*[@key='pipeline']/*[@key='modules']/*[@key='measuring']/*[@key='metrics']/*[@key='measurements']")) is not None:
-            for measurement in reversed(measurements):
-                measurements.remove(measurement)
-
-        remove_file(root.find("*[@key='pipeline']/*[@key='modules']/*[@key='averaging']/*[@key='buffer']"))
-        remove_file(root.find("*[@key='pipeline']/*[@key='modules']/*[@key='interpolation']/*[@key='buffer']"))
-        remove_file(root.find("*[@key='pipeline']/*[@key='modules']/*[@key='limiting']/*[@key='buffer']"))
-
-        if (last_index := root.find("*[@key='pipeline']/*[@key='modules']/*[@key='averaging']/*[@key='last_index']")) is not None:
-            last_index.text = "0"
-
-        if (iteration := root.find("*[@key='iteration']")) is not None:
-            if (images := iteration.find("*[@key='images']")):
-                for image in reversed(images):
-                    remove_file(image)
-                    images.remove(image)
-
-            if (index := iteration.find("*[@key='index']")) is not None:
-                index.text = "1"
-
-            if (module_id := iteration.find("*[@key='module_id']")) is not None:
-                module_id.set("type", "NoneType")
-                module_id.text = ""
-
-        ET.indent(tree)
-        tree.write(session_data_path)
+        self.session.pipeline.modules["measuring"].metrics.measurements.clear()
+        self.session.pipeline.modules["averaging"].buffer = None
+        self.session.pipeline.modules["averaging"].last_index = 0
+        self.session.pipeline.modules["interpolation"].buffer = None
+        self.session.pipeline.modules["limiting"].buffer = None
+        self.session.iteration.images.clear()
+        self.session.iteration.index = 1
+        self.session.iteration.module_id = None
 
     def _iterate_frame_paths(self) -> Iterator[Path]:
         return self.path.glob(f"*.{FRAME_EXTENSION}")

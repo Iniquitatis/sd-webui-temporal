@@ -1,6 +1,6 @@
 from pathlib import Path
 from time import perf_counter
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 import gradio as gr
 
@@ -12,13 +12,12 @@ from modules.shared_state import State
 from modules.ui_components import ToolButton
 
 from temporal.blend_modes import BLEND_MODES
-from temporal.compat import upgrade_project
 from temporal.global_options import OptionCategory
 from temporal.image_filters import ImageFilter
 from temporal.interop import EXTENSION_DIR, get_cn_units
 from temporal.pipeline import PIPELINE_MODULES
 from temporal.project import Project, render_project_video
-from temporal.session import InitialNoiseParams, Session
+from temporal.session import InitialNoiseParams
 from temporal.shared import shared
 from temporal.ui import UI
 from temporal.ui.module_list import ModuleAccordion, ModuleAccordionSpecialCheckbox, ModuleList
@@ -69,6 +68,9 @@ class TemporalScript(scripts.Script):
 
             @ui.callback("load_preset", "click", ["preset_name", "group:preset"], ["group:preset"])
             def _(inputs):
+                if inputs["preset_name"] not in shared.preset_store.preset_names:
+                    return {}
+
                 preset_name = inputs.pop("preset_name")
 
                 inputs |= shared.preset_store.open_preset(preset_name).data
@@ -85,6 +87,9 @@ class TemporalScript(scripts.Script):
 
             @ui.callback("delete_preset", "click", ["preset_name"], ["preset_name"])
             def _(inputs):
+                if inputs["preset_name"] not in shared.preset_store.preset_names:
+                    return {}
+
                 preset_name = inputs["preset_name"]
                 new_name = get_next_element(shared.preset_store.preset_names, preset_name, "untitled")
 
@@ -94,7 +99,7 @@ class TemporalScript(scripts.Script):
 
         with ui.elem("", gr.Tab, label = "Project"):
             with ui.elem("", gr.Row):
-                ui.elem("project_name", gr.Dropdown, label = "Project name", choices = shared.project_store.project_names, allow_custom_value = True, value = get_first_element(shared.project_store.project_names, ""), groups = ["preset", "project", "session"])
+                ui.elem("project_name", gr.Dropdown, label = "Project", choices = shared.project_store.project_names, allow_custom_value = True, value = get_first_element(shared.project_store.project_names, "untitled"), groups = ["preset", "project"])
                 ui.elem("refresh_projects", ToolButton, value = "\U0001f504")
                 ui.elem("load_project", ToolButton, value = "\U0001f4c2")
                 ui.elem("delete_project", ToolButton, value = "\U0001f5d1\ufe0f")
@@ -108,8 +113,8 @@ class TemporalScript(scripts.Script):
                     project = shared.project_store.open_project(inputs["project_name"])
 
                     return {
-                        "project_description": gr.update(value = desc if (desc := project.get_description()) else "Cannot read project data"),
-                        "project_gallery": gr.update(value = project.list_all_frame_paths()[-shared.options.ui.gallery_size:]),
+                        "project_description": gr.update(value = project.get_description()),
+                        "project_gallery": gr.update(value = project.list_all_frame_paths()[:shared.options.ui.gallery_size]),
                         "project_gallery_page_index": gr.update(value = 1),
                         "project_gallery_parallel_index": gr.update(value = 1),
                     }
@@ -120,22 +125,20 @@ class TemporalScript(scripts.Script):
 
                     return {"project_name": gr.update(choices = shared.project_store.project_names)}
 
-                @ui.callback("load_project", "click", ["project_name", "group:session"], ["group:session"])
+                @ui.callback("load_project", "click", ["project_name"], ["group:session"])
                 def _(inputs):
-                    project_name = inputs.pop("project_name")
+                    if inputs["project_name"] not in shared.project_store.project_names:
+                        return {}
 
-                    project = shared.project_store.open_project(project_name)
+                    project = shared.project_store.open_project(inputs["project_name"])
 
-                    session = self._ui_to_session(inputs)
-                    session.load(project.session_path)
-                    # HACK: To prevent the dropdown's value being reset after
-                    # loading a project
-                    session.project_name = project_name
-
-                    return {k: gr.update(value = v) for k, v in self._session_to_ui(session).items()}
+                    return {id: gr.update(value = get_property_by_path(project.session, id)) for id in self._ui.parse_ids(["group:session"])}
 
                 @ui.callback("delete_project", "click", ["project_name"], ["project_name"])
                 def _(inputs):
+                    if inputs["project_name"] not in shared.project_store.project_names:
+                        return {}
+
                     project_name = inputs["project_name"]
                     new_name = get_next_element(shared.project_store.project_names, project_name, "untitled")
 
@@ -163,13 +166,16 @@ class TemporalScript(scripts.Script):
                     ui.elem("project_gallery_parallel_next", ToolButton, value = ">")
 
                 def navigate_gallery(inputs: dict[str, Any], page_offset: int, parallel_offset: int) -> dict[str, Any]:
-                    project_name = inputs["project_name"]
+                    if inputs["project_name"] not in shared.project_store.project_names:
+                        return {}
+
+                    project = shared.project_store.open_project(inputs["project_name"])
                     page = max(inputs["project_gallery_page_index"] + page_offset, 1)
                     parallel = max(inputs["project_gallery_parallel_index"] + parallel_offset, 1)
                     gallery_size = shared.options.ui.gallery_size
-                    project = shared.project_store.open_project(project_name)
+
                     return {
-                        "project_gallery": gr.update(value = project.list_all_frame_paths(parallel)[page * gallery_size:(page + 1) * gallery_size]),
+                        "project_gallery": gr.update(value = project.list_all_frame_paths(parallel)[(page - 1) * gallery_size:page * gallery_size]),
                         "project_gallery_page_index": gr.update(value = page),
                         "project_gallery_parallel_index": gr.update(value = parallel),
                     }
@@ -216,34 +222,36 @@ class TemporalScript(scripts.Script):
 
                     @ui.callback("confirm_project_rename", "click", ["project_name", "new_project_name"], ["project_name"])
                     def _(inputs):
+                        if inputs["project_name"] not in shared.project_store.project_names:
+                            return {}
+
                         shared.project_store.rename_project(inputs["project_name"], inputs["new_project_name"])
+
                         return {"project_name": gr.update(choices = shared.project_store.project_names, value = inputs["new_project_name"])}
 
-                ui.elem("upgrade_project", gr.Button, value = "Upgrade")
                 ui.elem("delete_intermediate_frames", gr.Button, value = "Delete intermediate frames")
                 ui.elem("delete_session_data", gr.Button, value = "Delete session data")
 
-                @ui.callback("upgrade_project", "click", ["project_name"], ["project_description", "project_gallery"])
-                def _(inputs):
-                    project = shared.project_store.open_project(inputs["project_name"])
-                    upgrade_project(project.path)
-                    return {
-                        "project_description": gr.update(value = desc if (desc := project.get_description()) else "Cannot read project data"),
-                        "project_gallery": gr.update(value = project.list_all_frame_paths()[-shared.options.ui.gallery_size:]),
-                    }
-
                 @ui.callback("delete_intermediate_frames", "click", ["project_name"], ["project_gallery"])
                 def _(inputs):
+                    if inputs["project_name"] not in shared.project_store.project_names:
+                        return {}
+
                     project = shared.project_store.open_project(inputs["project_name"])
                     project.delete_intermediate_frames()
+
                     return {
-                        "project_description": gr.update(value = desc if (desc := project.get_description()) else "Cannot read project data"),
-                        "project_gallery": gr.update(value = project.list_all_frame_paths()[-shared.options.ui.gallery_size:]),
+                        "project_description": gr.update(value = project.get_description()),
+                        "project_gallery": gr.update(value = project.list_all_frame_paths()[:shared.options.ui.gallery_size]),
                     }
 
                 @ui.callback("delete_session_data", "click", ["project_name"], [])
                 def _(inputs):
+                    if inputs["project_name"] not in shared.project_store.project_names:
+                        return {}
+
                     shared.project_store.open_project(inputs["project_name"]).delete_session_data()
+
                     return {}
 
         with ui.elem("", gr.Tab, label = "Pipeline"):
@@ -317,6 +325,9 @@ class TemporalScript(scripts.Script):
                 ui.elem("render_final", gr.Button, value = "Render final")
 
                 def render_video(inputs, is_final):
+                    if inputs["project_name"] not in shared.project_store.project_names:
+                        return {}
+
                     yield {
                         "render_draft": gr.update(interactive = False),
                         "render_final": gr.update(interactive = False),
@@ -356,12 +367,14 @@ class TemporalScript(scripts.Script):
             ui.elem("render_plots", gr.Button, value = "Render plots")
             ui.elem("metrics_plots", gr.Gallery, label = "Plots", columns = 4, object_fit = "contain", preview = True)
 
-            @ui.callback("render_plots", "click", ["project_name", "group:session"], ["metrics_plots"])
+            @ui.callback("render_plots", "click", ["project_name"], ["metrics_plots"])
             def _(inputs):
-                project = shared.project_store.open_project(inputs.pop("project_name"))
-                session = self._ui_to_session(inputs)
-                session.load(project.session_path)
-                return {"metrics_plots": gr.update(value = list(session.pipeline.modules["measuring"].metrics.plot().values()))}
+                if inputs["project_name"] not in shared.project_store.project_names:
+                    return {}
+
+                project = shared.project_store.open_project(inputs["project_name"])
+
+                return {"metrics_plots": gr.update(value = list(project.session.pipeline.modules["measuring"].metrics.plot().values()))}
 
         with ui.elem("", gr.Tab, label = "Settings"):
             ui.elem("apply_settings", gr.Button, value = "Apply")
@@ -407,25 +420,6 @@ class TemporalScript(scripts.Script):
     def run(self, p: StableDiffusionProcessingImg2Img, *args: Any) -> Any:
         return self._process(p, {name: arg for name, arg in zip(self._ui.parse_ids(["group:project", "group:session"]), args)})
 
-    def _ui_to_session(self, inputs: dict[str, Any], p: Optional[StableDiffusionProcessingImg2Img] = None) -> Session:
-        result = Session(
-            options = opts,
-            processing = p,
-            controlnet_units = get_cn_units(p),
-        ) if p is not None else Session()
-
-        for id, value in inputs.items():
-            if self._ui.is_in_group(id, "session"):
-                set_property_by_path(result, id, value)
-
-        return result
-
-    def _session_to_ui(self, session: Session) -> dict[str, Any]:
-        return {
-            id: get_property_by_path(session, id)
-            for id in self._ui.parse_ids(["group:session"])
-        }
-
     def _process(self, p: StableDiffusionProcessingImg2Img, inputs: dict[str, Any]) -> Processed:
         opts_backup = opts.data.copy()
 
@@ -440,17 +434,24 @@ class TemporalScript(scripts.Script):
 
         processing.fix_seed(p)
 
-        project = Project(Path(shared.options.output.output_dir) / inputs["project_name"])
-        project.load()
+        project = Project(Path(shared.options.output.output_dir) / inputs["project_name"], inputs["project_name"])
+
+        session = project.session
+        session.options = opts
+        session.processing = p
+        session.controlnet_units = get_cn_units(p)
+        session.project = project
+
+        if inputs["load_parameters"]:
+            project.load(project.path)
+        else:
+            for id, value in inputs.items():
+                if self._ui.is_in_group(id, "session"):
+                    set_property_by_path(session, id, value)
 
         if not inputs["continue_from_last_frame"]:
             project.delete_all_frames()
             project.delete_session_data()
-
-        session = self._ui_to_session(inputs, p)
-
-        if inputs["load_parameters"] and project.session_path.exists():
-            session.load(project.session_path)
 
         if not self._verify_image_existence(p, session.initial_noise, session.pipeline.parallel):
             opts.data.update(opts_backup)
@@ -474,16 +475,14 @@ class TemporalScript(scripts.Script):
                 break
 
             if i % shared.options.output.autosave_every_n_iterations == 0:
-                session.save(project.session_path)
-                project.save()
+                project.save(project.path)
 
             end_time = perf_counter()
 
             logging.info(f"Iteration took {end_time - start_time:.6f} second(s)")
 
         session.pipeline.finalize(session)
-        session.save(project.session_path)
-        project.save()
+        project.save(project.path)
 
         state.end()
 

@@ -17,7 +17,9 @@ class ProjectStore:
         self._sort()
 
     def open_project(self, name: str) -> Project:
-        return Project(self.path / name)
+        project = Project(self.path / name, name)
+        project.load(project.path)
+        return project
 
     def delete_project(self, name: str) -> None:
         remove_entry(self.path / name)

@@ -8,12 +8,12 @@ import numpy as np
 
 from temporal.meta.registerable import Registerable
 from temporal.utils import logging
-from temporal.utils.fs import ensure_directory_exists, load_json, load_text, move_entry, save_json, save_text
+from temporal.utils.fs import ensure_directory_exists, load_json, load_text, move_entry, remove_entry, save_json, save_text
 from temporal.utils.image import load_image, pil_to_np
 from temporal.utils.numpy import load_array, save_array
 
 
-VERSION = 26
+VERSION = 27
 
 UPGRADERS: dict[int, Type["Upgrader"]] = {}
 
@@ -1380,5 +1380,43 @@ class _(Upgrader):
         ET.indent(tree)
         tree.write(session_data_path, "utf-8")
         save_text(version_path, "26")
+
+        return True
+
+
+class _(Upgrader):
+    id = 27
+
+    @staticmethod
+    def upgrade(path: Path) -> bool:
+        version_path = path / "project" / "version.txt"
+
+        if int(load_text(version_path, "0")) != 26:
+            return False
+
+        session_dir = path / "project" / "session"
+
+        for entry_path in session_dir.iterdir():
+            move_entry(entry_path, path / "project" / entry_path.name)
+
+        remove_entry(session_dir)
+        remove_entry(version_path)
+
+        new_root = ET.Element("object", {"type": "temporal.project.Project"})
+        new_tree = ET.ElementTree(new_root)
+
+        version = ET.SubElement(new_root, "object", {"key": "version", "type": "int"})
+        version.text = "27"
+
+        data_path = path / "project" / "data.xml"
+
+        old_tree = ET.ElementTree(file = data_path)
+
+        session = old_tree.getroot()
+        session.set("key", "session")
+        new_root.append(session)
+
+        ET.indent(new_tree)
+        new_tree.write(data_path, "utf-8")
 
         return True
