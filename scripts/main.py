@@ -3,9 +3,9 @@ from typing import Any, Callable
 
 import gradio as gr
 
-from modules import processing, scripts, shared as webui_shared
+from modules import scripts, shared as webui_shared
 from modules.options import Options
-from modules.processing import Processed, StableDiffusionProcessingImg2Img
+from modules.processing import Processed, StableDiffusionProcessingImg2Img, fix_seed
 from modules.styles import StyleDatabase
 from modules.shared_state import State
 from modules.ui_components import ToolButton
@@ -431,7 +431,7 @@ class TemporalScript(scripts.Script):
         p.negative_prompt = prompt_styles.apply_negative_styles_to_prompt(p.negative_prompt, p.styles)
         p.styles.clear()
 
-        processing.fix_seed(p)
+        fix_seed(p)
 
         project = Project(shared.options.output.output_dir / inputs["project_name"], inputs["project_name"])
 

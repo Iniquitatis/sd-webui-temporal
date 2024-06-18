@@ -3,11 +3,11 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any, Optional
 
-from modules import scripts
 from modules.processing import StableDiffusionProcessing
+from modules.scripts import basedir
 
 
-EXTENSION_DIR = Path(scripts.basedir())
+EXTENSION_DIR = Path(basedir())
 
 
 @dataclass

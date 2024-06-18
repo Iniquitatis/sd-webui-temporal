@@ -4,9 +4,10 @@ from math import ceil
 from pathlib import Path
 from typing import Optional
 
-from modules import images, processing, shared
+from modules import shared as webui_shared
+from modules.images import save_image as webui_save_image
 from modules.options import Options
-from modules.processing import Processed, StableDiffusionProcessing, StableDiffusionProcessingImg2Img
+from modules.processing import Processed, StableDiffusionProcessing, StableDiffusionProcessingImg2Img, process_images as webui_process_images
 from modules.shared_state import State
 
 from temporal.thread_queue import ThreadQueue
@@ -16,8 +17,8 @@ from temporal.utils.object import copy_with_overrides
 
 
 # FIXME: To shut up the type checker
-opts: Options = getattr(shared, "opts")
-state: State = getattr(shared, "state")
+opts: Options = getattr(webui_shared, "opts")
+state: State = getattr(webui_shared, "state")
 
 
 image_save_queue = ThreadQueue()
@@ -32,7 +33,7 @@ def process_image(p: StableDiffusionProcessing, preview: bool = False) -> Option
         State.do_set_current_image = lambda self: None
 
     try:
-        processed = processing.process_images(p)
+        processed = webui_process_images(p)
     except:
         State.do_set_current_image = do_set_current_image
         return None
@@ -82,7 +83,7 @@ def save_processed_image(image: PILImage, p: StableDiffusionProcessing, output_d
     else:
         processed = Processed(p, [image])
 
-        images.save_image(
+        webui_save_image(
             image,
             output_dir,
             "",
