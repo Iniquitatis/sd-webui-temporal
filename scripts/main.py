@@ -109,7 +109,7 @@ class TemporalScript(scripts.Script):
 
                     return {
                         "project_description": gr.update(value = desc if (desc := project.get_description()) else "Cannot read project data"),
-                        "project_gallery": gr.update(value = project.list_all_frame_paths()[-shared.options.project_management.gallery_size:]),
+                        "project_gallery": gr.update(value = project.list_all_frame_paths()[-shared.options.ui.gallery_size:]),
                         "project_gallery_page_index": gr.update(value = 1),
                         "project_gallery_parallel_index": gr.update(value = 1),
                     }
@@ -166,7 +166,7 @@ class TemporalScript(scripts.Script):
                     project_name = inputs["project_name"]
                     page = max(inputs["project_gallery_page_index"] + page_offset, 1)
                     parallel = max(inputs["project_gallery_parallel_index"] + parallel_offset, 1)
-                    gallery_size = shared.options.project_management.gallery_size
+                    gallery_size = shared.options.ui.gallery_size
                     project = shared.project_store.open_project(project_name)
                     return {
                         "project_gallery": gr.update(value = project.list_all_frame_paths(parallel)[page * gallery_size:(page + 1) * gallery_size]),
@@ -229,7 +229,7 @@ class TemporalScript(scripts.Script):
                     upgrade_project(project.path)
                     return {
                         "project_description": gr.update(value = desc if (desc := project.get_description()) else "Cannot read project data"),
-                        "project_gallery": gr.update(value = project.list_all_frame_paths()[-shared.options.project_management.gallery_size:]),
+                        "project_gallery": gr.update(value = project.list_all_frame_paths()[-shared.options.ui.gallery_size:]),
                     }
 
                 @ui.callback("delete_intermediate_frames", "click", ["project_name"], ["project_gallery"])
@@ -238,7 +238,7 @@ class TemporalScript(scripts.Script):
                     project.delete_intermediate_frames()
                     return {
                         "project_description": gr.update(value = desc if (desc := project.get_description()) else "Cannot read project data"),
-                        "project_gallery": gr.update(value = project.list_all_frame_paths()[-shared.options.project_management.gallery_size:]),
+                        "project_gallery": gr.update(value = project.list_all_frame_paths()[-shared.options.ui.gallery_size:]),
                     }
 
                 @ui.callback("delete_session_data", "click", ["project_name"], [])
