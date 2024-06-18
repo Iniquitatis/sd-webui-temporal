@@ -460,6 +460,8 @@ class TemporalScript(scripts.Script):
         if not session.iteration.images:
             session.iteration.images[:] = [pil_to_np(x) for x in p.init_images]
 
+        last_images = session.iteration.images.copy()
+
         state.job_count = inputs["iter_count"]
 
         for i in range(inputs["iter_count"]):
@@ -472,6 +474,8 @@ class TemporalScript(scripts.Script):
 
             if not session.pipeline.run(session):
                 break
+
+            last_images = session.iteration.images.copy()
 
             if i % shared.options.output.autosave_every_n_iterations == 0:
                 project.save(project.path)
@@ -487,7 +491,7 @@ class TemporalScript(scripts.Script):
 
         opts.data.update(opts_backup)
 
-        return Processed(p, [np_to_pil(x) for x in session.iteration.images])
+        return Processed(p, [np_to_pil(x) for x in last_images])
 
     @staticmethod
     def _verify_image_existence(p: StableDiffusionProcessingImg2Img, initial_noise: InitialNoiseParams, count: int) -> bool:
