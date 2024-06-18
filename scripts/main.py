@@ -526,7 +526,4 @@ class TemporalScript(scripts.Script):
         elif len(p.init_images) != count:
             p.init_images = [p.init_images[0]] * count
 
-        if opts.img2img_color_correction:
-            p.color_corrections = [processing.setup_color_correction(x) for x in p.init_images]
-
         return True
