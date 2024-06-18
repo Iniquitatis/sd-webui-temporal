@@ -1,7 +1,6 @@
 from abc import abstractmethod
 from typing import Any, Optional
 
-import gradio as gr
 import numpy as np
 import scipy
 import skimage
@@ -9,8 +8,8 @@ from PIL import Image
 
 from temporal.blend_modes import BLEND_MODES
 from temporal.image_mask import ImageMask
-from temporal.meta.configurable import ui_param
-from temporal.meta.serializable import field
+from temporal.meta.configurable import BoolParam, ColorParam, EnumParam, FloatParam, ImageParam, IntParam, StringParam
+from temporal.meta.serializable import SerializableField as Field
 from temporal.pipeline_modules import PipelineModule
 from temporal.session import Session
 from temporal.utils.image import NumpyImage, alpha_blend, apply_channelwise, get_rgb_array, join_hsv_to_rgb, match_image, np_to_pil, pil_to_np, split_hsv
@@ -21,10 +20,10 @@ from temporal.utils.numpy import generate_value_noise, saturate_array
 class ImageFilter(PipelineModule, abstract = True):
     icon = "\U00002728"
 
-    amount: float = field(1.0)
-    amount_relative: bool = field(False)
-    blend_mode: str = field("normal")
-    mask: ImageMask = field(factory = ImageMask)
+    amount: float = Field(1.0)
+    amount_relative: bool = Field(False)
+    blend_mode: str = Field("normal")
+    mask: ImageMask = Field(factory = ImageMask)
 
     def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         return [saturate_array(self._blend(x, self.process(x, seed + i), session)) for i, x in enumerate(images)]
@@ -71,7 +70,7 @@ class BlurringFilter(ImageFilter):
     id = "blurring"
     name = "Blurring"
 
-    radius: float = ui_param("Radius", gr.Slider, minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0)
+    radius: float = FloatParam("Radius", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, ui_type = "slider")
 
     def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
         return skimage.filters.gaussian(npim, round(self.radius), channel_axis = 2)
@@ -81,9 +80,9 @@ class ColorBalancingFilter(ImageFilter):
     id = "color_balancing"
     name = "Color balancing"
 
-    brightness: float = ui_param("Brightness", gr.Slider, minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0)
-    contrast: float = ui_param("Contrast", gr.Slider, minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0)
-    saturation: float = ui_param("Saturation", gr.Slider, minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0)
+    brightness: float = FloatParam("Brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, ui_type = "slider")
+    contrast: float = FloatParam("Contrast", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, ui_type = "slider")
+    saturation: float = FloatParam("Saturation", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, ui_type = "slider")
 
     def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
         npim = remap_range(npim, npim.min(), npim.max(), 0.0, self.brightness)
@@ -100,9 +99,9 @@ class ColorCorrectionFilter(ImageFilter):
     id = "color_correction"
     name = "Color correction"
 
-    image: Optional[NumpyImage] = ui_param("Image", gr.Image, type = "numpy", image_mode = "RGB")
-    normalize_contrast: bool = ui_param("Normalize contrast", gr.Checkbox, value = False)
-    equalize_histogram: bool = ui_param("Equalize histogram", gr.Checkbox, value = False)
+    image: Optional[NumpyImage] = ImageParam("Image", channels = 3)
+    normalize_contrast: bool = BoolParam("Normalize contrast", value = False)
+    equalize_histogram: bool = BoolParam("Equalize histogram", value = False)
 
     def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
         if self.image is not None:
@@ -121,7 +120,7 @@ class ColorOverlayFilter(ImageFilter):
     id = "color_overlay"
     name = "Color overlay"
 
-    color: str = ui_param("Color", gr.ColorPicker, value = "#ffffff")
+    color: str = ColorParam("Color", channels = 3, value = "#ffffff")
 
     def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
         color = get_rgb_array(self.color)
@@ -136,7 +135,7 @@ class CustomCodeFilter(ImageFilter):
     id = "custom_code"
     name = "Custom code"
 
-    code: str = ui_param("Code", gr.Code, language = "python")
+    code: str = StringParam("Code", value = "output = input", ui_type = "code", language = "python")
 
     def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
         code_globals: dict[str, Any] = dict(
@@ -153,8 +152,8 @@ class ImageOverlayFilter(ImageFilter):
     id = "image_overlay"
     name = "Image overlay"
 
-    image: Optional[NumpyImage] = ui_param("Image", gr.Image, type = "numpy", image_mode = "RGBA")
-    blurring: float = ui_param("Blurring", gr.Slider, minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0)
+    image: Optional[NumpyImage] = ImageParam("Image", channels = 4)
+    blurring: float = FloatParam("Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, ui_type = "slider")
 
     def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
         if self.image is None:
@@ -171,8 +170,8 @@ class MedianFilter(ImageFilter):
     id = "median"
     name = "Median"
 
-    radius: int = ui_param("Radius", gr.Slider, precision = 0, minimum = 0, maximum = 50, step = 1, value = 0)
-    percentile: float = ui_param("Percentile", gr.Slider, minimum = 0.0, maximum = 100.0, step = 0.1, value = 50.0)
+    radius: int = IntParam("Radius", minimum = 0, maximum = 50, step = 1, value = 0, ui_type = "slider")
+    percentile: float = FloatParam("Percentile", minimum = 0.0, maximum = 100.0, step = 0.1, value = 50.0, ui_type = "slider")
 
     def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
         footprint = skimage.morphology.disk(self.radius)
@@ -189,8 +188,8 @@ class MorphologyFilter(ImageFilter):
     id = "morphology"
     name = "Morphology"
 
-    mode: str = ui_param("Mode", gr.Dropdown, choices = ["erosion", "dilation", "opening", "closing"], value = "erosion")
-    radius: int = ui_param("Radius", gr.Slider, precision = 0, minimum = 0, maximum = 50, step = 1, value = 0)
+    mode: str = EnumParam("Mode", choices = ["erosion", "dilation", "opening", "closing"], value = "erosion", ui_type = "menu")
+    radius: int = IntParam("Radius", minimum = 0, maximum = 50, step = 1, value = 0, ui_type = "slider")
 
     def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
         func = (
@@ -208,8 +207,8 @@ class NoiseCompressionFilter(ImageFilter):
     id = "noise_compression"
     name = "Noise compression"
 
-    constant: float = ui_param("Constant", gr.Slider, minimum = 0.0, maximum = 1.0, step = 1e-5, value = 0.0)
-    adaptive: float = ui_param("Adaptive", gr.Slider, minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0)
+    constant: float = FloatParam("Constant", minimum = 0.0, maximum = 1.0, step = 1e-5, value = 0.0, ui_type = "slider")
+    adaptive: float = FloatParam("Adaptive", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, ui_type = "slider")
 
     def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
         weight = 0.0
@@ -227,12 +226,12 @@ class NoiseOverlayFilter(ImageFilter):
     id = "noise_overlay"
     name = "Noise overlay"
 
-    scale: int = ui_param("Scale", gr.Slider, precision = 0, minimum = 1, maximum = 1024, step = 1, value = 1)
-    octaves: int = ui_param("Octaves", gr.Slider, precison = 0, minimum = 1, maximum = 10, step = 1, value = 1)
-    lacunarity: float = ui_param("Lacunarity", gr.Slider, minimum = 0.01, maximum = 4.0, step = 0.01, value = 2.0)
-    persistence: float = ui_param("Persistence", gr.Slider, minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.5)
-    seed: int = ui_param("Seed", gr.Number, precision = 0, minimum = 0, step = 1, value = 0)
-    use_dynamic_seed: bool = ui_param("Use dynamic seed", gr.Checkbox, value = False)
+    scale: int = IntParam("Scale", minimum = 1, maximum = 1024, step = 1, value = 1, ui_type = "slider")
+    octaves: int = IntParam("Octaves", minimum = 1, maximum = 10, step = 1, value = 1, ui_type = "slider")
+    lacunarity: float = FloatParam("Lacunarity", minimum = 0.01, maximum = 4.0, step = 0.01, value = 2.0, ui_type = "slider")
+    persistence: float = FloatParam("Persistence", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.5, ui_type = "slider")
+    seed: int = IntParam("Seed", minimum = 0, step = 1, value = 0, ui_type = "box")
+    use_dynamic_seed: bool = BoolParam("Use dynamic seed", value = False)
 
     def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
         return generate_value_noise(
@@ -249,9 +248,9 @@ class PalettizationFilter(ImageFilter):
     id = "palettization"
     name = "Palettization"
 
-    palette: Optional[NumpyImage] = ui_param("Palette", gr.Image, type = "numpy", image_mode = "RGB")
-    stretch: bool = ui_param("Stretch", gr.Checkbox, value = False)
-    dithering: bool = ui_param("Dithering", gr.Checkbox, value = False)
+    palette: Optional[NumpyImage] = ImageParam("Palette", channels = 3)
+    stretch: bool = BoolParam("Stretch", value = False)
+    dithering: bool = BoolParam("Dithering", value = False)
 
     def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
         def stretch_array(arr, new_length):
@@ -279,8 +278,8 @@ class SharpeningFilter(ImageFilter):
     id = "sharpening"
     name = "Sharpening"
 
-    strength: float = ui_param("Strength", gr.Slider, minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0)
-    radius: float = ui_param("Radius", gr.Slider, minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0)
+    strength: float = FloatParam("Strength", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, ui_type = "slider")
+    radius: float = FloatParam("Radius", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0, ui_type = "slider")
 
     def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
         return skimage.filters.unsharp_mask(npim, self.radius, self.strength, channel_axis = 2)
@@ -290,8 +289,8 @@ class SymmetryFilter(ImageFilter):
     id = "symmetry"
     name = "Symmetry"
 
-    horizontal: bool = ui_param("Horizontal", gr.Checkbox, value = False)
-    vertical: bool = ui_param("Vertical", gr.Checkbox, value = False)
+    horizontal: bool = BoolParam("Horizontal", value = False)
+    vertical: bool = BoolParam("Vertical", value = False)
 
     def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
         height, width = npim.shape[:2]
@@ -310,10 +309,10 @@ class TransformationFilter(ImageFilter):
     id = "transformation"
     name = "Transformation"
 
-    translation_x: float = ui_param("Translation X", gr.Slider, minimum = -1.0, maximum = 1.0, step = 0.001, value = 0.0)
-    translation_y: float = ui_param("Translation Y", gr.Slider, minimum = -1.0, maximum = 1.0, step = 0.001, value = 0.0)
-    rotation: float = ui_param("Rotation", gr.Slider, minimum = -90.0, maximum = 90.0, step = 0.1, value = 0.0)
-    scaling: float = ui_param("Scaling", gr.Slider, minimum = 0.0, maximum = 2.0, step = 0.001, value = 1.0)
+    translation_x: float = FloatParam("Translation X", minimum = -1.0, maximum = 1.0, step = 0.001, value = 0.0, ui_type = "slider")
+    translation_y: float = FloatParam("Translation Y", minimum = -1.0, maximum = 1.0, step = 0.001, value = 0.0, ui_type = "slider")
+    rotation: float = FloatParam("Rotation", minimum = -90.0, maximum = 90.0, step = 0.1, value = 0.0, ui_type = "slider")
+    scaling: float = FloatParam("Scaling", minimum = 0.0, maximum = 2.0, step = 0.001, value = 1.0, ui_type = "slider")
 
     def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
         height, width = npim.shape[:2]

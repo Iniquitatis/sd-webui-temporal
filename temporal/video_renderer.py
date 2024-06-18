@@ -3,7 +3,7 @@ from itertools import chain
 from pathlib import Path
 from subprocess import run
 
-from temporal.meta.serializable import Serializable, field
+from temporal.meta.serializable import Serializable, SerializableField as Field
 from temporal.thread_queue import ThreadQueue
 from temporal.utils.collection import reorder_dict
 from temporal.utils.fs import save_text
@@ -14,10 +14,10 @@ video_render_queue = ThreadQueue()
 
 
 class VideoRenderer(Serializable):
-    fps: int = field(30)
-    looping: bool = field(False)
-    filter_order: list[str] = field(factory = list)
-    filters: dict[str, VideoFilter] = field(factory = lambda: {id: cls() for id, cls in VIDEO_FILTERS.items()})
+    fps: int = Field(30)
+    looping: bool = Field(False)
+    filter_order: list[str] = Field(factory = list)
+    filters: dict[str, VideoFilter] = Field(factory = lambda: {id: cls() for id, cls in VIDEO_FILTERS.items()})
 
     def enqueue_video_render(self, path: Path, frame_paths: Sequence[Path], is_final: bool) -> None:
         video_render_queue.enqueue(self._render_video, path, frame_paths, is_final)

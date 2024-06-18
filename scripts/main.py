@@ -19,6 +19,7 @@ from temporal.project import Project, render_project_video
 from temporal.session import InitialNoiseParams
 from temporal.shared import shared
 from temporal.ui import UI
+from temporal.ui.configurable import make_configurable_param_editor
 from temporal.ui.module_list import ModuleAccordion, ModuleAccordionSpecialCheckbox, ModuleList
 from temporal.utils import logging
 from temporal.utils.collection import get_first_element, get_next_element
@@ -291,9 +292,9 @@ class TemporalScript(scripts.Script):
                             ui.elem(f"pipeline.modules['{id}'].blend_mode", gr.Dropdown, label = "Blend mode", choices = list(BLEND_MODES.keys()), value = get_first_element(BLEND_MODES), groups = ["preset", "session"])
 
                             with ui.elem("", gr.Tab, label = "Parameters"):
-                                if module.__ui_params__:
-                                    for param in module.__ui_params__.values():
-                                        ui.elem(f"pipeline.modules['{id}'].{param.key}", param.gr_type, label = param.name, **param.kwargs, groups = ["preset", "session"])
+                                if module.__params__:
+                                    for param in module.__params__.values():
+                                        make_configurable_param_editor(ui, f"pipeline.modules['{id}'].{param.key}", param, groups = ["preset", "session"])
                                 else:
                                     ui.elem("", gr.Markdown, value = "_This filter has no available parameters._")
 
@@ -304,8 +305,8 @@ class TemporalScript(scripts.Script):
                                 ui.elem(f"pipeline.modules['{id}'].mask.blurring", gr.Slider, label = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, groups = ["preset", "session"])
 
                         else:
-                            for param in module.__ui_params__.values():
-                                ui.elem(f"pipeline.modules['{id}'].{param.key}", param.gr_type, label = param.name, **param.kwargs, groups = ["preset", "session"])
+                            for param in module.__params__.values():
+                                make_configurable_param_editor(ui, f"pipeline.modules['{id}'].{param.key}", param, groups = ["preset", "session"])
 
         with ui.elem("", gr.Tab, label = "Video Rendering"):
             ui.elem("video_renderer.fps", gr.Slider, label = "Frames per second", precision = 0, minimum = 1, maximum = 60, step = 1, value = 30, groups = ["preset", "video"])
@@ -314,8 +315,8 @@ class TemporalScript(scripts.Script):
             with ui.elem("video_renderer.filter_order", ModuleList, keys = VIDEO_FILTERS.keys(), groups = ["preset", "video"]):
                 for id, filter in VIDEO_FILTERS.items():
                     with ui.elem(f"video_renderer.filters['{id}'].enabled", ModuleAccordion, label = filter.name, key = id, value = False, open = False, groups = ["preset", "video"]):
-                        for param in filter.__ui_params__.values():
-                            ui.elem(f"video_renderer.filters['{id}'].{param.key}", param.gr_type, label = param.name, **param.kwargs, groups = ["preset", "video"])
+                        for param in filter.__params__.values():
+                            make_configurable_param_editor(ui, f"video_renderer.filters['{id}'].{param.key}", param, groups = ["preset", "video"])
 
             ui.elem("video_parallel_index", gr.Number, label = "Parallel index", precision = 0, minimum = 1, step = 1, value = 1, groups = ["preset"])
 
@@ -395,11 +396,8 @@ class TemporalScript(scripts.Script):
                     def make_param_getter(category: OptionCategory, key: str) -> Callable[[], Any]:
                         return lambda: getattr(category, key)
 
-                    for param in category.__ui_params__.values():
-                        kwargs = dict(param.kwargs)
-                        kwargs.pop("value")
-
-                        ui.elem(f"{field.key}.{param.key}", param.gr_type, label = param.name, value = make_param_getter(category, param.key), **kwargs, groups = ["options"])
+                    for param in category.__params__.values():
+                        make_configurable_param_editor(ui, f"{field.key}.{param.key}", copy_with_overrides(param, default = make_param_getter(category, param.key)), groups = ["options"])
 
         with ui.elem("", gr.Tab, label = "Help"):
             for file_name, title in [

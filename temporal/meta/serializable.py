@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 from itertools import chain
 from pathlib import Path
-from typing import Any, Callable, Optional, TypeVar
+from typing import Any, Callable, Optional, TypeVar, cast
 
 from temporal.serialization import Archive, Serializer, find_alias_for_type
 from temporal.utils import logging
@@ -12,7 +12,12 @@ T = TypeVar("T")
 
 
 class SerializableField:
-    def __init__(self, default: Optional[T] = None, factory: Optional[Callable[[], T]] = None, saved: bool = True) -> None:
+    def __new__(cls, default: Optional[T] = None, *, factory: Optional[Callable[[], T]] = None, saved: bool = True) -> T:
+        instance = object.__new__(cls)
+        instance.__init__(default, factory = factory, saved = saved)
+        return cast(T, instance)
+
+    def __init__(self, default: Optional[T] = None, *, factory: Optional[Callable[[], T]] = None, saved: bool = True) -> None:
         self.key = ""
         self.default = default
         self.factory = factory
@@ -23,10 +28,6 @@ class SerializableField:
 
     def set_default_value(self, instance: Any) -> None:
         setattr(instance, self.key, self.factory() if self.factory is not None else self.default)
-
-
-def field(default: Optional[T] = None, *, factory: Optional[Callable[[], T]] = None, saved: bool = True) -> Any:
-    return SerializableField(default, factory, saved)
 
 
 class Serializable:

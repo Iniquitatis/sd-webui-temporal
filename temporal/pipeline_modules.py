@@ -1,14 +1,13 @@
 from typing import Optional, Type
 
-import gradio as gr
 import numpy as np
 import skimage
 from numpy.typing import NDArray
 
 from modules.sd_samplers import visible_sampler_names
 
-from temporal.meta.configurable import Configurable, ui_param
-from temporal.meta.serializable import field
+from temporal.meta.configurable import BoolParam, Configurable, EnumParam, FloatParam, IntParam
+from temporal.meta.serializable import SerializableField as Field
 from temporal.metrics import Metrics
 from temporal.project import render_project_video
 from temporal.session import Session
@@ -31,7 +30,7 @@ class PipelineModule(Configurable, abstract = True):
 
     icon: str = "\U00002699"
 
-    enabled: bool = field(False)
+    enabled: bool = Field(False)
 
     def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         return images
@@ -45,13 +44,13 @@ class AveragingModule(PipelineModule):
     name = "Averaging"
     icon = "\U0001f553"
 
-    frames: int = ui_param("Frame count", gr.Number, precision = 0, minimum = 1, step = 1, value = 1)
-    trimming: float = ui_param("Trimming", gr.Slider, minimum = 0.0, maximum = 0.5, step = 0.01, value = 0.0)
-    easing: float = ui_param("Easing", gr.Slider, minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0)
-    preference: float = ui_param("Preference", gr.Slider, minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0)
+    frames: int = IntParam("Frame count", minimum = 1, step = 1, value = 1, ui_type = "box")
+    trimming: float = FloatParam("Trimming", minimum = 0.0, maximum = 0.5, step = 0.01, value = 0.0, ui_type = "slider")
+    easing: float = FloatParam("Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0, ui_type = "slider")
+    preference: float = FloatParam("Preference", minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0, ui_type = "slider")
 
-    buffer: Optional[NDArray[np.float_]] = field(None)
-    last_index: int = field(0)
+    buffer: Optional[NDArray[np.float_]] = Field(None)
+    last_index: int = Field(0)
 
     def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if self.buffer is None:
@@ -82,10 +81,10 @@ class DetailingModule(PipelineModule):
     name = "Detailing"
     icon = "\U0001f9ec"
 
-    scale: float = ui_param("Scale", gr.Slider, minimum = 0.25, maximum = 4.0, step = 0.25, value = 1.0)
-    sampler: str = ui_param("Sampling method", gr.Dropdown, choices = visible_sampler_names(), value = "Euler a")
-    steps: int = ui_param("Steps", gr.Slider, precision = 0, minimum = 1, maximum = 150, step = 1, value = 15)
-    denoising_strength: float = ui_param("Denoising strength", gr.Slider, minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.2)
+    scale: float = FloatParam("Scale", minimum = 0.25, maximum = 4.0, step = 0.25, value = 1.0, ui_type = "slider")
+    sampler: str = EnumParam("Sampling method", choices = visible_sampler_names(), value = "Euler a", ui_type = "menu")
+    steps: int = IntParam("Steps", minimum = 1, maximum = 150, step = 1, value = 15, ui_type = "slider")
+    denoising_strength: float = FloatParam("Denoising strength", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.2, ui_type = "slider")
 
     def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if not (processed_images := process_images(
@@ -118,11 +117,11 @@ class InterpolationModule(PipelineModule):
     name = "Interpolation"
     icon = "\U0001f553"
 
-    blending: float = ui_param("Blending", gr.Slider, minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0)
-    movement: float = ui_param("Movement", gr.Slider, minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0)
-    radius: int = ui_param("Radius", gr.Slider, precision = 0, minimum = 7, maximum = 31, step = 2, value = 15)
+    blending: float = FloatParam("Blending", minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
+    movement: float = FloatParam("Movement", minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
+    radius: int = IntParam("Radius", minimum = 7, maximum = 31, step = 2, value = 15, ui_type = "slider")
 
-    buffer: Optional[NDArray[np.float_]] = field(None)
+    buffer: Optional[NDArray[np.float_]] = Field(None)
 
     def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if self.buffer is None:
@@ -159,10 +158,10 @@ class LimitingModule(PipelineModule):
     name = "Limiting"
     icon = "\U0001f553"
 
-    mode: str = ui_param("Mode", gr.Dropdown, choices = ["clamp", "compress"], value = "clamp")
-    max_difference: float = ui_param("Maximum difference", gr.Slider, minimum = 0.001, maximum = 1.0, step = 0.001, value = 1.0)
+    mode: str = EnumParam("Mode", choices = ["clamp", "compress"], value = "clamp", ui_type = "menu")
+    max_difference: float = FloatParam("Maximum difference", minimum = 0.001, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
 
-    buffer: Optional[NDArray[np.float_]] = field(None)
+    buffer: Optional[NDArray[np.float_]] = Field(None)
 
     def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if self.buffer is None:
@@ -195,9 +194,9 @@ class MeasuringModule(PipelineModule):
     name = "Measuring"
     icon = "\U0001f6e0"
 
-    plot_every_nth_frame: int = ui_param("Plot every N-th frame", gr.Number, precision = 0, minimum = 1, step = 1, value = 10)
+    plot_every_nth_frame: int = IntParam("Plot every N-th frame", minimum = 1, step = 1, value = 10, ui_type = "box")
 
-    metrics: Metrics = field(factory = Metrics)
+    metrics: Metrics = Field(factory = Metrics)
 
     def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         self.metrics.measure(images[0])
@@ -213,10 +212,10 @@ class ProcessingModule(PipelineModule):
     name = "Processing"
     icon = "\U0001f9ec"
 
-    samples: int = ui_param("Sample count", gr.Number, precision = 0, minimum = 1, value = 1)
-    trimming: float = ui_param("Trimming", gr.Slider, minimum = 0.0, maximum = 0.5, step = 0.01, value = 0.0)
-    easing: float = ui_param("Easing", gr.Slider, minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0)
-    preference: float = ui_param("Preference", gr.Slider, minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0)
+    samples: int = IntParam("Sample count", minimum = 1, value = 1, ui_type = "box")
+    trimming: float = FloatParam("Trimming", minimum = 0.0, maximum = 0.5, step = 0.01, value = 0.0, ui_type = "slider")
+    easing: float = FloatParam("Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0, ui_type = "slider")
+    preference: float = FloatParam("Preference", minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0, ui_type = "slider")
 
     def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if not (processed_images := process_images(
@@ -244,10 +243,10 @@ class SavingModule(PipelineModule):
     name = "Saving"
     icon = "\U0001f6e0"
 
-    scale: float = ui_param("Scale", gr.Slider, minimum = 0.25, maximum = 4.0, step = 0.25, value = 1.0)
-    save_every_nth_frame: int = ui_param("Save every N-th frame", gr.Number, precision = 0, minimum = 1, step = 1, value = 1)
-    save_final: bool = ui_param("Save final", gr.Checkbox, value = False)
-    archive_mode: bool = ui_param("Archive mode", gr.Checkbox, value = False)
+    scale: float = FloatParam("Scale", minimum = 0.25, maximum = 4.0, step = 0.25, value = 1.0, ui_type = "slider")
+    save_every_nth_frame: int = IntParam("Save every N-th frame", minimum = 1, step = 1, value = 1, ui_type = "box")
+    save_final: bool = BoolParam("Save final", value = False)
+    archive_mode: bool = BoolParam("Archive mode", value = False)
 
     def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if frame_index % self.save_every_nth_frame != 0:
@@ -294,10 +293,10 @@ class VideoRenderingModule(PipelineModule):
     name = "Video rendering"
     icon = "\U0001f6e0"
 
-    render_draft_every_nth_frame: int = ui_param("Render draft every N-th frame", gr.Number, precision = 0, minimum = 1, step = 1, value = 100)
-    render_final_every_nth_frame: int = ui_param("Render final every N-th frame", gr.Number, precision = 0, minimum = 1, step = 1, value = 1000)
-    render_draft_on_finish: bool = ui_param("Render draft on finish", gr.Checkbox, value = False)
-    render_final_on_finish: bool = ui_param("Render final on finish", gr.Checkbox, value = False)
+    render_draft_every_nth_frame: int = IntParam("Render draft every N-th frame", minimum = 1, step = 1, value = 100, ui_type = "box")
+    render_final_every_nth_frame: int = IntParam("Render final every N-th frame", minimum = 1, step = 1, value = 1000, ui_type = "box")
+    render_draft_on_finish: bool = BoolParam("Render draft on finish", value = False)
+    render_final_on_finish: bool = BoolParam("Render final on finish", value = False)
 
     def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         for i, _ in enumerate(images, 1):

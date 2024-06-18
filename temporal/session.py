@@ -5,7 +5,7 @@ from modules.options import Options
 from modules.processing import StableDiffusionProcessingImg2Img
 
 from temporal.interop import ControlNetUnitWrapper
-from temporal.meta.serializable import Serializable, field
+from temporal.meta.serializable import Serializable, SerializableField as Field
 if TYPE_CHECKING:
     from temporal.pipeline import Pipeline
     from temporal.project import Project
@@ -19,28 +19,28 @@ opts: Options = getattr(webui_shared, "opts")
 
 
 class InitialNoiseParams(Serializable):
-    factor: float = field(0.0)
-    scale: int = field(1)
-    octaves: int = field(1)
-    lacunarity: float = field(2.0)
-    persistence: float = field(0.5)
+    factor: float = Field(0.0)
+    scale: int = Field(1)
+    octaves: int = Field(1)
+    lacunarity: float = Field(2.0)
+    persistence: float = Field(0.5)
 
 
 class IterationData(Serializable):
-    images: list[NumpyImage] = field(factory = list)
-    index: int = field(1)
-    module_id: Optional[str] = field(None)
+    images: list[NumpyImage] = Field(factory = list)
+    index: int = Field(1)
+    module_id: Optional[str] = Field(None)
 
 
 class Session(Serializable):
     # NOTE: The next four fields should be assigned manually
-    options: Options = field(factory = lambda: copy_with_overrides(opts, data = opts.data.copy()))
-    processing: StableDiffusionProcessingImg2Img = field(factory = StableDiffusionProcessingImg2Img)
-    controlnet_units: Optional[list[ControlNetUnitWrapper]] = field(factory = list)
-    project: "Project" = field(None, saved = False)
-    initial_noise: InitialNoiseParams = field(factory = InitialNoiseParams)
-    pipeline: "Pipeline" = field()
-    iteration: IterationData = field(factory = IterationData)
+    options: Options = Field(factory = lambda: copy_with_overrides(opts, data = opts.data.copy()))
+    processing: StableDiffusionProcessingImg2Img = Field(factory = StableDiffusionProcessingImg2Img)
+    controlnet_units: Optional[list[ControlNetUnitWrapper]] = Field(factory = list)
+    project: "Project" = Field(None, saved = False)
+    initial_noise: InitialNoiseParams = Field(factory = InitialNoiseParams)
+    pipeline: "Pipeline" = Field()
+    iteration: IterationData = Field(factory = IterationData)
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         from temporal.pipeline import Pipeline

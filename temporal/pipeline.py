@@ -3,7 +3,7 @@ import skimage
 from modules import shared as webui_shared
 from modules.shared_state import State
 
-from temporal.meta.serializable import Serializable, field
+from temporal.meta.serializable import Serializable, SerializableField as Field
 from temporal.pipeline_modules import PIPELINE_MODULES, PipelineModule
 from temporal.session import IterationData, Session
 from temporal.shared import shared
@@ -16,9 +16,9 @@ state: State = getattr(webui_shared, "state")
 
 
 class Pipeline(Serializable):
-    parallel: int = field(1)
-    module_order: list[str] = field(factory = list)
-    modules: dict[str, PipelineModule] = field(factory = lambda: {id: cls() for id, cls in PIPELINE_MODULES.items()})
+    parallel: int = Field(1)
+    module_order: list[str] = Field(factory = list)
+    modules: dict[str, PipelineModule] = Field(factory = lambda: {id: cls() for id, cls in PIPELINE_MODULES.items()})
 
     def run(self, session: Session) -> bool:
         ordered_modules = reorder_dict(self.modules, self.module_order)

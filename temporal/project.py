@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Iterator
 
 from temporal.compat import VERSION, upgrade_project
-from temporal.meta.serializable import Serializable, field
+from temporal.meta.serializable import Serializable, SerializableField as Field
 from temporal.session import Session
 from temporal.utils import logging
 from temporal.utils.fs import clear_directory, ensure_directory_exists, remove_entry
@@ -44,10 +44,10 @@ def render_project_video(project_dir: Path, renderer: VideoRenderer, is_final: b
 
 
 class Project(Serializable):
-    path: Path = field(Path("outputs/temporal/untitled"), saved = False)
-    name: str = field("untitled", saved = False)
-    version: int = field(VERSION)
-    session: Session = field(factory = Session)
+    path: Path = Field(Path("outputs/temporal/untitled"), saved = False)
+    name: str = Field("untitled", saved = False)
+    version: int = Field(VERSION)
+    session: Session = Field(factory = Session)
 
     def load(self, dir: Path) -> None:
         upgrade_project(dir)

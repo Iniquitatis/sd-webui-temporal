@@ -10,21 +10,21 @@ import skimage
 from PIL import Image
 from numpy.typing import NDArray
 
-from temporal.meta.serializable import Serializable, field
+from temporal.meta.serializable import Serializable, SerializableField as Field
 from temporal.utils.fs import ensure_directory_exists
 from temporal.utils.image import NumpyImage, PILImage, save_image
 
 
 class Measurement(Serializable):
-    luminance_mean: float = field(0.0)
-    luminance_std: float = field(0.0)
-    color_level_mean: tuple[float, float, float] = field((0.0, 0.0, 0.0))
-    color_level_std: tuple[float, float, float] = field((0.0, 0.0, 0.0))
-    noise_sigma: float = field(0.0)
+    luminance_mean: float = Field(0.0)
+    luminance_std: float = Field(0.0)
+    color_level_mean: tuple[float, float, float] = Field((0.0, 0.0, 0.0))
+    color_level_std: tuple[float, float, float] = Field((0.0, 0.0, 0.0))
+    noise_sigma: float = Field(0.0)
 
 
 class Metrics(Serializable):
-    measurements: list[Measurement] = field(factory = list)
+    measurements: list[Measurement] = Field(factory = list)
 
     def measure(self, npim: NumpyImage) -> None:
         grayscale = skimage.color.rgb2gray(npim[..., :3], channel_axis = 2)
