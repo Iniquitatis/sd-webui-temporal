@@ -1,4 +1,3 @@
-from pathlib import Path
 from time import perf_counter
 from typing import Any, Callable
 
@@ -340,7 +339,7 @@ class TemporalScript(scripts.Script):
                         set_property_by_path(shared, key, value)
 
                     video_path = render_project_video(
-                        Path(shared.options.output.output_dir) / project_name,
+                        shared.options.output.output_dir / project_name,
                         shared.video_renderer,
                         is_final,
                         parallel_index,
@@ -434,7 +433,7 @@ class TemporalScript(scripts.Script):
 
         processing.fix_seed(p)
 
-        project = Project(Path(shared.options.output.output_dir) / inputs["project_name"], inputs["project_name"])
+        project = Project(shared.options.output.output_dir / inputs["project_name"], inputs["project_name"])
 
         session = project.session
         session.options = opts

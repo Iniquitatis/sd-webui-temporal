@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import gradio as gr
 
 from temporal.meta.configurable import Configurable, ui_param
@@ -11,7 +13,7 @@ class OptionCategory(Configurable):
 class OutputCategory(OptionCategory):
     name = "Output"
 
-    output_dir: str = ui_param("Output directory", gr.Textbox, value = "outputs/temporal")
+    output_dir: Path = ui_param("Output directory", gr.Textbox, preprocessor = Path, postprocessor = Path.as_posix, value = Path("outputs/temporal"))
     autosave_every_n_iterations: int = ui_param("Autosave every N iterations", gr.Number, precision = 0, minimum = 1, step = 1, value = 10)
 
 

@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Optional, Type
 
 import gradio as gr
@@ -276,7 +275,7 @@ class SavingModule(PipelineModule):
                 save_processed_image(
                     image = np_to_pil(image),
                     p = session.processing,
-                    output_dir = ensure_directory_exists(Path(shared.options.output.output_dir)),
+                    output_dir = ensure_directory_exists(shared.options.output.output_dir),
                     file_name = None,
                     archive_mode = self.archive_mode,
                 )
