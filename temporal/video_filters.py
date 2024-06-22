@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from typing import Type
 
+from temporal.color import Color
 from temporal.meta.configurable import BoolParam, ColorParam, Configurable, EnumParam, FloatParam, IntParam, StringParam
 from temporal.meta.serializable import SerializableField as Field
 
@@ -75,7 +76,7 @@ class ScalingFilter(VideoFilter):
     width: int = IntParam("Width", minimum = 16, maximum = 2560, step = 8, value = 512, ui_type = "slider")
     height: int = IntParam("Height", minimum = 16, maximum = 2560, step = 8, value = 512, ui_type = "slider")
     padded: bool = BoolParam("Padded", value = False)
-    background_color: str = ColorParam("Background color", channels = 3, value = "#000000")
+    background_color: Color = ColorParam("Background color", channels = 3, factory = lambda: Color(0.0, 0.0, 0.0))
     backdrop: bool = BoolParam("Backdrop", value = False)
     backdrop_brightness: float = FloatParam("Backdrop brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 0.5, ui_type = "slider")
     backdrop_blurring: float = FloatParam("Backdrop blurring", minimum = 0.0, maximum = 50.0, step = 1.0, value = 0.0, ui_type = "slider")
@@ -157,12 +158,10 @@ class TextOverlayFilter(VideoFilter):
     offset_y: int = IntParam("Offset Y", step = 1, value = 0, ui_type = "box")
     font: str = StringParam("Font", value = "sans", ui_type = "box")
     font_size: int = IntParam("Font size", minimum = 1, maximum = 144, step = 1, value = 16, ui_type = "slider")
-    text_color: str = ColorParam("Text color", channels = 3, value = "#ffffff")
-    text_alpha: float = FloatParam("Text alpha", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0, ui_type = "slider")
+    text_color: Color = ColorParam("Text color", channels = 4, factory = lambda: Color(1.0, 1.0, 1.0, 1.0))
     shadow_offset_x: int = IntParam("Shadow offset X", step = 1, value = 1, ui_type = "box")
     shadow_offset_y: int = IntParam("Shadow offset Y", step = 1, value = 1, ui_type = "box")
-    shadow_color: str = ColorParam("Shadow color", channels = 3, value = "#000000")
-    shadow_alpha: float = FloatParam("Shadow alpha", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0, ui_type = "slider")
+    shadow_color: Color = ColorParam("Shadow color", channels = 4, factory = lambda: Color(0.0, 0.0, 0.0, 1.0))
 
     def print(self, fps: int) -> str:
         text = (
@@ -174,4 +173,4 @@ class TextOverlayFilter(VideoFilter):
             .replace(":", "\\:")
             .replace("'", "\\'")
         )
-        return f"drawtext='text={text}:x=(W-tw)*{self.anchor_x}+{self.offset_x}:y=(H-th)*{self.anchor_y}+{self.offset_y}:font={self.font}:fontsize={self.font_size}:fontcolor={self.text_color}{int(self.text_alpha * 255.0):02x}:shadowx={self.shadow_offset_x}:shadowy={self.shadow_offset_y}:shadowcolor={self.shadow_color}{int(self.shadow_alpha * 255.0):02x}'"
+        return f"drawtext='text={text}:x=(W-tw)*{self.anchor_x}+{self.offset_x}:y=(H-th)*{self.anchor_y}+{self.offset_y}:font={self.font}:fontsize={self.font_size}:fontcolor={self.text_color.to_hex()}:shadowx={self.shadow_offset_x}:shadowy={self.shadow_offset_y}:shadowcolor={self.shadow_color.to_hex()}'"

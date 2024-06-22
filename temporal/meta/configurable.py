@@ -1,8 +1,10 @@
 from pathlib import Path
-from typing import Any, Generic, Literal, Optional, TypeVar, cast
+from typing import Any, Callable, Generic, Literal, Optional, TypeVar, cast
 
+from temporal.color import Color
 from temporal.meta.registerable import Registerable
 from temporal.meta.serializable import Serializable, SerializableField
+from temporal.noise import Noise
 from temporal.utils.image import NumpyImage
 
 
@@ -15,9 +17,13 @@ class ConfigurableParam(SerializableField, Generic[T]):
         instance.__init__(*args, **kwargs)
         return cast(T, instance)
 
-    def __init__(self, name: str = "Parameter", default: Optional[T] = None) -> None:
-        super().__init__(default = default)
+    def __init__(self, name: str = "Parameter", value: Optional[T] = None, *, factory: Optional[Callable[[], T]] = None) -> None:
+        super().__init__(value = value, factory = factory)
         self.name = name
+
+    @property
+    def default(self) -> T:
+        return cast(T, super().default)
 
 
 class Configurable(Registerable, Serializable):
@@ -115,14 +121,14 @@ class EnumParam(ConfigurableParam[str]):
         self.ui_type = ui_type
 
 
-class ColorParam(ConfigurableParam[str]):
+class ColorParam(ConfigurableParam[Color]):
     def __init__(
         self,
         name: str = "Parameter",
         channels: int = 3,
-        value: str = "#ffffff",
+        factory: Callable[[], Color] = Color,
     ) -> None:
-        super().__init__(name, value)
+        super().__init__(name, factory = factory)
         self.channels = channels
 
 
@@ -134,3 +140,12 @@ class ImageParam(ConfigurableParam[NumpyImage]):
     ) -> None:
         super().__init__(name, None)
         self.channels = channels
+
+
+class NoiseParam(ConfigurableParam[Noise]):
+    def __init__(
+        self,
+        name: str = "Parameter",
+        factory: Callable[[], Noise] = Noise,
+    ) -> None:
+        super().__init__(name, factory = factory)

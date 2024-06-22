@@ -13,6 +13,8 @@ All modules in this tab are marked with the following icons:
     * **Octaves** — amount of progressively downscaled noise layers that will be mixed into a single one.
     * **Lacunarity** — downscale factor of each subsequent noise layer compared to a previous one.
     * **Persistence** — amplitude factor of each subsequent noise layer compared to a previous one.
+    * **Seed** — seed that will be used for generating the noise pattern.
+    * **Use initial seed** — determines whether the initial seed will be used or the one that's defined above.
 * **Parallel** — amount of images to create/process in parallel.
 * Generic options available to all modules:
     * **(✔️ to the left of a module name)** — determines if a module is enabled.

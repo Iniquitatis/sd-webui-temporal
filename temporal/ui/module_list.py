@@ -1,37 +1,42 @@
 # NOTE: Hic sunt dracones
 from collections.abc import Iterable
-from typing import Any, Optional
+from typing import Any, Callable, Iterator, Optional
 
 import gradio as gr
 
+from temporal.ui import ReadData, ResolvedCallback, UIThing, UpdateData, UpdateRequest, Widget
+from temporal.ui.gradio_widget import GradioWidget
 
-class ModuleList(gr.Dropdown):
+
+class ModuleList(Widget):
     index = 0
 
-    def __init__(self, *args: Any, keys: Optional[Iterable[str]] = [], **kwargs: Any) -> None:
-        kwargs.pop("label", "")
-        classes = kwargs.pop("elem_classes", [])
+    def __init__(
+        self,
+        keys: Optional[Iterable[str]] = None,
+    ) -> None:
+        super().__init__()
 
-        super().__init__(*args, **kwargs,
-            label = "Order",
+        self._dropdown = GradioWidget(gr.Dropdown,
+            label = self._format_label("Order"),
             multiselect = True,
             choices = list(keys) if keys is not None else None,
             value = list(keys) if keys is not None else None,
-            elem_classes = classes + ["temporal-module-list-dropdown", f"temporal-index-{ModuleList.index}"],
+            elem_classes = ["temporal-module-list-dropdown", f"temporal-index-{ModuleList.index}"],
         )
-        self.change(None, self, None, _js = f"(x) => updateModuleListOrder({ModuleList.index}, x)")
+        self._dropdown._instance.change(None, self._dropdown._instance, None, _js = f"(x) => updateModuleListOrder({ModuleList.index}, x)")
 
         # NOTE: Necessary to communicate between the web interface and Python
         # (probably there's a better way to do this, but I haven't found it yet)
-        self._textbox = gr.Textbox(*args, **kwargs,
-            label = "Order",
+        self._textbox = GradioWidget(gr.Textbox,
+            label = self._format_label("Order"),
             value = "|".join(keys) if keys is not None else None,
-            elem_classes = classes + ["temporal-module-list-textbox", f"temporal-index-{ModuleList.index}"],
+            elem_classes = ["temporal-module-list-textbox", f"temporal-index-{ModuleList.index}"],
         )
-        self._textbox.change(lambda x: gr.update(value = x.split("|")), self._textbox, self)
+        self._textbox._instance.change(lambda x: gr.update(value = x.split("|")), self._textbox._instance, self._dropdown._instance)
 
-        self._column = gr.Column(*args, **kwargs,
-            elem_classes = classes + ["temporal-module-list", f"temporal-index-{ModuleList.index}"],
+        self._column = GradioWidget(gr.Column,
+            elem_classes = ["temporal-module-list", f"temporal-index-{ModuleList.index}"],
         )
 
         ModuleList.index += 1
@@ -42,25 +47,42 @@ class ModuleList(gr.Dropdown):
     def __exit__(self, *args: Any, **kwargs: Any) -> None:
         return self._column.__exit__(*args, **kwargs)
 
-    def get_block_name(self) -> str:
-        return "dropdown"
+    @property
+    def dependencies(self) -> Iterator[UIThing]:
+        yield from self._dropdown.dependencies
+
+    def read(self, data: ReadData) -> list[str]:
+        return self._dropdown.read(data)
+
+    def update(self, data: UpdateData) -> UpdateRequest:
+        return self._dropdown.update(data)
+
+    def setup_callback(self, callback: ResolvedCallback) -> None:
+        self._dropdown.setup_callback(callback)
 
 
-class ModuleAccordion(gr.Checkbox):
+class ModuleAccordion(Widget):
     index = 0
 
-    def __init__(self, *args: Any, key: str, **kwargs: Any) -> None:
-        label = kwargs.pop("label", "")
-        classes = kwargs.pop("elem_classes", [])
+    def __init__(
+        self,
+        label: str = "",
+        key: str = "",
+        value: bool = False,
+        open: bool = False,
+    ) -> None:
+        super().__init__()
 
-        super().__init__(*args, **kwargs,
-            label = label,
-            elem_classes = classes + ["temporal-module-accordion-checkbox", f"temporal-index-{ModuleAccordion.index}"],
+        self._checkbox = GradioWidget(gr.Checkbox,
+            label = self._format_label(label),
+            value = value,
+            elem_classes = ["temporal-module-accordion-checkbox", f"temporal-index-{ModuleAccordion.index}"],
         )
 
-        self._accordion = gr.Accordion(*args, **kwargs,
+        self._accordion = GradioWidget(gr.Accordion,
             label = "",
-            elem_classes = classes + ["temporal-module-accordion", f"temporal-key-{key}", f"temporal-index-{ModuleAccordion.index}"],
+            open = open,
+            elem_classes = ["temporal-module-accordion", f"temporal-key-{key}", f"temporal-index-{ModuleAccordion.index}"],
         )
 
         ModuleAccordion.index += 1
@@ -71,17 +93,42 @@ class ModuleAccordion(gr.Checkbox):
     def __exit__(self, *args: Any, **kwargs: Any) -> None:
         return self._accordion.__exit__(*args, **kwargs)
 
-    def get_block_name(self) -> str:
-        return "checkbox"
+    @property
+    def dependencies(self) -> Iterator[UIThing]:
+        yield from self._checkbox.dependencies
+
+    def read(self, data: ReadData) -> bool:
+        return self._checkbox.read(data)
+
+    def update(self, data: UpdateData) -> UpdateRequest:
+        return self._checkbox.update(data)
+
+    def setup_callback(self, callback: ResolvedCallback) -> None:
+        self._checkbox.setup_callback(callback)
 
 
-class ModuleAccordionSpecialCheckbox(gr.Checkbox):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        classes = kwargs.pop("elem_classes", [])
+class ModuleAccordionSpecialCheckbox(Widget):
+    def __init__(
+        self,
+        value: bool | Callable[[], bool] = False,
+        classes: Iterable[str] = [],
+    ) -> None:
+        super().__init__()
 
-        super().__init__(*args, **kwargs,
-            elem_classes = classes + ["temporal-module-accordion-special-checkbox"],
+        self._instance = GradioWidget(gr.Checkbox,
+            value = value,
+            elem_classes = list(classes) + ["temporal-module-accordion-special-checkbox"],
         )
 
-    def get_block_name(self) -> str:
-        return "checkbox"
+    @property
+    def dependencies(self) -> Iterator[UIThing]:
+        yield from self._instance.dependencies
+
+    def read(self, data: ReadData) -> bool:
+        return self._instance.read(data)
+
+    def update(self, data: UpdateData) -> UpdateRequest:
+        return self._instance.update(data)
+
+    def setup_callback(self, callback: ResolvedCallback) -> None:
+        self._instance.setup_callback(callback)

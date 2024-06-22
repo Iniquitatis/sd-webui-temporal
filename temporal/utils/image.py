@@ -3,7 +3,7 @@ from typing import Callable, Optional, TypeVar
 
 import numpy as np
 import skimage
-from PIL import Image, ImageColor
+from PIL import Image
 from numpy.typing import NDArray
 
 from temporal.utils.math import lerp
@@ -43,10 +43,6 @@ def ensure_image_dims(im: T, mode: Optional[str] = None, size: Optional[tuple[in
         return pil_to_np(tmp_im)
     else:
         return tmp_im
-
-
-def get_rgb_array(color: str) -> NDArray[np.float_]:
-    return np.array(ImageColor.getrgb(color), dtype = np.float_) / 255.0
 
 
 def join_hsv_to_rgb(h: NumpyImage, s: NumpyImage, v: NumpyImage) -> NumpyImage:

@@ -6,6 +6,7 @@ from modules.processing import StableDiffusionProcessingImg2Img
 
 from temporal.interop import ControlNetUnitWrapper
 from temporal.meta.serializable import Serializable, SerializableField as Field
+from temporal.noise import Noise
 if TYPE_CHECKING:
     from temporal.pipeline import Pipeline
     from temporal.project import Project
@@ -20,10 +21,8 @@ opts: Options = getattr(webui_shared, "opts")
 
 class InitialNoiseParams(Serializable):
     factor: float = Field(0.0)
-    scale: int = Field(1)
-    octaves: int = Field(1)
-    lacunarity: float = Field(2.0)
-    persistence: float = Field(0.5)
+    noise: Noise = Field(factory = Noise)
+    use_initial_seed: bool = Field(False)
 
 
 class IterationData(Serializable):

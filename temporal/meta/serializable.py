@@ -12,22 +12,23 @@ T = TypeVar("T")
 
 
 class SerializableField:
-    def __new__(cls, default: Optional[T] = None, *, factory: Optional[Callable[[], T]] = None, saved: bool = True) -> T:
+    def __new__(cls, value: Optional[T] = None, *, factory: Optional[Callable[[], T]] = None, saved: bool = True) -> T:
         instance = object.__new__(cls)
-        instance.__init__(default, factory = factory, saved = saved)
+        instance.__init__(value, factory = factory, saved = saved)
         return cast(T, instance)
 
-    def __init__(self, default: Optional[T] = None, *, factory: Optional[Callable[[], T]] = None, saved: bool = True) -> None:
+    def __init__(self, value: Optional[T] = None, *, factory: Optional[Callable[[], T]] = None, saved: bool = True) -> None:
         self.key = ""
-        self.default = default
+        self.value = value
         self.factory = factory
         self.saved = saved
 
     def __set_name__(self, owner: Any, name: str) -> None:
         self.key = name
 
-    def set_default_value(self, instance: Any) -> None:
-        setattr(instance, self.key, self.factory() if self.factory is not None else self.default)
+    @property
+    def default(self) -> Any:
+        return self.factory() if self.factory is not None else self.value
 
 
 class Serializable:
@@ -62,7 +63,7 @@ class Serializable:
 
         for key, field in self.__fields__.items():
             if key not in initialized_keys:
-                field.set_default_value(self)
+                setattr(self, key, field.default)
 
     def read(self, ar: Archive) -> None:
         for child in ar:

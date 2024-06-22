@@ -7,12 +7,14 @@ import skimage
 from PIL import Image
 
 from temporal.blend_modes import BLEND_MODES
+from temporal.color import Color
 from temporal.image_mask import ImageMask
-from temporal.meta.configurable import BoolParam, ColorParam, EnumParam, FloatParam, ImageParam, IntParam, StringParam
+from temporal.meta.configurable import BoolParam, ColorParam, EnumParam, FloatParam, ImageParam, IntParam, NoiseParam, StringParam
 from temporal.meta.serializable import SerializableField as Field
+from temporal.noise import Noise
 from temporal.pipeline_modules import PipelineModule
 from temporal.session import Session
-from temporal.utils.image import NumpyImage, alpha_blend, apply_channelwise, get_rgb_array, join_hsv_to_rgb, match_image, np_to_pil, pil_to_np, split_hsv
+from temporal.utils.image import NumpyImage, alpha_blend, apply_channelwise, join_hsv_to_rgb, match_image, np_to_pil, pil_to_np, split_hsv
 from temporal.utils.math import lerp, normalize, remap_range
 from temporal.utils.numpy import generate_value_noise, saturate_array
 
@@ -120,15 +122,10 @@ class ColorOverlayFilter(ImageFilter):
     id = "color_overlay"
     name = "Color overlay"
 
-    color: str = ColorParam("Color", channels = 3, value = "#ffffff")
+    color: Color = ColorParam("Color", channels = 3)
 
     def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
-        color = get_rgb_array(self.color)
-
-        if npim.shape[-1] > color.shape[-1]:
-            color = np.stack([color, [1.0]])
-
-        return np.full_like(npim, color)
+        return np.full_like(npim, self.color.to_numpy(npim.shape[-1]))
 
 
 class CustomCodeFilter(ImageFilter):
@@ -226,21 +223,17 @@ class NoiseOverlayFilter(ImageFilter):
     id = "noise_overlay"
     name = "Noise overlay"
 
-    scale: int = IntParam("Scale", minimum = 1, maximum = 1024, step = 1, value = 1, ui_type = "slider")
-    octaves: int = IntParam("Octaves", minimum = 1, maximum = 10, step = 1, value = 1, ui_type = "slider")
-    lacunarity: float = FloatParam("Lacunarity", minimum = 0.01, maximum = 4.0, step = 0.01, value = 2.0, ui_type = "slider")
-    persistence: float = FloatParam("Persistence", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.5, ui_type = "slider")
-    seed: int = IntParam("Seed", minimum = 0, step = 1, value = 0, ui_type = "box")
+    noise: Noise = NoiseParam("Noise")
     use_dynamic_seed: bool = BoolParam("Use dynamic seed", value = False)
 
     def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
         return generate_value_noise(
             npim.shape,
-            self.scale,
-            self.octaves,
-            self.lacunarity,
-            self.persistence,
-            seed if self.use_dynamic_seed else self.seed,
+            self.noise.scale,
+            self.noise.octaves,
+            self.noise.lacunarity,
+            self.noise.persistence,
+            seed if self.use_dynamic_seed else self.noise.seed,
         )
 
 
