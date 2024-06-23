@@ -9,7 +9,8 @@ from PIL import Image
 from temporal.blend_modes import BLEND_MODES
 from temporal.color import Color
 from temporal.image_mask import ImageMask
-from temporal.meta.configurable import BoolParam, ColorParam, EnumParam, FloatParam, ImageParam, IntParam, NoiseParam, StringParam
+from temporal.image_source import ImageSource
+from temporal.meta.configurable import BoolParam, ColorParam, EnumParam, FloatParam, ImageParam, ImageSourceParam, IntParam, NoiseParam, StringParam
 from temporal.meta.serializable import SerializableField as Field
 from temporal.noise import Noise
 from temporal.pipeline_modules import PipelineModule
@@ -28,10 +29,10 @@ class ImageFilter(PipelineModule, abstract = True):
     mask: ImageMask = Field(factory = ImageMask)
 
     def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
-        return [saturate_array(self._blend(x, self.process(x, seed + i), session)) for i, x in enumerate(images)]
+        return [saturate_array(self._blend(x, self.process(x, i, session, frame_index, seed + i), session)) for i, x in enumerate(images)]
 
     @abstractmethod
-    def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
+    def process(self, npim: NumpyImage, parallel_index: int, session: Session, frame_index: int, seed: int) -> NumpyImage:
         raise NotImplementedError
 
     def _blend(self, npim: NumpyImage, processed: NumpyImage, session: Session) -> NumpyImage:
@@ -74,7 +75,7 @@ class BlurringFilter(ImageFilter):
 
     radius: float = FloatParam("Radius", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, ui_type = "slider")
 
-    def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
+    def process(self, npim: NumpyImage, parallel_index: int, session: Session, frame_index: int, seed: int) -> NumpyImage:
         return skimage.filters.gaussian(npim, round(self.radius), channel_axis = 2)
 
 
@@ -86,7 +87,7 @@ class ColorBalancingFilter(ImageFilter):
     contrast: float = FloatParam("Contrast", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, ui_type = "slider")
     saturation: float = FloatParam("Saturation", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, ui_type = "slider")
 
-    def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
+    def process(self, npim: NumpyImage, parallel_index: int, session: Session, frame_index: int, seed: int) -> NumpyImage:
         npim = remap_range(npim, npim.min(), npim.max(), 0.0, self.brightness)
 
         npim = remap_range(npim, npim.min(), npim.max(), 0.5 - self.contrast / 2, 0.5 + self.contrast / 2)
@@ -101,13 +102,13 @@ class ColorCorrectionFilter(ImageFilter):
     id = "color_correction"
     name = "Color correction"
 
-    image: Optional[NumpyImage] = ImageParam("Image", channels = 3)
+    source: ImageSource = ImageSourceParam("Image source", channels = 3)
     normalize_contrast: bool = BoolParam("Normalize contrast", value = False)
     equalize_histogram: bool = BoolParam("Equalize histogram", value = False)
 
-    def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
-        if self.image is not None:
-            npim = skimage.exposure.match_histograms(npim, match_image(self.image, npim, size = False), channel_axis = 2)
+    def process(self, npim: NumpyImage, parallel_index: int, session: Session, frame_index: int, seed: int) -> NumpyImage:
+        if (image := self.source.get_image(session.processing.init_images[parallel_index], frame_index - 1)) is not None:
+            npim = skimage.exposure.match_histograms(npim, match_image(image, npim, size = False), channel_axis = 2)
 
         if self.normalize_contrast:
             npim = skimage.exposure.rescale_intensity(npim)
@@ -124,7 +125,7 @@ class ColorOverlayFilter(ImageFilter):
 
     color: Color = ColorParam("Color", channels = 3)
 
-    def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
+    def process(self, npim: NumpyImage, parallel_index: int, session: Session, frame_index: int, seed: int) -> NumpyImage:
         return np.full_like(npim, self.color.to_numpy(npim.shape[-1]))
 
 
@@ -134,7 +135,7 @@ class CustomCodeFilter(ImageFilter):
 
     code: str = StringParam("Code", value = "output = input", ui_type = "code", language = "python")
 
-    def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
+    def process(self, npim: NumpyImage, parallel_index: int, session: Session, frame_index: int, seed: int) -> NumpyImage:
         code_globals: dict[str, Any] = dict(
             np = np,
             scipy = scipy,
@@ -149,15 +150,15 @@ class ImageOverlayFilter(ImageFilter):
     id = "image_overlay"
     name = "Image overlay"
 
-    image: Optional[NumpyImage] = ImageParam("Image", channels = 4)
+    source: ImageSource = ImageSourceParam("Image source", channels = 4)
     blurring: float = FloatParam("Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, ui_type = "slider")
 
-    def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
-        if self.image is None:
+    def process(self, npim: NumpyImage, parallel_index: int, session: Session, frame_index: int, seed: int) -> NumpyImage:
+        if (image := self.source.get_image(session.processing.init_images[parallel_index], frame_index - 1)) is None:
             return npim
 
         return match_image(alpha_blend(npim, skimage.filters.gaussian(
-            match_image(self.image, npim, mode = False),
+            match_image(image, npim, mode = False),
             round(self.blurring),
             channel_axis = 2,
         )), npim)
@@ -170,7 +171,7 @@ class MedianFilter(ImageFilter):
     radius: int = IntParam("Radius", minimum = 0, maximum = 50, step = 1, value = 0, ui_type = "slider")
     percentile: float = FloatParam("Percentile", minimum = 0.0, maximum = 100.0, step = 0.1, value = 50.0, ui_type = "slider")
 
-    def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
+    def process(self, npim: NumpyImage, parallel_index: int, session: Session, frame_index: int, seed: int) -> NumpyImage:
         footprint = skimage.morphology.disk(self.radius)
 
         if self.percentile == 50.0:
@@ -188,7 +189,7 @@ class MorphologyFilter(ImageFilter):
     mode: str = EnumParam("Mode", choices = ["erosion", "dilation", "opening", "closing"], value = "erosion", ui_type = "menu")
     radius: int = IntParam("Radius", minimum = 0, maximum = 50, step = 1, value = 0, ui_type = "slider")
 
-    def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
+    def process(self, npim: NumpyImage, parallel_index: int, session: Session, frame_index: int, seed: int) -> NumpyImage:
         func = (
             skimage.morphology.erosion  if self.mode == "erosion"  else
             skimage.morphology.dilation if self.mode == "dilation" else
@@ -207,7 +208,7 @@ class NoiseCompressionFilter(ImageFilter):
     constant: float = FloatParam("Constant", minimum = 0.0, maximum = 1.0, step = 1e-5, value = 0.0, ui_type = "slider")
     adaptive: float = FloatParam("Adaptive", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, ui_type = "slider")
 
-    def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
+    def process(self, npim: NumpyImage, parallel_index: int, session: Session, frame_index: int, seed: int) -> NumpyImage:
         weight = 0.0
 
         if self.constant > 0.0:
@@ -226,7 +227,7 @@ class NoiseOverlayFilter(ImageFilter):
     noise: Noise = NoiseParam("Noise")
     use_dynamic_seed: bool = BoolParam("Use dynamic seed", value = False)
 
-    def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
+    def process(self, npim: NumpyImage, parallel_index: int, session: Session, frame_index: int, seed: int) -> NumpyImage:
         return generate_value_noise(
             npim.shape,
             self.noise.scale,
@@ -245,7 +246,7 @@ class PalettizationFilter(ImageFilter):
     stretch: bool = BoolParam("Stretch", value = False)
     dithering: bool = BoolParam("Dithering", value = False)
 
-    def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
+    def process(self, npim: NumpyImage, parallel_index: int, session: Session, frame_index: int, seed: int) -> NumpyImage:
         def stretch_array(arr, new_length):
             return np.interp(np.arange(new_length), np.linspace(0, new_length - 1, len(arr)), arr)
 
@@ -274,7 +275,7 @@ class SharpeningFilter(ImageFilter):
     strength: float = FloatParam("Strength", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, ui_type = "slider")
     radius: float = FloatParam("Radius", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0, ui_type = "slider")
 
-    def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
+    def process(self, npim: NumpyImage, parallel_index: int, session: Session, frame_index: int, seed: int) -> NumpyImage:
         return skimage.filters.unsharp_mask(npim, self.radius, self.strength, channel_axis = 2)
 
 
@@ -285,7 +286,7 @@ class SymmetryFilter(ImageFilter):
     horizontal: bool = BoolParam("Horizontal", value = False)
     vertical: bool = BoolParam("Vertical", value = False)
 
-    def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
+    def process(self, npim: NumpyImage, parallel_index: int, session: Session, frame_index: int, seed: int) -> NumpyImage:
         height, width = npim.shape[:2]
         npim = npim.copy()
 
@@ -307,7 +308,7 @@ class TransformationFilter(ImageFilter):
     rotation: float = FloatParam("Rotation", minimum = -90.0, maximum = 90.0, step = 0.1, value = 0.0, ui_type = "slider")
     scaling: float = FloatParam("Scaling", minimum = 0.0, maximum = 2.0, step = 0.001, value = 1.0, ui_type = "slider")
 
-    def process(self, npim: NumpyImage, seed: int) -> NumpyImage:
+    def process(self, npim: NumpyImage, parallel_index: int, session: Session, frame_index: int, seed: int) -> NumpyImage:
         height, width = npim.shape[:2]
 
         o_transform = skimage.transform.AffineTransform(translation = (-width / 2, -height / 2))

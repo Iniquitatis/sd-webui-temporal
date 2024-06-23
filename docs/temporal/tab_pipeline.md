@@ -43,7 +43,7 @@ All modules in this tab are marked with the following icons:
     * **Contrast** — target contrast of the frame.
     * **Saturation** — target saturation of the frame.
 * **Color correction** — various parameters to keep frame's palette normalized.
-    * **Reference image** — an image that will be used to match histograms. Simply put, an overall color balance of the frame will be matched against this image.
+    * **Image source** — an image source that will be used to match histograms. Simply put, an overall color balance of the frame will be matched against this image source.
     * **Normalize contrast** — normalize the contrast curve of the frame so that it's in range of 0.0–1.0.
     * **Equalize histogram** — equalize the image histogram, distributing the color intensities evenly.
 * **Color overlay** — overlaying the constant color on top of the frame.
@@ -59,7 +59,7 @@ All modules in this tab are marked with the following icons:
     * **Steps** — same as the standard img2img option.
     * **Denoising strength** — same as the standard img2img option.
 * **Image overlay** — overlaying an image on top of the frame.
-    * **Image** — an image that will be used to modulate the frame.
+    * **Image source** — an image source that will be used to modulate the frame.
     * **Blurring** — blurring radius of the modulator image.
 * **Interpolation** — interpolation of the current image towards the new image.
     * **Blending** — rate of introduction of colors from the new image.

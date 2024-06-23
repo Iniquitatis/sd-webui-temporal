@@ -319,6 +319,24 @@ class _(Serializer[SimpleNamespace]):
             ar[key].write(value)
 
 
+class _(Serializer[bytes]):
+    @classmethod
+    def read(cls, obj, ar):
+        if ar.data_dir is not None:
+            return (ar.data_dir / ar.data).read_bytes()
+        else:
+            raise NotADirectoryError
+
+    @classmethod
+    def write(cls, obj, ar):
+        if ar.data_dir is not None:
+            path = ar.data_dir / f"{id(obj)}.bin"
+            path.write_bytes(obj)
+            ar.data = path.name
+        else:
+            raise NotADirectoryError
+
+
 class _(Serializer[Image.Image]):
     @classmethod
     def read(cls, obj, ar):

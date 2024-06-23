@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Any, Callable, Generic, Literal, Optional, TypeVar, cast
 
 from temporal.color import Color
+from temporal.image_source import ImageSource
 from temporal.meta.registerable import Registerable
 from temporal.meta.serializable import Serializable, SerializableField
 from temporal.noise import Noise
@@ -139,6 +140,17 @@ class ImageParam(ConfigurableParam[NumpyImage]):
         channels: int = 3,
     ) -> None:
         super().__init__(name, None)
+        self.channels = channels
+
+
+class ImageSourceParam(ConfigurableParam[ImageSource]):
+    def __init__(
+        self,
+        name: str = "Parameter",
+        channels: int = 3,
+        factory: Callable[[], ImageSource] = ImageSource,
+    ) -> None:
+        super().__init__(name, factory = factory)
         self.channels = channels
 
 
