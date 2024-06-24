@@ -6,27 +6,28 @@ import gradio as gr
 from modules import scripts, shared as webui_shared
 from modules.options import Options
 from modules.processing import Processed, StableDiffusionProcessingImg2Img, fix_seed
-from modules.styles import StyleDatabase
 from modules.shared_state import State
-from modules.ui_components import ToolButton
+from modules.styles import StyleDatabase
 
 from temporal.blend_modes import BLEND_MODES
 from temporal.global_options import OptionCategory
 from temporal.image_filters import ImageFilter
 from temporal.interop import EXTENSION_DIR, get_cn_units
 from temporal.pipeline import PIPELINE_MODULES
+from temporal.preset import Preset
 from temporal.project import Project, render_project_video
 from temporal.session import InitialNoiseParams
 from temporal.shared import shared
 from temporal.ui import CallbackInputs, CallbackOutputs, UI
 from temporal.ui.configurable_param_editor import ConfigurableParamEditor
+from temporal.ui.fs_store_list import FSStoreList
 from temporal.ui.gradio_widget import GradioWidget
 from temporal.ui.image_mask_editor import ImageMaskEditor
 from temporal.ui.module_list import ModuleAccordion, ModuleAccordionSpecialCheckbox, ModuleList
 from temporal.ui.noise_editor import NoiseEditor
 from temporal.ui.paginator import Paginator
 from temporal.utils import logging
-from temporal.utils.collection import get_first_element, get_next_element
+from temporal.utils.collection import get_first_element
 from temporal.utils.fs import load_text
 from temporal.utils.image import PILImage, np_to_pil, pil_to_np
 from temporal.utils.numpy import generate_value_noise
@@ -58,63 +59,29 @@ class TemporalScript(scripts.Script):
         self._ui = ui = UI()
 
         with ui.add("", GradioWidget(gr.Row)):
-            ui.add("preset_name", GradioWidget(gr.Dropdown, label = "Preset", choices = list(shared.preset_store.preset_names), allow_custom_value = True, value = get_first_element(shared.preset_store.preset_names, "")))
-            ui.add("refresh_presets", GradioWidget(ToolButton, value = "\U0001f504"))
-            ui.add("load_preset", GradioWidget(ToolButton, value = "\U0001f4c2"))
-            ui.add("save_preset", GradioWidget(ToolButton, value = "\U0001f4be"))
-            ui.add("delete_preset", GradioWidget(ToolButton, value = "\U0001f5d1\ufe0f"))
+            ui.add("preset_name", FSStoreList(label = "Preset", store = shared.preset_store, features = ["load", "save", "rename", "delete"]))
 
-            @ui.callback("refresh_presets", "click", [], ["preset_name"])
-            def _(_: CallbackInputs) -> CallbackOutputs:
-                shared.preset_store.refresh_presets()
-
-                return {"preset_name": {"choices": shared.preset_store.preset_names}}
-
-            @ui.callback("load_preset", "click", ["preset_name", "group:preset"], ["group:preset"])
+            @ui.callback("preset_name", "load", ["preset_name", "group:preset"], ["group:preset"])
             def _(inputs: CallbackInputs) -> CallbackOutputs:
-                if inputs["preset_name"] not in shared.preset_store.preset_names:
-                    return {}
-
-                preset_name = inputs.pop("preset_name")
-
-                inputs |= shared.preset_store.open_preset(preset_name).data
+                inputs |= inputs.pop("preset_name").data
 
                 return {k: {"value": v} for k, v in inputs.items()}
 
-            @ui.callback("save_preset", "click", ["preset_name", "group:preset"], ["preset_name"])
+            @ui.callback("preset_name", "save", ["group:preset"], ["preset_name"])
             def _(inputs: CallbackInputs) -> CallbackOutputs:
-                preset_name = inputs.pop("preset_name")
-
-                shared.preset_store.save_preset(preset_name, inputs)
-
-                return {"preset_name": {"choices": shared.preset_store.preset_names, "value": preset_name}}
-
-            @ui.callback("delete_preset", "click", ["preset_name"], ["preset_name"])
-            def _(inputs: CallbackInputs) -> CallbackOutputs:
-                if inputs["preset_name"] not in shared.preset_store.preset_names:
-                    return {}
-
-                preset_name = inputs["preset_name"]
-                new_name = get_next_element(shared.preset_store.preset_names, preset_name, "untitled")
-
-                shared.preset_store.delete_preset(preset_name)
-
-                return {"preset_name": {"choices": shared.preset_store.preset_names, "value": new_name}}
+                return {"preset_name": {"value": Preset(inputs)}}
 
         with ui.add("", GradioWidget(gr.Tab, label = "Project")):
             with ui.add("", GradioWidget(gr.Row)):
-                ui.add("project_name", GradioWidget(gr.Dropdown, label = "Project", choices = list(shared.project_store.project_names), allow_custom_value = True, value = get_first_element(shared.project_store.project_names, "untitled")), groups = ["preset", "project"])
-                ui.add("refresh_projects", GradioWidget(ToolButton, value = "\U0001f504"))
-                ui.add("load_project", GradioWidget(ToolButton, value = "\U0001f4c2"))
-                ui.add("delete_project", GradioWidget(ToolButton, value = "\U0001f5d1\ufe0f"))
+                ui.add("project_name", FSStoreList(label = "Project", store = shared.project_store, features = ["load", "rename", "delete"]), groups = ["preset", "project"])
 
                 # FIXME: `change` makes typing slower, but `select` won't work until user clicks an appropriate item
                 @ui.callback("project_name", "change", ["project_name"], ["project_description", "project_gallery", "project_gallery_page", "project_gallery_parallel"])
                 def _(inputs: CallbackInputs) -> CallbackOutputs:
-                    if inputs["project_name"] not in shared.project_store.project_names:
+                    if inputs["project_name"] not in shared.project_store.entry_names:
                         return {}
 
-                    project = shared.project_store.open_project(inputs["project_name"])
+                    project = shared.project_store.load_entry(inputs["project_name"])
 
                     return {
                         "project_description": {"value": project.get_description()},
@@ -123,35 +90,14 @@ class TemporalScript(scripts.Script):
                         "project_gallery_parallel": {"value": 1},
                     }
 
-                @ui.callback("refresh_projects", "click", [], ["project_name"])
-                def _(_: CallbackInputs) -> CallbackOutputs:
-                    shared.project_store.refresh_projects()
-
-                    return {"project_name": {"choices": shared.project_store.project_names}}
-
-                @ui.callback("load_project", "click", ["project_name"], ["group:session"])
+                @ui.callback("project_name", "load", ["project_name"], ["group:session"])
                 def _(inputs: CallbackInputs) -> CallbackOutputs:
-                    if inputs["project_name"] not in shared.project_store.project_names:
-                        return {}
-
-                    project = shared.project_store.open_project(inputs["project_name"])
+                    project = inputs["project_name"]
 
                     return {
                         id: {"value": get_property_by_path(project.session, id)}
                         for id in self._ui.parse_id("group:session")
                     }
-
-                @ui.callback("delete_project", "click", ["project_name"], ["project_name"])
-                def _(inputs: CallbackInputs) -> CallbackOutputs:
-                    if inputs["project_name"] not in shared.project_store.project_names:
-                        return {}
-
-                    project_name = inputs["project_name"]
-                    new_name = get_next_element(shared.project_store.project_names, project_name, "untitled")
-
-                    shared.project_store.delete_project(project_name)
-
-                    return {"project_name": {"choices": shared.project_store.project_names, "value": new_name}}
 
             with ui.add("", GradioWidget(gr.Tab, label = "Session")):
                 ui.add("load_parameters", GradioWidget(gr.Checkbox, label = "Load parameters", value = True), groups = ["preset", "project"])
@@ -165,10 +111,10 @@ class TemporalScript(scripts.Script):
                 ui.add("project_gallery_parallel", Paginator(label = "Parallel", minimum = 1, value = 1))
 
                 def update_gallery(inputs: CallbackInputs) -> CallbackOutputs:
-                    if inputs["project_name"] not in shared.project_store.project_names:
+                    if inputs["project_name"] not in shared.project_store.entry_names:
                         return {}
 
-                    project = shared.project_store.open_project(inputs["project_name"])
+                    project = shared.project_store.load_entry(inputs["project_name"])
                     page = inputs["project_gallery_page"]
                     parallel = inputs["project_gallery_parallel"]
                     gallery_size = shared.options.ui.gallery_size
@@ -184,28 +130,15 @@ class TemporalScript(scripts.Script):
                     return update_gallery(inputs)
 
             with ui.add("", GradioWidget(gr.Tab, label = "Tools")):
-                with ui.add("", GradioWidget(gr.Row)):
-                    ui.add("new_project_name", GradioWidget(gr.Textbox, label = "New name", value = ""))
-                    ui.add("confirm_project_rename", GradioWidget(ToolButton, value = "\U00002714\ufe0f"))
-
-                    @ui.callback("confirm_project_rename", "click", ["project_name", "new_project_name"], ["project_name"])
-                    def _(inputs: CallbackInputs) -> CallbackOutputs:
-                        if inputs["project_name"] not in shared.project_store.project_names:
-                            return {}
-
-                        shared.project_store.rename_project(inputs["project_name"], inputs["new_project_name"])
-
-                        return {"project_name": {"choices": shared.project_store.project_names, "value": inputs["new_project_name"]}}
-
                 ui.add("delete_intermediate_frames", GradioWidget(gr.Button, value = "Delete intermediate frames"))
                 ui.add("delete_session_data", GradioWidget(gr.Button, value = "Delete session data"))
 
                 @ui.callback("delete_intermediate_frames", "click", ["project_name"], ["project_gallery"])
                 def _(inputs: CallbackInputs) -> CallbackOutputs:
-                    if inputs["project_name"] not in shared.project_store.project_names:
+                    if inputs["project_name"] not in shared.project_store.entry_names:
                         return {}
 
-                    project = shared.project_store.open_project(inputs["project_name"])
+                    project = shared.project_store.load_entry(inputs["project_name"])
                     project.delete_intermediate_frames()
 
                     return {
@@ -215,10 +148,10 @@ class TemporalScript(scripts.Script):
 
                 @ui.callback("delete_session_data", "click", ["project_name"], [])
                 def _(inputs: CallbackInputs) -> CallbackOutputs:
-                    if inputs["project_name"] not in shared.project_store.project_names:
+                    if inputs["project_name"] not in shared.project_store.entry_names:
                         return {}
 
-                    project = shared.project_store.open_project(inputs["project_name"])
+                    project = shared.project_store.load_entry(inputs["project_name"])
                     project.delete_session_data()
                     project.save(project.path)
 
@@ -290,7 +223,7 @@ class TemporalScript(scripts.Script):
                 ui.add("render_final", GradioWidget(gr.Button, value = "Render final"))
 
                 def render_video(inputs: CallbackInputs, is_final: bool) -> Iterator[CallbackOutputs]:
-                    if inputs["project_name"] not in shared.project_store.project_names:
+                    if inputs["project_name"] not in shared.project_store.entry_names:
                         return {}
 
                     yield {
@@ -334,10 +267,10 @@ class TemporalScript(scripts.Script):
 
             @ui.callback("render_plots", "click", ["project_name"], ["metrics_plots"])
             def _(inputs: CallbackInputs) -> CallbackOutputs:
-                if inputs["project_name"] not in shared.project_store.project_names:
+                if inputs["project_name"] not in shared.project_store.entry_names:
                     return {}
 
-                project = shared.project_store.open_project(inputs["project_name"])
+                project = shared.project_store.load_entry(inputs["project_name"])
 
                 return {"metrics_plots": {"value": list(project.session.pipeline.modules["measuring"].metrics.plot().values())}}
 

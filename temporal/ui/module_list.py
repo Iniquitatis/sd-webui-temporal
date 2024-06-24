@@ -41,11 +41,12 @@ class ModuleList(Widget):
 
         ModuleList.index += 1
 
-    def __enter__(self, *args: Any, **kwargs: Any) -> gr.Column:
-        return self._column.__enter__(*args, **kwargs)
+    def __enter__(self, *args: Any, **kwargs: Any) -> "ModuleList":
+        self._column.__enter__(*args, **kwargs)
+        return self
 
     def __exit__(self, *args: Any, **kwargs: Any) -> None:
-        return self._column.__exit__(*args, **kwargs)
+        self._column.__exit__(*args, **kwargs)
 
     @property
     def dependencies(self) -> Iterator[UIThing]:
@@ -87,11 +88,12 @@ class ModuleAccordion(Widget):
 
         ModuleAccordion.index += 1
 
-    def __enter__(self, *args: Any, **kwargs: Any) -> gr.Accordion:
-        return self._accordion.__enter__(*args, **kwargs)
+    def __enter__(self, *args: Any, **kwargs: Any) -> "ModuleAccordion":
+        self._accordion.__enter__(*args, **kwargs)
+        return self
 
     def __exit__(self, *args: Any, **kwargs: Any) -> None:
-        return self._accordion.__exit__(*args, **kwargs)
+        self._accordion.__exit__(*args, **kwargs)
 
     @property
     def dependencies(self) -> Iterator[UIThing]:

@@ -3,6 +3,7 @@
 * **Project** — current project. Name can be entered manually to create a new one after the processing begins.
     * 🔄 — update project list.
     * 📂 — load UI parameters from the currently selected project.
+    * ✏️ — rename currently selected project.
     * 🗑️ — delete currently selected project.
 * **Session** — current session parameters.
     * **Load parameters** — read parameters from the specified **Project subdirectory**, otherwise take those that are currently set in the UI.
@@ -15,9 +16,6 @@
     * **Page** — currently selected page of the gallery.
     * **Parallel** — index of an image set to preview in the gallery.
 * **Tools** — various utilities for managing the currently selected project.
-    * **New name** — new name for the currently selected project.
-        * ✔️ — rename currently selected project.
-        * **NOTE:** This will rename both the project's folder and the rendered videos.
     * **Delete intermediate frames** — delete all frames in the project's folder other than the first one and the last one.
     * **Delete session data** — delete the temporary session data.
         * **WARNING:** This will make the project unable to be continued—only restarting with the same parameters will be possible.
