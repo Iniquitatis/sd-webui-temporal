@@ -238,6 +238,31 @@ class ProcessingModule(PipelineModule):
         ]
 
 
+class RandomSamplingModule(PipelineModule):
+    id = "random_sampling"
+    name = "Random sampling"
+    icon = "\U0001f553"
+
+    chance: float = FloatParam("Chance", minimum = 0.001, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
+
+    buffer: Optional[NDArray[np.float_]] = Field(None)
+
+    def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
+        if self.buffer is None:
+            self.buffer = np.stack([
+                ensure_image_dims(image, "RGB", (session.processing.width, session.processing.height))
+                for image in images
+            ], 0)
+
+        for i, (sub, image) in enumerate(zip(self.buffer, images)):
+            mask = np.random.default_rng(seed + i).random(sub.shape[:2]) <= self.chance
+
+            for j in range(3):
+                sub[..., j] = np.where(mask, image[..., j], sub[..., j])
+
+        return [sub for sub in self.buffer]
+
+
 class SavingModule(PipelineModule):
     id = "saving"
     name = "Saving"

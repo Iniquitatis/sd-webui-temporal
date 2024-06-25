@@ -109,6 +109,8 @@ All modules in this tab are marked with the following icons:
         * **NOTE:** This parameter won't have any effect if **Trimming** is greater than `0`.
     * **Preference** — "brightness preference" of the averaging algorithm. At minimum, it prefers the darkest colors, at maximum—the brightest ones.
         * **NOTE:** The greater the **Trimming** is, the less this parameter will affect the result.
+* **Random sampling** — random picking of pixels from the new image.
+    * **Chance** — chance of pixels from the new image to appear in the current image.
 * **Saving** — automatic saving of resulting images.
     * **Save every N-th frame** — stride at which the frames will be saved.
     * **Archive mode** — disable saving of metadata inside of each frame (such as prompt, seed, etc.) and enable maximum compression.
