@@ -110,7 +110,7 @@ class ResolvedCallback:
             }
 
         def resolved_to_gr_outputs(outputs: ResolvedCallbackOutputs) -> GradioCallbackOutputs:
-            result: dict[GradioThing, dict[str, Any]] = {}
+            result: dict[GradioThing, dict[str, Any]] = {x: gr.update() for x in gr_outputs}
 
             for thing, properties in outputs.items():
                 result |= _satisfy_update_request_recursively(thing, properties)

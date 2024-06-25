@@ -225,32 +225,34 @@ class TemporalScript(scripts.Script):
 
                 def render_video(inputs: CallbackInputs, is_final: bool) -> Iterator[CallbackOutputs]:
                     if inputs["project_name"] not in shared.project_store.entry_names:
-                        return {}
+                        # FIXME: Early return locks up the UI for some reason
+                        yield {}
 
-                    yield {
-                        "render_draft": {"interactive": False},
-                        "render_final": {"interactive": False},
-                    }
+                    else:
+                        yield {
+                            "render_draft": {"interactive": False},
+                            "render_final": {"interactive": False},
+                        }
 
-                    project_name = inputs.pop("project_name")
-                    parallel_index = inputs.pop("video_parallel_index")
+                        project_name = inputs.pop("project_name")
+                        parallel_index = inputs.pop("video_parallel_index")
 
-                    for key, value in inputs.items():
-                        set_property_by_path(shared, key, value)
+                        for key, value in inputs.items():
+                            set_property_by_path(shared, key, value)
 
-                    video_path = render_project_video(
-                        shared.options.output.output_dir / project_name,
-                        shared.video_renderer,
-                        is_final,
-                        parallel_index,
-                    )
-                    wait_until(lambda: not video_render_queue.busy)
+                        video_path = render_project_video(
+                            shared.options.output.output_dir / project_name,
+                            shared.video_renderer,
+                            is_final,
+                            parallel_index,
+                        )
+                        wait_until(lambda: not video_render_queue.busy)
 
-                    yield {
-                        "render_draft": {"interactive": True},
-                        "render_final": {"interactive": True},
-                        "video_preview": {"value": video_path.as_posix()},
-                    }
+                        yield {
+                            "render_draft": {"interactive": True},
+                            "render_final": {"interactive": True},
+                            "video_preview": {"value": video_path.as_posix()},
+                        }
 
                 @ui.callback("render_draft", "click", ["project_name", "video_parallel_index", "group:video"], ["render_draft", "render_final", "video_preview"])
                 def _(inputs: CallbackInputs) -> Iterator[CallbackOutputs]:
