@@ -20,6 +20,7 @@ from temporal.session import InitialNoiseParams
 from temporal.shared import shared
 from temporal.ui import CallbackInputs, CallbackOutputs, UI
 from temporal.ui.configurable_param_editor import ConfigurableParamEditor
+from temporal.ui.dropdown import Dropdown
 from temporal.ui.fs_store_list import FSStoreList
 from temporal.ui.gradio_widget import GradioWidget
 from temporal.ui.image_mask_editor import ImageMaskEditor
@@ -190,7 +191,7 @@ class TemporalScript(scripts.Script):
                                 ui.add(f"pipeline.modules['{id}'].amount", GradioWidget(gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0), groups = ["preset", "session"])
                                 ui.add(f"pipeline.modules['{id}'].amount_relative", GradioWidget(gr.Checkbox, label = "Relative", value = False), groups = ["preset", "session"])
 
-                            ui.add(f"pipeline.modules['{id}'].blend_mode", GradioWidget(gr.Dropdown, label = "Blend mode", choices = list(BLEND_MODES.keys()), value = get_first_element(BLEND_MODES)), groups = ["preset", "session"])
+                            ui.add(f"pipeline.modules['{id}'].blend_mode", Dropdown(label = "Blend mode", choices = [(x.id, x.name) for x in BLEND_MODES.values()], value = get_first_element(BLEND_MODES)), groups = ["preset", "session"])
 
                             with ui.add("", GradioWidget(gr.Tab, label = "Parameters")):
                                 if module.__params__:

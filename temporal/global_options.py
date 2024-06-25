@@ -31,8 +31,8 @@ class ProcessingCategory(OptionCategory):
 class UICategory(OptionCategory):
     name = "UI"
 
-    preset_sorting_order: str = EnumParam("Preset sorting order", choices = ["alphabetical", "date"], value = "alphabetical", ui_type = "radio")
-    project_sorting_order: str = EnumParam("Project sorting order", choices = ["alphabetical", "date"], value = "alphabetical", ui_type = "radio")
+    preset_sorting_order: str = EnumParam("Preset sorting order", choices = [("alphabetical", "Alphabetical"), ("date", "Date")], value = "alphabetical", ui_type = "radio")
+    project_sorting_order: str = EnumParam("Project sorting order", choices = [("alphabetical", "Alphabetical"), ("date", "Date")], value = "alphabetical", ui_type = "radio")
     gallery_size: int = IntParam("Gallery size", minimum = 1, maximum = 1000, step = 1, value = 10, ui_type = "box")
 
 

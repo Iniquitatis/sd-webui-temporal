@@ -32,10 +32,10 @@
 * **Temporal averaging** — averaging of several consecutive frames.
     * **Radius** — filter radius; total amount of averaged frames equals to `x * 2 + 1`.
     * **Algorithm** — algorithm to use when computing the average.
-        * **mean** — produces blurry video.
-        * **median** — produces sharper video than **mean**, but more prone to artifacts.
+        * **Mean** — produces blurry video.
+        * **Median** — produces sharper video than **Mean**, but more prone to artifacts.
     * **Easing** — kernel easing factor.
-        * **NOTE:** This parameter is relevant only for **mean** algorithm.
+        * **NOTE:** This parameter is relevant only for **Mean** algorithm.
         * Value of 0 means that every frame will be averaged in an equal proportion, whereas value greater than 0 makes a distribution ranging from 0 to 1.
         * Value greater than 0 makes a soft distribution curve.
         * Value of 1 makes a triangle distribution curve.

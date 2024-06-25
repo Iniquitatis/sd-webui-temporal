@@ -5,6 +5,7 @@ import gradio as gr
 from temporal.image_source import ImageSource
 from temporal.ui import ReadData, ResolvedCallback, ResolvedCallbackInputs, ResolvedCallbackOutputs, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.gradio_widget import GradioWidget
+from temporal.ui.radio import Radio
 from temporal.ui.video_box import VideoBox
 from temporal.utils.image import ensure_image_dims
 
@@ -18,7 +19,7 @@ class ImageSourceEditor(Widget):
     ) -> None:
         super().__init__()
 
-        self._type = GradioWidget(gr.Radio, label = self._format_label(label, "Type"), choices = ["image", "initial_image", "video"], value = value.type)
+        self._type = Radio(label = self._format_label(label, "Type"), choices = [("image", "Image"), ("initial_image", "Initial image"), ("video", "Video")], value = value.type)
         self._image = GradioWidget(gr.Image, label = self._format_label(label, "Image"), type = "numpy", image_mode = "RGBA" if channels == 4 else "RGB", value = value.image, visible = value.type == "image")
         self._video = VideoBox(label = self._format_label(label, "Video"), value = value.video, visible = value.type == "video")
 

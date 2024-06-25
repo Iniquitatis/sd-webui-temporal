@@ -10,10 +10,12 @@ from temporal.meta.configurable import BoolParam, ColorParam, ConfigurableParam,
 from temporal.noise import Noise
 from temporal.ui import ReadData, ResolvedCallback, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.color_editor import ColorEditor
+from temporal.ui.dropdown import Dropdown
 from temporal.ui.gradio_widget import GradioWidget
 from temporal.ui.image_source_editor import ImageSourceEditor
 from temporal.ui.noise_editor import NoiseEditor
 from temporal.ui.path_editor import PathEditor
+from temporal.ui.radio import Radio
 
 
 T = TypeVar("T")
@@ -62,10 +64,10 @@ class ConfigurableParamEditor(Widget):
             self._widget = PathEditor(label = self._format_label(param.name), value = make_dynamic_value(Path, param))
 
         elif isinstance(param, EnumParam) and param.ui_type == "menu":
-            self._widget = GradioWidget(gr.Dropdown, label = self._format_label(param.name), choices = list(param.choices), value = make_dynamic_value(str, param))
+            self._widget = Dropdown(label = self._format_label(param.name), choices = param.choices, value = make_dynamic_value(str, param))
 
         elif isinstance(param, EnumParam) and param.ui_type == "radio":
-            self._widget = GradioWidget(gr.Radio, label = self._format_label(param.name), choices = list(param.choices), value = make_dynamic_value(str, param))
+            self._widget = Radio(label = self._format_label(param.name), choices = param.choices, value = make_dynamic_value(str, param))
 
         elif isinstance(param, ColorParam):
             self._widget = ColorEditor(label = self._format_label(param.name), channels = param.channels, value = make_static_value(Color, param))

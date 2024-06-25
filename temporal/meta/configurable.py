@@ -113,7 +113,7 @@ class EnumParam(ConfigurableParam[str]):
     def __init__(
         self,
         name: str = "Parameter",
-        choices: list[str] = [],
+        choices: list[str | tuple[Any, str]] = [],
         value: str = "",
         ui_type: Literal["menu", "radio"] = "menu",
     ) -> None:

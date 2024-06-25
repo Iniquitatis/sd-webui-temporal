@@ -158,7 +158,7 @@ class LimitingModule(PipelineModule):
     name = "Limiting"
     icon = "\U0001f553"
 
-    mode: str = EnumParam("Mode", choices = ["clamp", "compress"], value = "clamp", ui_type = "menu")
+    mode: str = EnumParam("Mode", choices = [("clamp", "Clamp"), ("compress", "Compress")], value = "clamp", ui_type = "menu")
     max_difference: float = FloatParam("Maximum difference", minimum = 0.001, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
 
     buffer: Optional[NDArray[np.float_]] = Field(None)

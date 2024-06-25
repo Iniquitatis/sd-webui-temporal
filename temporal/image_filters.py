@@ -186,7 +186,12 @@ class MorphologyFilter(ImageFilter):
     id = "morphology"
     name = "Morphology"
 
-    mode: str = EnumParam("Mode", choices = ["erosion", "dilation", "opening", "closing"], value = "erosion", ui_type = "menu")
+    mode: str = EnumParam("Mode", choices = [
+        ("erosion", "Erosion"),
+        ("dilation", "Dilation"),
+        ("opening", "Opening"),
+        ("closing", "Closing"),
+    ], value = "erosion", ui_type = "menu")
     radius: int = IntParam("Radius", minimum = 0, maximum = 50, step = 1, value = 0, ui_type = "slider")
 
     def process(self, npim: NumpyImage, parallel_index: int, session: Session, frame_index: int, seed: int) -> NumpyImage:

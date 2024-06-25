@@ -132,7 +132,7 @@ class TemporalAveragingFilter(VideoFilter):
     name = "Temporal averaging"
 
     radius: int = IntParam("Radius", minimum = 1, maximum = 60, step = 1, value = 1, ui_type = "slider")
-    algorithm: str = EnumParam("Algorithm", choices = ["mean", "median"], value = "mean", ui_type = "menu")
+    algorithm: str = EnumParam("Algorithm", choices = [("mean", "Mean"), ("median", "Median")], value = "mean", ui_type = "menu")
     easing: float = FloatParam("Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0, ui_type = "slider")
 
     def print(self, fps: int) -> str:

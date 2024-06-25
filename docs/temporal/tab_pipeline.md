@@ -67,8 +67,8 @@ All modules in this tab are marked with the following icons:
     * **Radius** — radius of similar area detection.
 * **Limiting** — limiting of the difference between the previous and the current image.
     * **Mode** — limiting mode.
-        * **clamp** — clamp the difference, cutting off anything higher than **Maximum difference**.
-        * **compress** — compress the difference, "squashing" its range to **Maximum difference**.
+        * **Clamp** — clamp the difference, cutting off anything higher than **Maximum difference**.
+        * **Compress** — compress the difference, "squashing" its range to **Maximum difference**.
     * **Maximum difference** — maximum difference between the values of the individual color channels.
         * **NOTE:** This value represents both positive and negative values.
 * **Measuring** — measuring various image values, such as mean luma or standard deviation among every color channel.
@@ -79,10 +79,10 @@ All modules in this tab are marked with the following icons:
     * **Percentile** — percent at which the median value will be calculated; 0 — darkest, 100 — brightest.
 * **Morphology** — processing of the frame using a morphological operation.
     * **Mode** — operation type.
-        * **erosion** — makes the image details "thicker" and darker.
-        * **dilation** — makes the image details "thinner" and brighter.
-        * **opening** — erosion followed by dilation.
-        * **closing** — dilation followed by erosion.
+        * **Erosion** — makes the image details "thicker" and darker.
+        * **Dilation** — makes the image details "thinner" and brighter.
+        * **Opening** — erosion followed by dilation.
+        * **Closing** — dilation followed by erosion.
     * **Radius** — operation radius.
 * **Noise compression** — basically, an actual algorithmical denoising, called noise compression to not be confused with the **img2img** denoising.
     * **Constant** — constant rate of the denoising. Generally should be very low, like 0.0002 or so, although it may vary.
