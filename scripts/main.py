@@ -30,7 +30,7 @@ from temporal.ui.paginator import Paginator
 from temporal.utils import logging
 from temporal.utils.collection import get_first_element
 from temporal.utils.fs import load_text
-from temporal.utils.image import PILImage, np_to_pil, pil_to_np
+from temporal.utils.image import PILImage, ensure_image_dims, np_to_pil, pil_to_np
 from temporal.utils.numpy import generate_value_noise
 from temporal.utils.object import copy_with_overrides, get_property_by_path, set_property_by_path
 from temporal.utils.time import wait_until
@@ -357,7 +357,7 @@ class TemporalScript(scripts.Script):
             return Processed(p, p.init_images)
 
         if not session.iteration.images:
-            session.iteration.images[:] = [pil_to_np(x) for x in p.init_images]
+            session.iteration.images[:] = [pil_to_np(ensure_image_dims(x, "RGB", (p.width, p.height))) for x in p.init_images]
 
         last_images = session.iteration.images.copy()
 
