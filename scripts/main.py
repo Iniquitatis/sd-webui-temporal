@@ -314,7 +314,6 @@ class TemporalScript(scripts.Script):
                 ("tab_video_rendering.md", "Video Rendering tab"),
                 ("tab_measuring.md", "Measuring tab"),
                 ("tab_settings.md", "Settings tab"),
-                ("additional_notes.md", "Additional notes"),
             ]:
                 with ui.add("", GradioWidget(gr.Accordion, label = title, open = False)):
                     ui.add("", GradioWidget(gr.Markdown, value = load_text(EXTENSION_DIR / "docs" / "temporal" / file_name, "")))
