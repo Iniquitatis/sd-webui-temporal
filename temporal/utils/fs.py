@@ -12,8 +12,6 @@ def open_utf8(path: Path, mode: str) -> IO[Any]:
 
 
 def load_text(path: Path, fallback: T = None) -> str | T:
-    path = Path(path)
-
     if not path.is_file():
         return fallback
 
@@ -27,8 +25,6 @@ def save_text(path: Path, text: str) -> None:
 
 
 def load_json(path: Path, fallback: T = None) -> dict[str, Any] | T:
-    path = Path(path)
-
     if not path.is_file():
         return fallback
 
@@ -42,8 +38,6 @@ def save_json(path: Path, data: dict[str, Any]) -> None:
 
 
 def clear_directory(path: Path, pattern: Optional[str] = None) -> Path:
-    path = Path(path)
-
     if not path.is_dir():
         return path
 
@@ -61,8 +55,6 @@ def clear_directory(path: Path, pattern: Optional[str] = None) -> Path:
 
 
 def ensure_directory_exists(path: Path) -> Path:
-    path = Path(path)
-
     if not path.is_dir():
         path.mkdir(parents = True)
 
@@ -70,8 +62,6 @@ def ensure_directory_exists(path: Path) -> Path:
 
 
 def is_directory_empty(path: Path) -> bool:
-    path = Path(path)
-
     if not path.is_dir():
         return True
 
@@ -79,8 +69,6 @@ def is_directory_empty(path: Path) -> bool:
 
 
 def iterate_subdirectories(path: Path) -> Iterator[Path]:
-    path = Path(path)
-
     if not path.is_dir():
         return
 
@@ -90,9 +78,6 @@ def iterate_subdirectories(path: Path) -> Iterator[Path]:
 
 
 def move_entry(old_path: Path, new_path: Path) -> Path:
-    old_path = Path(old_path)
-    new_path = Path(new_path)
-
     if not old_path.exists():
         return old_path
 
@@ -102,8 +87,6 @@ def move_entry(old_path: Path, new_path: Path) -> Path:
 
 
 def recreate_directory(path: Path) -> Path:
-    path = Path(path)
-
     remove_directory(path)
     ensure_directory_exists(path)
 
@@ -111,8 +94,6 @@ def recreate_directory(path: Path) -> Path:
 
 
 def remove_directory(path: Path) -> Path:
-    path = Path(path)
-
     if path.is_dir():
         rmtree(path)
 
@@ -120,8 +101,6 @@ def remove_directory(path: Path) -> Path:
 
 
 def remove_entry(path: Path) -> Path:
-    path = Path(path)
-
     if path.is_file():
         path.unlink()
     elif path.is_dir():
