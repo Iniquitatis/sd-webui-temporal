@@ -4,6 +4,7 @@
 All modules in this tab are marked with the following icons:
 * ✨ — image filter that affects the image appearance directly.
 * 🕓 — temporal module that takes multiple subsequent rendered frames into account in order to work. May take several iterations for the effect to be visible at all.
+* 📈 — measuring module that measures various image values and builds corresponding graphs of the values' dynamics.
 * 🛠 — tool module that doesn't directly affect an image, but rather does some action such as saving an image.
 * 🧬 — neural network module that invokes Stable Diffusion in order to process an image.
 
@@ -27,6 +28,9 @@ All modules in this tab are marked with the following icons:
         * **Normalized** — normalization of the mask image to use the full range from black to white.
         * **Inverted** — inversion of the mask image.
         * **Blurring** — blurring radius of the mask image.
+* Generic options available to all measuring modules:
+    * **Plot every N-th frame** — stride at which the values will be measured.
+    * **NOTE:** Resulting graphs will be placed into the `<project subdirectory>/session/metrics` directory.
 * **Averaging** — averaging of last generated frames.
     * **Frame count** — amount of last generated frames to be blended together to produce a final frame.
         * **NOTE:** Slows down the morphing effect, increases the general middle-scale detail precision, and makes the resulting frames blurrier (can be somewhat mitigated by enabling the **Sharpening** filter).
@@ -46,6 +50,8 @@ All modules in this tab are marked with the following icons:
     * **Image source** — an image source that will be used to match histograms. Simply put, an overall color balance of the frame will be matched against this image source.
     * **Normalize contrast** — normalize the contrast curve of the frame so that it's in range of 0.0–1.0.
     * **Equalize histogram** — equalize the image histogram, distributing the color intensities evenly.
+* **Color level mean** — mean value measuring per RGB channel.
+* **Color level sigma** — standard deviation measuring per RGB channel.
 * **Color overlay** — overlaying the constant color on top of the frame.
     * **Color** — a color that will be used to modulate the frame.
 * **Custom code** — custom preprocessing code.
@@ -65,15 +71,14 @@ All modules in this tab are marked with the following icons:
     * **Blending** — rate of introduction of colors from the new image.
     * **Movement** — rate of spatial shifting towards the similar areas of the new image.
     * **Radius** — radius of similar area detection.
+* **Luminance mean** — luminance mean measuring.
+* **Luminance sigma** — luminance standard deviation measuring.
 * **Limiting** — limiting of the difference between the previous and the current image.
     * **Mode** — limiting mode.
         * **Clamp** — clamp the difference, cutting off anything higher than **Maximum difference**.
         * **Compress** — compress the difference, "squashing" its range to **Maximum difference**.
     * **Maximum difference** — maximum difference between the values of the individual color channels.
         * **NOTE:** This value represents both positive and negative values.
-* **Measuring** — measuring various image values, such as mean luma or standard deviation among every color channel.
-    * **Plot every N-th frame** — stride at which the plots will be rendered.
-    * **NOTE:** Resulting plots will be placed into the `<project subdirectory>/session/metrics` directory.
 * **Median** — averaging of neighboring pixels using the median filter.
     * **Radius** — averaging radius.
     * **Percentile** — percent at which the median value will be calculated; 0 — darkest, 100 — brightest.
@@ -94,6 +99,7 @@ All modules in this tab are marked with the following icons:
     * **Persistence** — amplitude factor of each subsequent noise layer compared to a previous one.
     * **Seed** — static seed that will be used for generating the noise pattern.
     * **Use dynamic seed** — determines whether a currently processed frame's seed will be used or a filter's one.
+* **Noise sigma** — noise standard deviation measuring.
 * **Palettization** — applying a palette to the frame.
     * **Palette** — an image where _each_ pixel represents one color of a palette.
         * **NOTE:** Generally those images are very small (up to 256 pixels _total_) and contain just a few pixels representing the unique colors. For example, an 8x2 image contains 16 colors, and so on.

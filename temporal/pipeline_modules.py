@@ -8,7 +8,6 @@ from modules.sd_samplers import visible_sampler_names
 
 from temporal.meta.configurable import BoolParam, Configurable, EnumParam, FloatParam, IntParam
 from temporal.meta.serializable import SerializableField as Field
-from temporal.metrics import Metrics
 from temporal.project import render_project_video
 from temporal.session import Session
 from temporal.shared import shared
@@ -187,24 +186,6 @@ class LimitingModule(PipelineModule):
             sub[:] = saturate_array(a + diff)
 
         return [sub for sub in self.buffer]
-
-
-class MeasuringModule(PipelineModule):
-    id = "measuring"
-    name = "Measuring"
-    icon = "\U0001f6e0"
-
-    plot_every_nth_frame: int = IntParam("Plot every N-th frame", minimum = 1, step = 1, value = 10, ui_type = "box")
-
-    metrics: Metrics = Field(factory = Metrics)
-
-    def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
-        self.metrics.measure(images[0])
-
-        if frame_index % self.plot_every_nth_frame == 0:
-            self.metrics.plot_to_directory(ensure_directory_exists(session.project.path / "metrics"))
-
-        return images
 
 
 class ProcessingModule(PipelineModule):

@@ -91,11 +91,20 @@ class Project(Serializable):
                 remove_entry(image_path)
 
     def delete_session_data(self) -> None:
-        self.session.pipeline.modules["measuring"].metrics.measurements.clear()
         self.session.pipeline.modules["averaging"].buffer = None
         self.session.pipeline.modules["averaging"].last_index = 0
         self.session.pipeline.modules["interpolation"].buffer = None
         self.session.pipeline.modules["limiting"].buffer = None
+        self.session.pipeline.modules["color_level_mean_measuring"].data = None
+        self.session.pipeline.modules["color_level_mean_measuring"].count = 0
+        self.session.pipeline.modules["color_level_sigma_measuring"].data = None
+        self.session.pipeline.modules["color_level_sigma_measuring"].count = 0
+        self.session.pipeline.modules["luminance_mean_measuring"].data = None
+        self.session.pipeline.modules["luminance_mean_measuring"].count = 0
+        self.session.pipeline.modules["luminance_sigma_measuring"].data = None
+        self.session.pipeline.modules["luminance_sigma_measuring"].count = 0
+        self.session.pipeline.modules["noise_sigma_measuring"].data = None
+        self.session.pipeline.modules["noise_sigma_measuring"].count = 0
         self.session.iteration.images.clear()
         self.session.iteration.index = 1
         self.session.iteration.module_id = None

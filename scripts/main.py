@@ -13,6 +13,7 @@ from temporal.blend_modes import BLEND_MODES
 from temporal.global_options import OptionCategory
 from temporal.image_filters import ImageFilter
 from temporal.interop import EXTENSION_DIR, get_cn_units
+from temporal.measuring_modules import MeasuringModule
 from temporal.pipeline import PIPELINE_MODULES
 from temporal.preset import Preset
 from temporal.project import Project, render_project_video
@@ -265,17 +266,22 @@ class TemporalScript(scripts.Script):
             ui.add("video_preview", GradioWidget(gr.Video, label = "Preview", format = "mp4", interactive = False))
 
         with ui.add("", GradioWidget(gr.Tab, label = "Measuring")):
-            ui.add("render_plots", GradioWidget(gr.Button, value = "Render plots"))
-            ui.add("metrics_plots", GradioWidget(gr.Gallery, label = "Plots", columns = 4, object_fit = "contain", preview = True))
+            ui.add("measuring_parallel_index", GradioWidget(gr.Number, label = "Parallel index", precision = 0, minimum = 1, step = 1, value = 1), groups = ["preset"])
+            ui.add("render_graphs", GradioWidget(gr.Button, value = "Render graphs"))
+            ui.add("graph_gallery", GradioWidget(gr.Gallery, label = "Graphs", columns = 4, object_fit = "contain", preview = True))
 
-            @ui.callback("render_plots", "click", ["project_name"], ["metrics_plots"])
+            @ui.callback("render_graphs", "click", ["project_name", "measuring_parallel_index"], ["graph_gallery"])
             def _(inputs: CallbackInputs) -> CallbackOutputs:
                 if inputs["project_name"] not in shared.project_store.entry_names:
                     return {}
 
                 project = shared.project_store.load_entry(inputs["project_name"])
 
-                return {"metrics_plots": {"value": list(project.session.pipeline.modules["measuring"].metrics.plot().values())}}
+                return {"graph_gallery": {"value": [
+                    x.plot(inputs["measuring_parallel_index"] - 1)
+                    for x in project.session.pipeline.modules.values()
+                    if isinstance(x, MeasuringModule) and x.enabled
+                ]}}
 
         with ui.add("", GradioWidget(gr.Tab, label = "Settings")):
             ui.add("apply_settings", GradioWidget(gr.Button, value = "Apply"))
