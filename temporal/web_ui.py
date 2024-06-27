@@ -94,3 +94,16 @@ def save_processed_image(image: PILImage, p: StableDiffusionProcessing, output_d
             forced_filename = file_name,
             extension = opts.samples_format or "png",
         )
+
+
+def has_schedulers() -> bool:
+    return hasattr(StableDiffusionProcessing, "scheduler")
+
+
+def get_schedulers() -> list[str]:
+    if has_schedulers():
+        from modules import sd_schedulers
+
+        return [x.label for x in sd_schedulers.schedulers]
+    else:
+        return []

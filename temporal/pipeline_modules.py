@@ -18,7 +18,7 @@ from temporal.utils.numpy import average_array, make_eased_weight_array, saturat
 from temporal.utils.object import copy_with_overrides
 from temporal.utils.time import wait_until
 from temporal.video_renderer import video_render_queue
-from temporal.web_ui import image_save_queue, process_images, save_processed_image
+from temporal.web_ui import get_schedulers, has_schedulers, image_save_queue, process_images, save_processed_image
 
 
 PIPELINE_MODULES: dict[str, Type["PipelineModule"]] = {}
@@ -82,6 +82,8 @@ class DetailingModule(PipelineModule):
 
     scale: float = FloatParam("Scale", minimum = 0.25, maximum = 4.0, step = 0.25, value = 1.0, ui_type = "slider")
     sampler: str = EnumParam("Sampling method", choices = visible_sampler_names(), value = "Euler a", ui_type = "menu")
+    if has_schedulers():
+        scheduler: str = EnumParam("Schedule type", choices = get_schedulers(), value = "Automatic", ui_type = "menu")
     steps: int = IntParam("Steps", minimum = 1, maximum = 150, step = 1, value = 15, ui_type = "slider")
     denoising_strength: float = FloatParam("Denoising strength", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.2, ui_type = "slider")
 
@@ -98,6 +100,7 @@ class DetailingModule(PipelineModule):
                 seed_resize_from_h = session.processing.seed_resize_from_h or session.processing.height,
                 do_not_save_samples = True,
                 do_not_save_grid = True,
+                **({"scheduler" : self.scheduler} if hasattr(self, "scheduler") else {})
             ),
             [(np_to_pil(x), seed + i, 1) for i, x in enumerate(images)],
             shared.options.processing.pixels_per_batch,

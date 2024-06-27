@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 from temporal.serialization import BasicObjectSerializer, Serializer
 from temporal.utils.image import NumpyImage
 from temporal.utils.object import copy_with_overrides
+from temporal.web_ui import has_schedulers
 
 
 # FIXME: To shut up the type checker
@@ -85,7 +86,7 @@ class _(BasicObjectSerializer[StableDiffusionProcessingImg2Img], create = False)
         "subseed_strength",
         "seed_resize_from_w",
         "seed_resize_from_h",
-    ]
+    ] + (["scheduler"] if has_schedulers() else [])
 
 
 class _(Serializer[ControlNetUnitWrapper]):
