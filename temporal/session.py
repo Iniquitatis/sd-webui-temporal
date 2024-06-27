@@ -1,16 +1,17 @@
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional
 
 from modules import shared as webui_shared
 from modules.options import Options
 from modules.processing import StableDiffusionProcessingImg2Img
 
-from temporal.interop import ControlNetUnitWrapper
+from temporal.interop import ControlNetUnitList, ControlNetUnitWrapper
 from temporal.meta.serializable import Serializable, SerializableField as Field
 from temporal.noise import Noise
 if TYPE_CHECKING:
     from temporal.pipeline import Pipeline
     from temporal.project import Project
-from temporal.serialization import BasicObjectSerializer
+from temporal.serialization import BasicObjectSerializer, Serializer
 from temporal.utils.image import NumpyImage
 from temporal.utils.object import copy_with_overrides
 
@@ -35,7 +36,7 @@ class Session(Serializable):
     # NOTE: The next four fields should be assigned manually
     options: Options = Field(factory = lambda: copy_with_overrides(opts, data = opts.data.copy()))
     processing: StableDiffusionProcessingImg2Img = Field(factory = StableDiffusionProcessingImg2Img)
-    controlnet_units: Optional[list[ControlNetUnitWrapper]] = Field(factory = list)
+    controlnet_units: Optional[ControlNetUnitList] = Field(factory = ControlNetUnitList)
     project: "Project" = Field(None, saved = False)
     initial_noise: InitialNoiseParams = Field(factory = InitialNoiseParams)
     pipeline: "Pipeline" = Field()
@@ -87,20 +88,57 @@ class _(BasicObjectSerializer[StableDiffusionProcessingImg2Img], create = False)
     ]
 
 
-class _(BasicObjectSerializer[ControlNetUnitWrapper], create = False):
+class _(Serializer[ControlNetUnitWrapper]):
     keys = [
-        "instance.image",
-        "instance.enabled",
-        "instance.low_vram",
-        "instance.pixel_perfect",
-        "instance.module",
-        "instance.model",
-        "instance.weight",
-        "instance.guidance_start",
-        "instance.guidance_end",
-        "instance.processor_res",
-        "instance.threshold_a",
-        "instance.threshold_b",
-        "instance.control_mode",
-        "instance.resize_mode",
+        "image",
+        "enabled",
+        "low_vram",
+        "pixel_perfect",
+        "effective_region_mask",
+        "module",
+        "model",
+        "weight",
+        "guidance_start",
+        "guidance_end",
+        "processor_res",
+        "threshold_a",
+        "threshold_b",
+        "control_mode",
+        "resize_mode",
     ]
+
+    @classmethod
+    def read(cls, obj, ar):
+        for key in cls.keys:
+            value = ar[key].create()
+
+            if isinstance(object_value := getattr(obj.instance, key), Enum):
+                value = type(object_value)(value)
+
+            setattr(obj.instance, key, value)
+
+        return obj
+
+    @classmethod
+    def write(cls, obj, ar):
+        for key in cls.keys:
+            value = getattr(obj.instance, key)
+
+            if isinstance(value, Enum):
+                value = value.value
+
+            ar[key].write(value)
+
+
+class _(Serializer[ControlNetUnitList]):
+    @classmethod
+    def read(cls, obj, ar):
+        for unit, child in zip(obj.units, ar):
+            child.read(unit)
+
+        return obj
+
+    @classmethod
+    def write(cls, obj, ar):
+        for unit in obj.units:
+            ar.make_child().write(unit)
