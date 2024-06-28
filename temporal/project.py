@@ -3,7 +3,7 @@ from typing import Iterator
 
 from temporal.compat import VERSION, upgrade_project
 from temporal.meta.serializable import Serializable, SerializableField as Field
-from temporal.session import Session
+from temporal.session import IterationData, Session
 from temporal.utils import logging
 from temporal.utils.fs import clear_directory, ensure_directory_exists, remove_entry
 from temporal.video_renderer import VideoRenderer
@@ -91,23 +91,10 @@ class Project(Serializable):
                 remove_entry(image_path)
 
     def delete_session_data(self) -> None:
-        self.session.pipeline.modules["averaging"].buffer = None
-        self.session.pipeline.modules["averaging"].last_index = 0
-        self.session.pipeline.modules["interpolation"].buffer = None
-        self.session.pipeline.modules["limiting"].buffer = None
-        self.session.pipeline.modules["color_level_mean_measuring"].data = None
-        self.session.pipeline.modules["color_level_mean_measuring"].count = 0
-        self.session.pipeline.modules["color_level_sigma_measuring"].data = None
-        self.session.pipeline.modules["color_level_sigma_measuring"].count = 0
-        self.session.pipeline.modules["luminance_mean_measuring"].data = None
-        self.session.pipeline.modules["luminance_mean_measuring"].count = 0
-        self.session.pipeline.modules["luminance_sigma_measuring"].data = None
-        self.session.pipeline.modules["luminance_sigma_measuring"].count = 0
-        self.session.pipeline.modules["noise_sigma_measuring"].data = None
-        self.session.pipeline.modules["noise_sigma_measuring"].count = 0
-        self.session.iteration.images.clear()
-        self.session.iteration.index = 1
-        self.session.iteration.module_id = None
+        for module in self.session.pipeline.modules.values():
+            module.reset()
+
+        self.session.iteration = IterationData()
 
     def _iterate_frame_paths(self) -> Iterator[Path]:
         return self.path.glob(f"*.{FRAME_EXTENSION}")

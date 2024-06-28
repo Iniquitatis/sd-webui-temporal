@@ -52,6 +52,10 @@ class MeasuringModule(PipelineModule, abstract = True):
 
         return images
 
+    def reset(self) -> None:
+        self.data = None
+        self.count = 0
+
     @abstractmethod
     def measure(self, npim: NumpyImage) -> list[float]:
         raise NotImplementedError

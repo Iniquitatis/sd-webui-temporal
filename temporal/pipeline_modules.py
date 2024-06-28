@@ -37,6 +37,9 @@ class PipelineModule(Configurable, abstract = True):
     def finalize(self, images: list[NumpyImage], session: Session) -> None:
         pass
 
+    def reset(self) -> None:
+        pass
+
 
 class AveragingModule(PipelineModule):
     id = "averaging"
@@ -73,6 +76,10 @@ class AveragingModule(PipelineModule):
             power = self.preference + 1.0,
             weights = np.roll(make_eased_weight_array(self.frames, self.easing), self.last_index),
         )) for sub in self.buffer]
+
+    def reset(self) -> None:
+        self.buffer = None
+        self.last_index = 0
 
 
 class DetailingModule(PipelineModule):
@@ -143,6 +150,9 @@ class InterpolationModule(PipelineModule):
 
         return [sub for sub in self.buffer]
 
+    def reset(self) -> None:
+        self.buffer = None
+
     def _motion_warp(self, base_im: NumpyImage, target_im: NumpyImage) -> tuple[NumpyImage, NumpyImage]:
         def warp(im: NumpyImage, coords: NDArray[np.float_]) -> NumpyImage:
             return apply_channelwise(im, lambda x: skimage.transform.warp(x, coords, mode = "symmetric"))
@@ -189,6 +199,9 @@ class LimitingModule(PipelineModule):
             sub[:] = saturate_array(a + diff)
 
         return [sub for sub in self.buffer]
+
+    def reset(self) -> None:
+        self.buffer = None
 
 
 class ProcessingModule(PipelineModule):
@@ -245,6 +258,9 @@ class RandomSamplingModule(PipelineModule):
                 sub[..., j] = np.where(mask, image[..., j], sub[..., j])
 
         return [sub for sub in self.buffer]
+
+    def reset(self) -> None:
+        self.buffer = None
 
 
 class SavingModule(PipelineModule):
