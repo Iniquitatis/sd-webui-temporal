@@ -17,7 +17,7 @@ T = TypeVar("T", PILImage, NumpyImage)
 
 
 def alpha_blend(a: NumpyImage, b: NumpyImage) -> NumpyImage:
-    if b.shape[2] == 3:
+    if b.shape[-1] == 3:
         return b
 
     return lerp(a[..., :3], b[..., :3], b[..., [3]])
@@ -57,7 +57,7 @@ def load_image(path: str | Path) -> PILImage:
 
 def match_image(im: T, reference: PILImage | NumpyImage, mode: bool = True, size: bool = True) -> T:
     if isinstance(reference, np.ndarray):
-        ref_mode = "RGBA" if reference.shape[2] == 4 else "RGB"
+        ref_mode = "RGBA" if reference.shape[-1] == 4 else "RGB"
         ref_size = (reference.shape[1], reference.shape[0])
     else:
         ref_mode = reference.mode

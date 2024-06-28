@@ -241,7 +241,7 @@ class RandomSamplingModule(PipelineModule):
         for i, (sub, image) in enumerate(zip(self.buffer, images)):
             mask = np.random.default_rng(seed + i).random(sub.shape[:2]) <= self.chance
 
-            for j in range(3):
+            for j in range(sub.shape[-1]):
                 sub[..., j] = np.where(mask, image[..., j], sub[..., j])
 
         return [sub for sub in self.buffer]

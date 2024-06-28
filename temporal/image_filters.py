@@ -59,7 +59,7 @@ class ImageFilter(PipelineModule, abstract = True):
                 factor = 1.0 - factor
 
             if self.mask.blurring:
-                factor = skimage.filters.gaussian(factor, round(self.mask.blurring), channel_axis = 2)
+                factor = skimage.filters.gaussian(factor, round(self.mask.blurring), channel_axis = -1)
 
         else:
             factor = 1.0
@@ -76,7 +76,7 @@ class BlurringFilter(ImageFilter):
     radius: float = FloatParam("Radius", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, ui_type = "slider")
 
     def process(self, npim: NumpyImage, parallel_index: int, session: Session, frame_index: int, seed: int) -> NumpyImage:
-        return skimage.filters.gaussian(npim, round(self.radius), channel_axis = 2)
+        return skimage.filters.gaussian(npim, round(self.radius), channel_axis = -1)
 
 
 class ColorBalancingFilter(ImageFilter):
@@ -108,7 +108,7 @@ class ColorCorrectionFilter(ImageFilter):
 
     def process(self, npim: NumpyImage, parallel_index: int, session: Session, frame_index: int, seed: int) -> NumpyImage:
         if (image := self.source.get_image(session.processing.init_images[parallel_index], frame_index - 1)) is not None:
-            npim = skimage.exposure.match_histograms(npim, match_image(image, npim, size = False), channel_axis = 2)
+            npim = skimage.exposure.match_histograms(npim, match_image(image, npim, size = False), channel_axis = -1)
 
         if self.normalize_contrast:
             npim = skimage.exposure.rescale_intensity(npim)
@@ -160,7 +160,7 @@ class ImageOverlayFilter(ImageFilter):
         return match_image(alpha_blend(npim, skimage.filters.gaussian(
             match_image(image, npim, mode = False),
             round(self.blurring),
-            channel_axis = 2,
+            channel_axis = -1,
         )), npim)
 
 
@@ -220,9 +220,9 @@ class NoiseCompressionFilter(ImageFilter):
             weight += self.constant
 
         if self.adaptive > 0.0:
-            weight += skimage.restoration.estimate_sigma(npim, average_sigmas = True, channel_axis = 2) * self.adaptive
+            weight += skimage.restoration.estimate_sigma(npim, average_sigmas = True, channel_axis = -1) * self.adaptive
 
-        return skimage.restoration.denoise_tv_chambolle(npim, weight = max(weight, 1e-5), channel_axis = 2)
+        return skimage.restoration.denoise_tv_chambolle(npim, weight = max(weight, 1e-5), channel_axis = -1)
 
 
 class NoiseOverlayFilter(ImageFilter):
@@ -281,7 +281,7 @@ class SharpeningFilter(ImageFilter):
     radius: float = FloatParam("Radius", minimum = 0.0, maximum = 5.0, step = 0.1, value = 0.0, ui_type = "slider")
 
     def process(self, npim: NumpyImage, parallel_index: int, session: Session, frame_index: int, seed: int) -> NumpyImage:
-        return skimage.filters.unsharp_mask(npim, self.radius, self.strength, channel_axis = 2)
+        return skimage.filters.unsharp_mask(npim, self.radius, self.strength, channel_axis = -1)
 
 
 class SymmetryFilter(ImageFilter):
