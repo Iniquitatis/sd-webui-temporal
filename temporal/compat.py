@@ -632,7 +632,7 @@ class _(Upgrader):
         j_controlnet_units = j_data["controlnet_params"]
         j_ext_data = j_data["extension_params"]
 
-        tree = ET.ElementTree(ET.Element("object", {"type": "Session"}))
+        tree = ET.ElementTree(ET.Element("object", {"type": "temporal.session.Session"}))
 
         root = tree.getroot()
 
