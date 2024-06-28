@@ -16,7 +16,7 @@ video_render_queue = ThreadQueue()
 class VideoRenderer(Serializable):
     fps: int = Field(30)
     looping: bool = Field(False)
-    filter_order: list[str] = Field(factory = list)
+    filter_order: list[str] = Field(factory = lambda: [id for id in VIDEO_FILTERS.keys()])
     filters: dict[str, VideoFilter] = Field(factory = lambda: {id: cls() for id, cls in VIDEO_FILTERS.items()})
 
     def enqueue_video_render(self, path: Path, frame_paths: Sequence[Path], is_final: bool) -> None:

@@ -1,5 +1,5 @@
 from time import perf_counter
-from typing import Any, Callable, Iterator
+from typing import Any, Iterator
 
 import gradio as gr
 
@@ -9,33 +9,26 @@ from modules.processing import Processed, StableDiffusionProcessingImg2Img, fix_
 from modules.shared_state import State
 from modules.styles import StyleDatabase
 
-from temporal.blend_modes import BLEND_MODES
-from temporal.global_options import OptionCategory
-from temporal.image_filters import ImageFilter
 from temporal.interop import EXTENSION_DIR, get_cn_units
 from temporal.measuring_modules import MeasuringModule
-from temporal.pipeline import PIPELINE_MODULES
 from temporal.preset import Preset
 from temporal.project import Project, render_project_video
 from temporal.session import InitialNoiseParams
 from temporal.shared import shared
 from temporal.ui import CallbackInputs, CallbackOutputs, UI
-from temporal.ui.configurable_param_editor import ConfigurableParamEditor
-from temporal.ui.dropdown import Dropdown
 from temporal.ui.fs_store_list import FSStoreList
 from temporal.ui.gradio_widget import GradioWidget
-from temporal.ui.image_mask_editor import ImageMaskEditor
-from temporal.ui.module_list import ModuleAccordion, ModuleAccordionSpecialCheckbox, ModuleList
-from temporal.ui.noise_editor import NoiseEditor
+from temporal.ui.initial_noise_editor import InitialNoiseEditor
+from temporal.ui.options_editor import OptionsEditor
 from temporal.ui.paginator import Paginator
+from temporal.ui.pipeline_editor import PipelineEditor
+from temporal.ui.video_renderer_editor import VideoRendererEditor
 from temporal.utils import logging
-from temporal.utils.collection import get_first_element
 from temporal.utils.fs import load_text
 from temporal.utils.image import PILImage, ensure_image_dims, np_to_pil, pil_to_np
 from temporal.utils.numpy import generate_value_noise
 from temporal.utils.object import copy_with_overrides, get_property_by_path, set_property_by_path
 from temporal.utils.time import wait_until
-from temporal.video_filters import VIDEO_FILTERS
 from temporal.video_renderer import video_render_queue
 from temporal.web_ui import process_images
 
@@ -160,64 +153,11 @@ class TemporalScript(scripts.Script):
                     return {}
 
         with ui.add("", GradioWidget(gr.Tab, label = "Pipeline")):
-            with ui.add("", GradioWidget(gr.Accordion, label = "Initial noise", open = False)):
-                ui.add("initial_noise.factor", GradioWidget(gr.Slider, label = "Factor", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0), groups = ["preset", "session"])
-                ui.add("initial_noise.noise", NoiseEditor(), groups = ["preset", "session"])
-                ui.add("initial_noise.use_initial_seed", GradioWidget(gr.Checkbox, label = "Use initial seed", value = False), groups = ["preset", "session"])
-
-            sorted_modules = dict(sorted(PIPELINE_MODULES.items(), key = lambda x: f"{x[1].icon} {x[1].id}"))
-
-            ui.add("pipeline.parallel", GradioWidget(gr.Number, label = "Parallel", precision = 0, minimum = 1, step = 1, value = 1), groups = ["preset", "session"])
-
-            with ui.add("pipeline.module_order", ModuleList(keys = sorted_modules.keys()), groups = ["preset", "session"]):
-                for id, module in sorted_modules.items():
-                    with ui.add(f"pipeline.modules['{id}'].enabled", ModuleAccordion(label = f"{module.icon} {module.name}", key = id, value = False, open = False), groups = ["preset", "session"]):
-                        elem_id = f"preview_{id}"
-
-                        def make_value_getter(id: str) -> Callable[[], bool]:
-                            return lambda: shared.previewed_modules[id]
-
-                        ui.add(elem_id, ModuleAccordionSpecialCheckbox(value = make_value_getter(id), classes = ["temporal-visibility-checkbox"]), groups = ["preset"])
-
-                        def make_callback(id: str, elem_id: str) -> None:
-                            @ui.callback(elem_id, "change", [elem_id], [])
-                            def _(inputs: CallbackInputs) -> CallbackOutputs:
-                                shared.previewed_modules[id] = inputs[elem_id]
-                                return {}
-
-                        make_callback(id, elem_id)
-
-                        if issubclass(module, ImageFilter):
-                            with ui.add("", GradioWidget(gr.Row)):
-                                ui.add(f"pipeline.modules['{id}'].amount", GradioWidget(gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = 1.0), groups = ["preset", "session"])
-                                ui.add(f"pipeline.modules['{id}'].amount_relative", GradioWidget(gr.Checkbox, label = "Relative", value = False), groups = ["preset", "session"])
-
-                            ui.add(f"pipeline.modules['{id}'].blend_mode", Dropdown(label = "Blend mode", choices = [(x.id, x.name) for x in BLEND_MODES.values()], value = get_first_element(BLEND_MODES)), groups = ["preset", "session"])
-
-                            with ui.add("", GradioWidget(gr.Tab, label = "Parameters")):
-                                if module.__params__:
-                                    for param in module.__params__.values():
-                                        ui.add(f"pipeline.modules['{id}'].{param.key}", ConfigurableParamEditor(param = param), groups = ["preset", "session"])
-                                else:
-                                    ui.add("", GradioWidget(gr.Markdown, value = "_This filter has no available parameters._"))
-
-                            with ui.add("", GradioWidget(gr.Tab, label = "Mask")):
-                                ui.add(f"pipeline.modules['{id}'].mask", ImageMaskEditor(), groups = ["preset", "session"])
-
-                        else:
-                            for param in module.__params__.values():
-                                ui.add(f"pipeline.modules['{id}'].{param.key}", ConfigurableParamEditor(param = param), groups = ["preset", "session"])
+            ui.add("initial_noise", InitialNoiseEditor(), groups = ["preset", "session"])
+            ui.add("pipeline", PipelineEditor(), groups = ["preset", "session"])
 
         with ui.add("", GradioWidget(gr.Tab, label = "Video Rendering")):
-            ui.add("video_renderer.fps", GradioWidget(gr.Slider, label = "Frames per second", minimum = 1, maximum = 60, step = 1, value = 30), groups = ["preset", "video"])
-            ui.add("video_renderer.looping", GradioWidget(gr.Checkbox, label = "Looping", value = False), groups = ["preset", "video"])
-
-            with ui.add("video_renderer.filter_order", ModuleList(keys = VIDEO_FILTERS.keys()), groups = ["preset", "video"]):
-                for id, filter in VIDEO_FILTERS.items():
-                    with ui.add(f"video_renderer.filters['{id}'].enabled", ModuleAccordion(label = filter.name, key = id, value = False, open = False), groups = ["preset", "video"]):
-                        for param in filter.__params__.values():
-                            ui.add(f"video_renderer.filters['{id}'].{param.key}", ConfigurableParamEditor(param = param), groups = ["preset", "video"])
-
+            ui.add("video_renderer", VideoRendererEditor(value = shared.video_renderer), groups = ["preset"])
             ui.add("video_parallel_index", GradioWidget(gr.Number, label = "Parallel index", precision = 0, minimum = 1, step = 1, value = 1), groups = ["preset"])
 
             with ui.add("", GradioWidget(gr.Row)):
@@ -238,8 +178,7 @@ class TemporalScript(scripts.Script):
                         project_name = inputs.pop("project_name")
                         parallel_index = inputs.pop("video_parallel_index")
 
-                        for key, value in inputs.items():
-                            set_property_by_path(shared, key, value)
+                        shared.video_renderer = inputs["video_renderer"]
 
                         video_path = render_project_video(
                             shared.options.output.output_dir / project_name,
@@ -255,11 +194,11 @@ class TemporalScript(scripts.Script):
                             "video_preview": {"value": video_path.as_posix()},
                         }
 
-                @ui.callback("render_draft", "click", ["project_name", "video_parallel_index", "group:video"], ["render_draft", "render_final", "video_preview"])
+                @ui.callback("render_draft", "click", ["project_name", "video_renderer", "video_parallel_index"], ["render_draft", "render_final", "video_preview"])
                 def _(inputs: CallbackInputs) -> Iterator[CallbackOutputs]:
                     yield from render_video(inputs, False)
 
-                @ui.callback("render_final", "click", ["project_name", "video_parallel_index", "group:video"], ["render_draft", "render_final", "video_preview"])
+                @ui.callback("render_final", "click", ["project_name", "video_renderer", "video_parallel_index"], ["render_draft", "render_final", "video_preview"])
                 def _(inputs: CallbackInputs) -> Iterator[CallbackOutputs]:
                     yield from render_video(inputs, True)
 
@@ -285,26 +224,14 @@ class TemporalScript(scripts.Script):
 
         with ui.add("", GradioWidget(gr.Tab, label = "Settings")):
             ui.add("apply_settings", GradioWidget(gr.Button, value = "Apply"))
+            ui.add("options", OptionsEditor(value = shared.options))
 
-            @ui.callback("apply_settings", "click", ["group:options"], [])
+            @ui.callback("apply_settings", "click", ["options"], [])
             def _(inputs: CallbackInputs) -> CallbackOutputs:
-                for key, ui_value in inputs.items():
-                    set_property_by_path(shared.options, key, ui_value)
-
+                shared.options = inputs["options"]
                 shared.options.save(EXTENSION_DIR / "settings")
 
                 return {}
-
-            for field in shared.options.__fields__.values():
-                if not isinstance(category := getattr(shared.options, field.key), OptionCategory):
-                    continue
-
-                with ui.add("", GradioWidget(gr.Accordion, label = category.name, open = False)):
-                    def make_param_getter(category: OptionCategory, key: str) -> Callable[[], Any]:
-                        return lambda: getattr(category, key)
-
-                    for param in category.__params__.values():
-                        ui.add(f"{field.key}.{param.key}", ConfigurableParamEditor(param = param, value = make_param_getter(category, param.key)), groups = ["options"])
 
         with ui.add("", GradioWidget(gr.Tab, label = "Help")):
             for file_name, title in [

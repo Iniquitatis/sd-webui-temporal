@@ -1,3 +1,5 @@
+from typing import Iterator, Type
+
 import skimage
 
 from modules import shared as webui_shared
@@ -17,8 +19,8 @@ state: State = getattr(webui_shared, "state")
 
 class Pipeline(Serializable):
     parallel: int = Field(1)
-    module_order: list[str] = Field(factory = list)
-    modules: dict[str, PipelineModule] = Field(factory = lambda: {id: cls() for id, cls in PIPELINE_MODULES.items()})
+    module_order: list[str] = Field(factory = lambda: [id for id, _ in _iter_modules()])
+    modules: dict[str, PipelineModule] = Field(factory = lambda: {id: cls() for id, cls in _iter_modules()})
 
     def run(self, session: Session) -> bool:
         ordered_modules = reorder_dict(self.modules, self.module_order)
@@ -72,3 +74,7 @@ class Pipeline(Serializable):
             preview = iteration.images[min(max(shared.options.live_preview.preview_parallel_index - 1, 0), len(iteration.images) - 1)]
 
         state.assign_current_image(np_to_pil(preview))
+
+
+def _iter_modules() -> Iterator[tuple[str, Type[PipelineModule]]]:
+    yield from sorted(PIPELINE_MODULES.items(), key = lambda x: f"{x[1].icon} {x[1].id}")
