@@ -106,6 +106,8 @@ All modules in this tab are marked with the following icons:
     * **Stretch** — enables linear stretching of the palette to fill all 256 colors, reducing the color banding.
         * **NOTE:** While it smoothes out the color transitions, it also introduces transitional tones that might not be intended in the palette.
     * **Dithering** — determines whether an image will be dithered in the process of quantization or not. In simple terms, it means reducing the color banding while using a limited color palette.
+* **Pixelization** — rounding to a specific virtual pixel size.
+    * **Pixel size** — size of a virtual pixel. For example, at value of `8`, an image with resolution 1024x512 will _appear_ as if its resolution were 128x64—its actual resolution won't be affected.
 * **Processing** — the main Stable Diffusion processing procedure.
     * **NOTE:** Currently, all of the settings listed here are related to the averaging of several samples generated from a single frame.
     * **Sample count** — amount of samples to take for generating a frame.

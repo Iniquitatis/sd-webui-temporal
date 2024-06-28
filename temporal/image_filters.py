@@ -273,6 +273,27 @@ class PalettizationFilter(ImageFilter):
         ).convert("RGB"))
 
 
+class PixelizationFilter(ImageFilter):
+    id = "pixelization"
+    name = "Pixelization"
+
+    pixel_size: int = IntParam("Pixel size", minimum = 1, step = 1, value = 1, ui_type = "box")
+
+    def process(self, npim: NumpyImage, parallel_index: int, session: Session, frame_index: int, seed: int) -> NumpyImage:
+        height, width = npim.shape[:2]
+
+        y, x = np.meshgrid(np.arange(height), np.arange(width), indexing = "ij")
+
+        return np.mean([
+            npim[
+                np.clip(y // self.pixel_size * self.pixel_size + j, 0, height - 1),
+                np.clip(x // self.pixel_size * self.pixel_size + i, 0, width  - 1),
+            ]
+            for j in range(self.pixel_size)
+            for i in range(self.pixel_size)
+        ], axis = 0)
+
+
 class SharpeningFilter(ImageFilter):
     id = "sharpening"
     name = "Sharpening"
