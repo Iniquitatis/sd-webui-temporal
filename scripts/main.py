@@ -135,7 +135,7 @@ class TemporalScript(scripts.Script):
                 ui.add("delete_intermediate_frames", GradioWidget(gr.Button, value = "Delete intermediate frames"))
                 ui.add("delete_session_data", GradioWidget(gr.Button, value = "Delete session data"))
 
-                @ui.callback("delete_intermediate_frames", "click", ["project_name"], ["project_gallery"])
+                @ui.callback("delete_intermediate_frames", "click", ["project_name"], ["project_description", "project_gallery"])
                 def _(inputs: CallbackInputs) -> CallbackOutputs:
                     if inputs["project_name"] not in shared.project_store.entry_names:
                         return {}
