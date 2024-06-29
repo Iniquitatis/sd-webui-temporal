@@ -1,5 +1,3 @@
-from typing import Iterator, Type
-
 import skimage
 
 from modules import shared as webui_shared
@@ -9,7 +7,6 @@ from temporal.meta.serializable import Serializable, SerializableField as Field
 from temporal.pipeline_modules import PIPELINE_MODULES, PipelineModule
 from temporal.session import IterationData, Session
 from temporal.shared import shared
-from temporal.utils.collection import reorder_dict
 from temporal.utils.image import np_to_pil
 
 
@@ -19,19 +16,15 @@ state: State = getattr(webui_shared, "state")
 
 class Pipeline(Serializable):
     parallel: int = Field(1)
-    module_order: list[str] = Field(factory = lambda: [id for id, _ in _iter_modules()])
-    modules: dict[str, PipelineModule] = Field(factory = lambda: {id: cls() for id, cls in _iter_modules()})
+    modules: dict[str, PipelineModule] = Field(factory = lambda: {id: cls() for id, cls in sorted(PIPELINE_MODULES.items(), key = lambda x: f"{x[1].icon} {x[1].id}")})
 
     def run(self, session: Session) -> bool:
-        ordered_modules = reorder_dict(self.modules, self.module_order)
-        ordered_keys = list(ordered_modules.keys())
-
         if session.iteration.module_id is not None:
-            skip_index = ordered_keys.index(session.iteration.module_id)
+            skip_index = list(self.modules.keys()).index(session.iteration.module_id)
         else:
             skip_index = -1
 
-        for i, module in enumerate(ordered_modules.values()):
+        for i, module in enumerate(self.modules.values()):
             if i <= skip_index or not module.enabled:
                 continue
 
@@ -61,7 +54,7 @@ class Pipeline(Serializable):
         return True
 
     def finalize(self, session: Session) -> None:
-        for module in reorder_dict(self.modules, self.module_order).values():
+        for module in self.modules.values():
             if not module.enabled:
                 continue
 
@@ -74,7 +67,3 @@ class Pipeline(Serializable):
             preview = iteration.images[min(max(shared.options.live_preview.preview_parallel_index - 1, 0), len(iteration.images) - 1)]
 
         state.assign_current_image(np_to_pil(preview))
-
-
-def _iter_modules() -> Iterator[tuple[str, Type[PipelineModule]]]:
-    yield from sorted(PIPELINE_MODULES.items(), key = lambda x: f"{x[1].icon} {x[1].id}")
