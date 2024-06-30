@@ -3,7 +3,7 @@ from typing import Iterator, Optional
 
 import gradio as gr
 
-from temporal.ui import ReadData, ResolvedCallback, UIThing, UpdateData, UpdateRequest, Widget
+from temporal.ui import Callback, ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.gradio_widget import GradioWidget
 from temporal.video import Video
 
@@ -38,5 +38,5 @@ class VideoBox(Widget):
 
         return result
 
-    def setup_callback(self, callback: ResolvedCallback) -> None:
+    def setup_callback(self, callback: Callback) -> None:
         self._instance.setup_callback(callback)

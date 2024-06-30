@@ -3,7 +3,7 @@ from typing import Iterator
 import gradio as gr
 
 from temporal.image_source import ImageSource
-from temporal.ui import ReadData, ResolvedCallback, ResolvedCallbackInputs, ResolvedCallbackOutputs, UIThing, UpdateData, UpdateRequest, Widget
+from temporal.ui import Callback, CallbackInputs, CallbackOutputs, ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.gradio_widget import GradioWidget
 from temporal.ui.radio import Radio
 from temporal.ui.video_box import VideoBox
@@ -24,8 +24,8 @@ class ImageSourceEditor(Widget):
         self._video = VideoBox(label = self._format_label(label, "Video"), value = value.video, visible = value.type == "video")
 
         @self._type.callback("change", [self._type, self._image, self._video], [self._image, self._video])
-        def _(inputs: ResolvedCallbackInputs) -> ResolvedCallbackOutputs:
-            outputs: ResolvedCallbackOutputs = {
+        def _(inputs: CallbackInputs) -> CallbackOutputs:
+            outputs: CallbackOutputs = {
                 self._image: {"visible": False},
                 self._video: {"visible": False},
             }
@@ -85,7 +85,7 @@ class ImageSourceEditor(Widget):
 
         return result
 
-    def setup_callback(self, callback: ResolvedCallback) -> None:
+    def setup_callback(self, callback: Callback) -> None:
         self._type.setup_callback(callback)
         self._image.setup_callback(callback)
         self._video.setup_callback(callback)

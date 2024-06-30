@@ -5,7 +5,7 @@ import gradio as gr
 from temporal.project import Project
 from temporal.project_store import ProjectStore
 from temporal.shared import shared
-from temporal.ui import ReadData, ResolvedCallback, ResolvedCallbackInputs, ResolvedCallbackOutputs, UIThing, UpdateData, UpdateRequest, Widget
+from temporal.ui import Callback, CallbackInputs, CallbackOutputs, ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.fs_store_list import FSStoreList
 from temporal.ui.gradio_widget import GradioWidget
 from temporal.ui.initial_noise_editor import InitialNoiseEditor
@@ -38,7 +38,7 @@ class ProjectEditor(Widget):
             self._pipeline = PipelineEditor(value.session.pipeline)
 
         @self._project.callback("change", [self._project], [self._description, self._gallery, self._gallery_page, self._gallery_parallel, self._initial_noise, self._pipeline])
-        def _(inputs: ResolvedCallbackInputs) -> ResolvedCallbackOutputs:
+        def _(inputs: CallbackInputs) -> CallbackOutputs:
             project = inputs[self._project]
 
             return {
@@ -51,7 +51,7 @@ class ProjectEditor(Widget):
             }
 
         @self._project.callback("load", [self._project], [self._initial_noise, self._pipeline])
-        def _(inputs: ResolvedCallbackInputs) -> ResolvedCallbackOutputs:
+        def _(inputs: CallbackInputs) -> CallbackOutputs:
             project = inputs[self._project]
 
             return {
@@ -59,7 +59,7 @@ class ProjectEditor(Widget):
                 self._pipeline: {"value": project.session.pipeline},
             }
 
-        def update_gallery(inputs: ResolvedCallbackInputs) -> ResolvedCallbackOutputs:
+        def update_gallery(inputs: CallbackInputs) -> CallbackOutputs:
             project = inputs[self._project]
             page = inputs[self._gallery_page]
             parallel = inputs[self._gallery_parallel]
@@ -68,15 +68,15 @@ class ProjectEditor(Widget):
             return {self._gallery: {"value": project.list_all_frame_paths(parallel)[(page - 1) * gallery_size:page * gallery_size]}}
 
         @self._gallery_page.callback("change", [self._project, self._gallery_page, self._gallery_parallel], [self._gallery])
-        def _(inputs: ResolvedCallbackInputs) -> ResolvedCallbackOutputs:
+        def _(inputs: CallbackInputs) -> CallbackOutputs:
             return update_gallery(inputs)
 
         @self._gallery_parallel.callback("change", [self._project, self._gallery_page, self._gallery_parallel], [self._gallery])
-        def _(inputs: ResolvedCallbackInputs) -> ResolvedCallbackOutputs:
+        def _(inputs: CallbackInputs) -> CallbackOutputs:
             return update_gallery(inputs)
 
         @self._delete_intermediate_frames.callback("click", [self._project], [self._description, self._gallery])
-        def _(inputs: ResolvedCallbackInputs) -> ResolvedCallbackOutputs:
+        def _(inputs: CallbackInputs) -> CallbackOutputs:
             project = inputs[self._project]
             project.delete_intermediate_frames()
 
@@ -86,7 +86,7 @@ class ProjectEditor(Widget):
             }
 
         @self._delete_session_data.callback("click", [self._project], [])
-        def _(inputs: ResolvedCallbackInputs) -> ResolvedCallbackOutputs:
+        def _(inputs: CallbackInputs) -> CallbackOutputs:
             project = inputs[self._project]
             project.delete_session_data()
             project.save(project.path)
@@ -115,5 +115,5 @@ class ProjectEditor(Widget):
 
         return result
 
-    def setup_callback(self, callback: ResolvedCallback) -> None:
+    def setup_callback(self, callback: Callback) -> None:
         self._project.setup_callback(callback)

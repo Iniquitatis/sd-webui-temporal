@@ -8,7 +8,7 @@ from temporal.color import Color
 from temporal.image_source import ImageSource
 from temporal.meta.configurable import BoolParam, ColorParam, ConfigurableParam, EnumParam, FloatParam, ImageParam, ImageSourceParam, IntParam, NoiseParam, PathParam, StringParam
 from temporal.noise import Noise
-from temporal.ui import ReadData, ResolvedCallback, UIThing, UpdateData, UpdateRequest, Widget
+from temporal.ui import Callback, ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.color_editor import ColorEditor
 from temporal.ui.dropdown import Dropdown
 from temporal.ui.gradio_widget import GradioWidget
@@ -94,5 +94,5 @@ class ConfigurableParamEditor(Widget):
     def update(self, data: UpdateData) -> UpdateRequest:
         return self._widget.update(data)
 
-    def setup_callback(self, callback: ResolvedCallback) -> None:
+    def setup_callback(self, callback: Callback) -> None:
         self._widget.setup_callback(callback)

@@ -3,7 +3,7 @@ from typing import Iterator
 import gradio as gr
 
 from temporal.color import Color
-from temporal.ui import ReadData, ResolvedCallback, UIThing, UpdateData, UpdateRequest, Widget
+from temporal.ui import Callback, ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.gradio_widget import GradioWidget
 
 
@@ -45,6 +45,6 @@ class ColorEditor(Widget):
 
         return result
 
-    def setup_callback(self, callback: ResolvedCallback) -> None:
+    def setup_callback(self, callback: Callback) -> None:
         self._color.setup_callback(callback)
         self._alpha.setup_callback(callback)

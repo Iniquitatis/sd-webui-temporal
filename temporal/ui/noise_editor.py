@@ -3,7 +3,7 @@ from typing import Iterator
 import gradio as gr
 
 from temporal.noise import Noise
-from temporal.ui import ReadData, ResolvedCallback, ResolvedCallbackInputs, ResolvedCallbackOutputs, UIThing, UpdateData, UpdateRequest, Widget
+from temporal.ui import Callback, CallbackInputs, CallbackOutputs, ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.gradio_widget import GradioWidget
 from temporal.utils.image import NumpyImage
 from temporal.utils.numpy import generate_value_noise
@@ -29,7 +29,7 @@ class NoiseEditor(Widget):
                 self._seed = GradioWidget(gr.Number, label = self._format_label(label, "Seed"), precision = 0, minimum = 0, step = 1, value = value.seed)
 
         @self.callback("change", [self], [self._preview])
-        def _(inputs: ResolvedCallbackInputs) -> ResolvedCallbackOutputs:
+        def _(inputs: CallbackInputs) -> CallbackOutputs:
             return {self._preview: {"value": self._generate_preview_texture(inputs[self])}}
 
     @property
@@ -64,7 +64,7 @@ class NoiseEditor(Widget):
 
         return result
 
-    def setup_callback(self, callback: ResolvedCallback) -> None:
+    def setup_callback(self, callback: Callback) -> None:
         self._scale.setup_callback(callback)
         self._octaves.setup_callback(callback)
         self._lacunarity.setup_callback(callback)

@@ -5,7 +5,7 @@ import gradio as gr
 
 from modules.ui_components import ToolButton
 
-from temporal.ui import ResolvedCallback, ResolvedCallbackFunc, ResolvedCallbackInputs, ResolvedCallbackOutputs, ReadData, UIThing, UpdateData, UpdateRequest, Widget
+from temporal.ui import Callback, CallbackFunc, CallbackInputs, CallbackOutputs, ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.gradio_widget import GradioWidget
 
 
@@ -39,27 +39,27 @@ class Paginator(Widget):
 
         return result
 
-    def setup_callback(self, callback: ResolvedCallback) -> None:
+    def setup_callback(self, callback: Callback) -> None:
         if callback.event != "change" or isgeneratorfunction(callback.func):
             raise ValueError
 
-        func = cast(ResolvedCallbackFunc, callback.func)
+        func = cast(CallbackFunc, callback.func)
 
-        def previous_page(inputs: ResolvedCallbackInputs) -> ResolvedCallbackOutputs:
+        def previous_page(inputs: CallbackInputs) -> CallbackOutputs:
             inputs[self] = self._clamp(inputs.pop(self) - 1)
             return {self: {"value": inputs[self]}} | func(inputs)
 
-        def set_page(inputs: ResolvedCallbackInputs) -> ResolvedCallbackOutputs:
+        def set_page(inputs: CallbackInputs) -> CallbackOutputs:
             inputs[self] = self._clamp(inputs.pop(self))
             return {self: {"value": inputs[self]}} | func(inputs)
 
-        def next_page(inputs: ResolvedCallbackInputs) -> ResolvedCallbackOutputs:
+        def next_page(inputs: CallbackInputs) -> CallbackOutputs:
             inputs[self] = self._clamp(inputs.pop(self) + 1)
             return {self: {"value": inputs[self]}} | func(inputs)
 
-        self._previous_button.setup_callback(ResolvedCallback("click", previous_page, [self] + callback.inputs, [self] + callback.outputs))
-        self._index.setup_callback(ResolvedCallback("change", set_page, [self] + callback.inputs, [self] + callback.outputs))
-        self._next_button.setup_callback(ResolvedCallback("click", next_page, [self] + callback.inputs, [self] + callback.outputs))
+        self._previous_button.setup_callback(Callback("click", previous_page, [self] + callback.inputs, [self] + callback.outputs))
+        self._index.setup_callback(Callback("change", set_page, [self] + callback.inputs, [self] + callback.outputs))
+        self._next_button.setup_callback(Callback("click", next_page, [self] + callback.inputs, [self] + callback.outputs))
 
     def _clamp(self, value: int) -> int:
         minimum = self._index._instance.minimum if self._index._instance.minimum is not None else -1e9

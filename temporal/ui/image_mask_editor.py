@@ -3,7 +3,7 @@ from typing import Iterator
 import gradio as gr
 
 from temporal.image_mask import ImageMask
-from temporal.ui import ReadData, ResolvedCallback, UIThing, UpdateData, UpdateRequest, Widget
+from temporal.ui import Callback, ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.gradio_widget import GradioWidget
 
 
@@ -46,7 +46,7 @@ class ImageMaskEditor(Widget):
 
         return result
 
-    def setup_callback(self, callback: ResolvedCallback) -> None:
+    def setup_callback(self, callback: Callback) -> None:
         self._image.setup_callback(callback)
         self._normalized.setup_callback(callback)
         self._inverted.setup_callback(callback)

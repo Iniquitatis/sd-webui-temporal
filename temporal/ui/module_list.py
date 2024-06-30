@@ -4,7 +4,7 @@ from typing import Any, Callable, Iterator, Optional
 
 import gradio as gr
 
-from temporal.ui import ReadData, ResolvedCallback, UIThing, UpdateData, UpdateRequest, Widget
+from temporal.ui import Callback, ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.gradio_widget import GradioWidget
 
 
@@ -58,7 +58,7 @@ class ModuleList(Widget):
     def update(self, data: UpdateData) -> UpdateRequest:
         return self._dropdown.update(data)
 
-    def setup_callback(self, callback: ResolvedCallback) -> None:
+    def setup_callback(self, callback: Callback) -> None:
         self._dropdown.setup_callback(callback)
 
 
@@ -105,7 +105,7 @@ class ModuleAccordion(Widget):
     def update(self, data: UpdateData) -> UpdateRequest:
         return self._checkbox.update(data)
 
-    def setup_callback(self, callback: ResolvedCallback) -> None:
+    def setup_callback(self, callback: Callback) -> None:
         self._checkbox.setup_callback(callback)
 
 
@@ -132,5 +132,5 @@ class ModuleAccordionSpecialCheckbox(Widget):
     def update(self, data: UpdateData) -> UpdateRequest:
         return self._instance.update(data)
 
-    def setup_callback(self, callback: ResolvedCallback) -> None:
+    def setup_callback(self, callback: Callback) -> None:
         self._instance.setup_callback(callback)

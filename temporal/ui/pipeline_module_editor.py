@@ -6,7 +6,7 @@ from temporal.blend_modes import BLEND_MODES
 from temporal.image_filters import ImageFilter
 from temporal.pipeline_modules import PipelineModule
 from temporal.shared import shared
-from temporal.ui import ReadData, ResolvedCallbackInputs, ResolvedCallbackOutputs, UIThing, UpdateData, UpdateRequest, Widget
+from temporal.ui import CallbackInputs, CallbackOutputs, ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.configurable_param_editor import ConfigurableParamEditor
 from temporal.ui.dropdown import Dropdown
 from temporal.ui.gradio_widget import GradioWidget
@@ -27,7 +27,7 @@ class PipelineModuleEditor(Widget):
             self._visibility = ModuleAccordionSpecialCheckbox(value = lambda: shared.previewed_modules[value.id], classes = ["temporal-visibility-checkbox"])
 
             @self._visibility.callback("change", [self._visibility], [])
-            def _(inputs: ResolvedCallbackInputs) -> ResolvedCallbackOutputs:
+            def _(inputs: CallbackInputs) -> CallbackOutputs:
                 shared.previewed_modules[value.id] = inputs[self._visibility]
                 return {}
 

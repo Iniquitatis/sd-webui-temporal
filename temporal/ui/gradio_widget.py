@@ -1,6 +1,6 @@
 from typing import Any, Callable, Generic, Iterator, ParamSpec, TypeVar, cast
 
-from temporal.ui import GradioThing, ReadData, ResolvedCallback, UIThing, UpdateData, UpdateRequest, Widget
+from temporal.ui import Callback, GradioThing, ReadData, UIThing, UpdateData, UpdateRequest, Widget
 
 
 T = TypeVar("T", bound = GradioThing)
@@ -31,7 +31,7 @@ class GradioWidget(Widget, Generic[T]):
     def update(self, data: UpdateData) -> UpdateRequest:
         return {self._instance: data}
 
-    def setup_callback(self, callback: ResolvedCallback) -> None:
+    def setup_callback(self, callback: Callback) -> None:
         callback.apply_to_component(self._instance)
 
     def __enter__(self, *args: Any, **kwargs: Any) -> "GradioWidget[T]":
