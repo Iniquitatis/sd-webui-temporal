@@ -140,21 +140,15 @@ class TemporalScript(scripts.Script):
         def _(inputs: CallbackInputs) -> CallbackOutputs:
             return {project: {"value": inputs[projects]}}
 
-        def update_gallery(inputs: CallbackInputs) -> CallbackOutputs:
+        @gallery_page.callback("change", [projects, gallery_page, gallery_parallel], [gallery])
+        @gallery_parallel.callback("change", [projects, gallery_page, gallery_parallel], [gallery])
+        def _(inputs: CallbackInputs) -> CallbackOutputs:
             project_obj = inputs[project]
             page = inputs[gallery_page]
             parallel = inputs[gallery_parallel]
             gallery_size = shared.options.ui.gallery_size
 
             return {gallery: {"value": project_obj.list_all_frame_paths(parallel)[(page - 1) * gallery_size:page * gallery_size]}}
-
-        @gallery_page.callback("change", [project, gallery_page, gallery_parallel], [gallery])
-        def _(inputs: CallbackInputs) -> CallbackOutputs:
-            return update_gallery(inputs)
-
-        @gallery_parallel.callback("change", [project, gallery_page, gallery_parallel], [gallery])
-        def _(inputs: CallbackInputs) -> CallbackOutputs:
-            return update_gallery(inputs)
 
         def render_video(inputs: CallbackInputs, is_final: bool) -> Iterator[CallbackOutputs]:
             yield {
