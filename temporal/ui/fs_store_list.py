@@ -1,34 +1,38 @@
 from collections.abc import Iterable
-from typing import Any, Generic, Iterator, Literal, TypeVar, cast
+from typing import Generic, Iterator, Literal, Optional, TypeVar, cast
 
 import gradio as gr
 
 from modules.ui_components import ToolButton
 
 from temporal.fs_store import FSStore
+from temporal.meta.serializable import Serializable
 from temporal.ui import ReadData, ResolvedCallback, ResolvedCallbackInputs, ResolvedCallbackOutputs, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.gradio_widget import GradioWidget
 from temporal.utils.collection import get_first_element, get_next_element
 from temporal.utils.object import copy_with_overrides
 
 
-T = TypeVar("T", bound = FSStore[Any])
+T = TypeVar("T", bound = Serializable)
 
 
 class FSStoreList(Widget, Generic[T]):
     def __init__(
         self,
         label: str,
-        store: T,
+        store: FSStore[T],
         features: Iterable[Literal["load", "save", "rename", "delete"]] = ["load", "save", "rename", "delete"],
+        default_name: str = "untitled",
+        value: Optional[T] = None,
     ) -> None:
         super().__init__()
 
         self.store = store
+        self.entry = value or store.__create_entry__(default_name)
 
         with GradioWidget(gr.Group):
             with GradioWidget(gr.Row):
-                self._entry_name = GradioWidget(gr.Dropdown, label = self._format_label(label), choices = list(store.entry_names), allow_custom_value = True, value = get_first_element(store.entry_names, ""))
+                self._entry_name = GradioWidget(gr.Dropdown, label = self._format_label(label), choices = list(store.entry_names), allow_custom_value = True, value = get_first_element(store.entry_names, default_name))
                 self._refresh_entries = GradioWidget(ToolButton, value = "\U0001f504")
                 self._load_entry = GradioWidget(ToolButton, value = "\U0001f4c2", visible = "load" in features)
                 self._save_entry = GradioWidget(ToolButton, value = "\U0001f4be", visible = "save" in features)
@@ -39,6 +43,12 @@ class FSStoreList(Widget, Generic[T]):
                 self._new_entry_name = GradioWidget(gr.Textbox, label = self._format_label(label, "New name"), value = "")
                 self._confirm_rename = GradioWidget(ToolButton, value = "\U00002714\ufe0f")
                 self._deny_rename = GradioWidget(ToolButton, value = "\U0000274c")
+
+        @self._entry_name.callback("change", [self._entry_name], [])
+        def _(inputs: ResolvedCallbackInputs) -> ResolvedCallbackOutputs:
+            self.entry = store.load_entry(inputs[self._entry_name])
+
+            return {}
 
         @self._refresh_entries.callback("click", [], [self._entry_name])
         def _(_: ResolvedCallbackInputs) -> ResolvedCallbackOutputs:
@@ -89,14 +99,18 @@ class FSStoreList(Widget, Generic[T]):
     def dependencies(self) -> Iterator[UIThing]:
         yield self._entry_name
 
-    def read(self, data: ReadData) -> str:
-        return data[self._entry_name]
+    def read(self, data: ReadData) -> T:
+        self.entry = self.store.load_entry(data[self._entry_name])
+        return self.entry
 
     def update(self, data: UpdateData) -> UpdateRequest:
         result: UpdateRequest = {}
 
-        if isinstance(value := data.get("value", None), str):
-            result[self._entry_name] = {"value": value}
+        if isinstance(name := data.get("name", None), str):
+            result[self._entry_name] = {"value": name}
+
+        if (value := data.get("value", None)) is not None:
+            self.entry = value
 
         return result
 

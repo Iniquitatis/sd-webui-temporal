@@ -29,7 +29,10 @@ class FSStore(Generic[T]):
 
     def load_entry(self, name: str) -> T:
         result = self.__create_entry__(name)
-        result.load(self.path / name)
+
+        if (path := self.path / name).is_dir():
+            result.load(path)
+
         return result
 
     def save_entry(self, name: str, entry: T) -> None:
@@ -47,6 +50,9 @@ class FSStore(Generic[T]):
         rename_entry(self.path, old_name, new_name)
         self.entry_names[self.entry_names.index(old_name)] = new_name
         self._sort()
+
+    def find_entry_name(self, entry: T) -> str:
+        raise SystemError
 
     def _sort(self) -> None:
         if self.sorting_order == "alphabetical":

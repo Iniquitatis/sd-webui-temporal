@@ -12,22 +12,20 @@ from modules.styles import StyleDatabase
 from temporal.interop import EXTENSION_DIR, get_cn_units
 from temporal.measuring_modules import MeasuringModule
 from temporal.preset import Preset
-from temporal.project import Project, render_project_video
+from temporal.project import render_project_video
 from temporal.session import InitialNoiseParams
 from temporal.shared import shared
 from temporal.ui import CallbackInputs, CallbackOutputs, UI
 from temporal.ui.fs_store_list import FSStoreList
 from temporal.ui.gradio_widget import GradioWidget
-from temporal.ui.initial_noise_editor import InitialNoiseEditor
 from temporal.ui.options_editor import OptionsEditor
-from temporal.ui.paginator import Paginator
-from temporal.ui.pipeline_editor import PipelineEditor
+from temporal.ui.project_editor import ProjectEditor
 from temporal.ui.video_renderer_editor import VideoRendererEditor
 from temporal.utils import logging
 from temporal.utils.fs import load_text
 from temporal.utils.image import PILImage, ensure_image_dims, np_to_pil, pil_to_np
 from temporal.utils.numpy import generate_value_noise
-from temporal.utils.object import copy_with_overrides, get_property_by_path, set_property_by_path
+from temporal.utils.object import copy_with_overrides
 from temporal.utils.time import wait_until
 from temporal.video_renderer import video_render_queue
 from temporal.web_ui import process_images
@@ -53,108 +51,24 @@ class TemporalScript(scripts.Script):
     def ui(self, is_img2img: bool) -> Any:
         self._ui = ui = UI()
 
-        with ui.add("", GradioWidget(gr.Row)):
-            ui.add("preset_name", FSStoreList(label = "Preset", store = shared.preset_store, features = ["load", "save", "rename", "delete"]))
+        ui.add("preset", FSStoreList(label = "Preset", store = shared.preset_store, features = ["load", "save", "rename", "delete"]))
 
-            @ui.callback("preset_name", "load", ["preset_name", "group:preset"], ["group:preset"])
-            def _(inputs: CallbackInputs) -> CallbackOutputs:
-                inputs |= inputs.pop("preset_name").data
+        @ui.callback("preset", "load", ["preset", "group:preset"], ["group:preset"])
+        def _(inputs: CallbackInputs) -> CallbackOutputs:
+            inputs |= inputs.pop("preset").data
 
-                return {k: {"value": v} for k, v in inputs.items()}
+            return {k: {"value": v} for k, v in inputs.items()}
 
-            @ui.callback("preset_name", "save", ["group:preset"], ["preset_name"])
-            def _(inputs: CallbackInputs) -> CallbackOutputs:
-                return {"preset_name": {"value": Preset(inputs)}}
+        @ui.callback("preset", "save", ["group:preset"], ["preset"])
+        def _(inputs: CallbackInputs) -> CallbackOutputs:
+            return {"preset": {"value": Preset(inputs)}}
 
-        with ui.add("", GradioWidget(gr.Tab, label = "Project")):
-            with ui.add("", GradioWidget(gr.Row)):
-                ui.add("project_name", FSStoreList(label = "Project", store = shared.project_store, features = ["load", "rename", "delete"]), groups = ["preset", "project"])
+        ui.add("project", ProjectEditor(store = shared.project_store), groups = ["preset", "project"])
 
-                # FIXME: `change` makes typing slower, but `select` won't work until user clicks an appropriate item
-                @ui.callback("project_name", "change", ["project_name"], ["project_description", "project_gallery", "project_gallery_page", "project_gallery_parallel"])
-                def _(inputs: CallbackInputs) -> CallbackOutputs:
-                    if inputs["project_name"] not in shared.project_store.entry_names:
-                        return {}
-
-                    project = shared.project_store.load_entry(inputs["project_name"])
-
-                    return {
-                        "project_description": {"value": project.get_description()},
-                        "project_gallery": {"value": project.list_all_frame_paths()[:shared.options.ui.gallery_size]},
-                        "project_gallery_page": {"value": 1},
-                        "project_gallery_parallel": {"value": 1},
-                    }
-
-                @ui.callback("project_name", "load", ["project_name"], ["group:session"])
-                def _(inputs: CallbackInputs) -> CallbackOutputs:
-                    project = inputs["project_name"]
-
-                    return {
-                        id: {"value": get_property_by_path(project.session, id)}
-                        for id in self._ui.parse_id("group:session")
-                    }
-
-            with ui.add("", GradioWidget(gr.Tab, label = "Session")):
-                ui.add("load_parameters", GradioWidget(gr.Checkbox, label = "Load parameters", value = True), groups = ["preset", "project"])
-                ui.add("continue_from_last_frame", GradioWidget(gr.Checkbox, label = "Continue from last frame", value = True), groups = ["preset", "project"])
-                ui.add("iter_count", GradioWidget(gr.Number, label = "Iteration count", precision = 0, minimum = 1, step = 1, value = 100), groups = ["preset", "project"])
-
-            with ui.add("", GradioWidget(gr.Tab, label = "Information")):
-                ui.add("project_description", GradioWidget(gr.Textbox, label = "Description", lines = 5, max_lines = 5, interactive = False))
-                ui.add("project_gallery", GradioWidget(gr.Gallery, label = "Gallery", columns = 4, object_fit = "contain", preview = True))
-                ui.add("project_gallery_page", Paginator(label = "Page", minimum = 1, value = 1))
-                ui.add("project_gallery_parallel", Paginator(label = "Parallel", minimum = 1, value = 1))
-
-                def update_gallery(inputs: CallbackInputs) -> CallbackOutputs:
-                    if inputs["project_name"] not in shared.project_store.entry_names:
-                        return {}
-
-                    project = shared.project_store.load_entry(inputs["project_name"])
-                    page = inputs["project_gallery_page"]
-                    parallel = inputs["project_gallery_parallel"]
-                    gallery_size = shared.options.ui.gallery_size
-
-                    return {"project_gallery": {"value": project.list_all_frame_paths(parallel)[(page - 1) * gallery_size:page * gallery_size]}}
-
-                @ui.callback("project_gallery_page", "change", ["project_name", "project_gallery_page", "project_gallery_parallel"], ["project_gallery"])
-                def _(inputs: CallbackInputs) -> CallbackOutputs:
-                    return update_gallery(inputs)
-
-                @ui.callback("project_gallery_parallel", "change", ["project_name", "project_gallery_page", "project_gallery_parallel"], ["project_gallery"])
-                def _(inputs: CallbackInputs) -> CallbackOutputs:
-                    return update_gallery(inputs)
-
-            with ui.add("", GradioWidget(gr.Tab, label = "Tools")):
-                ui.add("delete_intermediate_frames", GradioWidget(gr.Button, value = "Delete intermediate frames"))
-                ui.add("delete_session_data", GradioWidget(gr.Button, value = "Delete session data"))
-
-                @ui.callback("delete_intermediate_frames", "click", ["project_name"], ["project_description", "project_gallery"])
-                def _(inputs: CallbackInputs) -> CallbackOutputs:
-                    if inputs["project_name"] not in shared.project_store.entry_names:
-                        return {}
-
-                    project = shared.project_store.load_entry(inputs["project_name"])
-                    project.delete_intermediate_frames()
-
-                    return {
-                        "project_description": {"value": project.get_description()},
-                        "project_gallery": {"value": project.list_all_frame_paths()[:shared.options.ui.gallery_size]},
-                    }
-
-                @ui.callback("delete_session_data", "click", ["project_name"], [])
-                def _(inputs: CallbackInputs) -> CallbackOutputs:
-                    if inputs["project_name"] not in shared.project_store.entry_names:
-                        return {}
-
-                    project = shared.project_store.load_entry(inputs["project_name"])
-                    project.delete_session_data()
-                    project.save(project.path)
-
-                    return {}
-
-        with ui.add("", GradioWidget(gr.Tab, label = "Pipeline")):
-            ui.add("initial_noise", InitialNoiseEditor(), groups = ["preset", "session"])
-            ui.add("pipeline", PipelineEditor(), groups = ["preset", "session"])
+        with ui.add("", GradioWidget(gr.Tab, label = "Session")):
+            ui.add("load_parameters", GradioWidget(gr.Checkbox, label = "Load parameters", value = True), groups = ["preset", "project"])
+            ui.add("continue_from_last_frame", GradioWidget(gr.Checkbox, label = "Continue from last frame", value = True), groups = ["preset", "project"])
+            ui.add("iter_count", GradioWidget(gr.Number, label = "Iteration count", precision = 0, minimum = 1, step = 1, value = 100), groups = ["preset", "project"])
 
         with ui.add("", GradioWidget(gr.Tab, label = "Video Rendering")):
             ui.add("video_renderer", VideoRendererEditor(value = shared.video_renderer), groups = ["preset"])
@@ -165,40 +79,32 @@ class TemporalScript(scripts.Script):
                 ui.add("render_final", GradioWidget(gr.Button, value = "Render final"))
 
                 def render_video(inputs: CallbackInputs, is_final: bool) -> Iterator[CallbackOutputs]:
-                    if inputs["project_name"] not in shared.project_store.entry_names:
-                        # FIXME: Early return locks up the UI for some reason
-                        yield {}
+                    yield {
+                        "render_draft": {"interactive": False},
+                        "render_final": {"interactive": False},
+                    }
 
-                    else:
-                        yield {
-                            "render_draft": {"interactive": False},
-                            "render_final": {"interactive": False},
-                        }
+                    shared.video_renderer = inputs["video_renderer"]
 
-                        project_name = inputs.pop("project_name")
-                        parallel_index = inputs.pop("video_parallel_index")
+                    video_path = render_project_video(
+                        inputs["project"].path,
+                        shared.video_renderer,
+                        is_final,
+                        inputs["video_parallel_index"],
+                    )
+                    wait_until(lambda: not video_render_queue.busy)
 
-                        shared.video_renderer = inputs["video_renderer"]
+                    yield {
+                        "render_draft": {"interactive": True},
+                        "render_final": {"interactive": True},
+                        "video_preview": {"value": video_path.as_posix()},
+                    }
 
-                        video_path = render_project_video(
-                            shared.options.output.output_dir / project_name,
-                            shared.video_renderer,
-                            is_final,
-                            parallel_index,
-                        )
-                        wait_until(lambda: not video_render_queue.busy)
-
-                        yield {
-                            "render_draft": {"interactive": True},
-                            "render_final": {"interactive": True},
-                            "video_preview": {"value": video_path.as_posix()},
-                        }
-
-                @ui.callback("render_draft", "click", ["project_name", "video_renderer", "video_parallel_index"], ["render_draft", "render_final", "video_preview"])
+                @ui.callback("render_draft", "click", ["project", "video_renderer", "video_parallel_index"], ["render_draft", "render_final", "video_preview"])
                 def _(inputs: CallbackInputs) -> Iterator[CallbackOutputs]:
                     yield from render_video(inputs, False)
 
-                @ui.callback("render_final", "click", ["project_name", "video_renderer", "video_parallel_index"], ["render_draft", "render_final", "video_preview"])
+                @ui.callback("render_final", "click", ["project", "video_renderer", "video_parallel_index"], ["render_draft", "render_final", "video_preview"])
                 def _(inputs: CallbackInputs) -> Iterator[CallbackOutputs]:
                     yield from render_video(inputs, True)
 
@@ -209,12 +115,9 @@ class TemporalScript(scripts.Script):
             ui.add("render_graphs", GradioWidget(gr.Button, value = "Render graphs"))
             ui.add("graph_gallery", GradioWidget(gr.Gallery, label = "Graphs", columns = 4, object_fit = "contain", preview = True))
 
-            @ui.callback("render_graphs", "click", ["project_name", "measuring_parallel_index"], ["graph_gallery"])
+            @ui.callback("render_graphs", "click", ["project", "measuring_parallel_index"], ["graph_gallery"])
             def _(inputs: CallbackInputs) -> CallbackOutputs:
-                if inputs["project_name"] not in shared.project_store.entry_names:
-                    return {}
-
-                project = shared.project_store.load_entry(inputs["project_name"])
+                project = inputs["project"]
 
                 return {"graph_gallery": {"value": [
                     x.plot(inputs["measuring_parallel_index"] - 1)
@@ -245,7 +148,7 @@ class TemporalScript(scripts.Script):
                 with ui.add("", GradioWidget(gr.Accordion, label = title, open = False)):
                     ui.add("", GradioWidget(gr.Markdown, value = load_text(EXTENSION_DIR / "docs" / "temporal" / file_name, "")))
 
-        return ui.finalize(["group:project", "group:session"])
+        return ui.finalize(["group:project"])
 
     def run(self, p: StableDiffusionProcessingImg2Img, *args: Any) -> Any:
         return self._process(p, self._ui.recombine(*args))
@@ -264,20 +167,15 @@ class TemporalScript(scripts.Script):
 
         fix_seed(p)
 
-        project = Project(shared.options.output.output_dir / inputs["project_name"], inputs["project_name"])
+        project = inputs["project"]
 
         session = project.session
         session.options = opts
         session.processing = p
         session.controlnet_units = get_cn_units(p)
-        session.project = project
 
         if inputs["load_parameters"]:
             project.load(project.path)
-        else:
-            for id, value in inputs.items():
-                if self._ui.is_in_group(id, "session"):
-                    set_property_by_path(session, id, value)
 
         if not inputs["continue_from_last_frame"]:
             project.delete_all_frames()

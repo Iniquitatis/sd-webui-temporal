@@ -34,7 +34,7 @@ class IterationData(Serializable):
 
 
 class Session(Serializable):
-    # NOTE: The next four fields should be assigned manually
+    # NOTE: The next three fields should be assigned manually
     options: Options = Field(factory = lambda: copy_with_overrides(opts, data = opts.data.copy()))
     processing: StableDiffusionProcessingImg2Img = Field(factory = StableDiffusionProcessingImg2Img)
     controlnet_units: Optional[ControlNetUnitList] = Field(factory = ControlNetUnitList)

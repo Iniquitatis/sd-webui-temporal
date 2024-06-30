@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Iterator
 
 from temporal.compat import VERSION, upgrade_project
 from temporal.meta.serializable import Serializable, SerializableField as Field
@@ -48,6 +48,11 @@ class Project(Serializable):
     name: str = Field("untitled", saved = False)
     version: int = Field(VERSION)
     session: Session = Field(factory = Session)
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.session.project = self
 
     def load(self, dir: Path) -> None:
         upgrade_project(dir)

@@ -11,13 +11,14 @@ from temporal.ui.noise_editor import NoiseEditor
 class InitialNoiseEditor(Widget):
     def __init__(
         self,
+        value: InitialNoiseParams = InitialNoiseParams(),
     ) -> None:
         super().__init__()
 
         with GradioWidget(gr.Accordion, label = "Initial noise", open = False):
-            self._factor = GradioWidget(gr.Slider, label = "Factor", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0)
-            self._noise = NoiseEditor()
-            self._use_initial_seed = GradioWidget(gr.Checkbox, label = "Use initial seed", value = False)
+            self._factor = GradioWidget(gr.Slider, label = "Factor", minimum = 0.0, maximum = 1.0, step = 0.01, value = value.factor)
+            self._noise = NoiseEditor(value = value.noise)
+            self._use_initial_seed = GradioWidget(gr.Checkbox, label = "Use initial seed", value = value.use_initial_seed)
 
     @property
     def dependencies(self) -> Iterator[UIThing]:
