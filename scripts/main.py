@@ -15,7 +15,7 @@ from temporal.preset import Preset
 from temporal.project import Project
 from temporal.shared import shared
 from temporal.ui import CallbackInputs, CallbackOutputs, UI
-from temporal.ui.fs_store_list import FSStoreList
+from temporal.ui.fs_store_list import FSStoreList, FSStoreListEntry
 from temporal.ui.gradio_widget import GradioWidget
 from temporal.ui.options_editor import OptionsEditor
 from temporal.ui.paginator import Paginator
@@ -51,8 +51,8 @@ class TemporalScript(scripts.Script):
     def ui(self, is_img2img: bool) -> Any:
         self._ui = UI()
 
-        presets = FSStoreList(label = "Preset", store = shared.preset_store, features = ["load", "save", "rename", "delete"])
-        projects = FSStoreList(label = "Project", store = shared.project_store, features = ["load", "rename", "delete"])
+        stored_preset = FSStoreList(label = "Preset", store = shared.preset_store, features = ["load", "save", "rename", "delete"])
+        stored_project = FSStoreList(label = "Project", store = shared.project_store, features = ["load", "rename", "delete"])
 
         with GradioWidget(gr.Tab, label = "General"):
             load_parameters = GradioWidget(gr.Checkbox, label = "Load parameters", value = True)
@@ -103,11 +103,12 @@ class TemporalScript(scripts.Script):
                 with GradioWidget(gr.Accordion, label = title, open = False):
                     GradioWidget(gr.Markdown, value = load_text(EXTENSION_DIR / "docs" / "temporal" / file_name, ""))
 
-        @presets.callback("load", [presets], [load_parameters, continue_from_last_frame, iter_count, project, video_renderer])
+        @stored_preset.callback("load", [stored_preset], [stored_project, load_parameters, continue_from_last_frame, iter_count, project, video_renderer])
         def _(inputs: CallbackInputs) -> CallbackOutputs:
-            data = inputs[presets].data
+            data = inputs[stored_preset].data.data
 
             return {
+                stored_project: {"value": data["stored_project"]},
                 load_parameters: {"value": data["load_parameters"]},
                 continue_from_last_frame: {"value": data["continue_from_last_frame"]},
                 iter_count: {"value": data["iter_count"]},
@@ -115,9 +116,10 @@ class TemporalScript(scripts.Script):
                 video_renderer: {"value": data["video_renderer"]},
             }
 
-        @presets.callback("save", [load_parameters, continue_from_last_frame, iter_count, project, video_renderer], [presets])
+        @stored_preset.callback("save", [stored_project, load_parameters, continue_from_last_frame, iter_count, project, video_renderer], [stored_preset])
         def _(inputs: CallbackInputs) -> CallbackOutputs:
-            return {presets: {"value": Preset({
+            return {stored_preset: {"value": Preset({
+                "stored_project": inputs[stored_project].name,
                 "load_parameters": inputs[load_parameters],
                 "continue_from_last_frame": inputs[continue_from_last_frame],
                 "iter_count": inputs[iter_count],
@@ -125,9 +127,9 @@ class TemporalScript(scripts.Script):
                 "video_renderer": inputs[video_renderer],
             })}}
 
-        @projects.callback("change", [projects], [description, gallery, gallery_page, gallery_parallel])
+        @stored_project.callback("change", [stored_project], [description, gallery, gallery_page, gallery_parallel])
         def _(inputs: CallbackInputs) -> CallbackOutputs:
-            project_obj = inputs[projects]
+            project_obj = inputs[stored_project].data
 
             return {
                 description: {"value": project_obj.get_description()},
@@ -136,14 +138,14 @@ class TemporalScript(scripts.Script):
                 gallery_parallel: {"value": 1},
             }
 
-        @projects.callback("load", [projects], [project])
+        @stored_project.callback("load", [stored_project], [project])
         def _(inputs: CallbackInputs) -> CallbackOutputs:
-            return {project: {"value": inputs[projects]}}
+            return {project: {"value": inputs[stored_project].data}}
 
-        @gallery_page.callback("change", [projects, gallery_page, gallery_parallel], [gallery])
-        @gallery_parallel.callback("change", [projects, gallery_page, gallery_parallel], [gallery])
+        @gallery_page.callback("change", [stored_project, gallery_page, gallery_parallel], [gallery])
+        @gallery_parallel.callback("change", [stored_project, gallery_page, gallery_parallel], [gallery])
         def _(inputs: CallbackInputs) -> CallbackOutputs:
-            project_obj = inputs[project]
+            project_obj = inputs[stored_project].data
             page = inputs[gallery_page]
             parallel = inputs[gallery_parallel]
             gallery_size = shared.options.ui.gallery_size
@@ -158,7 +160,7 @@ class TemporalScript(scripts.Script):
 
             shared.video_renderer = inputs[video_renderer]
 
-            video_path = inputs[project].render_video(shared.video_renderer, is_final, inputs[video_parallel_index])
+            video_path = inputs[stored_project].data.render_video(shared.video_renderer, is_final, inputs[video_parallel_index])
             wait_until(lambda: not video_render_queue.busy)
 
             yield {
@@ -167,25 +169,25 @@ class TemporalScript(scripts.Script):
                 video_preview: {"value": video_path.as_posix()},
             }
 
-        @render_draft.callback("click", [project, video_renderer, video_parallel_index], [render_draft, render_final, video_preview])
+        @render_draft.callback("click", [stored_project, video_renderer, video_parallel_index], [render_draft, render_final, video_preview])
         def _(inputs: CallbackInputs) -> Iterator[CallbackOutputs]:
             yield from render_video(inputs, False)
 
-        @render_final.callback("click", [project, video_renderer, video_parallel_index], [render_draft, render_final, video_preview])
+        @render_final.callback("click", [stored_project, video_renderer, video_parallel_index], [render_draft, render_final, video_preview])
         def _(inputs: CallbackInputs) -> Iterator[CallbackOutputs]:
             yield from render_video(inputs, True)
 
-        @render_graphs.callback("click", [project, measuring_parallel_index], [graph_gallery])
+        @render_graphs.callback("click", [stored_project, measuring_parallel_index], [graph_gallery])
         def _(inputs: CallbackInputs) -> CallbackOutputs:
             return {graph_gallery: {"value": [
                 x.plot(inputs[measuring_parallel_index] - 1)
-                for x in inputs[project].pipeline.modules.values()
+                for x in inputs[stored_project].data.pipeline.modules.values()
                 if isinstance(x, MeasuringModule) and x.enabled
             ]}}
 
-        @delete_intermediate_frames.callback("click", [project], [description, gallery])
+        @delete_intermediate_frames.callback("click", [stored_project], [description, gallery])
         def _(inputs: CallbackInputs) -> CallbackOutputs:
-            project_obj = inputs[project]
+            project_obj = inputs[stored_project].data
             project_obj.delete_intermediate_frames()
 
             return {
@@ -193,9 +195,9 @@ class TemporalScript(scripts.Script):
                 gallery: {"value": project_obj.list_all_frame_paths()[:shared.options.ui.gallery_size]},
             }
 
-        @delete_session_data.callback("click", [project], [])
+        @delete_session_data.callback("click", [stored_project], [])
         def _(inputs: CallbackInputs) -> CallbackOutputs:
-            project_obj = inputs[project]
+            project_obj = inputs[stored_project].data
             project_obj.delete_session_data()
             project_obj.save(project_obj.path)
 
@@ -208,15 +210,16 @@ class TemporalScript(scripts.Script):
 
             return {}
 
-        return self._ui.finalize(load_parameters, continue_from_last_frame, iter_count, project)
+        return self._ui.finalize(stored_project, load_parameters, continue_from_last_frame, iter_count, project)
 
     def run(self, p: StableDiffusionProcessingImg2Img, *args: Any) -> Any:
+        stored_project: FSStoreListEntry[Project]
         load_parameters: bool
         continue_from_last_frame: bool
         iter_count: int
         project: Project
 
-        load_parameters, continue_from_last_frame, iter_count, project = self._ui.recombine(*args)
+        stored_project, load_parameters, continue_from_last_frame, iter_count, project = self._ui.recombine(*args)
 
         opts_backup = opts.data.copy()
 
@@ -231,12 +234,13 @@ class TemporalScript(scripts.Script):
 
         fix_seed(p)
 
+        project.path = stored_project.data.path
         project.options = opts
         project.processing = p
         project.controlnet_units = get_cn_units(p)
 
         if load_parameters:
-            project.load(project.path)
+            project.load(stored_project.data.path)
 
         if not continue_from_last_frame:
             project.delete_all_frames()

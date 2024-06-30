@@ -1,5 +1,6 @@
 from collections.abc import Iterable
-from typing import Generic, Iterator, Literal, Optional, TypeVar, cast
+from dataclasses import dataclass
+from typing import Generic, Iterator, Literal, TypeVar, cast
 
 import gradio as gr
 
@@ -16,6 +17,12 @@ from temporal.utils.object import copy_with_overrides
 T = TypeVar("T", bound = Serializable)
 
 
+@dataclass
+class FSStoreListEntry(Generic[T]):
+    name: str
+    data: T
+
+
 class FSStoreList(Widget, Generic[T]):
     def __init__(
         self,
@@ -23,12 +30,10 @@ class FSStoreList(Widget, Generic[T]):
         store: FSStore[T],
         features: Iterable[Literal["load", "save", "rename", "delete"]] = ["load", "save", "rename", "delete"],
         default_name: str = "untitled",
-        value: Optional[T] = None,
     ) -> None:
         super().__init__()
 
         self.store = store
-        self.entry = value or store.__create_entry__(default_name)
 
         with GradioWidget(gr.Group):
             with GradioWidget(gr.Row):
@@ -43,12 +48,6 @@ class FSStoreList(Widget, Generic[T]):
                 self._new_entry_name = GradioWidget(gr.Textbox, label = self._format_label(label, "New name"), value = "")
                 self._confirm_rename = GradioWidget(ToolButton, value = "\U00002714\ufe0f")
                 self._deny_rename = GradioWidget(ToolButton, value = "\U0000274c")
-
-        @self._entry_name.callback("change", [self._entry_name], [])
-        def _(inputs: CallbackInputs) -> CallbackOutputs:
-            self.entry = store.load_entry(inputs[self._entry_name])
-
-            return {}
 
         @self._refresh_entries.callback("click", [], [self._entry_name])
         def _(_: CallbackInputs) -> CallbackOutputs:
@@ -89,7 +88,7 @@ class FSStoreList(Widget, Generic[T]):
             if entry_name not in store.entry_names:
                 return {}
 
-            new_name = get_next_element(store.entry_names, entry_name, "untitled")
+            new_name = get_next_element(store.entry_names, entry_name, default_name)
 
             store.delete_entry(entry_name)
 
@@ -99,18 +98,14 @@ class FSStoreList(Widget, Generic[T]):
     def dependencies(self) -> Iterator[UIThing]:
         yield self._entry_name
 
-    def read(self, data: ReadData) -> T:
-        self.entry = self.store.load_entry(data[self._entry_name])
-        return self.entry
+    def read(self, data: ReadData) -> FSStoreListEntry[T]:
+        return FSStoreListEntry(data[self._entry_name], self.store.load_entry(data[self._entry_name]))
 
     def update(self, data: UpdateData) -> UpdateRequest:
         result: UpdateRequest = {}
 
-        if isinstance(name := data.get("name", None), str):
-            result[self._entry_name] = {"value": name}
-
-        if (value := data.get("value", None)) is not None:
-            self.entry = value
+        if isinstance(value := data.get("value", None), str):
+            result[self._entry_name] = {"value": value}
 
         return result
 
@@ -119,18 +114,7 @@ class FSStoreList(Widget, Generic[T]):
             self._refresh_entries.setup_callback(copy_with_overrides(callback, event = "click"))
 
         elif callback.event == "load":
-            def func(inputs: CallbackInputs) -> CallbackOutputs:
-                entry_name = inputs.pop(self._entry_name)
-
-                if entry_name not in self.store.entry_names:
-                    return {}
-
-                if self in inputs:
-                    inputs[self] = self.store.load_entry(entry_name)
-
-                return cast(CallbackOutputs, callback.func(inputs))
-
-            self._load_entry.setup_callback(Callback("click", func, [self._entry_name] + callback.inputs, callback.outputs))
+            self._load_entry.setup_callback(copy_with_overrides(callback, event = "click"))
 
         elif callback.event == "save":
             def func(inputs: CallbackInputs) -> CallbackOutputs:
