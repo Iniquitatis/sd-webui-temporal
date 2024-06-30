@@ -13,7 +13,7 @@ from numpy.typing import NDArray
 from temporal.meta.configurable import IntParam
 from temporal.meta.serializable import SerializableField as Field
 from temporal.pipeline_modules import PipelineModule
-from temporal.session import Session
+from temporal.project import Project
 from temporal.utils.fs import ensure_directory_exists
 from temporal.utils.image import NumpyImage, PILImage, save_image
 
@@ -29,7 +29,7 @@ class MeasuringModule(PipelineModule, abstract = True):
     data: Optional[NDArray[np.float_]] = Field(None)
     count: int = Field(0)
 
-    def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
+    def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if frame_index % self.plot_every_nth_frame != 0:
             return images
 
@@ -48,7 +48,7 @@ class MeasuringModule(PipelineModule, abstract = True):
         self.count += 1
 
         for parallel_index in range(len(images)):
-            save_image(self.plot(parallel_index), ensure_directory_exists(session.project.path / "metrics") / f"{self.file_name}-{parallel_index + 1:02d}.png")
+            save_image(self.plot(parallel_index), ensure_directory_exists(project.path / "metrics") / f"{self.file_name}-{parallel_index + 1:02d}.png")
 
         return images
 

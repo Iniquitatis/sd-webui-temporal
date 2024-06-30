@@ -8,8 +8,7 @@ from modules.sd_samplers import visible_sampler_names
 
 from temporal.meta.configurable import BoolParam, Configurable, EnumParam, FloatParam, IntParam
 from temporal.meta.serializable import SerializableField as Field
-from temporal.project import render_project_video
-from temporal.session import Session
+from temporal.project import Project, render_project_video
 from temporal.shared import shared
 from temporal.utils.fs import ensure_directory_exists
 from temporal.utils.image import NumpyImage, apply_channelwise, ensure_image_dims, match_image, np_to_pil, pil_to_np
@@ -31,10 +30,10 @@ class PipelineModule(Configurable, abstract = True):
 
     enabled: bool = Field(False)
 
-    def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
+    def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         return images
 
-    def finalize(self, images: list[NumpyImage], session: Session) -> None:
+    def finalize(self, images: list[NumpyImage], project: Project) -> None:
         pass
 
     def reset(self) -> None:
@@ -54,10 +53,10 @@ class AveragingModule(PipelineModule):
     buffer: Optional[NDArray[np.float_]] = Field(None)
     last_index: int = Field(0)
 
-    def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
+    def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if self.buffer is None:
             self.buffer = np.stack([np.repeat(
-                ensure_image_dims(image, "RGB", (session.processing.width, session.processing.height))[np.newaxis, ...],
+                ensure_image_dims(image, "RGB", (project.processing.width, project.processing.height))[np.newaxis, ...],
                 self.frames,
                 axis = 0,
             ) for image in images], 0)
@@ -94,17 +93,17 @@ class DetailingModule(PipelineModule):
     steps: int = IntParam("Steps", minimum = 1, maximum = 150, step = 1, value = 15, ui_type = "slider")
     denoising_strength: float = FloatParam("Denoising strength", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.2, ui_type = "slider")
 
-    def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
+    def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if not (processed_images := process_images(
-            copy_with_overrides(session.processing,
+            copy_with_overrides(project.processing,
                 sampler_name = self.sampler,
                 steps = self.steps,
-                width = quantize(session.processing.width * self.scale, 8),
-                height = quantize(session.processing.height * self.scale, 8),
+                width = quantize(project.processing.width * self.scale, 8),
+                height = quantize(project.processing.height * self.scale, 8),
                 denoising_strength = self.denoising_strength,
                 seed_enable_extras = True,
-                seed_resize_from_w = session.processing.seed_resize_from_w or session.processing.width,
-                seed_resize_from_h = session.processing.seed_resize_from_h or session.processing.height,
+                seed_resize_from_w = project.processing.seed_resize_from_w or project.processing.width,
+                seed_resize_from_h = project.processing.seed_resize_from_h or project.processing.height,
                 do_not_save_samples = True,
                 do_not_save_grid = True,
                 **({"scheduler" : self.scheduler} if hasattr(self, "scheduler") else {})
@@ -116,7 +115,7 @@ class DetailingModule(PipelineModule):
             return None
 
         return [
-            pil_to_np(ensure_image_dims(image_array[0], "RGB", (session.processing.width, session.processing.height)))
+            pil_to_np(ensure_image_dims(image_array[0], "RGB", (project.processing.width, project.processing.height)))
             for image_array in processed_images
         ]
 
@@ -132,10 +131,10 @@ class InterpolationModule(PipelineModule):
 
     buffer: Optional[NDArray[np.float_]] = Field(None)
 
-    def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
+    def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if self.buffer is None:
             self.buffer = np.stack([
-                ensure_image_dims(image, "RGB", (session.processing.width, session.processing.height))
+                ensure_image_dims(image, "RGB", (project.processing.width, project.processing.height))
                 for image in images
             ], 0)
 
@@ -175,10 +174,10 @@ class LimitingModule(PipelineModule):
 
     buffer: Optional[NDArray[np.float_]] = Field(None)
 
-    def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
+    def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if self.buffer is None:
             self.buffer = np.stack([
-                ensure_image_dims(image, "RGB", (session.processing.width, session.processing.height))
+                ensure_image_dims(image, "RGB", (project.processing.width, project.processing.height))
                 for image in images
             ], 0)
 
@@ -214,9 +213,9 @@ class ProcessingModule(PipelineModule):
     easing: float = FloatParam("Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0, ui_type = "slider")
     preference: float = FloatParam("Preference", minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0, ui_type = "slider")
 
-    def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
+    def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if not (processed_images := process_images(
-            copy_with_overrides(session.processing, do_not_save_samples = True, do_not_save_grid = True),
+            copy_with_overrides(project.processing, do_not_save_samples = True, do_not_save_grid = True),
             [(np_to_pil(x), seed + i, self.samples) for i, x in enumerate(images)],
             shared.options.processing.pixels_per_batch,
             shared.previewed_modules[self.id] and not shared.options.live_preview.show_only_finished_images,
@@ -244,10 +243,10 @@ class RandomSamplingModule(PipelineModule):
 
     buffer: Optional[NDArray[np.float_]] = Field(None)
 
-    def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
+    def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if self.buffer is None:
             self.buffer = np.stack([
-                ensure_image_dims(image, "RGB", (session.processing.width, session.processing.height))
+                ensure_image_dims(image, "RGB", (project.processing.width, project.processing.height))
                 for image in images
             ], 0)
 
@@ -273,11 +272,11 @@ class SavingModule(PipelineModule):
     save_final: bool = BoolParam("Save final", value = False)
     archive_mode: bool = BoolParam("Archive mode", value = False)
 
-    def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
+    def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if frame_index % self.save_every_nth_frame != 0:
             return images
 
-        for i, image in enumerate(self._get_scaled_images(images, session)):
+        for i, image in enumerate(self._get_scaled_images(images, project)):
             file_name = f"{frame_index:05d}"
 
             if len(images) > 1:
@@ -285,20 +284,20 @@ class SavingModule(PipelineModule):
 
             save_processed_image(
                 image = np_to_pil(image),
-                p = session.processing,
-                output_dir = ensure_directory_exists(session.project.path),
+                p = project.processing,
+                output_dir = ensure_directory_exists(project.path),
                 file_name = file_name,
                 archive_mode = self.archive_mode,
             )
 
         return images
 
-    def finalize(self, images: list[NumpyImage], session: Session) -> None:
+    def finalize(self, images: list[NumpyImage], project: Project) -> None:
         if self.save_final:
-            for image in self._get_scaled_images(images, session):
+            for image in self._get_scaled_images(images, project):
                 save_processed_image(
                     image = np_to_pil(image),
-                    p = session.processing,
+                    p = project.processing,
                     output_dir = ensure_directory_exists(shared.options.output.output_dir),
                     file_name = None,
                     archive_mode = self.archive_mode,
@@ -306,10 +305,10 @@ class SavingModule(PipelineModule):
 
         wait_until(lambda: not image_save_queue.busy)
 
-    def _get_scaled_images(self, images: list[NumpyImage], session: Session) -> list[NumpyImage]:
+    def _get_scaled_images(self, images: list[NumpyImage], project: Project) -> list[NumpyImage]:
         return [ensure_image_dims(x, size = (
-            int(quantize(session.processing.width * self.scale, 8)),
-            int(quantize(session.processing.height * self.scale, 8)),
+            int(quantize(project.processing.width * self.scale, 8)),
+            int(quantize(project.processing.height * self.scale, 8)),
         )) for x in images] if self.scale != 1.0 else images
 
 
@@ -323,22 +322,22 @@ class VideoRenderingModule(PipelineModule):
     render_draft_on_finish: bool = BoolParam("Render draft on finish", value = False)
     render_final_on_finish: bool = BoolParam("Render final on finish", value = False)
 
-    def forward(self, images: list[NumpyImage], session: Session, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
+    def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         for i, _ in enumerate(images, 1):
             if frame_index % self.render_draft_every_nth_frame == 0:
-                render_project_video(session.project.path, shared.video_renderer, False, i)
+                render_project_video(project.path, shared.video_renderer, False, i)
 
             if frame_index % self.render_final_every_nth_frame == 0:
-                render_project_video(session.project.path, shared.video_renderer, True, i)
+                render_project_video(project.path, shared.video_renderer, True, i)
 
         return images
 
-    def finalize(self, images: list[NumpyImage], session: Session) -> None:
+    def finalize(self, images: list[NumpyImage], project: Project) -> None:
         for i, _ in enumerate(images, 1):
             if self.render_draft_on_finish:
-                render_project_video(session.project.path, shared.video_renderer, False, i)
+                render_project_video(project.path, shared.video_renderer, False, i)
 
             if self.render_final_on_finish:
-                render_project_video(session.project.path, shared.video_renderer, True, i)
+                render_project_video(project.path, shared.video_renderer, True, i)
 
         wait_until(lambda: not video_render_queue.busy)

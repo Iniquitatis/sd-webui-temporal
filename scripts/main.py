@@ -18,6 +18,7 @@ from temporal.ui import CallbackInputs, CallbackOutputs, UI
 from temporal.ui.fs_store_list import FSStoreList
 from temporal.ui.gradio_widget import GradioWidget
 from temporal.ui.options_editor import OptionsEditor
+from temporal.ui.paginator import Paginator
 from temporal.ui.project_editor import ProjectEditor
 from temporal.ui.video_renderer_editor import VideoRendererEditor
 from temporal.utils import logging
@@ -50,13 +51,22 @@ class TemporalScript(scripts.Script):
     def ui(self, is_img2img: bool) -> Any:
         self._ui = UI()
 
-        preset = FSStoreList(label = "Preset", store = shared.preset_store, features = ["load", "save", "rename", "delete"])
-        project = ProjectEditor(store = shared.project_store)
+        presets = FSStoreList(label = "Preset", store = shared.preset_store, features = ["load", "save", "rename", "delete"])
+        projects = FSStoreList(label = "Project", store = shared.project_store, features = ["load", "rename", "delete"])
 
-        with GradioWidget(gr.Tab, label = "Session"):
+        with GradioWidget(gr.Tab, label = "General"):
             load_parameters = GradioWidget(gr.Checkbox, label = "Load parameters", value = True)
             continue_from_last_frame = GradioWidget(gr.Checkbox, label = "Continue from last frame", value = True)
             iter_count = GradioWidget(gr.Number, label = "Iteration count", precision = 0, minimum = 1, step = 1, value = 100)
+
+        with GradioWidget(gr.Tab, label = "Information"):
+            description = GradioWidget(gr.Textbox, label = "Description", lines = 5, max_lines = 5, interactive = False)
+            gallery = GradioWidget(gr.Gallery, label = "Gallery", columns = 4, object_fit = "contain", preview = True)
+            gallery_page = Paginator(label = "Page", minimum = 1, value = 1)
+            gallery_parallel = Paginator(label = "Parallel", minimum = 1, value = 1)
+
+        with GradioWidget(gr.Tab, label = "Pipeline"):
+            project = ProjectEditor()
 
         with GradioWidget(gr.Tab, label = "Video Rendering"):
             video_renderer = VideoRendererEditor(value = shared.video_renderer)
@@ -72,6 +82,10 @@ class TemporalScript(scripts.Script):
             measuring_parallel_index = GradioWidget(gr.Number, label = "Parallel index", precision = 0, minimum = 1, step = 1, value = 1)
             render_graphs = GradioWidget(gr.Button, value = "Render graphs")
             graph_gallery = GradioWidget(gr.Gallery, label = "Graphs", columns = 4, object_fit = "contain", preview = True)
+
+        with GradioWidget(gr.Tab, label = "Tools"):
+            delete_intermediate_frames = GradioWidget(gr.Button, value = "Delete intermediate frames")
+            delete_session_data = GradioWidget(gr.Button, value = "Delete session data")
 
         with GradioWidget(gr.Tab, label = "Settings"):
             apply_settings = GradioWidget(gr.Button, value = "Apply")
@@ -89,27 +103,58 @@ class TemporalScript(scripts.Script):
                 with GradioWidget(gr.Accordion, label = title, open = False):
                     GradioWidget(gr.Markdown, value = load_text(EXTENSION_DIR / "docs" / "temporal" / file_name, ""))
 
-        @preset.callback("load", [preset, project, load_parameters, continue_from_last_frame, iter_count, video_renderer], [project, load_parameters, continue_from_last_frame, iter_count, video_renderer])
+        @presets.callback("load", [presets], [load_parameters, continue_from_last_frame, iter_count, project, video_renderer])
         def _(inputs: CallbackInputs) -> CallbackOutputs:
-            data = inputs[preset].data
+            data = inputs[presets].data
 
             return {
-                project: {"value": data["project"]},
                 load_parameters: {"value": data["load_parameters"]},
                 continue_from_last_frame: {"value": data["continue_from_last_frame"]},
                 iter_count: {"value": data["iter_count"]},
+                project: {"value": data["project"]},
                 video_renderer: {"value": data["video_renderer"]},
             }
 
-        @preset.callback("save", [project, load_parameters, continue_from_last_frame, iter_count, video_renderer], [preset])
+        @presets.callback("save", [load_parameters, continue_from_last_frame, iter_count, project, video_renderer], [presets])
         def _(inputs: CallbackInputs) -> CallbackOutputs:
-            return {preset: {"value": Preset({
-                "project": inputs[project],
+            return {presets: {"value": Preset({
                 "load_parameters": inputs[load_parameters],
                 "continue_from_last_frame": inputs[continue_from_last_frame],
                 "iter_count": inputs[iter_count],
+                "project": inputs[project],
                 "video_renderer": inputs[video_renderer],
             })}}
+
+        @projects.callback("change", [projects], [description, gallery, gallery_page, gallery_parallel])
+        def _(inputs: CallbackInputs) -> CallbackOutputs:
+            project_obj = inputs[projects]
+
+            return {
+                description: {"value": project_obj.get_description()},
+                gallery: {"value": project_obj.list_all_frame_paths()[:shared.options.ui.gallery_size]},
+                gallery_page: {"value": 1},
+                gallery_parallel: {"value": 1},
+            }
+
+        @projects.callback("load", [projects], [project])
+        def _(inputs: CallbackInputs) -> CallbackOutputs:
+            return {project: {"value": inputs[projects]}}
+
+        def update_gallery(inputs: CallbackInputs) -> CallbackOutputs:
+            project_obj = inputs[project]
+            page = inputs[gallery_page]
+            parallel = inputs[gallery_parallel]
+            gallery_size = shared.options.ui.gallery_size
+
+            return {gallery: {"value": project_obj.list_all_frame_paths(parallel)[(page - 1) * gallery_size:page * gallery_size]}}
+
+        @gallery_page.callback("change", [project, gallery_page, gallery_parallel], [gallery])
+        def _(inputs: CallbackInputs) -> CallbackOutputs:
+            return update_gallery(inputs)
+
+        @gallery_parallel.callback("change", [project, gallery_page, gallery_parallel], [gallery])
+        def _(inputs: CallbackInputs) -> CallbackOutputs:
+            return update_gallery(inputs)
 
         def render_video(inputs: CallbackInputs, is_final: bool) -> Iterator[CallbackOutputs]:
             yield {
@@ -145,9 +190,27 @@ class TemporalScript(scripts.Script):
         def _(inputs: CallbackInputs) -> CallbackOutputs:
             return {graph_gallery: {"value": [
                 x.plot(inputs[measuring_parallel_index] - 1)
-                for x in inputs[project].session.pipeline.modules.values()
+                for x in inputs[project].pipeline.modules.values()
                 if isinstance(x, MeasuringModule) and x.enabled
             ]}}
+
+        @delete_intermediate_frames.callback("click", [project], [description, gallery])
+        def _(inputs: CallbackInputs) -> CallbackOutputs:
+            project_obj = inputs[project]
+            project_obj.delete_intermediate_frames()
+
+            return {
+                description: {"value": project_obj.get_description()},
+                gallery: {"value": project_obj.list_all_frame_paths()[:shared.options.ui.gallery_size]},
+            }
+
+        @delete_session_data.callback("click", [project], [])
+        def _(inputs: CallbackInputs) -> CallbackOutputs:
+            project_obj = inputs[project]
+            project_obj.delete_session_data()
+            project_obj.save(project_obj.path)
+
+            return {}
 
         @apply_settings.callback("click", [options], [])
         def _(inputs: CallbackInputs) -> CallbackOutputs:
@@ -156,15 +219,15 @@ class TemporalScript(scripts.Script):
 
             return {}
 
-        return self._ui.finalize(project, load_parameters, continue_from_last_frame, iter_count)
+        return self._ui.finalize(load_parameters, continue_from_last_frame, iter_count, project)
 
     def run(self, p: StableDiffusionProcessingImg2Img, *args: Any) -> Any:
-        project: Project
         load_parameters: bool
         continue_from_last_frame: bool
         iter_count: int
+        project: Project
 
-        project, load_parameters, continue_from_last_frame, iter_count = self._ui.recombine(*args)
+        load_parameters, continue_from_last_frame, iter_count, project = self._ui.recombine(*args)
 
         opts_backup = opts.data.copy()
 
@@ -179,10 +242,9 @@ class TemporalScript(scripts.Script):
 
         fix_seed(p)
 
-        session = project.session
-        session.options = opts
-        session.processing = p
-        session.controlnet_units = get_cn_units(p)
+        project.options = opts
+        project.processing = p
+        project.controlnet_units = get_cn_units(p)
 
         if load_parameters:
             project.load(project.path)
@@ -194,17 +256,17 @@ class TemporalScript(scripts.Script):
         if not p.init_images or not isinstance(p.init_images[0], PILImage):
             noises = [generate_value_noise(
                 (p.height, p.width, 3),
-                session.initial_noise.noise.scale,
-                session.initial_noise.noise.octaves,
-                session.initial_noise.noise.lacunarity,
-                session.initial_noise.noise.persistence,
-                (p.seed if session.initial_noise.use_initial_seed else session.initial_noise.noise.seed) + i,
-            ) for i in range(session.pipeline.parallel)]
+                project.initial_noise.noise.scale,
+                project.initial_noise.noise.octaves,
+                project.initial_noise.noise.lacunarity,
+                project.initial_noise.noise.persistence,
+                (p.seed if project.initial_noise.use_initial_seed else project.initial_noise.noise.seed) + i,
+            ) for i in range(project.pipeline.parallel)]
 
-            if session.initial_noise.factor < 1.0:
+            if project.initial_noise.factor < 1.0:
                 if not (processed_images := process_images(
                     copy_with_overrides(p,
-                        denoising_strength = 1.0 - session.initial_noise.factor,
+                        denoising_strength = 1.0 - project.initial_noise.factor,
                         do_not_save_samples = True,
                         do_not_save_grid = True,
                     ),
@@ -221,13 +283,13 @@ class TemporalScript(scripts.Script):
             else:
                 p.init_images = noises
 
-        elif len(p.init_images) != session.pipeline.parallel:
-            p.init_images = [p.init_images[0]] * session.pipeline.parallel
+        elif len(p.init_images) != project.pipeline.parallel:
+            p.init_images = [p.init_images[0]] * project.pipeline.parallel
 
-        if not session.iteration.images:
-            session.iteration.images[:] = [pil_to_np(ensure_image_dims(x, "RGB", (p.width, p.height))) for x in p.init_images]
+        if not project.iteration.images:
+            project.iteration.images[:] = [pil_to_np(ensure_image_dims(x, "RGB", (p.width, p.height))) for x in p.init_images]
 
-        last_images = session.iteration.images.copy()
+        last_images = project.iteration.images.copy()
 
         state.job_count = iter_count
 
@@ -239,10 +301,10 @@ class TemporalScript(scripts.Script):
             state.job = "Temporal main loop"
             state.job_no = i
 
-            if not session.pipeline.run(session):
+            if not project.pipeline.run(project):
                 break
 
-            last_images = session.iteration.images.copy()
+            last_images = project.iteration.images.copy()
 
             if i % shared.options.output.autosave_every_n_iterations == 0:
                 project.save(project.path)
@@ -251,7 +313,7 @@ class TemporalScript(scripts.Script):
 
             logging.info(f"Iteration took {end_time - start_time:.6f} second(s)")
 
-        session.pipeline.finalize(session)
+        project.pipeline.finalize(project)
         project.save(project.path)
 
         state.end()

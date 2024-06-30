@@ -2,7 +2,7 @@ from typing import Iterator
 
 import gradio as gr
 
-from temporal.session import InitialNoiseParams
+from temporal.project import InitialNoiseParams
 from temporal.ui import ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.gradio_widget import GradioWidget
 from temporal.ui.noise_editor import NoiseEditor

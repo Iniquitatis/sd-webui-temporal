@@ -30,7 +30,7 @@ All modules in this tab are marked with the following icons:
         * **Blurring** — blurring radius of the mask image.
 * Generic options available to all measuring modules:
     * **Plot every N-th frame** — stride at which the values will be measured.
-    * **NOTE:** Resulting graphs will be placed into the `<project subdirectory>/session/metrics` directory.
+    * **NOTE:** Resulting graphs will be placed into the `<project subdirectory>/metrics` directory.
 * **Averaging** — averaging of last generated frames.
     * **Frame count** — amount of last generated frames to be blended together to produce a final frame.
         * **NOTE:** Slows down the morphing effect, increases the general middle-scale detail precision, and makes the resulting frames blurrier (can be somewhat mitigated by enabling the **Sharpening** filter).
