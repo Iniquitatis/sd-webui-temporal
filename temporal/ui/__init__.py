@@ -138,17 +138,17 @@ class ResolvedCallback:
 
 
 class Widget(ABC):
-    _last_id = 0
     _existing_labels: set[str] = set()
+    _all: list["Widget"] = []
 
     def __init__(
         self,
     ) -> None:
-        self.id = f"__widget_{Widget._last_id}__"
-        Widget._last_id += 1
+        self.id = f"__widget_{len(self._all)}__"
         self.groups: list[str] = ["all"]
         self.callbacks: list[Callback] = []
         self.resolved_callbacks: list[ResolvedCallback] = []
+        self._all.append(self)
 
     @property
     @abstractmethod
@@ -197,7 +197,6 @@ class Widget(ABC):
 class UI:
     def __init__(self) -> None:
         self._widgets: dict[str, Widget] = {}
-        self._existing_labels: set[str] = set()
 
     def parse_id(self, id: str) -> Iterator[str]:
         if id.startswith("group:"):
@@ -233,17 +232,16 @@ class UI:
         return decorator
 
     def finalize(self, ids: Iterable[str]) -> list[GradioThing]:
-        for base_widget in self._widgets.values():
-            for widget in _iter_widgets_recursively(base_widget):
-                for callback in widget.callbacks:
-                    widget.resolved_callbacks.append(callback.resolve(self.resolve_id))
+        for widget in Widget._all:
+            for callback in widget.callbacks:
+                widget.resolved_callbacks.append(callback.resolve(self.resolve_id))
 
-                widget.callbacks.clear()
+            widget.callbacks.clear()
 
-                for callback in widget.resolved_callbacks:
-                    widget.setup_callback(callback)
+            for callback in widget.resolved_callbacks:
+                widget.setup_callback(callback)
 
-                widget.resolved_callbacks.clear()
+            widget.resolved_callbacks.clear()
 
         self._final_widgets = [
             widget
@@ -297,11 +295,3 @@ def _satisfy_update_request_recursively(thing: UIThing, properties: Properties) 
             result |= _satisfy_update_request_recursively(other_thing, other_properties)
 
         return result
-
-
-def _iter_widgets_recursively(widget: Widget) -> Iterator[Widget]:
-    yield widget
-
-    for var in vars(widget).values():
-        if isinstance(var, Widget):
-            yield from _iter_widgets_recursively(var)
