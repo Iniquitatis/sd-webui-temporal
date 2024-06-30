@@ -12,7 +12,7 @@ from modules.styles import StyleDatabase
 from temporal.interop import EXTENSION_DIR, get_cn_units
 from temporal.measuring_modules import MeasuringModule
 from temporal.preset import Preset
-from temporal.project import Project, render_project_video
+from temporal.project import Project
 from temporal.shared import shared
 from temporal.ui import CallbackInputs, CallbackOutputs, UI
 from temporal.ui.fs_store_list import FSStoreList
@@ -164,12 +164,7 @@ class TemporalScript(scripts.Script):
 
             shared.video_renderer = inputs[video_renderer]
 
-            video_path = render_project_video(
-                inputs[project].path,
-                shared.video_renderer,
-                is_final,
-                inputs[video_parallel_index],
-            )
+            video_path = inputs[project].render_video(shared.video_renderer, is_final, inputs[video_parallel_index])
             wait_until(lambda: not video_render_queue.busy)
 
             yield {

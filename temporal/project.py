@@ -25,40 +25,6 @@ from temporal.web_ui import has_schedulers
 opts: Options = getattr(webui_shared, "opts")
 
 
-FRAME_NAME_FORMAT = "{index:05d}"
-FRAME_EXTENSION = "png"
-VIDEO_NAME_FORMAT = "{name}-{suffix}"
-VIDEO_EXTENSION = "mp4"
-VIDEO_DRAFT_SUFFIX = "draft"
-VIDEO_FINAL_SUFFIX = "final"
-
-
-def make_frame_name(index: int) -> str:
-    return FRAME_NAME_FORMAT.format(index = index)
-
-
-def make_frame_file_name(index: int) -> str:
-    return f"{make_frame_name(index)}.{FRAME_EXTENSION}"
-
-
-def make_video_name(name: str, is_final: bool) -> str:
-    return VIDEO_NAME_FORMAT.format(
-        name = name,
-        suffix = VIDEO_FINAL_SUFFIX if is_final else VIDEO_DRAFT_SUFFIX,
-    )
-
-
-def make_video_file_name(name: str, is_final: bool) -> str:
-    return f"{make_video_name(name, is_final)}.{VIDEO_EXTENSION}"
-
-
-def render_project_video(project_dir: Path, renderer: VideoRenderer, is_final: bool, parallel_index: int = 1) -> Path:
-    project = Project(project_dir)
-    video_path = ensure_directory_exists(project_dir / "videos") / make_video_file_name(f"{parallel_index:02d}", is_final)
-    renderer.enqueue_video_render(video_path, project.list_all_frame_paths(parallel_index), is_final)
-    return video_path
-
-
 class InitialNoiseParams(Serializable):
     factor: float = Field(0.0)
     noise: Noise = Field(factory = Noise)
@@ -112,7 +78,7 @@ class Project(Serializable):
         return sorted((x for x in self._iterate_frame_paths() if _parse_frame_index(x)[1] == parallel_index), key = lambda x: x.name)
 
     def delete_all_frames(self) -> None:
-        clear_directory(self.path, f"*.{FRAME_EXTENSION}")
+        clear_directory(self.path, "*.png")
 
     def delete_intermediate_frames(self) -> None:
         kept_indices = self.get_first_frame_index(), self.get_last_frame_index()
@@ -129,8 +95,13 @@ class Project(Serializable):
 
         self.iteration = IterationData()
 
+    def render_video(self, renderer: VideoRenderer, is_final: bool, parallel_index: int = 1) -> Path:
+        video_path = ensure_directory_exists(self.path / "videos") / f"{parallel_index:02d}-{'final' if is_final else 'draft'}.mp4"
+        renderer.enqueue_video_render(video_path, self.list_all_frame_paths(parallel_index), is_final)
+        return video_path
+
     def _iterate_frame_paths(self) -> Iterator[Path]:
-        return self.path.glob(f"*.{FRAME_EXTENSION}")
+        return self.path.glob("*.png")
 
 
 def _make_pipeline() -> "Pipeline":
