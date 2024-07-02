@@ -230,7 +230,6 @@ class NoiseOverlayFilter(ImageFilter):
     name = "Noise overlay"
 
     noise: Noise = NoiseParam("Noise")
-    use_dynamic_seed: bool = BoolParam("Use dynamic seed", value = False)
 
     def process(self, npim: NumpyImage, parallel_index: int, project: Project, frame_index: int, seed: int) -> NumpyImage:
         return generate_value_noise(
@@ -239,7 +238,7 @@ class NoiseOverlayFilter(ImageFilter):
             self.noise.octaves,
             self.noise.lacunarity,
             self.noise.persistence,
-            seed if self.use_dynamic_seed else self.noise.seed,
+            seed if self.noise.use_global_seed else self.noise.seed,
         )
 
 

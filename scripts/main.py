@@ -254,7 +254,7 @@ class TemporalScript(scripts.Script):
                 project.initial_noise.noise.octaves,
                 project.initial_noise.noise.lacunarity,
                 project.initial_noise.noise.persistence,
-                (p.seed if project.initial_noise.use_initial_seed else project.initial_noise.noise.seed) + i,
+                (p.seed if project.initial_noise.noise.use_global_seed else project.initial_noise.noise.seed) + i,
             ) for i in range(project.pipeline.parallel)]
 
             if project.initial_noise.factor < 1.0:

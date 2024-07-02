@@ -15,7 +15,7 @@ All modules in this tab are marked with the following icons:
     * **Lacunarity** — downscale factor of each subsequent noise layer compared to a previous one.
     * **Persistence** — amplitude factor of each subsequent noise layer compared to a previous one.
     * **Seed** — seed that will be used for generating the noise pattern.
-    * **Use initial seed** — determines whether the initial seed will be used or the one that's defined above.
+    * **Use global seed** — determines whether the initial seed will be used or the one that's defined above.
 * **Parallel** — amount of images to create/process in parallel.
 * Generic options available to all modules:
     * **(✔️ to the left of a module name)** — determines if a module is enabled.
@@ -98,7 +98,7 @@ All modules in this tab are marked with the following icons:
     * **Lacunarity** — downscale factor of each subsequent noise layer compared to a previous one.
     * **Persistence** — amplitude factor of each subsequent noise layer compared to a previous one.
     * **Seed** — static seed that will be used for generating the noise pattern.
-    * **Use dynamic seed** — determines whether a currently processed frame's seed will be used or a filter's one.
+    * **Use global seed** — determines whether a currently processed frame's seed will be used or a filter's one.
 * **Noise sigma** — noise standard deviation measuring.
 * **Palettization** — applying a palette to the frame.
     * **Palette** — an image where _each_ pixel represents one color of a palette.

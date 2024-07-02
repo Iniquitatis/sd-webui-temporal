@@ -5,6 +5,7 @@ import gradio as gr
 from temporal.noise import Noise
 from temporal.ui import Callback, CallbackInputs, CallbackOutputs, ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.gradio_widget import GradioWidget
+from temporal.ui.seed_editor import SeedEditor
 from temporal.utils.image import NumpyImage
 from temporal.utils.numpy import generate_value_noise
 
@@ -26,7 +27,8 @@ class NoiseEditor(Widget):
                 self._octaves = GradioWidget(gr.Slider, label = self._format_label(label, "Octaves"), minimum = 1, maximum = 10, step = 1, value = value.octaves)
                 self._lacunarity = GradioWidget(gr.Slider, label = self._format_label(label, "Lacunarity"), minimum = 0.01, maximum = 4.0, step = 0.01, value = value.lacunarity)
                 self._persistence = GradioWidget(gr.Slider, label = self._format_label(label, "Persistence"), minimum = 0.0, maximum = 1.0, step = 0.01, value = value.persistence)
-                self._seed = GradioWidget(gr.Number, label = self._format_label(label, "Seed"), precision = 0, minimum = 0, step = 1, value = value.seed)
+                self._seed = SeedEditor(label = self._format_label(label, "Seed"), value = value.seed)
+                self._use_global_seed = GradioWidget(gr.Checkbox, label = self._format_label(label, "Use global seed"), value = value.use_global_seed)
 
         @self.callback("change", [self], [self._preview])
         def _(inputs: CallbackInputs) -> CallbackOutputs:
@@ -39,6 +41,7 @@ class NoiseEditor(Widget):
         yield self._lacunarity
         yield self._persistence
         yield self._seed
+        yield self._use_global_seed
 
     def read(self, data: ReadData) -> Noise:
         return Noise(
@@ -47,6 +50,7 @@ class NoiseEditor(Widget):
             data[self._lacunarity],
             data[self._persistence],
             data[self._seed],
+            data[self._use_global_seed],
         )
 
     def update(self, data: UpdateData) -> UpdateRequest:
@@ -61,6 +65,7 @@ class NoiseEditor(Widget):
             result[self._lacunarity] = {"value": value.lacunarity}
             result[self._persistence] = {"value": value.persistence}
             result[self._seed] = {"value": value.seed}
+            result[self._use_global_seed] = {"value": value.use_global_seed}
 
         return result
 
@@ -70,6 +75,7 @@ class NoiseEditor(Widget):
         self._lacunarity.setup_callback(callback)
         self._persistence.setup_callback(callback)
         self._seed.setup_callback(callback)
+        self._use_global_seed.setup_callback(callback)
 
     def _generate_preview_texture(self, noise: Noise) -> NumpyImage:
         return generate_value_noise(

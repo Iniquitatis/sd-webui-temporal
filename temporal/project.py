@@ -28,7 +28,6 @@ opts: Options = getattr(webui_shared, "opts")
 class InitialNoiseParams(Serializable):
     factor: float = Field(0.0)
     noise: Noise = Field(factory = Noise)
-    use_initial_seed: bool = Field(False)
 
 
 class IterationData(Serializable):
