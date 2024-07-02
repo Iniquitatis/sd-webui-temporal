@@ -274,7 +274,7 @@ class PixelizationFilter(ImageFilter):
     def process(self, npim: NumpyImage, parallel_index: int, project: Project, frame_index: int, seed: int) -> NumpyImage:
         height, width = npim.shape[:2]
 
-        y, x = np.meshgrid(np.arange(height), np.arange(width), indexing = "ij")
+        y, x = np.indices((height, width))
 
         return np.mean([
             npim[

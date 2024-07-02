@@ -158,7 +158,7 @@ class InterpolationModule(PipelineModule):
 
         height, width = base_im.shape[:2]
 
-        coords = np.array(np.meshgrid(np.arange(height), np.arange(width), indexing = "ij")).astype(np.float_)
+        coords = np.indices((height, width)).astype(np.float_)
         offsets = skimage.registration.optical_flow_ilk(skimage.color.rgb2gray(base_im), skimage.color.rgb2gray(target_im), radius = self.radius)
 
         return warp(base_im, coords + offsets * -self.movement), warp(target_im, coords + -offsets * (-1.0 + self.movement))
