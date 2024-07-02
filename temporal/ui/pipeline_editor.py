@@ -38,11 +38,21 @@ class PipelineEditor(Widget):
         )
 
     def update(self, data: UpdateData) -> UpdateRequest:
-        result: UpdateRequest = {}
+        result: UpdateRequest = {
+            self._parallel: {},
+            self._module_order: {},
+        }
+        result |= {widget: {} for widget in self._modules.values()}
 
         if isinstance(value := data.get("value", None), Pipeline):
-            result[self._parallel] = {"value": value.parallel}
-            result[self._module_order] = {"value": list(value.modules.keys())}
-            result |= {widget: {"value": value.modules[key]} for key, widget in self._modules.items()}
+            result[self._parallel]["value"] = value.parallel
+            result[self._module_order]["value"] = list(value.modules.keys())
+
+            for key, widget in self._modules.items():
+                result[widget]["value"] = value.modules[key]
+
+        if isinstance(preview_states := data.get("preview_states", None), dict):
+            for key, widget in self._modules.items():
+                result[widget]["preview"] = preview_states[key]
 
         return result

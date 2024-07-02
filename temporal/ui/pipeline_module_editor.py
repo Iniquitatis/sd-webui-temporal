@@ -56,6 +56,7 @@ class PipelineModuleEditor(Widget):
     @property
     def dependencies(self) -> Iterator[UIThing]:
         yield self._enabled
+        yield self._visibility
         yield from self._params.values()
 
         if issubclass(self.type, ImageFilter):
@@ -89,5 +90,8 @@ class PipelineModuleEditor(Widget):
                 result[self._amount_relative] = {"value": value.amount_relative}
                 result[self._blend_mode] = {"value": value.blend_mode}
                 result[self._mask] = {"value": value.mask}
+
+        if isinstance(preview := data.get("preview", None), bool):
+            result[self._visibility] = {"value": preview}
 
         return result

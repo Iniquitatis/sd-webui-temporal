@@ -112,7 +112,7 @@ class TemporalScript(scripts.Script):
                 load_parameters: {"value": data["load_parameters"]},
                 continue_from_last_frame: {"value": data["continue_from_last_frame"]},
                 iter_count: {"value": data["iter_count"]},
-                project: {"value": data["project"]},
+                project: {"value": data["project"], "preview_states": data["preview_states"]},
                 video_renderer: {"value": data["video_renderer"]},
             }
 
@@ -124,6 +124,7 @@ class TemporalScript(scripts.Script):
                 "continue_from_last_frame": inputs[continue_from_last_frame],
                 "iter_count": inputs[iter_count],
                 "project": inputs[project],
+                "preview_states": shared.previewed_modules,
                 "video_renderer": inputs[video_renderer],
             })}}
 

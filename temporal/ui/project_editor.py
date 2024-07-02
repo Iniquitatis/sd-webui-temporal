@@ -28,10 +28,16 @@ class ProjectEditor(Widget):
         )
 
     def update(self, data: UpdateData) -> UpdateRequest:
-        result: UpdateRequest = {}
+        result: UpdateRequest = {
+            self._initial_noise: {},
+            self._pipeline: {},
+        }
 
         if isinstance(value := data.get("value", None), Project):
-            result[self._initial_noise] = {"value": value.initial_noise}
-            result[self._pipeline] = {"value": value.pipeline}
+            result[self._initial_noise]["value"] = value.initial_noise
+            result[self._pipeline]["value"] = value.pipeline
+
+        if isinstance(preview_states := data.get("preview_states", None), dict):
+            result[self._pipeline]["preview_states"] = preview_states
 
         return result
