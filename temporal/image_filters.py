@@ -17,7 +17,7 @@ from temporal.pipeline_modules import PipelineModule
 from temporal.project import Project
 from temporal.utils.image import NumpyImage, alpha_blend, apply_channelwise, join_hsv_to_rgb, match_image, np_to_pil, pil_to_np, split_hsv
 from temporal.utils.math import lerp, normalize, remap_range
-from temporal.utils.numpy import generate_value_noise, saturate_array
+from temporal.utils.numpy import saturate_array
 
 
 class ImageFilter(PipelineModule, abstract = True):
@@ -232,14 +232,7 @@ class NoiseOverlayFilter(ImageFilter):
     noise: Noise = NoiseParam("Noise")
 
     def process(self, npim: NumpyImage, parallel_index: int, project: Project, frame_index: int, seed: int) -> NumpyImage:
-        return generate_value_noise(
-            npim.shape,
-            self.noise.scale,
-            self.noise.octaves,
-            self.noise.lacunarity,
-            self.noise.persistence,
-            seed if self.noise.use_global_seed else self.noise.seed,
-        )
+        return self.noise.generate(npim.shape, seed)
 
 
 class PalettizationFilter(ImageFilter):

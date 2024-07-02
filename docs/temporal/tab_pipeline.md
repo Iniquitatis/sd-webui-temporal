@@ -9,9 +9,10 @@ All modules in this tab are marked with the following icons:
 * 🧬 — neural network module that invokes Stable Diffusion in order to process an image.
 
 * **Initial noise** — parameters of noise to use in a generation of the initial image if it's absent.
+    * **Mode** — noise mode.
     * **Factor** — amount of noise that will be left unprocessed.
     * **Scale** — scale of the noise pattern; pixels.
-    * **Octaves** — amount of progressively downscaled noise layers that will be mixed into a single one.
+    * **Detail** — amount of progressively downscaled noise layers that will be mixed into a single one.
     * **Lacunarity** — downscale factor of each subsequent noise layer compared to a previous one.
     * **Persistence** — amplitude factor of each subsequent noise layer compared to a previous one.
     * **Seed** — seed that will be used for generating the noise pattern.
@@ -93,8 +94,9 @@ All modules in this tab are marked with the following icons:
     * **Constant** — constant rate of the denoising. Generally should be very low, like 0.0002 or so, although it may vary.
     * **Adaptive** — adaptive rate of the denoising.
 * **Noise overlay** — overlaying the random noise on top of the frame.
+    * **Mode** — noise mode.
     * **Scale** — scale of the noise pattern; pixels.
-    * **Octaves** — amount of progressively downscaled noise layers that will be mixed into a single one.
+    * **Detail** — amount of progressively downscaled noise layers that will be mixed into a single one.
     * **Lacunarity** — downscale factor of each subsequent noise layer compared to a previous one.
     * **Persistence** — amplitude factor of each subsequent noise layer compared to a previous one.
     * **Seed** — static seed that will be used for generating the noise pattern.

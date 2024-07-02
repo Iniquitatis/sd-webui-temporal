@@ -24,7 +24,6 @@ from temporal.ui.video_renderer_editor import VideoRendererEditor
 from temporal.utils import logging
 from temporal.utils.fs import load_text
 from temporal.utils.image import PILImage, ensure_image_dims, np_to_pil, pil_to_np
-from temporal.utils.numpy import generate_value_noise
 from temporal.utils.object import copy_with_overrides
 from temporal.utils.time import wait_until
 from temporal.video_renderer import video_render_queue
@@ -248,14 +247,10 @@ class TemporalScript(scripts.Script):
             project.delete_session_data()
 
         if not p.init_images or not isinstance(p.init_images[0], PILImage):
-            noises = [generate_value_noise(
-                (p.height, p.width, 3),
-                project.initial_noise.noise.scale,
-                project.initial_noise.noise.octaves,
-                project.initial_noise.noise.lacunarity,
-                project.initial_noise.noise.persistence,
-                (p.seed if project.initial_noise.noise.use_global_seed else project.initial_noise.noise.seed) + i,
-            ) for i in range(project.pipeline.parallel)]
+            noises = [
+                project.initial_noise.noise.generate((p.height, p.width, 3), p.seed, i)
+                for i in range(project.pipeline.parallel)
+            ]
 
             if project.initial_noise.factor < 1.0:
                 if not (processed_images := process_images(

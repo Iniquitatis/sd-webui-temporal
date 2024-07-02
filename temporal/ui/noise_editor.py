@@ -5,9 +5,9 @@ import gradio as gr
 from temporal.noise import Noise
 from temporal.ui import Callback, CallbackInputs, CallbackOutputs, ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.gradio_widget import GradioWidget
+from temporal.ui.radio import Radio
 from temporal.ui.seed_editor import SeedEditor
 from temporal.utils.image import NumpyImage
-from temporal.utils.numpy import generate_value_noise
 
 
 class NoiseEditor(Widget):
@@ -23,8 +23,9 @@ class NoiseEditor(Widget):
             self._preview = GradioWidget(gr.Image, label = self._format_label(label, "Preview"), type = "numpy", image_mode = "RGB", value = self._generate_preview_texture(value))
 
             with GradioWidget(gr.Column):
+                self._mode = Radio(label = self._format_label(label, "Mode"), choices = [("fbm", "fBm"), ("turbulence", "Turbulence"), ("ridge", "Ridge")], value = value.mode)
                 self._scale = GradioWidget(gr.Slider, label = self._format_label(label, "Scale"), minimum = 1, maximum = 1024, step = 1, value = value.scale)
-                self._octaves = GradioWidget(gr.Slider, label = self._format_label(label, "Octaves"), minimum = 1, maximum = 10, step = 1, value = value.octaves)
+                self._detail = GradioWidget(gr.Slider, label = self._format_label(label, "Detail"), minimum = 1.0, maximum = 10.0, step = 0.01, value = value.detail)
                 self._lacunarity = GradioWidget(gr.Slider, label = self._format_label(label, "Lacunarity"), minimum = 0.01, maximum = 4.0, step = 0.01, value = value.lacunarity)
                 self._persistence = GradioWidget(gr.Slider, label = self._format_label(label, "Persistence"), minimum = 0.0, maximum = 1.0, step = 0.01, value = value.persistence)
                 self._seed = SeedEditor(label = self._format_label(label, "Seed"), value = value.seed)
@@ -36,8 +37,9 @@ class NoiseEditor(Widget):
 
     @property
     def dependencies(self) -> Iterator[UIThing]:
+        yield self._mode
         yield self._scale
-        yield self._octaves
+        yield self._detail
         yield self._lacunarity
         yield self._persistence
         yield self._seed
@@ -45,8 +47,9 @@ class NoiseEditor(Widget):
 
     def read(self, data: ReadData) -> Noise:
         return Noise(
+            data[self._mode],
             data[self._scale],
-            data[self._octaves],
+            data[self._detail],
             data[self._lacunarity],
             data[self._persistence],
             data[self._seed],
@@ -60,8 +63,9 @@ class NoiseEditor(Widget):
             result[self._row] = {"visible": visible}
 
         if isinstance(value := data.get("value", None), Noise):
+            result[self._mode] = {"value": value.mode}
             result[self._scale] = {"value": value.scale}
-            result[self._octaves] = {"value": value.octaves}
+            result[self._detail] = {"value": value.detail}
             result[self._lacunarity] = {"value": value.lacunarity}
             result[self._persistence] = {"value": value.persistence}
             result[self._seed] = {"value": value.seed}
@@ -70,19 +74,13 @@ class NoiseEditor(Widget):
         return result
 
     def setup_callback(self, callback: Callback) -> None:
+        self._mode.setup_callback(callback)
         self._scale.setup_callback(callback)
-        self._octaves.setup_callback(callback)
+        self._detail.setup_callback(callback)
         self._lacunarity.setup_callback(callback)
         self._persistence.setup_callback(callback)
         self._seed.setup_callback(callback)
         self._use_global_seed.setup_callback(callback)
 
     def _generate_preview_texture(self, noise: Noise) -> NumpyImage:
-        return generate_value_noise(
-            (256, 256, 3),
-            noise.scale,
-            noise.octaves,
-            noise.lacunarity,
-            noise.persistence,
-            noise.seed,
-        )
+        return noise.generate((256, 256, 3))
