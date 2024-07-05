@@ -7,8 +7,9 @@ import numpy as np
 from temporal.color import Color
 from temporal.gradient import Gradient
 from temporal.image_source import ImageSource
-from temporal.meta.configurable import BoolParam, ColorParam, ConfigurableParam, EnumParam, FloatParam, GradientParam, ImageParam, ImageSourceParam, IntParam, NoiseParam, PathParam, StringParam
+from temporal.meta.configurable import BoolParam, ColorParam, ConfigurableParam, EnumParam, FloatParam, GradientParam, ImageParam, ImageSourceParam, IntParam, NoiseParam, PathParam, PatternParam, StringParam
 from temporal.noise import Noise
+from temporal.pattern import Pattern
 from temporal.ui import Callback, ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.color_editor import ColorEditor
 from temporal.ui.dropdown import Dropdown
@@ -17,6 +18,7 @@ from temporal.ui.gradio_widget import GradioWidget
 from temporal.ui.image_source_editor import ImageSourceEditor
 from temporal.ui.noise_editor import NoiseEditor
 from temporal.ui.path_editor import PathEditor
+from temporal.ui.pattern_editor import PatternEditor
 from temporal.ui.radio import Radio
 
 
@@ -85,6 +87,9 @@ class ConfigurableParamEditor(Widget):
 
         elif isinstance(param, NoiseParam):
             self._widget = NoiseEditor(label = self._format_label(param.name), value = make_static_value(Noise, param))
+
+        elif isinstance(param, PatternParam):
+            self._widget = PatternEditor(label = self._format_label(param.name), value = make_static_value(Pattern, param))
 
         else:
             raise NotImplementedError

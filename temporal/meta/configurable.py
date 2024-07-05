@@ -7,6 +7,7 @@ from temporal.image_source import ImageSource
 from temporal.meta.registerable import Registerable
 from temporal.meta.serializable import Serializable, SerializableField
 from temporal.noise import Noise
+from temporal.pattern import Pattern
 from temporal.utils.image import NumpyImage
 
 
@@ -169,5 +170,14 @@ class NoiseParam(ConfigurableParam[Noise]):
         self,
         name: str = "Parameter",
         factory: Callable[[], Noise] = Noise,
+    ) -> None:
+        super().__init__(name, factory = factory)
+
+
+class PatternParam(ConfigurableParam[Pattern]):
+    def __init__(
+        self,
+        name: str = "Parameter",
+        factory: Callable[[], Pattern] = Pattern,
     ) -> None:
         super().__init__(name, factory = factory)

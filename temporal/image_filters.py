@@ -11,9 +11,10 @@ from temporal.color import Color
 from temporal.gradient import Gradient
 from temporal.image_mask import ImageMask
 from temporal.image_source import ImageSource
-from temporal.meta.configurable import BoolParam, ColorParam, EnumParam, FloatParam, GradientParam, ImageParam, ImageSourceParam, IntParam, NoiseParam, StringParam
+from temporal.meta.configurable import BoolParam, ColorParam, EnumParam, FloatParam, GradientParam, ImageParam, ImageSourceParam, IntParam, NoiseParam, PatternParam, StringParam
 from temporal.meta.serializable import SerializableField as Field
 from temporal.noise import Noise
+from temporal.pattern import Pattern
 from temporal.pipeline_modules import PipelineModule
 from temporal.project import Project
 from temporal.utils.image import NumpyImage, alpha_blend, apply_channelwise, join_hsv_to_rgb, match_image, np_to_pil, pil_to_np, split_hsv
@@ -274,6 +275,16 @@ class PalettizationFilter(ImageFilter):
             colors = palette_arr.size,
             dither = Image.Dither.FLOYDSTEINBERG if self.dithering else Image.Dither.NONE,
         ).convert("RGB"))
+
+
+class PatternOverlayFilter(ImageFilter):
+    id = "pattern_overlay"
+    name = "Pattern overlay"
+
+    pattern: Pattern = PatternParam("Pattern")
+
+    def process(self, npim: NumpyImage, parallel_index: int, project: Project, frame_index: int, seed: int) -> NumpyImage:
+        return alpha_blend(npim, self.pattern.generate(npim.shape[:2] + (4,)))
 
 
 class PixelizationFilter(ImageFilter):

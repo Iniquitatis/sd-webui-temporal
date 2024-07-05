@@ -1,14 +1,15 @@
 from typing import Iterator
 
 import gradio as gr
-import numpy as np
 
+from temporal.color import Color
 from temporal.gradient import Gradient
+from temporal.pattern import Pattern
 from temporal.ui import Callback, CallbackInputs, CallbackOutputs, ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.color_editor import ColorEditor
 from temporal.ui.gradio_widget import GradioWidget
 from temporal.ui.radio import Radio
-from temporal.utils.image import NumpyImage, alpha_blend, checkerboard
+from temporal.utils.image import NumpyImage, alpha_blend
 
 
 class GradientEditor(Widget):
@@ -90,6 +91,6 @@ class GradientEditor(Widget):
 
     def _generate_preview_texture(self, gradient: Gradient) -> NumpyImage:
         return alpha_blend(
-            checkerboard((256, 256, 3), 8, np.array([0.75, 0.75, 0.75]), np.array([0.25, 0.25, 0.25])),
+            Pattern("checkerboard", 8, Color(0.75, 0.75, 0.75), Color(0.25, 0.25, 0.25)).generate((256, 256, 3)),
             gradient.generate((256, 256, 4), True),
         )
