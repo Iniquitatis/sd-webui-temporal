@@ -10,7 +10,7 @@ from modules.shared_state import State
 from modules.styles import StyleDatabase
 
 from temporal.interop import EXTENSION_DIR, get_cn_units
-from temporal.measuring_modules import MeasuringModule
+from temporal.pipeline_modules.measuring import MeasuringModule
 from temporal.preset import Preset
 from temporal.project import Project
 from temporal.shared import shared

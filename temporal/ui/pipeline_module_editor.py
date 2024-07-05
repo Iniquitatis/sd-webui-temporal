@@ -3,8 +3,8 @@ from typing import Iterator
 import gradio as gr
 
 from temporal.blend_modes import BLEND_MODES
-from temporal.image_filters import ImageFilter
-from temporal.pipeline_modules import PipelineModule
+from temporal.pipeline_module import PipelineModule
+from temporal.pipeline_modules.filtering import ImageFilter
 from temporal.shared import shared
 from temporal.ui import CallbackInputs, CallbackOutputs, ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.configurable_param_editor import ConfigurableParamEditor

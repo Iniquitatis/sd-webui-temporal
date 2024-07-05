@@ -5,14 +5,13 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
-import skimage
 from PIL import Image
 from matplotlib.ticker import MaxNLocator
 from numpy.typing import NDArray
 
 from temporal.meta.configurable import IntParam
 from temporal.meta.serializable import SerializableField as Field
-from temporal.pipeline_modules import PipelineModule
+from temporal.pipeline_module import PipelineModule
 from temporal.project import Project
 from temporal.utils.fs import ensure_directory_exists
 from temporal.utils.image import NumpyImage, PILImage, save_image
@@ -96,71 +95,3 @@ class MeasuringModule(PipelineModule, abstract = True):
         plt.close()
 
         return im
-
-
-class ColorLevelMeanMeasuringModule(MeasuringModule):
-    id = "color_level_mean_measuring"
-    name = "Color level mean"
-    file_name = "color_level_mean"
-    channels = [
-        ("Red", "darkred"),
-        ("Green", "darkgreen"),
-        ("Blue", "darkblue"),
-    ]
-
-    def measure(self, npim: NumpyImage) -> list[float]:
-        red, green, blue = npim[..., 0], npim[..., 1], npim[..., 2]
-        return [float(np.mean(red)), float(np.mean(green)), float(np.mean(blue))]
-
-
-class ColorLevelSigmaMeasuringModule(MeasuringModule):
-    id = "color_level_sigma_measuring"
-    name = "Color level sigma"
-    file_name = "color_level_sigma"
-    channels = [
-        ("Red", "darkred"),
-        ("Green", "darkgreen"),
-        ("Blue", "darkblue"),
-    ]
-
-    def measure(self, npim: NumpyImage) -> list[float]:
-        red, green, blue = npim[..., 0], npim[..., 1], npim[..., 2]
-        return [float(np.std(red)), float(np.std(green)), float(np.std(blue))]
-
-
-class LuminanceMeanMeasuringModule(MeasuringModule):
-    id = "luminance_mean_measuring"
-    name = "Luminance mean"
-    file_name = "luminance_mean"
-    channels = [
-        ("Luminance", "gray"),
-    ]
-
-    def measure(self, npim: NumpyImage) -> list[float]:
-        grayscale = skimage.color.rgb2gray(npim[..., :3], channel_axis = -1)
-        return [float(np.mean(grayscale))]
-
-
-class LuminanceSigmaMeasuringModule(MeasuringModule):
-    id = "luminance_sigma_measuring"
-    name = "Luminance sigma"
-    file_name = "luminance_sigma"
-    channels = [
-        ("Luminance", "gray"),
-    ]
-
-    def measure(self, npim: NumpyImage) -> list[float]:
-        grayscale = skimage.color.rgb2gray(npim[..., :3], channel_axis = -1)
-        return [float(np.std(grayscale))]
-
-
-class NoiseSigmaMeasuringModule(MeasuringModule):
-    id = "noise_sigma_measuring"
-    name = "Noise sigma"
-    file_name = "noise_sigma"
-    channels = [
-        ("Noise sigma", "royalblue"),
-    ]
-
-    def measure(self, npim: NumpyImage) -> list[float]:
-        return [float(skimage.restoration.estimate_sigma(npim, average_sigmas = True, channel_axis = -1))]

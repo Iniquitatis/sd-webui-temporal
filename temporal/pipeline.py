@@ -4,7 +4,7 @@ from modules import shared as webui_shared
 from modules.shared_state import State
 
 from temporal.meta.serializable import Serializable, SerializableField as Field
-from temporal.pipeline_modules import PIPELINE_MODULES, PipelineModule
+from temporal.pipeline_module import PIPELINE_MODULES, PipelineModule
 from temporal.project import IterationData, Project
 from temporal.shared import shared
 from temporal.utils.image import np_to_pil
