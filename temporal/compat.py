@@ -13,7 +13,7 @@ from temporal.utils.image import load_image, pil_to_np
 from temporal.utils.numpy import load_array, save_array
 
 
-VERSION = 37
+VERSION = 38
 
 UPGRADERS: dict[int, Type["Upgrader"]] = {}
 
@@ -1874,6 +1874,62 @@ class _(Upgrader):
 
         if (version := tree.find("*[@key='version']")) is not None:
             version.text = "37"
+
+        ET.indent(tree)
+        tree.write(data_path, "utf-8")
+
+        return True
+
+
+class _(Upgrader):
+    id = 38
+
+    @staticmethod
+    def upgrade(path: Path) -> bool:
+        data_path = path / "project" / "data.xml"
+
+        if not data_path.exists():
+            return False
+
+        tree = ET.ElementTree(file = data_path)
+
+        if tree.findtext("*[@key='version']", "0") != "37":
+            return False
+
+        if (modules := tree.find("*[@key='pipeline']/*[@key='modules']")) is not None:
+            gradient_overlay = ET.SubElement(modules, "object", {"key": "gradient_overlay", "type": "temporal.image_filters.GradientOverlayFilter"})
+            ET.SubElement(gradient_overlay, "object", {"key": "enabled", "type": "bool"}).text = "False"
+            ET.SubElement(gradient_overlay, "object", {"key": "amount", "type": "float"}).text = "1.0"
+            ET.SubElement(gradient_overlay, "object", {"key": "amount_relative", "type": "bool"}).text = "False"
+            ET.SubElement(gradient_overlay, "object", {"key": "blend_mode", "type": "str"}).text = "normal"
+
+            mask = ET.SubElement(gradient_overlay, "object", {"key": "mask", "type": "temporal.image_mask.ImageMask"})
+            ET.SubElement(mask, "object", {"key": "image", "type": "NoneType"})
+            ET.SubElement(mask, "object", {"key": "normalized", "type": "bool"}).text = "False"
+            ET.SubElement(mask, "object", {"key": "inverted", "type": "bool"}).text = "False"
+            ET.SubElement(mask, "object", {"key": "blurring", "type": "float"}).text = "0.0"
+
+            gradient = ET.SubElement(gradient_overlay, "object", {"key": "gradient", "type": "temporal.gradient.Gradient"})
+            ET.SubElement(gradient, "object", {"key": "type", "type": "str"}).text = "linear"
+            ET.SubElement(gradient, "object", {"key": "start_x", "type": "float"}).text = "0.0"
+            ET.SubElement(gradient, "object", {"key": "start_y", "type": "float"}).text = "0.0"
+            ET.SubElement(gradient, "object", {"key": "end_x", "type": "float"}).text = "1.0"
+            ET.SubElement(gradient, "object", {"key": "end_y", "type": "float"}).text = "1.0"
+
+            start_color = ET.SubElement(gradient, "object", {"key": "start_color", "type": "temporal.color.Color"})
+            ET.SubElement(start_color, "object", {"key": "r", "type": "float"}).text = "1.0"
+            ET.SubElement(start_color, "object", {"key": "g", "type": "float"}).text = "1.0"
+            ET.SubElement(start_color, "object", {"key": "b", "type": "float"}).text = "1.0"
+            ET.SubElement(start_color, "object", {"key": "a", "type": "float"}).text = "1.0"
+
+            end_color = ET.SubElement(gradient, "object", {"key": "end_color", "type": "temporal.color.Color"})
+            ET.SubElement(end_color, "object", {"key": "r", "type": "float"}).text = "0.0"
+            ET.SubElement(end_color, "object", {"key": "g", "type": "float"}).text = "0.0"
+            ET.SubElement(end_color, "object", {"key": "b", "type": "float"}).text = "0.0"
+            ET.SubElement(end_color, "object", {"key": "a", "type": "float"}).text = "1.0"
+
+        if (version := tree.find("*[@key='version']")) is not None:
+            version.text = "38"
 
         ET.indent(tree)
         tree.write(data_path, "utf-8")

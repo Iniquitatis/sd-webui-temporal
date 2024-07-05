@@ -27,6 +27,12 @@ def apply_channelwise(npim: NumpyImage, func: Callable[[NumpyImage], NumpyImage]
     return np.stack([func(npim[..., i]) for i in range(npim.shape[-1])], axis = -1)
 
 
+def checkerboard(shape: tuple[int, ...], cell_size: int, color_1: NDArray[np.float_], color_2: NDArray[np.float_]) -> NumpyImage:
+    y, x = np.indices(shape[:2])
+    pattern = (x // cell_size + y // cell_size) % 2 == 0
+    return np.where(pattern[..., np.newaxis], color_2[..., :shape[-1]], color_1[..., :shape[-1]])
+
+
 def ensure_image_dims(im: T, mode: Optional[str] = None, size: Optional[tuple[int, int]] = None) -> T:
     if isinstance(im, np.ndarray):
         tmp_im = np_to_pil(im)

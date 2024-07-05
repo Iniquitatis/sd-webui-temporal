@@ -5,12 +5,14 @@ import gradio as gr
 import numpy as np
 
 from temporal.color import Color
+from temporal.gradient import Gradient
 from temporal.image_source import ImageSource
-from temporal.meta.configurable import BoolParam, ColorParam, ConfigurableParam, EnumParam, FloatParam, ImageParam, ImageSourceParam, IntParam, NoiseParam, PathParam, StringParam
+from temporal.meta.configurable import BoolParam, ColorParam, ConfigurableParam, EnumParam, FloatParam, GradientParam, ImageParam, ImageSourceParam, IntParam, NoiseParam, PathParam, StringParam
 from temporal.noise import Noise
 from temporal.ui import Callback, ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.color_editor import ColorEditor
 from temporal.ui.dropdown import Dropdown
+from temporal.ui.gradient_editor import GradientEditor
 from temporal.ui.gradio_widget import GradioWidget
 from temporal.ui.image_source_editor import ImageSourceEditor
 from temporal.ui.noise_editor import NoiseEditor
@@ -77,6 +79,9 @@ class ConfigurableParamEditor(Widget):
 
         elif isinstance(param, ImageSourceParam):
             self._widget = ImageSourceEditor(label = self._format_label(param.name), channels = param.channels, value = make_static_value(ImageSource, param))
+
+        elif isinstance(param, GradientParam):
+            self._widget = GradientEditor(label = self._format_label(param.name), value = make_static_value(Gradient, param))
 
         elif isinstance(param, NoiseParam):
             self._widget = NoiseEditor(label = self._format_label(param.name), value = make_static_value(Noise, param))

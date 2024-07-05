@@ -8,9 +8,10 @@ from PIL import Image
 
 from temporal.blend_modes import BLEND_MODES
 from temporal.color import Color
+from temporal.gradient import Gradient
 from temporal.image_mask import ImageMask
 from temporal.image_source import ImageSource
-from temporal.meta.configurable import BoolParam, ColorParam, EnumParam, FloatParam, ImageParam, ImageSourceParam, IntParam, NoiseParam, StringParam
+from temporal.meta.configurable import BoolParam, ColorParam, EnumParam, FloatParam, GradientParam, ImageParam, ImageSourceParam, IntParam, NoiseParam, StringParam
 from temporal.meta.serializable import SerializableField as Field
 from temporal.noise import Noise
 from temporal.pipeline_modules import PipelineModule
@@ -144,6 +145,16 @@ class CustomCodeFilter(ImageFilter):
         )
         exec(self.code, code_globals)
         return code_globals.get("output", npim)
+
+
+class GradientOverlayFilter(ImageFilter):
+    id = "gradient_overlay"
+    name = "Gradient overlay"
+
+    gradient: Gradient = GradientParam("Gradient")
+
+    def process(self, npim: NumpyImage, parallel_index: int, project: Project, frame_index: int, seed: int) -> NumpyImage:
+        return alpha_blend(npim, self.gradient.generate(npim.shape[:2] + (4,)))
 
 
 class ImageOverlayFilter(ImageFilter):
