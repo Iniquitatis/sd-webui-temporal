@@ -10,7 +10,6 @@ from temporal.video_renderer import video_render_queue
 
 
 class VideoRenderingModule(ToolModule):
-    id = "video_rendering"
     name = "Video rendering"
 
     render_draft_every_nth_frame: int = IntParam("Render draft every N-th frame", minimum = 1, step = 1, value = 100, ui_type = "box")

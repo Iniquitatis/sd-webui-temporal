@@ -6,7 +6,6 @@ from temporal.utils.image import NumpyImage
 
 
 class GradientPaintingModule(PaintingModule):
-    id = "gradient_painting"
     name = "Gradient"
 
     gradient: Gradient = GradientParam("Gradient")

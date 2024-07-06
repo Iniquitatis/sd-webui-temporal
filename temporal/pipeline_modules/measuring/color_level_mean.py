@@ -5,7 +5,6 @@ from temporal.utils.image import NumpyImage
 
 
 class ColorLevelMeanMeasuringModule(MeasuringModule):
-    id = "color_level_mean_measuring"
     name = "Color level mean"
     file_name = "color_level_mean"
     channels = [

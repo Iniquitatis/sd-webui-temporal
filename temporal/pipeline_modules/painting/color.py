@@ -8,7 +8,6 @@ from temporal.utils.image import NumpyImage
 
 
 class ColorPaintingModule(PaintingModule):
-    id = "color_painting"
     name = "Color"
 
     color: Color = ColorParam("Color", channels = 4)

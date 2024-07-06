@@ -7,6 +7,7 @@ from temporal.meta.serializable import Serializable, SerializableField as Field
 from temporal.pipeline_module import PIPELINE_MODULES, PipelineModule
 from temporal.project import IterationData, Project
 from temporal.shared import shared
+from temporal.utils.collection import find_index_by_predicate
 from temporal.utils.image import np_to_pil
 
 
@@ -16,15 +17,15 @@ state: State = getattr(webui_shared, "state")
 
 class Pipeline(Serializable):
     parallel: int = Field(1)
-    modules: dict[str, PipelineModule] = Field(factory = lambda: {id: cls() for id, cls in sorted(PIPELINE_MODULES.items(), key = lambda x: f"{x[1].icon} {x[1].id}")})
+    modules: list[PipelineModule] = Field(factory = lambda: [cls() for cls in sorted(PIPELINE_MODULES, key = lambda x: f"{x.icon} {x.name}")])
 
     def run(self, project: Project) -> bool:
         if project.iteration.module_id is not None:
-            skip_index = list(self.modules.keys()).index(project.iteration.module_id)
+            skip_index = find_index_by_predicate(self.modules, lambda x: x.id == project.iteration.module_id)
         else:
             skip_index = -1
 
-        for i, module in enumerate(self.modules.values()):
+        for i, module in enumerate(self.modules):
             if i <= skip_index or not module.enabled:
                 continue
 
@@ -54,7 +55,7 @@ class Pipeline(Serializable):
         return True
 
     def finalize(self, project: Project) -> None:
-        for module in self.modules.values():
+        for module in self.modules:
             if not module.enabled:
                 continue
 

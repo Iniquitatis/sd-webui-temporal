@@ -8,7 +8,7 @@ from temporal.meta.serializable import Serializable
 from temporal.utils.image import NumpyImage, join_hsv_to_rgb, split_hsv
 
 
-BLEND_MODES: dict[str, Type["BlendMode"]] = {}
+BLEND_MODES: list[Type["BlendMode"]] = []
 
 
 class BlendMode(Registerable, Serializable, abstract = True):
@@ -21,7 +21,6 @@ class BlendMode(Registerable, Serializable, abstract = True):
 
 
 class NormalBlendMode(BlendMode):
-    id = "normal"
     name = "Normal"
 
     @staticmethod
@@ -30,7 +29,6 @@ class NormalBlendMode(BlendMode):
 
 
 class AddBlendMode(BlendMode):
-    id = "add"
     name = "Add"
 
     @staticmethod
@@ -39,7 +37,6 @@ class AddBlendMode(BlendMode):
 
 
 class SubtractBlendMode(BlendMode):
-    id = "subtract"
     name = "Subtract"
 
     @staticmethod
@@ -48,7 +45,6 @@ class SubtractBlendMode(BlendMode):
 
 
 class MultiplyBlendMode(BlendMode):
-    id = "multiply"
     name = "Multiply"
 
     @staticmethod
@@ -57,7 +53,6 @@ class MultiplyBlendMode(BlendMode):
 
 
 class DivideBlendMode(BlendMode):
-    id = "divide"
     name = "Divide"
 
     @staticmethod
@@ -66,7 +61,6 @@ class DivideBlendMode(BlendMode):
 
 
 class LightenBlendMode(BlendMode):
-    id = "lighten"
     name = "Lighten"
 
     @staticmethod
@@ -75,7 +69,6 @@ class LightenBlendMode(BlendMode):
 
 
 class DarkenBlendMode(BlendMode):
-    id = "darken"
     name = "Darken"
 
     @staticmethod
@@ -84,7 +77,6 @@ class DarkenBlendMode(BlendMode):
 
 
 class HardLightBlendMode(BlendMode):
-    id = "hard_light"
     name = "Hard light"
 
     @staticmethod
@@ -98,7 +90,6 @@ class HardLightBlendMode(BlendMode):
 
 
 class SoftLightBlendMode(BlendMode):
-    id = "soft_light"
     name = "Soft light"
 
     @staticmethod
@@ -120,7 +111,6 @@ class SoftLightBlendMode(BlendMode):
 
 
 class ColorDodgeBlendMode(BlendMode):
-    id = "color_dodge"
     name = "Color dodge"
 
     @staticmethod
@@ -137,7 +127,6 @@ class ColorDodgeBlendMode(BlendMode):
 
 
 class ColorBurnBlendMode(BlendMode):
-    id = "color_burn"
     name = "Color burn"
 
     @staticmethod
@@ -154,7 +143,6 @@ class ColorBurnBlendMode(BlendMode):
 
 
 class OverlayBlendMode(BlendMode):
-    id = "overlay"
     name = "Overlay"
 
     @staticmethod
@@ -163,7 +151,6 @@ class OverlayBlendMode(BlendMode):
 
 
 class ScreenBlendMode(BlendMode):
-    id = "screen"
     name = "Screen"
 
     @staticmethod
@@ -172,7 +159,6 @@ class ScreenBlendMode(BlendMode):
 
 
 class DifferenceBlendMode(BlendMode):
-    id = "difference"
     name = "Difference"
 
     @staticmethod
@@ -181,7 +167,6 @@ class DifferenceBlendMode(BlendMode):
 
 
 class ExclusionBlendMode(BlendMode):
-    id = "exclusion"
     name = "Exclusion"
 
     @staticmethod
@@ -190,7 +175,6 @@ class ExclusionBlendMode(BlendMode):
 
 
 class HueBlendMode(BlendMode):
-    id = "hue"
     name = "Hue"
 
     @staticmethod
@@ -201,7 +185,6 @@ class HueBlendMode(BlendMode):
 
 
 class SaturationBlendMode(BlendMode):
-    id = "saturation"
     name = "Saturation"
 
     @staticmethod
@@ -212,7 +195,6 @@ class SaturationBlendMode(BlendMode):
 
 
 class ValueBlendMode(BlendMode):
-    id = "value"
     name = "Value"
 
     @staticmethod
@@ -223,7 +205,6 @@ class ValueBlendMode(BlendMode):
 
 
 class ColorBlendMode(BlendMode):
-    id = "color"
     name = "Color"
 
     @staticmethod

@@ -181,7 +181,7 @@ class TemporalScript(scripts.Script):
         def _(inputs: CallbackInputs) -> CallbackOutputs:
             return {graph_gallery: {"value": [
                 x.plot(inputs[measuring_parallel_index] - 1)
-                for x in inputs[stored_project].data.pipeline.modules.values()
+                for x in inputs[stored_project].data.pipeline.modules
                 if isinstance(x, MeasuringModule) and x.enabled
             ]}}
 

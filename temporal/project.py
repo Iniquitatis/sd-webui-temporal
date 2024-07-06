@@ -6,7 +6,7 @@ from modules import shared as webui_shared
 from modules.options import Options
 from modules.processing import StableDiffusionProcessingImg2Img
 
-from temporal.compat import VERSION, upgrade_project
+from temporal.compat import get_latest_version, upgrade_project
 from temporal.interop import ControlNetUnitList, ControlNetUnitWrapper
 from temporal.meta.serializable import Serializable, SerializableField as Field
 from temporal.noise import Noise
@@ -38,7 +38,7 @@ class IterationData(Serializable):
 
 class Project(Serializable):
     path: Path = Field(Path("outputs/temporal/untitled"), saved = False)
-    version: int = Field(VERSION)
+    version: int = Field(get_latest_version())
     # NOTE: The next three fields should be assigned manually
     options: Options = Field(factory = lambda: copy_with_overrides(opts, data = opts.data.copy()))
     processing: StableDiffusionProcessingImg2Img = Field(factory = StableDiffusionProcessingImg2Img)
@@ -89,7 +89,7 @@ class Project(Serializable):
                 remove_entry(image_path)
 
     def delete_session_data(self) -> None:
-        for module in self.pipeline.modules.values():
+        for module in self.pipeline.modules:
             module.reset()
 
         self.iteration = IterationData()

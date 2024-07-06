@@ -7,7 +7,6 @@ from temporal.utils.image import NumpyImage
 
 
 class BlurringFilter(ImageFilter):
-    id = "blurring"
     name = "Blurring"
 
     radius: float = FloatParam("Radius", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, ui_type = "slider")

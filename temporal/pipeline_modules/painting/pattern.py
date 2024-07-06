@@ -6,7 +6,6 @@ from temporal.utils.image import NumpyImage
 
 
 class PatternPaintingModule(PaintingModule):
-    id = "pattern_painting"
     name = "Pattern"
 
     pattern: Pattern = PatternParam("Pattern")

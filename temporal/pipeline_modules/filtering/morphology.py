@@ -7,7 +7,6 @@ from temporal.utils.image import NumpyImage, apply_channelwise
 
 
 class MorphologyFilter(ImageFilter):
-    id = "morphology"
     name = "Morphology"
 
     mode: str = EnumParam("Mode", choices = [

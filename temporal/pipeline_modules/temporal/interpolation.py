@@ -13,7 +13,6 @@ from temporal.utils.math import lerp
 
 
 class InterpolationModule(TemporalModule):
-    id = "interpolation"
     name = "Interpolation"
 
     blending: float = FloatParam("Blending", minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")

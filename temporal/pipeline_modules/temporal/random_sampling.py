@@ -11,7 +11,6 @@ from temporal.utils.image import NumpyImage, ensure_image_dims
 
 
 class RandomSamplingModule(TemporalModule):
-    id = "random_sampling"
     name = "Random sampling"
 
     chance: float = FloatParam("Chance", minimum = 0.001, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")

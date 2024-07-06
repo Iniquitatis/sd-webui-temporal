@@ -6,7 +6,6 @@ from temporal.utils.image import NumpyImage
 
 
 class NoisePaintingModule(PaintingModule):
-    id = "noise_painting"
     name = "Noise"
 
     noise: Noise = NoiseParam("Noise")

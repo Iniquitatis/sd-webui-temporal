@@ -13,17 +13,21 @@ from temporal.utils.image import load_image, pil_to_np
 from temporal.utils.numpy import load_array, save_array
 
 
-VERSION = 41
+UPGRADERS: list[Type["Upgrader"]] = []
 
-UPGRADERS: dict[int, Type["Upgrader"]] = {}
+
+def get_latest_version() -> int:
+    return max(x.version for x in UPGRADERS)
 
 
 def upgrade_project(path: Path) -> None:
     last_version = 0
 
-    for version, upgrader in UPGRADERS.items():
+    for cls in UPGRADERS:
+        upgrader = cls()
+
         if upgrader.upgrade(path):
-            last_version = version
+            last_version = upgrader.version
 
     if last_version:
         logging.info(f"Upgraded project to version {last_version}")
@@ -32,17 +36,21 @@ def upgrade_project(path: Path) -> None:
 class Upgrader(Registerable, abstract = True):
     store = UPGRADERS
 
-    @staticmethod
+    version: int = -1
+
     @abstractmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         raise NotImplementedError
+
+    @property
+    def previous_version(self) -> int:
+        return max(x.version for x in UPGRADERS if x.version < self.version)
 
 
 class _(Upgrader):
-    id = 1
+    version = 1
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         def upgrade_value(value: Any) -> Any:
             if isinstance(value, list):
                 return {"type": "list", "data": [upgrade_value(x) for x in value]}
@@ -74,20 +82,19 @@ class _(Upgrader):
         data["extension_params"] = upgrade_values(data.get("extension_params", {}))
 
         save_json(params_path, data)
-        save_text(version_path, "1")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 2
+    version = 2
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         version_path = path / "session" / "version.txt"
         params_path = path / "session" / "parameters.json"
 
-        if int(load_text(version_path, "0")) != 1:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         data = load_json(params_path, {})
@@ -126,34 +133,32 @@ class _(Upgrader):
             ext_params[key] = 1.0
 
         save_json(params_path, data)
-        save_text(version_path, "2")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 3
+    version = 3
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         version_path = path / "session" / "version.txt"
 
-        if int(load_text(version_path, "0")) != 2:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         if frames := sorted(path.glob("*.png"), key = lambda x: int(x.stem)):
             copy2(frames[-1], ensure_directory_exists(path / "session" / "buffer") / "001.png")
 
-        save_text(version_path, "3")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 4
+    version = 4
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         def upgrade_value(value: Any) -> Any:
             if isinstance(value, dict):
                 type = value.get("type", None)
@@ -179,7 +184,7 @@ class _(Upgrader):
         version_path = path / "session" / "version.txt"
         params_path = path / "session" / "parameters.json"
 
-        if int(load_text(version_path, "0")) != 3:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         data = load_json(params_path, {})
@@ -193,16 +198,15 @@ class _(Upgrader):
         data["extension_params"] = upgrade_values(data.get("extension_params", {}))
 
         save_json(params_path, data)
-        save_text(version_path, "4")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 5
+    version = 5
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         def upgrade_value(value: Any) -> Any:
             if isinstance(value, dict):
                 type = value.get("type", None)
@@ -229,7 +233,7 @@ class _(Upgrader):
         params_path = path / "session" / "parameters.json"
         buffer_dir = path / "session" / "buffer"
 
-        if int(load_text(version_path, "0")) != 4:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         data = load_json(params_path, {})
@@ -262,20 +266,19 @@ class _(Upgrader):
             "last_index": 0,
         })
 
-        save_text(version_path, "5")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 6
+    version = 6
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         version_path = path / "session" / "version.txt"
         params_path = path / "session" / "parameters.json"
 
-        if int(load_text(version_path, "0")) != 5:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         data = load_json(params_path, {})
@@ -292,20 +295,19 @@ class _(Upgrader):
         })
 
         save_json(params_path, data)
-        save_text(version_path, "6")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 7
+    version = 7
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         version_path = path / "session" / "version.txt"
         params_path = path / "session" / "parameters.json"
 
-        if int(load_text(version_path, "0")) != 6:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         data = load_json(params_path, {})
@@ -329,20 +331,19 @@ class _(Upgrader):
         }
 
         save_json(params_path, data)
-        save_text(version_path, "7")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 8
+    version = 8
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         version_path = path / "session" / "version.txt"
         params_path = path / "session" / "parameters.json"
 
-        if int(load_text(version_path, "0")) != 7:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         data = load_json(params_path, {})
@@ -354,20 +355,19 @@ class _(Upgrader):
                 ext_params[key] = "arithmetic_mean"
 
         save_json(params_path, data)
-        save_text(version_path, "8")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 9
+    version = 9
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         version_path = path / "session" / "version.txt"
         params_path = path / "session" / "parameters.json"
 
-        if int(load_text(version_path, "0")) != 8:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         data = load_json(params_path, {})
@@ -387,20 +387,19 @@ class _(Upgrader):
                 ext_params[f"{feature}_preference"] = 1.0
 
         save_json(params_path, data)
-        save_text(version_path, "9")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 10
+    version = 10
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         version_path = path / "session" / "version.txt"
         params_path = path / "session" / "parameters.json"
 
-        if int(load_text(version_path, "0")) != 9:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         data = load_json(params_path, {})
@@ -415,20 +414,19 @@ class _(Upgrader):
         })
 
         save_json(params_path, data)
-        save_text(version_path, "10")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 11
+    version = 11
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         version_path = path / "session" / "version.txt"
         params_path = path / "session" / "parameters.json"
 
-        if int(load_text(version_path, "0")) != 10:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         data = load_json(params_path, {})
@@ -473,20 +471,19 @@ class _(Upgrader):
         })
 
         save_json(params_path, data)
-        save_text(version_path, "11")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 12
+    version = 12
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         version_path = path / "session" / "version.txt"
         params_path = path / "session" / "parameters.json"
 
-        if int(load_text(version_path, "0")) != 11:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         data = load_json(params_path, {})
@@ -502,20 +499,19 @@ class _(Upgrader):
         })
 
         save_json(params_path, data)
-        save_text(version_path, "12")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 13
+    version = 13
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         version_path = path / "session" / "version.txt"
         params_path = path / "session" / "parameters.json"
 
-        if int(load_text(version_path, "0")) != 12:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         data = load_json(params_path, {})
@@ -527,20 +523,19 @@ class _(Upgrader):
         })
 
         save_json(params_path, data)
-        save_text(version_path, "13")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 14
+    version = 14
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         version_path = path / "session" / "version.txt"
         params_path = path / "session" / "parameters.json"
 
-        if int(load_text(version_path, "0")) != 13:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         data = load_json(params_path, {})
@@ -551,19 +546,18 @@ class _(Upgrader):
         })
 
         save_json(params_path, data)
-        save_text(version_path, "14")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 15
+    version = 15
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         version_path = path / "session" / "version.txt"
 
-        if int(load_text(version_path, "0")) != 14:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         project_data_dir = ensure_directory_exists(path / "project")
@@ -572,20 +566,19 @@ class _(Upgrader):
         move_entry(path / "session", project_data_dir / "session")
         move_entry(version_path, project_data_dir / "version.txt")
 
-        save_text(project_data_dir / "version.txt", "15")
+        save_text(project_data_dir / "version.txt", str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 16
+    version = 16
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         version_path = path / "project" / "version.txt"
         params_path = path / "project" / "session" / "parameters.json"
 
-        if int(load_text(version_path, "0")) != 15:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         data = load_json(params_path, {})
@@ -596,16 +589,15 @@ class _(Upgrader):
         })
 
         save_json(params_path, data)
-        save_text(version_path, "16")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 17
+    version = 17
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         def elem(parent: ET.Element, key: str, type: str, source_dict: Optional[dict[str, Any]] = None, fallback: Any = "") -> ET.Element:
             attrs = {
                 "key": key or None,
@@ -621,7 +613,7 @@ class _(Upgrader):
 
         version_path = path / "project" / "version.txt"
 
-        if int(load_text(version_path, "0")) != 16:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         # NOTE: Session
@@ -870,16 +862,15 @@ class _(Upgrader):
         ET.indent(tree)
         tree.write(path / "project" / "buffer" / "data.xml", "utf-8")
 
-        save_text(version_path, "17")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 18
+    version = 18
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         def obj(parent: Optional[ET.Element], key: str = "", type: str = "", text: str = "") -> Optional[ET.Element]:
             if parent is None:
                 return None
@@ -932,7 +923,7 @@ class _(Upgrader):
         session_data_path = path / "project" / "session" / "data.xml"
         buffer_path = path / "project" / "buffer"
 
-        if int(load_text(version_path, "0")) != 17:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         tree = ET.ElementTree(file = session_data_path)
@@ -1067,20 +1058,19 @@ class _(Upgrader):
 
         rmtree(buffer_path)
 
-        save_text(version_path, "18")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 19
+    version = 19
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         version_path = path / "project" / "version.txt"
         session_data_path = path / "project" / "session" / "data.xml"
 
-        if int(load_text(version_path, "0")) != 18:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         tree = ET.ElementTree(file = session_data_path)
@@ -1099,21 +1089,20 @@ class _(Upgrader):
 
         ET.indent(tree)
         tree.write(session_data_path, "utf-8")
-        save_text(version_path, "19")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 
 class _(Upgrader):
-    id = 20
+    version = 20
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         version_path = path / "project" / "version.txt"
         session_data_path = path / "project" / "session" / "data.xml"
 
-        if int(load_text(version_path, "0")) != 19:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         tree = ET.ElementTree(file = session_data_path)
@@ -1131,16 +1120,15 @@ class _(Upgrader):
 
         ET.indent(tree)
         tree.write(session_data_path, "utf-8")
-        save_text(version_path, "20")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 21
+    version = 21
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         def convert(elem: Optional[ET.Element]) -> None:
             if elem is None or elem.text is None:
                 return
@@ -1163,7 +1151,7 @@ class _(Upgrader):
         version_path = path / "project" / "version.txt"
         session_data_path = path / "project" / "session" / "data.xml"
 
-        if int(load_text(version_path, "0")) != 20:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         tree = ET.ElementTree(file = session_data_path)
@@ -1177,20 +1165,19 @@ class _(Upgrader):
 
         ET.indent(tree)
         tree.write(session_data_path, "utf-8")
-        save_text(version_path, "21")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 22
+    version = 22
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         version_path = path / "project" / "version.txt"
         session_data_path = path / "project" / "session" / "data.xml"
 
-        if int(load_text(version_path, "0")) != 21:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         tree = ET.ElementTree(file = session_data_path)
@@ -1222,20 +1209,19 @@ class _(Upgrader):
 
         ET.indent(tree)
         tree.write(session_data_path, "utf-8")
-        save_text(version_path, "22")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 23
+    version = 23
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         version_path = path / "project" / "version.txt"
         session_data_path = path / "project" / "session" / "data.xml"
 
-        if int(load_text(version_path, "0")) != 22:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         tree = ET.ElementTree(file = session_data_path)
@@ -1256,16 +1242,15 @@ class _(Upgrader):
 
         ET.indent(tree)
         tree.write(session_data_path, "utf-8")
-        save_text(version_path, "23")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 24
+    version = 24
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         def parse_frame_index(im_path: Path) -> int:
             if im_path.is_file():
                 try:
@@ -1278,7 +1263,7 @@ class _(Upgrader):
         version_path = path / "project" / "version.txt"
         session_data_path = path / "project" / "session" / "data.xml"
 
-        if int(load_text(version_path, "0")) != 23:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         tree = ET.ElementTree(file = session_data_path)
@@ -1313,16 +1298,15 @@ class _(Upgrader):
 
         ET.indent(tree)
         tree.write(session_data_path, "utf-8")
-        save_text(version_path, "24")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 25
+    version = 25
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         def upgrade_buffer(elem: ET.Element) -> None:
             if elem.text is not None and (arr_path := (path / "project" / "session" / elem.text)).is_file():
                 save_array(np.expand_dims(load_array(arr_path), 0), arr_path)
@@ -1330,7 +1314,7 @@ class _(Upgrader):
         version_path = path / "project" / "version.txt"
         session_data_path = path / "project" / "session" / "data.xml"
 
-        if int(load_text(version_path, "0")) != 24:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         tree = ET.ElementTree(file = session_data_path)
@@ -1352,20 +1336,19 @@ class _(Upgrader):
 
         ET.indent(tree)
         tree.write(session_data_path, "utf-8")
-        save_text(version_path, "25")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 26
+    version = 26
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         version_path = path / "project" / "version.txt"
         session_data_path = path / "project" / "session" / "data.xml"
 
-        if int(load_text(version_path, "0")) != 25:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         tree = ET.ElementTree(file = session_data_path)
@@ -1379,19 +1362,18 @@ class _(Upgrader):
 
         ET.indent(tree)
         tree.write(session_data_path, "utf-8")
-        save_text(version_path, "26")
+        save_text(version_path, str(self.version))
 
         return True
 
 
 class _(Upgrader):
-    id = 27
+    version = 27
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         version_path = path / "project" / "version.txt"
 
-        if int(load_text(version_path, "0")) != 26:
+        if int(load_text(version_path, "0")) != self.previous_version:
             return False
 
         session_dir = path / "project" / "session"
@@ -1406,7 +1388,7 @@ class _(Upgrader):
         new_tree = ET.ElementTree(new_root)
 
         version = ET.SubElement(new_root, "object", {"key": "version", "type": "int"})
-        version.text = "27"
+        version.text = str(self.version)
 
         data_path = path / "project" / "data.xml"
 
@@ -1423,10 +1405,9 @@ class _(Upgrader):
 
 
 class _(Upgrader):
-    id = 28
+    version = 28
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         data_path = path / "project" / "data.xml"
 
         if not data_path.exists():
@@ -1434,7 +1415,7 @@ class _(Upgrader):
 
         tree = ET.ElementTree(file = data_path)
 
-        if tree.findtext("*[@key='version']", "0") != "27":
+        if tree.findtext("*[@key='version']", "0") != str(self.previous_version):
             return False
 
         if (initial_noise := tree.find("*[@key='session']/*[@key='initial_noise']")) is not None:
@@ -1496,7 +1477,7 @@ class _(Upgrader):
                 noise_overlay.remove(seed)
 
         if (version := tree.find("*[@key='version']")) is not None:
-            version.text = "28"
+            version.text = str(self.version)
 
         ET.indent(tree)
         tree.write(data_path, "utf-8")
@@ -1505,10 +1486,9 @@ class _(Upgrader):
 
 
 class _(Upgrader):
-    id = 29
+    version = 29
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         data_path = path / "project" / "data.xml"
 
         if not data_path.exists():
@@ -1516,7 +1496,7 @@ class _(Upgrader):
 
         tree = ET.ElementTree(file = data_path)
 
-        if tree.findtext("*[@key='version']", "0") != "28":
+        if tree.findtext("*[@key='version']", "0") != str(self.previous_version):
             return False
 
         for module_id in (
@@ -1533,7 +1513,7 @@ class _(Upgrader):
                     module.remove(image)
 
         if (version := tree.find("*[@key='version']")) is not None:
-            version.text = "29"
+            version.text = str(self.version)
 
         ET.indent(tree)
         tree.write(data_path, "utf-8")
@@ -1542,10 +1522,9 @@ class _(Upgrader):
 
 
 class _(Upgrader):
-    id = 30
+    version = 30
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         data_path = path / "project" / "data.xml"
 
         if not data_path.exists():
@@ -1553,7 +1532,7 @@ class _(Upgrader):
 
         tree = ET.ElementTree(file = data_path)
 
-        if tree.findtext("*[@key='version']", "0") != "29":
+        if tree.findtext("*[@key='version']", "0") != str(self.previous_version):
             return False
 
         if (module_order := tree.find("*[@key='session']/*[@key='pipeline']/*[@key='module_order']")) is not None:
@@ -1566,7 +1545,7 @@ class _(Upgrader):
             ET.SubElement(random_sampling, "object", {"key": "buffer", "type": "NoneType"})
 
         if (version := tree.find("*[@key='version']")) is not None:
-            version.text = "30"
+            version.text = str(self.version)
 
         ET.indent(tree)
         tree.write(data_path, "utf-8")
@@ -1575,10 +1554,9 @@ class _(Upgrader):
 
 
 class _(Upgrader):
-    id = 31
+    version = 31
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         def create_after(parent: ET.Element, sibling: ET.Element, tag: str, attrs: dict[str, str], text: str) -> ET.Element:
             elem = ET.Element(tag, attrs)
             elem.text = text
@@ -1599,7 +1577,7 @@ class _(Upgrader):
 
         tree = ET.ElementTree(file = data_path)
 
-        if tree.findtext("*[@key='version']", "0") != "30":
+        if tree.findtext("*[@key='version']", "0") != str(self.previous_version):
             return False
 
         if (module_order := tree.find("*[@key='session']/*[@key='pipeline']/*[@key='module_order']")) is not None:
@@ -1628,7 +1606,7 @@ class _(Upgrader):
                 modules.remove(measuring)
 
         if (version := tree.find("*[@key='version']")) is not None:
-            version.text = "31"
+            version.text = str(self.version)
 
         ET.indent(tree)
         tree.write(data_path, "utf-8")
@@ -1637,10 +1615,9 @@ class _(Upgrader):
 
 
 class _(Upgrader):
-    id = 32
+    version = 32
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         def update_unit_field(unit: ET.Element, key: str) -> None:
             if (field := unit.find(f"*[@key='instance.{key}']")) is not None:
                 field.set("key", key)
@@ -1652,7 +1629,7 @@ class _(Upgrader):
 
         tree = ET.ElementTree(file = data_path)
 
-        if tree.findtext("*[@key='version']", "0") != "31":
+        if tree.findtext("*[@key='version']", "0") != str(self.previous_version):
             return False
 
         if (controlnet_units := tree.find("*[@key='session']/*[@key='controlnet_units']")) is not None:
@@ -1678,7 +1655,7 @@ class _(Upgrader):
                     ET.SubElement(unit, "object", {"key": "effective_region_mask", "type": "NoneType"})
 
         if (version := tree.find("*[@key='version']")) is not None:
-            version.text = "32"
+            version.text = str(self.version)
 
         ET.indent(tree)
         tree.write(data_path, "utf-8")
@@ -1687,10 +1664,9 @@ class _(Upgrader):
 
 
 class _(Upgrader):
-    id = 33
+    version = 33
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         data_path = path / "project" / "data.xml"
 
         if not data_path.exists():
@@ -1698,7 +1674,7 @@ class _(Upgrader):
 
         tree = ET.ElementTree(file = data_path)
 
-        if tree.findtext("*[@key='version']", "0") != "32":
+        if tree.findtext("*[@key='version']", "0") != str(self.previous_version):
             return False
 
         if (module_order := tree.find("*[@key='session']/*[@key='pipeline']/*[@key='module_order']")) is not None:
@@ -1718,7 +1694,7 @@ class _(Upgrader):
             ET.SubElement(pixelization, "object", {"key": "pixel_size", "type": "int"}).text = "1"
 
         if (version := tree.find("*[@key='version']")) is not None:
-            version.text = "33"
+            version.text = str(self.version)
 
         ET.indent(tree)
         tree.write(data_path, "utf-8")
@@ -1727,10 +1703,9 @@ class _(Upgrader):
 
 
 class _(Upgrader):
-    id = 34
+    version = 34
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         data_path = path / "project" / "data.xml"
 
         if not data_path.exists():
@@ -1738,7 +1713,7 @@ class _(Upgrader):
 
         tree = ET.ElementTree(file = data_path)
 
-        if tree.findtext("*[@key='version']", "0") != "33":
+        if tree.findtext("*[@key='version']", "0") != str(self.previous_version):
             return False
 
         if (pipeline := tree.find("*[@key='session']/*[@key='pipeline']")) is not None:
@@ -1761,7 +1736,7 @@ class _(Upgrader):
                     modules.append(detached_modules[key])
 
         if (version := tree.find("*[@key='version']")) is not None:
-            version.text = "34"
+            version.text = str(self.version)
 
         ET.indent(tree)
         tree.write(data_path, "utf-8")
@@ -1770,10 +1745,9 @@ class _(Upgrader):
 
 
 class _(Upgrader):
-    id = 35
+    version = 35
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         data_path = path / "project" / "data.xml"
 
         if not data_path.exists():
@@ -1781,7 +1755,7 @@ class _(Upgrader):
 
         tree = ET.ElementTree(file = data_path)
 
-        if tree.findtext("*[@key='version']", "0") != "34":
+        if tree.findtext("*[@key='version']", "0") != str(self.previous_version):
             return False
 
         project = tree.getroot()
@@ -1800,7 +1774,7 @@ class _(Upgrader):
             iteration.set("type", "temporal.project.IterationData")
 
         if (version := tree.find("*[@key='version']")) is not None:
-            version.text = "35"
+            version.text = str(self.version)
 
         ET.indent(tree)
         tree.write(data_path, "utf-8")
@@ -1809,10 +1783,9 @@ class _(Upgrader):
 
 
 class _(Upgrader):
-    id = 36
+    version = 36
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         data_path = path / "project" / "data.xml"
 
         if not data_path.exists():
@@ -1820,7 +1793,7 @@ class _(Upgrader):
 
         tree = ET.ElementTree(file = data_path)
 
-        if tree.findtext("*[@key='version']", "0") != "35":
+        if tree.findtext("*[@key='version']", "0") != str(self.previous_version):
             return False
 
         if (initial_noise := tree.find("*[@key='initial_noise']")) is not None:
@@ -1838,7 +1811,7 @@ class _(Upgrader):
                 noise_overlay.remove(use_dynamic_seed)
 
         if (version := tree.find("*[@key='version']")) is not None:
-            version.text = "36"
+            version.text = str(self.version)
 
         ET.indent(tree)
         tree.write(data_path, "utf-8")
@@ -1847,10 +1820,9 @@ class _(Upgrader):
 
 
 class _(Upgrader):
-    id = 37
+    version = 37
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         data_path = path / "project" / "data.xml"
 
         if not data_path.exists():
@@ -1858,7 +1830,7 @@ class _(Upgrader):
 
         tree = ET.ElementTree(file = data_path)
 
-        if tree.findtext("*[@key='version']", "0") != "36":
+        if tree.findtext("*[@key='version']", "0") != str(self.previous_version):
             return False
 
         for base_path in (
@@ -1873,7 +1845,7 @@ class _(Upgrader):
                     octaves.set("type", "float")
 
         if (version := tree.find("*[@key='version']")) is not None:
-            version.text = "37"
+            version.text = str(self.version)
 
         ET.indent(tree)
         tree.write(data_path, "utf-8")
@@ -1882,10 +1854,9 @@ class _(Upgrader):
 
 
 class _(Upgrader):
-    id = 38
+    version = 38
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         data_path = path / "project" / "data.xml"
 
         if not data_path.exists():
@@ -1893,7 +1864,7 @@ class _(Upgrader):
 
         tree = ET.ElementTree(file = data_path)
 
-        if tree.findtext("*[@key='version']", "0") != "37":
+        if tree.findtext("*[@key='version']", "0") != str(self.previous_version):
             return False
 
         if (modules := tree.find("*[@key='pipeline']/*[@key='modules']")) is not None:
@@ -1929,7 +1900,7 @@ class _(Upgrader):
             ET.SubElement(end_color, "object", {"key": "a", "type": "float"}).text = "1.0"
 
         if (version := tree.find("*[@key='version']")) is not None:
-            version.text = "38"
+            version.text = str(self.version)
 
         ET.indent(tree)
         tree.write(data_path, "utf-8")
@@ -1938,10 +1909,9 @@ class _(Upgrader):
 
 
 class _(Upgrader):
-    id = 39
+    version = 39
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         data_path = path / "project" / "data.xml"
 
         if not data_path.exists():
@@ -1949,7 +1919,7 @@ class _(Upgrader):
 
         tree = ET.ElementTree(file = data_path)
 
-        if tree.findtext("*[@key='version']", "0") != "38":
+        if tree.findtext("*[@key='version']", "0") != str(self.previous_version):
             return False
 
         if (modules := tree.find("*[@key='pipeline']/*[@key='modules']")) is not None:
@@ -1982,7 +1952,7 @@ class _(Upgrader):
             ET.SubElement(color_b, "object", {"key": "a", "type": "float"}).text = "1.0"
 
         if (version := tree.find("*[@key='version']")) is not None:
-            version.text = "39"
+            version.text = str(self.version)
 
         ET.indent(tree)
         tree.write(data_path, "utf-8")
@@ -1991,10 +1961,9 @@ class _(Upgrader):
 
 
 class _(Upgrader):
-    id = 40
+    version = 40
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         data_path = path / "project" / "data.xml"
 
         if not data_path.exists():
@@ -2002,7 +1971,7 @@ class _(Upgrader):
 
         tree = ET.ElementTree(file = data_path)
 
-        if tree.findtext("*[@key='version']", "0") != "39":
+        if tree.findtext("*[@key='version']", "0") != str(self.previous_version):
             return False
 
         for src_key, dst_key, dst_type in [
@@ -2050,7 +2019,7 @@ class _(Upgrader):
                 module_id.text = dst_key
 
         if (version := tree.find("*[@key='version']")) is not None:
-            version.text = "40"
+            version.text = str(self.version)
 
         ET.indent(tree)
         tree.write(data_path, "utf-8")
@@ -2059,10 +2028,9 @@ class _(Upgrader):
 
 
 class _(Upgrader):
-    id = 41
+    version = 41
 
-    @staticmethod
-    def upgrade(path: Path) -> bool:
+    def upgrade(self, path: Path) -> bool:
         data_path = path / "project" / "data.xml"
 
         if not data_path.exists():
@@ -2070,7 +2038,7 @@ class _(Upgrader):
 
         tree = ET.ElementTree(file = data_path)
 
-        if tree.findtext("*[@key='version']", "0") != "40":
+        if tree.findtext("*[@key='version']", "0") != str(self.previous_version):
             return False
 
         classes = {
@@ -2101,7 +2069,79 @@ class _(Upgrader):
                 blend_mode.text = None
 
         if (version := tree.find("*[@key='version']")) is not None:
-            version.text = "41"
+            version.text = str(self.version)
+
+        ET.indent(tree)
+        tree.write(data_path, "utf-8")
+
+        return True
+
+
+class _(Upgrader):
+    version = 42
+
+    def upgrade(self, path: Path) -> bool:
+        data_path = path / "project" / "data.xml"
+
+        if not data_path.exists():
+            return False
+
+        tree = ET.ElementTree(file = data_path)
+
+        if tree.findtext("*[@key='version']", "0") != str(self.previous_version):
+            return False
+
+        for modules in tree.iterfind("*[@key='pipeline']/*[@key='modules']"):
+            modules.set("type", "list")
+
+            for module in modules:
+                module.attrib.pop("key")
+
+        classes = {
+            "blurring": "filtering.blurring.BlurringFilter",
+            "color_balancing": "filtering.color_balancing.ColorBalancingFilter",
+            "color_correction": "filtering.color_correction.ColorCorrectionFilter",
+            "custom_code": "filtering.custom_code.CustomCodeFilter",
+            "median": "filtering.median.MedianFilter",
+            "morphology": "filtering.morphology.MorphologyFilter",
+            "noise_compression": "filtering.noise_compression.NoiseCompressionFilter",
+            "palettization": "filtering.palettization.PalettizationFilter",
+            "pixelization": "filtering.pixelization.PixelizationFilter",
+            "sharpening": "filtering.sharpening.SharpeningFilter",
+            "symmetry": "filtering.symmetry.SymmetryFilter",
+            "transformation": "filtering.transformation.TransformationFilter",
+
+            "color_level_mean_measuring": "measuring.color_level_mean.ColorLevelMeanMeasuringModule",
+            "color_level_sigma_measuring": "measuring.color_level_sigma.ColorLevelSigmaMeasuringModule",
+            "luminance_mean_measuring": "measuring.luminance_mean.LuminanceMeanMeasuringModule",
+            "luminance_sigma_measuring": "measuring.luminance_sigma.LuminanceSigmaMeasuringModule",
+            "noise_sigma_measuring": "measuring.noise_sigma.NoiseSigmaMeasuringModule",
+
+            "averaging": "temporal.averaging.AveragingModule",
+            "interpolation": "temporal.interpolation.InterpolationModule",
+            "limiting": "temporal.limiting.LimitingModule",
+            "random_sampling": "temporal.random_sampling.RandomSamplingModule",
+
+            "color_painting": "painting.color.ColorPaintingModule",
+            "gradient_painting": "painting.gradient.GradientPaintingModule",
+            "image_painting": "painting.image.ImagePaintingModule",
+            "noise_painting": "painting.noise.NoisePaintingModule",
+            "pattern_painting": "painting.pattern.PatternPaintingModule",
+
+            "saving": "tool.saving.SavingModule",
+            "video_rendering": "tool.video_rendering.VideoRenderingModule",
+
+            "detailing": "neural.detailing.DetailingModule",
+            "processing": "neural.processing.ProcessingModule",
+        }
+
+        if ((module_id := tree.find("*[@key='iteration']/*[@key='module_id']")) is not None and
+            module_id.text is not None and
+            module_id.text != "None"):
+            module_id.text = f"temporal.pipeline_modules.{classes[module_id.text]}"
+
+        if (version := tree.find("*[@key='version']")) is not None:
+            version.text = str(self.version)
 
         ET.indent(tree)
         tree.write(data_path, "utf-8")

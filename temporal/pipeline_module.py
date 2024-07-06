@@ -6,7 +6,7 @@ from temporal.project import Project
 from temporal.utils.image import NumpyImage
 
 
-PIPELINE_MODULES: dict[str, Type["PipelineModule"]] = {}
+PIPELINE_MODULES: list[Type["PipelineModule"]] = []
 
 
 class PipelineModule(Configurable, abstract = True):

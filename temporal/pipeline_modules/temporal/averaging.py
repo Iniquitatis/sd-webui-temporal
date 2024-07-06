@@ -12,7 +12,6 @@ from temporal.utils.numpy import average_array, make_eased_weight_array, saturat
 
 
 class AveragingModule(TemporalModule):
-    id = "averaging"
     name = "Averaging"
 
     frames: int = IntParam("Frame count", minimum = 1, step = 1, value = 1, ui_type = "box")

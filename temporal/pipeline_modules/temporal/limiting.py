@@ -12,7 +12,6 @@ from temporal.utils.numpy import saturate_array
 
 
 class LimitingModule(TemporalModule):
-    id = "limiting"
     name = "Limiting"
 
     mode: str = EnumParam("Mode", choices = [("clamp", "Clamp"), ("compress", "Compress")], value = "clamp", ui_type = "menu")

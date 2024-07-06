@@ -5,9 +5,9 @@ import gradio as gr
 from temporal.pipeline import Pipeline
 from temporal.ui import ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.gradio_widget import GradioWidget
-from temporal.ui.module_list import ModuleList
+from temporal.ui.reorderable_list import ReorderableList
 from temporal.ui.pipeline_module_editor import PipelineModuleEditor
-from temporal.utils.collection import reorder_dict
+from temporal.utils.collection import find_by_predicate, reorder_dict
 
 
 class PipelineEditor(Widget):
@@ -19,10 +19,10 @@ class PipelineEditor(Widget):
 
         self._parallel = GradioWidget(gr.Number, label = "Parallel", precision = 0, minimum = 1, step = 1, value = value.parallel)
 
-        with ModuleList(keys = value.modules.keys()) as self._module_order:
+        with ReorderableList() as self._module_order:
             self._modules = {
-                id: PipelineModuleEditor(value = module)
-                for id, module in value.modules.items()
+                module.id: PipelineModuleEditor(value = module)
+                for module in value.modules
             }
 
     @property
@@ -34,7 +34,13 @@ class PipelineEditor(Widget):
     def read(self, data: ReadData) -> Pipeline:
         return Pipeline(
             parallel = data[self._parallel],
-            modules = {key: data[widget] for key, widget in reorder_dict(self._modules, data[self._module_order]).items()},
+            modules = [
+                data[widget]
+                for widget in reorder_dict(self._modules, [
+                    self._module_ids[x]
+                    for x in data[self._module_order]
+                ]).values()
+            ],
         )
 
     def update(self, data: UpdateData) -> UpdateRequest:
@@ -46,13 +52,17 @@ class PipelineEditor(Widget):
 
         if isinstance(value := data.get("value", None), Pipeline):
             result[self._parallel]["value"] = value.parallel
-            result[self._module_order]["value"] = list(value.modules.keys())
+            result[self._module_order]["value"] = [self._module_ids.index(x.id) for x in value.modules]
 
-            for key, widget in self._modules.items():
-                result[widget]["value"] = value.modules[key]
+            for id, widget in self._modules.items():
+                result[widget]["value"] = find_by_predicate(value.modules, lambda x: x.id == id)
 
         if isinstance(preview_states := data.get("preview_states", None), dict):
-            for key, widget in self._modules.items():
-                result[widget]["preview"] = preview_states[key]
+            for id, widget in self._modules.items():
+                result[widget]["preview"] = preview_states[id]
 
         return result
+
+    @property
+    def _module_ids(self) -> list[str]:
+        return list(self._modules.keys())

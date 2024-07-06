@@ -6,7 +6,6 @@ from temporal.utils.math import remap_range
 
 
 class ColorBalancingFilter(ImageFilter):
-    id = "color_balancing"
     name = "Color balancing"
 
     brightness: float = FloatParam("Brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, ui_type = "slider")

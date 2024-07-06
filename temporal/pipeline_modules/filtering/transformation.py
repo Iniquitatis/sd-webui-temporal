@@ -8,7 +8,6 @@ from temporal.utils.image import NumpyImage
 
 
 class TransformationFilter(ImageFilter):
-    id = "transformation"
     name = "Transformation"
 
     translation_x: float = FloatParam("Translation X", minimum = -1.0, maximum = 1.0, step = 0.001, value = 0.0, ui_type = "slider")

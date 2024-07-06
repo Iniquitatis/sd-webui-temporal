@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from inspect import isfunction
 from typing import Callable, Generic, Iterator, Optional, TypeVar, cast
 
 from temporal.ui import Callback, ReadData, UIThing, UpdateData, UpdateRequest, Widget
@@ -21,7 +22,7 @@ class Selector(Widget, Generic[T, U]):
 
         self.choices = _unpack_choices(choices)
 
-        self._instance = GradioWidget(gr_type, label = self._format_label(label), type = "index", choices = [name for _, name in self.choices], value = lambda: self._find_name(value()) if callable(value) else self._find_name(cast(U, value)))
+        self._instance = GradioWidget(gr_type, label = self._format_label(label), type = "index", choices = [name for _, name in self.choices], value = lambda: self._find_name(value()) if isfunction(value) else self._find_name(cast(U, value)))
 
     @property
     def dependencies(self) -> Iterator[UIThing]:

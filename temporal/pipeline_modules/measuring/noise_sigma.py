@@ -5,7 +5,6 @@ from temporal.utils.image import NumpyImage
 
 
 class NoiseSigmaMeasuringModule(MeasuringModule):
-    id = "noise_sigma_measuring"
     name = "Noise sigma"
     file_name = "noise_sigma"
     channels = [

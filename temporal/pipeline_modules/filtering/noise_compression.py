@@ -7,7 +7,6 @@ from temporal.utils.image import NumpyImage
 
 
 class NoiseCompressionFilter(ImageFilter):
-    id = "noise_compression"
     name = "Noise compression"
 
     constant: float = FloatParam("Constant", minimum = 0.0, maximum = 1.0, step = 1e-5, value = 0.0, ui_type = "slider")

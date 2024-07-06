@@ -6,7 +6,6 @@ from temporal.utils.image import NumpyImage
 
 
 class LuminanceSigmaMeasuringModule(MeasuringModule):
-    id = "luminance_sigma_measuring"
     name = "Luminance sigma"
     file_name = "luminance_sigma"
     channels = [

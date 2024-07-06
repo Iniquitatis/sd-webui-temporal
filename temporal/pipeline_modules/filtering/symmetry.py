@@ -7,7 +7,6 @@ from temporal.utils.image import NumpyImage
 
 
 class SymmetryFilter(ImageFilter):
-    id = "symmetry"
     name = "Symmetry"
 
     horizontal: bool = BoolParam("Horizontal", value = False)

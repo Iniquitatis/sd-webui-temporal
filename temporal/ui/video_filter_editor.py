@@ -2,7 +2,7 @@ from typing import Iterator
 
 from temporal.ui import ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.configurable_param_editor import ConfigurableParamEditor
-from temporal.ui.module_list import ModuleAccordion
+from temporal.ui.reorderable_list import ReorderableAccordion
 from temporal.video_filters import VideoFilter
 
 
@@ -15,7 +15,7 @@ class VideoFilterEditor(Widget):
 
         self.type = value.__class__
 
-        with ModuleAccordion(label = value.name, key = value.id, value = value.enabled, open = False) as self._enabled:
+        with ReorderableAccordion(label = value.name, value = value.enabled, open = False) as self._enabled:
             self._params = {
                 key: ConfigurableParamEditor(param = param, value = getattr(value, key))
                 for key, param in value.__params__.items()

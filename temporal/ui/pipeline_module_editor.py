@@ -10,7 +10,7 @@ from temporal.ui.blend_mode_selector import BlendModeSelector
 from temporal.ui.configurable_param_editor import ConfigurableParamEditor
 from temporal.ui.gradio_widget import GradioWidget
 from temporal.ui.image_mask_editor import ImageMaskEditor
-from temporal.ui.module_list import ModuleAccordion, ModuleAccordionSpecialCheckbox
+from temporal.ui.reorderable_list import ReorderableAccordion, ReorderableAccordionSpecialCheckbox
 
 
 class PipelineModuleEditor(Widget):
@@ -22,8 +22,8 @@ class PipelineModuleEditor(Widget):
 
         self.type = value.__class__
 
-        with ModuleAccordion(label = f"{value.icon} {value.name}", key = value.id, value = value.enabled, open = False) as self._enabled:
-            self._visibility = ModuleAccordionSpecialCheckbox(value = lambda: shared.previewed_modules[value.id], classes = ["temporal-visibility-checkbox"])
+        with ReorderableAccordion(label = f"{value.icon} {value.name}", value = value.enabled, open = False) as self._enabled:
+            self._visibility = ReorderableAccordionSpecialCheckbox(value = lambda: shared.previewed_modules[value.id], classes = ["temporal-visibility-checkbox"])
 
             @self._visibility.callback("change", [self._visibility], [])
             def _(inputs: CallbackInputs) -> CallbackOutputs:

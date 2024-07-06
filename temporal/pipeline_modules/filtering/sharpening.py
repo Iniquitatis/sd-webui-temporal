@@ -7,7 +7,6 @@ from temporal.utils.image import NumpyImage
 
 
 class SharpeningFilter(ImageFilter):
-    id = "sharpening"
     name = "Sharpening"
 
     strength: float = FloatParam("Strength", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, ui_type = "slider")

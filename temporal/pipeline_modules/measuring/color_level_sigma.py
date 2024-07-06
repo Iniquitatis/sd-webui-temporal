@@ -5,7 +5,6 @@ from temporal.utils.image import NumpyImage
 
 
 class ColorLevelSigmaMeasuringModule(MeasuringModule):
-    id = "color_level_sigma_measuring"
     name = "Color level sigma"
     file_name = "color_level_sigma"
     channels = [

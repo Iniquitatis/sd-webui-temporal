@@ -6,7 +6,7 @@ from temporal.meta.configurable import BoolParam, ColorParam, Configurable, Enum
 from temporal.meta.serializable import SerializableField as Field
 
 
-VIDEO_FILTERS: dict[str, Type["VideoFilter"]] = {}
+VIDEO_FILTERS: list[Type["VideoFilter"]] = []
 
 
 class VideoFilter(Configurable, abstract = True):
@@ -20,7 +20,6 @@ class VideoFilter(Configurable, abstract = True):
 
 
 class ChromaticAberrationFilter(VideoFilter):
-    id = "chromatic_aberration"
     name = "Chromatic aberration"
 
     distance: int = IntParam("Distance", minimum = 1, maximum = 512, step = 1, value = 1, ui_type = "slider")
@@ -30,7 +29,6 @@ class ChromaticAberrationFilter(VideoFilter):
 
 
 class ColorBalancingFilter(VideoFilter):
-    id = "color_balancing"
     name = "Color balancing"
 
     brightness: float = FloatParam("Brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, ui_type = "slider")
@@ -42,7 +40,6 @@ class ColorBalancingFilter(VideoFilter):
 
 
 class DeflickeringFilter(VideoFilter):
-    id = "deflickering"
     name = "Deflickering"
 
     frames: int = IntParam("Frames", minimum = 2, maximum = 120, step = 1, value = 60, ui_type = "slider")
@@ -52,7 +49,6 @@ class DeflickeringFilter(VideoFilter):
 
 
 class InterpolationFilter(VideoFilter):
-    id = "interpolation"
     name = "Interpolation"
 
     fps: int = IntParam("Frames per second", minimum = 1, maximum = 60, step = 1, value = 60, ui_type = "slider")
@@ -70,7 +66,6 @@ class InterpolationFilter(VideoFilter):
 
 
 class ScalingFilter(VideoFilter):
-    id = "scaling"
     name = "Scaling"
 
     width: int = IntParam("Width", minimum = 16, maximum = 2560, step = 8, value = 512, ui_type = "slider")
@@ -117,7 +112,6 @@ class ScalingFilter(VideoFilter):
 
 
 class SharpeningFilter(VideoFilter):
-    id = "sharpening"
     name = "Sharpening"
 
     strength: float = FloatParam("Strength", minimum = 0.0, maximum = 1.0, step = 0.1, value = 0.0, ui_type = "slider")
@@ -128,7 +122,6 @@ class SharpeningFilter(VideoFilter):
 
 
 class TemporalAveragingFilter(VideoFilter):
-    id = "temporal_averaging"
     name = "Temporal averaging"
 
     radius: int = IntParam("Radius", minimum = 1, maximum = 60, step = 1, value = 1, ui_type = "slider")
@@ -148,7 +141,6 @@ class TemporalAveragingFilter(VideoFilter):
 
 
 class TextOverlayFilter(VideoFilter):
-    id = "text_overlay"
     name = "Text overlay"
 
     text: str = StringParam("Text", value = "{frame}", ui_type = "box")

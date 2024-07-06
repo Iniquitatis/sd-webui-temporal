@@ -4,9 +4,9 @@ import gradio as gr
 
 from temporal.ui import ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.gradio_widget import GradioWidget
-from temporal.ui.module_list import ModuleList
+from temporal.ui.reorderable_list import ReorderableList
 from temporal.ui.video_filter_editor import VideoFilterEditor
-from temporal.utils.collection import reorder_dict
+from temporal.utils.collection import find_by_predicate, reorder_dict
 from temporal.video_renderer import VideoRenderer
 
 
@@ -20,10 +20,10 @@ class VideoRendererEditor(Widget):
         self._fps = GradioWidget(gr.Slider, label = "Frames per second", minimum = 1, maximum = 60, step = 1, value = value.fps)
         self._looping = GradioWidget(gr.Checkbox, label = "Looping", value = value.looping)
 
-        with ModuleList(keys = value.filters.keys()) as self._filter_order:
+        with ReorderableList() as self._filter_order:
             self._filters = {
-                id: VideoFilterEditor(value = filter)
-                for id, filter in value.filters.items()
+                filter.id: VideoFilterEditor(value = filter)
+                for filter in value.filters
             }
 
     @property
@@ -37,7 +37,13 @@ class VideoRendererEditor(Widget):
         return VideoRenderer(
             fps = data[self._fps],
             looping = data[self._looping],
-            filters = {key: data[widget] for key, widget in reorder_dict(self._filters, data[self._filter_order]).items()},
+            filters = [
+                data[widget]
+                for widget in reorder_dict(self._filters, [
+                    self._filter_ids[x]
+                    for x in data[self._filter_order]
+                ]).values()
+            ],
         )
 
     def update(self, data: UpdateData) -> UpdateRequest:
@@ -46,7 +52,14 @@ class VideoRendererEditor(Widget):
         if isinstance(value := data.get("value", None), VideoRenderer):
             result[self._fps] = {"value": value.fps}
             result[self._looping] = {"value": value.looping}
-            result[self._filter_order] = {"value": list(value.filters.keys())}
-            result |= {widget: {"value": value.filters[key]} for key, widget in self._filters.items()}
+            result[self._filter_order] = {"value": [self._filter_ids.index(x.id) for x in value.filters]}
+            result |= {
+                widget: {"value": find_by_predicate(value.filters, lambda x: x.id == id)}
+                for id, widget in self._filters.items()
+            }
 
         return result
+
+    @property
+    def _filter_ids(self) -> list[str]:
+        return list(self._filters.keys())

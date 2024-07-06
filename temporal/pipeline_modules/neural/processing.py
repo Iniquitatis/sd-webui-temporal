@@ -13,7 +13,6 @@ from temporal.web_ui import process_images
 
 
 class ProcessingModule(NeuralModule):
-    id = "processing"
     name = "Processing"
 
     samples: int = IntParam("Sample count", minimum = 1, value = 1, ui_type = "box")

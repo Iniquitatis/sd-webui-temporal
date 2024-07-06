@@ -8,7 +8,6 @@ from temporal.utils.image import NumpyImage, match_image
 
 
 class ColorCorrectionFilter(ImageFilter):
-    id = "color_correction"
     name = "Color correction"
 
     source: ImageSource = ImageSourceParam("Image source", channels = 3)

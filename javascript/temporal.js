@@ -8,23 +8,22 @@ function getClassValue(elem, prefix) {
     return null;
 }
 
-function initializeModuleLists() {
+function initializeReorderableLists() {
     let current = null;
 
     let observer = new MutationObserver(() => {
-        gradioApp().querySelectorAll(".temporal-module-list").forEach((moduleList) => {
-            if (moduleList.classList.contains("temporal-initialized")) return;
+        gradioApp().querySelectorAll(".temporal-reorderable-list").forEach((list) => {
+            if (list.classList.contains("temporal-initialized")) return;
 
-            let moduleListIndex = getClassValue(moduleList, "temporal-index-");
+            let listIndex = getClassValue(list, "temporal-index-");
 
-            moduleListDropdown = gradioApp().querySelector(`.temporal-module-list-dropdown.temporal-index-${moduleListIndex}`);
-            moduleListTextbox = gradioApp().querySelector(`.temporal-module-list-textbox.temporal-index-${moduleListIndex}`);
+            listTextbox = gradioApp().querySelector(`.temporal-reorderable-list-textbox.temporal-index-${listIndex}`);
 
-            moduleList.querySelectorAll(".temporal-module-accordion").forEach((accordion) => {
+            list.querySelectorAll(".temporal-reorderable-accordion").forEach((accordion) => {
                 let accordionIndex = getClassValue(accordion, "temporal-index-");
 
                 let dragger = document.createElement("span");
-                dragger.classList.add("temporal-module-accordion-dragger");
+                dragger.classList.add("temporal-reorderable-accordion-dragger");
                 dragger.classList.add(`temporal-index-${accordionIndex}`);
                 dragger.innerText = ":::";
                 dragger.addEventListener("pointerdown", (event) => {
@@ -35,7 +34,7 @@ function initializeModuleLists() {
                     current = accordion;
                 });
 
-                let checkbox = gradioApp().querySelector(`.temporal-module-accordion-checkbox.temporal-index-${accordionIndex}`);
+                let checkbox = list.querySelector(`.temporal-reorderable-accordion-checkbox.temporal-index-${accordionIndex}`);
                 checkbox.addEventListener("click", (event) => {
                     event.stopPropagation();
                 });
@@ -44,7 +43,7 @@ function initializeModuleLists() {
                 labelWrap.insertBefore(checkbox.parentElement, labelWrap.firstChild);
                 labelWrap.insertBefore(dragger, labelWrap.firstChild);
 
-                let specialCheckbox = accordion.querySelector(".temporal-module-accordion-special-checkbox");
+                let specialCheckbox = accordion.querySelector(".temporal-reorderable-accordion-special-checkbox");
 
                 if (specialCheckbox != null) {
                     specialCheckbox.addEventListener("click", (event) => {
@@ -55,11 +54,10 @@ function initializeModuleLists() {
                 }
 
                 accordion.checkbox = checkbox;
-                accordion.moduleList = moduleList;
-                accordion.moduleListDropdown = moduleListDropdown;
-                accordion.moduleListTextbox = moduleListTextbox;
+                accordion.list = list;
+                accordion.listTextbox = listTextbox;
             });
-            moduleList.classList.add("temporal-initialized");
+            list.classList.add("temporal-initialized");
         });
     });
     observer.observe(gradioApp(), {childList: true, subtree: true});
@@ -77,7 +75,7 @@ function initializeModuleLists() {
 
         let parent = current.parentElement;
 
-        parent.querySelectorAll(".temporal-module-accordion").forEach((other) => {
+        parent.querySelectorAll(".temporal-reorderable-accordion").forEach((other) => {
             if (current == other) return;
 
             let selfRect = current.getBoundingClientRect();
@@ -97,10 +95,10 @@ function initializeModuleLists() {
 
         event.stopPropagation();
 
-        let textArea = current.moduleListTextbox.querySelector("textarea");
+        let textArea = current.listTextbox.querySelector("textarea");
         textArea.value =
-            [...current.moduleList.querySelectorAll(".temporal-module-accordion")]
-            .map((x) => getClassValue(x, "temporal-key-"))
+            [...current.list.querySelectorAll(".temporal-reorderable-accordion")]
+            .map((x) => getClassValue(x, "temporal-index-"))
             .join("|");
 
         let inputEvent = new Event("input", {bubbles: true});
@@ -113,14 +111,14 @@ function initializeModuleLists() {
     });
 }
 
-function updateModuleListOrder(index, keys) {
-    let moduleList = gradioApp().querySelector(`.temporal-module-list.temporal-index-${index}`);
+function updateReorderableListOrder(listIndex, accordionIndexString) {
+    let list = gradioApp().querySelector(`.temporal-reorderable-list.temporal-index-${listIndex}`);
 
-    for (let key of keys) {
-        moduleList.appendChild(moduleList.querySelector(`.temporal-module-accordion.temporal-key-${key}`));
+    for (let index of accordionIndexString.split("|")) {
+        list.appendChild(list.querySelector(`.temporal-reorderable-accordion.temporal-index-${index}`));
     }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    initializeModuleLists();
+    initializeReorderableLists();
 });

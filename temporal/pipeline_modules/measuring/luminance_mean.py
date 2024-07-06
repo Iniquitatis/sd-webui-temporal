@@ -6,7 +6,6 @@ from temporal.utils.image import NumpyImage
 
 
 class LuminanceMeanMeasuringModule(MeasuringModule):
-    id = "luminance_mean_measuring"
     name = "Luminance mean"
     file_name = "luminance_mean"
     channels = [

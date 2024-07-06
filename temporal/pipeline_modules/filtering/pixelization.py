@@ -7,7 +7,6 @@ from temporal.utils.image import NumpyImage
 
 
 class PixelizationFilter(ImageFilter):
-    id = "pixelization"
     name = "Pixelization"
 
     pixel_size: int = IntParam("Pixel size", minimum = 1, step = 1, value = 1, ui_type = "box")

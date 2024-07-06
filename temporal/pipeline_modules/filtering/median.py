@@ -8,7 +8,6 @@ from temporal.utils.image import NumpyImage, apply_channelwise
 
 
 class MedianFilter(ImageFilter):
-    id = "median"
     name = "Median"
 
     radius: int = IntParam("Radius", minimum = 0, maximum = 50, step = 1, value = 0, ui_type = "slider")

@@ -13,7 +13,6 @@ from temporal.web_ui import get_schedulers, has_schedulers, process_images
 
 
 class DetailingModule(NeuralModule):
-    id = "detailing"
     name = "Detailing"
 
     scale: float = FloatParam("Scale", minimum = 0.25, maximum = 4.0, step = 0.25, value = 1.0, ui_type = "slider")

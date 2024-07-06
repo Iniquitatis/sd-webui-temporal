@@ -12,7 +12,6 @@ from temporal.web_ui import image_save_queue, save_processed_image
 
 
 class SavingModule(ToolModule):
-    id = "saving"
     name = "Saving"
 
     scale: float = FloatParam("Scale", minimum = 0.25, maximum = 4.0, step = 0.25, value = 1.0, ui_type = "slider")

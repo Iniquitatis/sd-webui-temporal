@@ -11,7 +11,6 @@ from temporal.utils.image import NumpyImage
 
 
 class CustomCodeFilter(ImageFilter):
-    id = "custom_code"
     name = "Custom code"
 
     code: str = StringParam("Code", value = "output = input", ui_type = "code", language = "python")

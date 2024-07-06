@@ -11,7 +11,6 @@ from temporal.utils.image import NumpyImage, apply_channelwise, np_to_pil, pil_t
 
 
 class PalettizationFilter(ImageFilter):
-    id = "palettization"
     name = "Palettization"
 
     palette: Optional[NumpyImage] = ImageParam("Palette", channels = 3)

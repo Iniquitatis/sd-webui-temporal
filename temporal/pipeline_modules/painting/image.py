@@ -9,7 +9,6 @@ from temporal.utils.image import NumpyImage, ensure_image_dims
 
 
 class ImagePaintingModule(PaintingModule):
-    id = "image_painting"
     name = "Image"
 
     source: ImageSource = ImageSourceParam("Image source", channels = 4)
