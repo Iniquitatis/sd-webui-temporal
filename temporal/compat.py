@@ -13,7 +13,7 @@ from temporal.utils.image import load_image, pil_to_np
 from temporal.utils.numpy import load_array, save_array
 
 
-VERSION = 40
+VERSION = 41
 
 UPGRADERS: dict[int, Type["Upgrader"]] = {}
 
@@ -2051,6 +2051,57 @@ class _(Upgrader):
 
         if (version := tree.find("*[@key='version']")) is not None:
             version.text = "40"
+
+        ET.indent(tree)
+        tree.write(data_path, "utf-8")
+
+        return True
+
+
+class _(Upgrader):
+    id = 41
+
+    @staticmethod
+    def upgrade(path: Path) -> bool:
+        data_path = path / "project" / "data.xml"
+
+        if not data_path.exists():
+            return False
+
+        tree = ET.ElementTree(file = data_path)
+
+        if tree.findtext("*[@key='version']", "0") != "40":
+            return False
+
+        classes = {
+            "normal": "NormalBlendMode",
+            "add": "AddBlendMode",
+            "subtract": "SubtractBlendMode",
+            "multiply": "MultiplyBlendMode",
+            "divide": "DivideBlendMode",
+            "lighten": "LightenBlendMode",
+            "darken": "DarkenBlendMode",
+            "hard_light": "HardLightBlendMode",
+            "soft_light": "SoftLightBlendMode",
+            "color_dodge": "ColorDodgeBlendMode",
+            "color_burn": "ColorBurnBlendMode",
+            "overlay": "OverlayBlendMode",
+            "screen": "ScreenBlendMode",
+            "difference": "DifferenceBlendMode",
+            "exclusion": "ExclusionBlendMode",
+            "hue": "HueBlendMode",
+            "saturation": "SaturationBlendMode",
+            "value": "ValueBlendMode",
+            "color": "ColorBlendMode",
+        }
+
+        for blend_mode in tree.iterfind("*[@key='pipeline']/*[@key='modules']/*/*[@key='blend_mode']"):
+            if blend_mode.text is not None:
+                blend_mode.set("type", f"temporal.blend_modes.{classes[blend_mode.text]}")
+                blend_mode.text = None
+
+        if (version := tree.find("*[@key='version']")) is not None:
+            version.text = "41"
 
         ET.indent(tree)
         tree.write(data_path, "utf-8")

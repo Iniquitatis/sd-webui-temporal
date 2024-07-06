@@ -4,13 +4,14 @@ from typing import Type
 import numpy as np
 
 from temporal.meta.registerable import Registerable
+from temporal.meta.serializable import Serializable
 from temporal.utils.image import NumpyImage, join_hsv_to_rgb, split_hsv
 
 
 BLEND_MODES: dict[str, Type["BlendMode"]] = {}
 
 
-class BlendMode(Registerable, abstract = True):
+class BlendMode(Registerable, Serializable, abstract = True):
     store = BLEND_MODES
 
     @staticmethod

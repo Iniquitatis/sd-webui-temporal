@@ -2,13 +2,12 @@ from typing import Iterator
 
 import gradio as gr
 
-from temporal.blend_modes import BLEND_MODES
 from temporal.pipeline_module import PipelineModule
 from temporal.pipeline_modules.filtering import ImageFilter
 from temporal.shared import shared
 from temporal.ui import CallbackInputs, CallbackOutputs, ReadData, UIThing, UpdateData, UpdateRequest, Widget
+from temporal.ui.blend_mode_selector import BlendModeSelector
 from temporal.ui.configurable_param_editor import ConfigurableParamEditor
-from temporal.ui.dropdown import Dropdown
 from temporal.ui.gradio_widget import GradioWidget
 from temporal.ui.image_mask_editor import ImageMaskEditor
 from temporal.ui.module_list import ModuleAccordion, ModuleAccordionSpecialCheckbox
@@ -36,7 +35,7 @@ class PipelineModuleEditor(Widget):
                     self._amount = GradioWidget(gr.Slider, label = "Amount", minimum = 0.0, maximum = 1.0, step = 0.01, value = value.amount)
                     self._amount_relative = GradioWidget(gr.Checkbox, label = "Relative", value = value.amount_relative)
 
-                self._blend_mode = Dropdown(label = "Blend mode", choices = [(x.id, x.name) for x in BLEND_MODES.values()], value = value.blend_mode)
+                self._blend_mode = BlendModeSelector(label = "Blend mode", value = value.blend_mode)
 
                 with GradioWidget(gr.Tab, label = "Parameters"):
                     self._params = {
