@@ -1,15 +1,19 @@
+from os import environ
+from pathlib import Path
 from time import perf_counter
-from typing import Any, Iterator
+from typing import Any, Iterator, cast
 
 import gradio as gr
 
 from modules import scripts, shared as webui_shared
 from modules.options import Options
 from modules.processing import Processed, StableDiffusionProcessingImg2Img, fix_seed
+from modules.scripts import basedir
 from modules.shared_state import State
 from modules.styles import StyleDatabase
 
-from temporal.interop import EXTENSION_DIR, get_cn_units
+environ["TEMPORAL_BACKEND"] = "WEBUI"
+
 from temporal.pipeline_modules.measuring import MeasuringModule
 from temporal.preset import Preset
 from temporal.project import Project
@@ -24,16 +28,19 @@ from temporal.ui.video_renderer_editor import VideoRendererEditor
 from temporal.utils import logging
 from temporal.utils.fs import load_text
 from temporal.utils.image import PILImage, ensure_image_dims, np_to_pil, pil_to_np
-from temporal.utils.object import copy_with_overrides
 from temporal.utils.time import wait_until
 from temporal.video_renderer import video_render_queue
-from temporal.web_ui import process_images
+from temporal.webui import WebUIBackend, WebUIBackendData
+from temporal.webui.controlnet import get_controlnet_units
 
 
 # FIXME: To shut up the type checker
 opts: Options = getattr(webui_shared, "opts")
 prompt_styles: StyleDatabase = getattr(webui_shared, "prompt_styles")
 state: State = getattr(webui_shared, "state")
+
+
+EXTENSION_DIR = Path(basedir())
 
 
 class TemporalScript(scripts.Script):
@@ -221,6 +228,8 @@ class TemporalScript(scripts.Script):
 
         stored_project, load_parameters, continue_from_last_frame, iter_count, project = self._ui.recombine(*args)
 
+        cast(WebUIBackend, shared.backend).processing = p
+
         opts_backup = opts.data.copy()
 
         opts.save_to_dirs = False
@@ -235,9 +244,11 @@ class TemporalScript(scripts.Script):
         fix_seed(p)
 
         project.path = stored_project.data.path
-        project.options = opts
-        project.processing = p
-        project.controlnet_units = get_cn_units(p)
+        project.backend_data = WebUIBackendData(
+            options = opts,
+            processing = p,
+            controlnet_units = get_controlnet_units(p),
+        )
 
         if load_parameters:
             project.load(stored_project.data.path)
@@ -253,15 +264,11 @@ class TemporalScript(scripts.Script):
             ]
 
             if project.initial_noise.factor < 1.0:
-                if not (processed_images := process_images(
-                    copy_with_overrides(p,
-                        denoising_strength = 1.0 - project.initial_noise.factor,
-                        do_not_save_samples = True,
-                        do_not_save_grid = True,
-                    ),
+                if not (processed_images := shared.backend.process_batches(
                     [(np_to_pil(x), p.seed + i, 1) for i, x in enumerate(noises)],
                     shared.options.processing.pixels_per_batch,
                     True,
+                    denoising_strength = 1.0 - project.initial_noise.factor,
                 )):
                     opts.data.update(opts_backup)
 

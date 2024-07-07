@@ -20,7 +20,7 @@ class RandomSamplingModule(TemporalModule):
     def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if self.buffer is None:
             self.buffer = np.stack([
-                ensure_image_dims(image, "RGB", (project.processing.width, project.processing.height))
+                ensure_image_dims(image, "RGB", (project.backend_data.width, project.backend_data.height))
                 for image in images
             ], 0)
 

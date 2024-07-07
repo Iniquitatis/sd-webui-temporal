@@ -1,28 +1,16 @@
-from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterator, Optional
 
-from modules import shared as webui_shared
-from modules.options import Options
-from modules.processing import StableDiffusionProcessingImg2Img
-
+from temporal.backend import BackendData
 from temporal.compat import get_latest_version, upgrade_project
-from temporal.interop import ControlNetUnitList, ControlNetUnitWrapper
 from temporal.meta.serializable import Serializable, SerializableField as Field
 from temporal.noise import Noise
 if TYPE_CHECKING:
     from temporal.pipeline import Pipeline
-from temporal.serialization import BasicObjectSerializer, Serializer
 from temporal.utils import logging
 from temporal.utils.fs import clear_directory, ensure_directory_exists, remove_entry
 from temporal.utils.image import NumpyImage
-from temporal.utils.object import copy_with_overrides
 from temporal.video_renderer import VideoRenderer
-from temporal.web_ui import has_schedulers
-
-
-# FIXME: To shut up the type checker
-opts: Options = getattr(webui_shared, "opts")
 
 
 class InitialNoiseParams(Serializable):
@@ -39,10 +27,7 @@ class IterationData(Serializable):
 class Project(Serializable):
     path: Path = Field(Path("outputs/temporal/untitled"), saved = False)
     version: int = Field(get_latest_version())
-    # NOTE: The next three fields should be assigned manually
-    options: Options = Field(factory = lambda: copy_with_overrides(opts, data = opts.data.copy()))
-    processing: StableDiffusionProcessingImg2Img = Field(factory = StableDiffusionProcessingImg2Img)
-    controlnet_units: Optional[ControlNetUnitList] = Field(factory = ControlNetUnitList)
+    backend_data: BackendData = Field(factory = BackendData)
     initial_noise: InitialNoiseParams = Field(factory = InitialNoiseParams)
     pipeline: "Pipeline" = Field(factory = lambda: _make_pipeline())
     iteration: IterationData = Field(factory = IterationData)
@@ -57,9 +42,9 @@ class Project(Serializable):
     def get_description(self) -> str:
         return "\n\n".join(f"{k}: {v}" for k, v in {
             "Name": self.path.name,
-            "Prompt": self.processing.prompt,
-            "Negative prompt": self.processing.negative_prompt,
-            "Checkpoint": self.options.sd_model_checkpoint,
+            "Positive prompt": self.backend_data.positive_prompt,
+            "Negative prompt": self.backend_data.negative_prompt,
+            "Model": self.backend_data.model,
             "Last frame": self.get_last_frame_index(),
             "Saved frames": self.get_actual_frame_count(),
         }.items())
@@ -124,98 +109,3 @@ def _parse_frame_index(image_path: Path) -> tuple[int, int]:
         logging.warning(f"{image_path.stem} doesn't match the frame name format")
 
     return 0, 0
-
-
-class _(BasicObjectSerializer[Options], create = False):
-    keys = [
-        "sd_model_checkpoint",
-        "sd_vae",
-        "CLIP_stop_at_last_layers",
-        "always_discard_next_to_last_sigma",
-    ]
-
-
-class _(BasicObjectSerializer[StableDiffusionProcessingImg2Img], create = False):
-    keys = [
-        "prompt",
-        "negative_prompt",
-        "init_images",
-        "image_mask",
-        "resize_mode",
-        "mask_blur_x",
-        "mask_blur_y",
-        "inpainting_mask_invert",
-        "inpainting_fill",
-        "inpaint_full_res",
-        "inpaint_full_res_padding",
-        "sampler_name",
-        "steps",
-        "refiner_checkpoint",
-        "refiner_switch_at",
-        "width",
-        "height",
-        "cfg_scale",
-        "denoising_strength",
-        "seed",
-        "seed_enable_extras",
-        "subseed",
-        "subseed_strength",
-        "seed_resize_from_w",
-        "seed_resize_from_h",
-    ] + (["scheduler"] if has_schedulers() else [])
-
-
-class _(Serializer[ControlNetUnitWrapper]):
-    keys = [
-        "image",
-        "enabled",
-        "low_vram",
-        "pixel_perfect",
-        "effective_region_mask",
-        "module",
-        "model",
-        "weight",
-        "guidance_start",
-        "guidance_end",
-        "processor_res",
-        "threshold_a",
-        "threshold_b",
-        "control_mode",
-        "resize_mode",
-    ]
-
-    @classmethod
-    def read(cls, obj, ar):
-        for key in cls.keys:
-            value = ar[key].create()
-
-            if isinstance(object_value := getattr(obj.instance, key), Enum):
-                value = type(object_value)(value)
-
-            setattr(obj.instance, key, value)
-
-        return obj
-
-    @classmethod
-    def write(cls, obj, ar):
-        for key in cls.keys:
-            value = getattr(obj.instance, key)
-
-            if isinstance(value, Enum):
-                value = value.value
-
-            ar[key].write(value)
-
-
-class _(Serializer[ControlNetUnitList]):
-    @classmethod
-    def read(cls, obj, ar):
-        for unit, child in zip(obj.units, ar):
-            child.read(unit)
-
-        return obj
-
-    @classmethod
-    def write(cls, obj, ar):
-        for unit in obj.units:
-            ar.make_child().write(unit)

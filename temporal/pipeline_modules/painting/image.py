@@ -15,7 +15,7 @@ class ImagePaintingModule(PaintingModule):
     blurring: float = FloatParam("Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, ui_type = "slider")
 
     def draw(self, size: tuple[int, int], parallel_index: int, project: Project, frame_index: int, seed: int) -> NumpyImage:
-        if (image := self.source.get_image(project.processing.init_images[parallel_index], frame_index - 1)) is None:
+        if (image := self.source.get_image(project.backend_data.images[parallel_index], frame_index - 1)) is None:
             return np.zeros((size[1], size[0], 4))
 
         return ensure_image_dims(skimage.filters.gaussian(image, round(self.blurring), channel_axis = -1), size = size)

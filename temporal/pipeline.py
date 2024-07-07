@@ -1,18 +1,11 @@
 import skimage
 
-from modules import shared as webui_shared
-from modules.shared_state import State
-
 from temporal.meta.serializable import Serializable, SerializableField as Field
 from temporal.pipeline_module import PIPELINE_MODULES, PipelineModule
 from temporal.project import IterationData, Project
 from temporal.shared import shared
 from temporal.utils.collection import find_index_by_predicate
 from temporal.utils.image import np_to_pil
-
-
-# FIXME: To shut up the type checker
-state: State = getattr(webui_shared, "state")
 
 
 class Pipeline(Serializable):
@@ -33,14 +26,14 @@ class Pipeline(Serializable):
                 project.iteration.images,
                 project,
                 project.iteration.index,
-                project.processing.seed + project.iteration.index,
+                project.backend_data.seed + project.iteration.index,
             )):
                 return False
 
             project.iteration.images[:] = images
             project.iteration.module_id = module.id
 
-            if state.interrupted or state.skipped:
+            if shared.backend.is_interrupted:
                 return False
 
             if not shared.options.live_preview.show_only_finished_images and shared.previewed_modules[module.id]:
@@ -67,4 +60,4 @@ class Pipeline(Serializable):
         else:
             preview = iteration.images[min(max(shared.options.live_preview.preview_parallel_index - 1, 0), len(iteration.images) - 1)]
 
-        state.assign_current_image(np_to_pil(preview))
+        shared.backend.set_preview_image(np_to_pil(preview))

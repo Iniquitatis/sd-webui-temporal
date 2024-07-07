@@ -15,7 +15,7 @@ class ColorCorrectionFilter(ImageFilter):
     equalize_histogram: bool = BoolParam("Equalize histogram", value = False)
 
     def process(self, npim: NumpyImage, parallel_index: int, project: Project, frame_index: int, seed: int) -> NumpyImage:
-        if (image := self.source.get_image(project.processing.init_images[parallel_index], frame_index - 1)) is not None:
+        if (image := self.source.get_image(project.backend_data.images[parallel_index], frame_index - 1)) is not None:
             npim = skimage.exposure.match_histograms(npim, match_image(image, npim, size = False), channel_axis = -1)
 
         if self.normalize_contrast:

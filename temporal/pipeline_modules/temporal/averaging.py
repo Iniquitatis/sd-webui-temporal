@@ -25,7 +25,7 @@ class AveragingModule(TemporalModule):
     def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if self.buffer is None:
             self.buffer = np.stack([np.repeat(
-                ensure_image_dims(image, "RGB", (project.processing.width, project.processing.height))[np.newaxis, ...],
+                ensure_image_dims(image, "RGB", (project.backend_data.width, project.backend_data.height))[np.newaxis, ...],
                 self.frames,
                 axis = 0,
             ) for image in images], 0)

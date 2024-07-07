@@ -27,7 +27,7 @@ class ImageFilter(PipelineModule, abstract = True):
         raise NotImplementedError
 
     def _blend(self, npim: NumpyImage, processed: NumpyImage, project: Project) -> NumpyImage:
-        amount = self.amount * (project.processing.denoising_strength if self.amount_relative else 1.0)
+        amount = self.amount * (project.backend_data.denoising_strength if self.amount_relative else 1.0)
 
         if amount == 0.0:
             return npim

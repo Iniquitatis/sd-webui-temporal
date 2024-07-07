@@ -2289,3 +2289,48 @@ class _(Upgrader):
         tree.write(data_path, "utf-8")
 
         return True
+
+
+class _(Upgrader):
+    version = 46
+
+    def upgrade(self, path: Path) -> bool:
+        data_path = path / "project" / "data.xml"
+
+        if not data_path.exists():
+            return False
+
+        tree = ET.ElementTree(file = data_path)
+
+        if tree.findtext("*[@key='version']", "0") != str(self.previous_version):
+            return False
+
+        root = tree.getroot()
+
+        backend_data = ET.SubElement(root, "object", {"key": "backend_data", "type": "temporal.webui.WebUIBackendData"})
+
+        if (processing := root.find("*[@key='options']")) is not None:
+            backend_data.append(processing)
+            root.remove(processing)
+
+        if (processing := root.find("*[@key='processing']")) is not None:
+            backend_data.append(processing)
+            root.remove(processing)
+
+        if (controlnet_units := root.find("*[@key='controlnet_units']")) is not None:
+            backend_data.append(controlnet_units)
+            root.remove(controlnet_units)
+
+            if controlnet_units.get("type") != "NoneType":
+                controlnet_units.set("type", "temporal.webui.controlnet.ControlNetUnitList")
+
+                for unit in controlnet_units:
+                    unit.set("type", "temporal.webui.controlnet.ControlNetUnitWrapper")
+
+        if (version := tree.find("*[@key='version']")) is not None:
+            version.text = str(self.version)
+
+        ET.indent(tree)
+        tree.write(data_path, "utf-8")
+
+        return True

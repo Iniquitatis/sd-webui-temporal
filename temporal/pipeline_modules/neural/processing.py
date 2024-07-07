@@ -8,8 +8,6 @@ from temporal.project import Project
 from temporal.shared import shared
 from temporal.utils.image import NumpyImage, np_to_pil, pil_to_np
 from temporal.utils.numpy import average_array, make_eased_weight_array, saturate_array
-from temporal.utils.object import copy_with_overrides
-from temporal.web_ui import process_images
 
 
 class ProcessingModule(NeuralModule):
@@ -21,8 +19,7 @@ class ProcessingModule(NeuralModule):
     preference: float = FloatParam("Preference", minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0, ui_type = "slider")
 
     def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
-        if not (processed_images := process_images(
-            copy_with_overrides(project.processing, do_not_save_samples = True, do_not_save_grid = True),
+        if not (processed_images := shared.backend.process_batches(
             [(np_to_pil(x), seed + i, self.samples) for i, x in enumerate(images)],
             shared.options.processing.pixels_per_batch,
             shared.previewed_modules[self.id] and not shared.options.live_preview.show_only_finished_images,
