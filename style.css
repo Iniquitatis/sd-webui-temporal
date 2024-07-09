@@ -2,6 +2,52 @@
     gap: 1rem !important;
 }
 
+.temporal-composite-widget-title {
+    background: var(--block-title-background-fill) !important;
+    border-radius: var(--block-title-radius) !important;
+    border: solid var(--block-title-border-width) var(--block-title-border-color) !important;
+    color: var(--block-title-text-color) !important;
+    display: inline-block !important;
+    font-size: var(--block-title-text-size) !important;
+    font-weight: var(--block-title-text-weight) !important;
+    line-height: var(--line-sm) !important;
+    padding: var(--block-title-padding) !important;
+    position: relative !important;
+    z-index: var(--layer-4) !important;
+}
+
+.temporal-color-editor-slider {
+    flex-grow: 1 !important;
+    min-width: auto !important;
+}
+
+.temporal-color-editor-slider > .wrap > .head > label {
+    left: 0 !important;
+    position: absolute !important;
+}
+
+.temporal-color-editor-slider > .wrap > .head > input {
+    position: absolute !important;
+    right: 0 !important;
+    width: 5rem !important;
+}
+
+.temporal-color-editor-slider > input {
+    margin-left: 1rem !important;
+    margin-right: 4rem !important;
+    width: calc(100% - 6.5rem) !important;
+}
+
+.temporal-color-editor-picker {
+    align-self: center !important;
+    flex-grow: 0 !important;
+    min-width: auto !important;
+}
+
+.temporal-color-editor-picker > label > span {
+    display: none !important;
+}
+
 .temporal-reorderable-list-textbox {
     display: none;
 }
