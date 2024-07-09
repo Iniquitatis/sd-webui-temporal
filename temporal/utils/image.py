@@ -7,6 +7,7 @@ from PIL import Image
 from numpy.typing import NDArray
 
 from temporal.utils.math import lerp
+from temporal.utils.numpy import saturate_array
 
 
 PILImage = Image.Image
@@ -25,6 +26,16 @@ def alpha_blend(a: NumpyImage, b: NumpyImage) -> NumpyImage:
 
 def apply_channelwise(npim: NumpyImage, func: Callable[[NumpyImage], NumpyImage]) -> NumpyImage:
     return np.stack([func(npim[..., i]) for i in range(npim.shape[-1])], axis = -1)
+
+
+def apply_color_matrix(npim: NumpyImage, matrix: NDArray[np.float_], clip: bool = True) -> NumpyImage:
+    result = npim.copy()
+    result[..., :3] @= matrix.T
+
+    if clip:
+        result = saturate_array(result)
+
+    return result
 
 
 def ensure_image_dims(im: T, mode: Optional[str] = None, size: Optional[tuple[int, int]] = None) -> T:
