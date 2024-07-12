@@ -77,6 +77,7 @@ class ReorderableAccordion(Widget):
         self._checkbox = GradioWidget(gr.Checkbox,
             label = self._format_label(label),
             value = value,
+            container = False,
             elem_classes = ["temporal-reorderable-accordion-checkbox", f"temporal-index-{index}"],
         )
 
@@ -119,6 +120,7 @@ class ReorderableAccordionSpecialCheckbox(Widget):
 
         self._instance = GradioWidget(gr.Checkbox,
             value = value,
+            container = False,
             elem_classes = list(classes) + ["temporal-reorderable-accordion-special-checkbox"],
         )
 

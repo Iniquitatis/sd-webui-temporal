@@ -40,8 +40,8 @@ function initializeReorderableLists() {
                 });
 
                 let labelWrap = accordion.querySelector(".label-wrap");
-                labelWrap.insertBefore(checkbox.parentElement, labelWrap.firstChild);
-                labelWrap.insertBefore(dragger, labelWrap.firstChild);
+                labelWrap.insertBefore(dragger, labelWrap.lastChild);
+                labelWrap.insertBefore(checkbox, labelWrap.lastChild);
 
                 let specialCheckbox = accordion.querySelector(".temporal-reorderable-accordion-special-checkbox");
 
