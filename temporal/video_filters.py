@@ -39,6 +39,15 @@ class ColorBalancingFilter(VideoFilter):
         return f"eq='contrast={self.contrast}:brightness={self.brightness - 1.0}:saturation={self.saturation}'"
 
 
+class DebandingFilter(VideoFilter):
+    name = "Debanding"
+
+    radius: int = IntParam("Radius", minimum = 1, maximum = 64, step = 1, value = 16, ui_type = "slider")
+
+    def print(self, fps: int) -> str:
+        return f"deband='range={self.radius}'"
+
+
 class DeflickeringFilter(VideoFilter):
     name = "Deflickering"
 
