@@ -42,7 +42,7 @@ class MeasuringModule(PipelineModule, abstract = True):
         for parallel_index, image in enumerate(images):
             frame_data = self.data[parallel_index, self.count]
             frame_data[0] = frame_index
-            frame_data[1:] = self.measure(image)
+            frame_data[1:] = self.measure(image, parallel_index)
 
         self.count += 1
 
@@ -56,7 +56,7 @@ class MeasuringModule(PipelineModule, abstract = True):
         self.count = 0
 
     @abstractmethod
-    def measure(self, npim: NumpyImage) -> list[float]:
+    def measure(self, npim: NumpyImage, parallel_index: int) -> list[float]:
         raise NotImplementedError
 
     def plot(self, parallel_index: int) -> PILImage:

@@ -13,6 +13,6 @@ class ColorLevelMeanMeasuringModule(MeasuringModule):
         ("Blue", "darkblue"),
     ]
 
-    def measure(self, npim: NumpyImage) -> list[float]:
+    def measure(self, npim: NumpyImage, parallel_index: int) -> list[float]:
         red, green, blue = npim[..., 0], npim[..., 1], npim[..., 2]
         return [float(np.mean(red)), float(np.mean(green)), float(np.mean(blue))]

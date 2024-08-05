@@ -12,6 +12,6 @@ class LuminanceMeanMeasuringModule(MeasuringModule):
         ("Luminance", "gray"),
     ]
 
-    def measure(self, npim: NumpyImage) -> list[float]:
+    def measure(self, npim: NumpyImage, parallel_index: int) -> list[float]:
         grayscale = skimage.color.rgb2gray(npim[..., :3], channel_axis = -1)
         return [float(np.mean(grayscale))]

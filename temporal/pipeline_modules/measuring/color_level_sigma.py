@@ -13,6 +13,6 @@ class ColorLevelSigmaMeasuringModule(MeasuringModule):
         ("Blue", "darkblue"),
     ]
 
-    def measure(self, npim: NumpyImage) -> list[float]:
+    def measure(self, npim: NumpyImage, parallel_index: int) -> list[float]:
         red, green, blue = npim[..., 0], npim[..., 1], npim[..., 2]
         return [float(np.std(red)), float(np.std(green)), float(np.std(blue))]
