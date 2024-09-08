@@ -1,4 +1,4 @@
-from time import perf_counter
+from pathlib import Path
 from typing import Any, Iterator
 
 import gradio as gr
@@ -9,7 +9,9 @@ from modules.processing import Processed, StableDiffusionProcessingImg2Img, fix_
 from modules.shared_state import State
 from modules.styles import StyleDatabase
 
-from temporal.interop import EXTENSION_DIR, get_cn_units
+from temporal.backends.webui import WebUIBackend, WebUIImageToImageParams
+from temporal.backends.webui.controlnet import get_controlnet_units
+from temporal.engine import Engine
 from temporal.pipeline_modules.measuring import MeasuringModule
 from temporal.preset import Preset
 from temporal.project import Project
@@ -21,13 +23,10 @@ from temporal.ui.options_editor import OptionsEditor
 from temporal.ui.paginator import Paginator
 from temporal.ui.project_editor import ProjectEditor
 from temporal.ui.video_renderer_editor import VideoRendererEditor
-from temporal.utils import logging
 from temporal.utils.fs import load_text
-from temporal.utils.image import PILImage, ensure_image_dims, np_to_pil, pil_to_np
-from temporal.utils.object import copy_with_overrides
+from temporal.utils.image import PILImage, np_to_pil
 from temporal.utils.time import wait_until
 from temporal.video_renderer import video_render_queue
-from temporal.web_ui import process_images
 
 
 # FIXME: To shut up the type checker
@@ -36,10 +35,19 @@ prompt_styles: StyleDatabase = getattr(webui_shared, "prompt_styles")
 state: State = getattr(webui_shared, "state")
 
 
+EXTENSION_DIR = Path(scripts.basedir())
+
+
+class WebUIEngine(Engine):
+    def on_iteration(self, iteration: int) -> None:
+        state.job = "Temporal main loop"
+        state.job_no = iteration
+
+
 class TemporalScript(scripts.Script):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        shared.init(EXTENSION_DIR / "settings", EXTENSION_DIR / "presets")
+        self.engine = WebUIEngine(WebUIBackend(), EXTENSION_DIR / "settings", EXTENSION_DIR / "presets")
 
     def title(self) -> str:
         return "Temporal"
@@ -221,23 +229,28 @@ class TemporalScript(scripts.Script):
 
         stored_project, load_parameters, continue_from_last_frame, iter_count, project = self._ui.recombine(*args)
 
-        opts_backup = opts.data.copy()
-
-        opts.save_to_dirs = False
-
-        if shared.options.live_preview.show_only_finished_images:
-            opts.show_progress_every_n_steps = -1
-
-        p.prompt = prompt_styles.apply_styles_to_prompt(p.prompt, p.styles)
-        p.negative_prompt = prompt_styles.apply_negative_styles_to_prompt(p.negative_prompt, p.styles)
-        p.styles.clear()
-
         fix_seed(p)
 
         project.path = stored_project.data.path
-        project.options = opts
-        project.processing = p
-        project.controlnet_units = get_cn_units(p)
+        project.parameters = WebUIImageToImageParams(
+            model = opts.sd_model_checkpoint,
+            vae = opts.sd_vae,
+            clip_skip = opts.CLIP_stop_at_last_layers,
+            images = [x for x in p.init_images if isinstance(x, PILImage)],
+            positive_prompts = [p.prompt],
+            negative_prompts = [p.negative_prompt],
+            width = p.width,
+            height = p.height,
+            sampler = p.sampler_name,
+            scheduler = p.scheduler,
+            steps = p.steps,
+            cfg = p.cfg_scale,
+            strength = p.denoising_strength,
+            seeds = [p.seed],
+            options = opts,
+            processing = p,
+            controlnet_units = get_controlnet_units(p),
+        )
 
         if load_parameters:
             project.load(stored_project.data.path)
@@ -246,67 +259,10 @@ class TemporalScript(scripts.Script):
             project.delete_all_frames()
             project.delete_session_data()
 
-        if not p.init_images or not isinstance(p.init_images[0], PILImage):
-            noises = [
-                project.initial_noise.noise.generate((p.height, p.width, 3), p.seed, i)
-                for i in range(project.pipeline.parallel)
-            ]
-
-            if project.initial_noise.factor < 1.0:
-                if not (processed_images := process_images(
-                    copy_with_overrides(p,
-                        denoising_strength = 1.0 - project.initial_noise.factor,
-                        do_not_save_samples = True,
-                        do_not_save_grid = True,
-                    ),
-                    [(np_to_pil(x), p.seed + i, 1) for i, x in enumerate(noises)],
-                    shared.options.processing.pixels_per_batch,
-                    True,
-                )):
-                    opts.data.update(opts_backup)
-
-                    return Processed(p, p.init_images)
-
-                p.init_images = [image_array[0] for image_array in processed_images]
-
-            else:
-                p.init_images = noises
-
-        elif len(p.init_images) != project.pipeline.parallel:
-            p.init_images = [p.init_images[0]] * project.pipeline.parallel
-
-        if not project.iteration.images:
-            project.iteration.images[:] = [pil_to_np(ensure_image_dims(x, "RGB", (p.width, p.height))) for x in p.init_images]
-
-        last_images = project.iteration.images.copy()
-
         state.job_count = iter_count
 
-        for i in range(iter_count):
-            logging.info(f"Iteration {i + 1} / {iter_count}")
-
-            start_time = perf_counter()
-
-            state.job = "Temporal main loop"
-            state.job_no = i
-
-            if not project.pipeline.run(project):
-                break
-
-            last_images = project.iteration.images.copy()
-
-            if i % shared.options.output.autosave_every_n_iterations == 0:
-                project.save(project.path)
-
-            end_time = perf_counter()
-
-            logging.info(f"Iteration took {end_time - start_time:.6f} second(s)")
-
-        project.pipeline.finalize(project)
-        project.save(project.path)
+        images = self.engine.start(project, iter_count)
 
         state.end()
 
-        opts.data.update(opts_backup)
-
-        return Processed(p, [np_to_pil(x) for x in last_images])
+        return Processed(p, [np_to_pil(x) for x in images])

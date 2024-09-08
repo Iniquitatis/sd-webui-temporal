@@ -6,7 +6,7 @@ from subprocess import run
 from temporal.meta.serializable import Serializable, SerializableField as Field
 from temporal.thread_queue import ThreadQueue
 from temporal.utils.fs import save_text
-from temporal.video_filters import VIDEO_FILTERS, VideoFilter
+from temporal.video_filters import VideoFilter
 
 
 video_render_queue = ThreadQueue()
@@ -18,7 +18,7 @@ class VideoRenderer(Serializable):
     last_frame: int = Field(0)
     frame_stride: int = Field(1)
     looping: bool = Field(False)
-    filters: list[VideoFilter] = Field(factory = lambda: [cls() for cls in VIDEO_FILTERS])
+    filters: list[VideoFilter] = Field(factory = list)
 
     def enqueue_video_render(self, path: Path, frame_paths: Sequence[Path], is_final: bool) -> None:
         video_render_queue.enqueue(self._render_video, path, frame_paths, is_final)

@@ -16,10 +16,10 @@ class DisplacementFilter(ImageFilter):
     y_scale: float = FloatParam("Y scale", step = 0.1, value = 1.0, ui_type = "box")
 
     def process(self, npim: NumpyImage, parallel_index: int, project: Project, frame_index: int, seed: int) -> NumpyImage:
-        if (image := self.source.get_image(project.processing.init_images[parallel_index], frame_index - 1)) is None:
+        if (image := self.source.get_image(project.parameters.images[parallel_index], frame_index - 1)) is None:
             return npim
 
-        image = ensure_image_dims(image, size = (project.processing.width, project.processing.height))
+        image = ensure_image_dims(image, size = (project.parameters.width, project.parameters.height))
 
         gradient = image[..., :2] * 2.0 - 1.0
 

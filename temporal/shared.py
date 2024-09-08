@@ -1,6 +1,7 @@
 from collections import defaultdict
 from pathlib import Path
 
+from temporal.backend import Backend
 from temporal.global_options import GlobalOptions
 from temporal.preset_store import PresetStore
 from temporal.project_store import ProjectStore
@@ -8,7 +9,8 @@ from temporal.video_renderer import VideoRenderer
 
 
 class SharedData:
-    def init(self, options_path: Path, presets_path: Path) -> None:
+    def init(self, backend: Backend, options_path: Path, presets_path: Path) -> None:
+        self.backend = backend
         self.options = GlobalOptions()
         self.options.load(options_path)
         self.preset_store = PresetStore(presets_path, self.options.ui.preset_sorting_order)

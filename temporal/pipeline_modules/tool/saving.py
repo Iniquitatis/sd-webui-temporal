@@ -8,7 +8,6 @@ from temporal.utils.fs import ensure_directory_exists
 from temporal.utils.image import NumpyImage, ensure_image_dims, np_to_pil
 from temporal.utils.math import quantize
 from temporal.utils.time import wait_until
-from temporal.web_ui import image_save_queue, save_processed_image
 
 
 class SavingModule(ToolModule):
@@ -29,9 +28,9 @@ class SavingModule(ToolModule):
             if len(images) > 1:
                 file_name += f"-{i + 1:02d}"
 
-            save_processed_image(
+            shared.backend.save_image(
                 image = np_to_pil(image),
-                p = project.processing,
+                project = project,
                 output_dir = ensure_directory_exists(project.path),
                 file_name = file_name,
                 archive_mode = self.archive_mode,
@@ -42,18 +41,18 @@ class SavingModule(ToolModule):
     def finalize(self, images: list[NumpyImage], project: Project) -> None:
         if self.save_final:
             for image in self._get_scaled_images(images, project):
-                save_processed_image(
+                shared.backend.save_image(
                     image = np_to_pil(image),
-                    p = project.processing,
+                    project = project,
                     output_dir = ensure_directory_exists(shared.options.output.output_dir),
                     file_name = None,
                     archive_mode = self.archive_mode,
                 )
 
-        wait_until(lambda: not image_save_queue.busy)
+        wait_until(shared.backend.are_images_saved)
 
     def _get_scaled_images(self, images: list[NumpyImage], project: Project) -> list[NumpyImage]:
         return [ensure_image_dims(x, size = (
-            int(quantize(project.processing.width * self.scale, 8)),
-            int(quantize(project.processing.height * self.scale, 8)),
+            int(quantize(project.parameters.width * self.scale, 8)),
+            int(quantize(project.parameters.height * self.scale, 8)),
         )) for x in images] if self.scale != 1.0 else images

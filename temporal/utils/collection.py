@@ -1,5 +1,5 @@
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from typing import Callable, Iterator, Optional, TypeVar
 
 
@@ -58,6 +58,10 @@ def get_next_element(iterable: Iterable[T], current: T, fallback: U = None) -> T
         return next(iterator)
     except StopIteration:
         return fallback
+
+
+def get_with_fallback(sequence: Sequence[T], index: int, fallback: U = None) -> T | U:
+    return sequence[index] if index < len(sequence) else fallback
 
 
 def natural_sort(iterable: Iterable[str]) -> list[str]:

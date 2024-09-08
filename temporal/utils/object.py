@@ -1,4 +1,5 @@
 import re
+from contextlib import contextmanager
 from copy import copy
 from typing import Any, Iterator, TypeVar
 
@@ -62,6 +63,18 @@ def set_property_by_path(obj: Any, path: str, value: Any) -> Any:
         obj[key] = value
     else:
         setattr(obj, key, value)
+
+
+@contextmanager
+def temporary_patch(obj: Any, key: str, new_value: Any) -> Iterator[None]:
+    old_value = getattr(obj, key)
+
+    setattr(obj, key, new_value)
+
+    try:
+        yield
+    finally:
+        setattr(obj, key, old_value)
 
 
 def _iter_property_path(path: str) -> Iterator[tuple[str, str]]:

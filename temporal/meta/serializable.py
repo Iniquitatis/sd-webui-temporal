@@ -65,6 +65,10 @@ class Serializable:
             if key not in initialized_keys:
                 setattr(self, key, field.default)
 
+    def __repr__(self) -> str:
+        args = ", ".join(f"{key} = {getattr(self, key)}" for key in self.__fields__.keys())
+        return f"{self.__class__.__name__}({args})"
+
     def read(self, ar: Archive) -> None:
         for child in ar:
             try:

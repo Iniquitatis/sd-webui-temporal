@@ -1,5 +1,7 @@
 from typing import Iterator
 
+from temporal.pipeline import Pipeline
+from temporal.pipeline_module import PIPELINE_MODULES
 from temporal.project import Project
 from temporal.ui import ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.initial_noise_editor import InitialNoiseEditor
@@ -12,6 +14,8 @@ class ProjectEditor(Widget):
         value: Project = Project(),
     ) -> None:
         super().__init__()
+
+        value.pipeline = Pipeline(modules = [cls() for cls in sorted(PIPELINE_MODULES, key = lambda x: f"{x.icon} {x.name}")])
 
         self._initial_noise = InitialNoiseEditor(value.initial_noise)
         self._pipeline = PipelineEditor(value.pipeline)

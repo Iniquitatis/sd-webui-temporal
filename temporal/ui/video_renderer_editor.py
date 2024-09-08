@@ -7,6 +7,7 @@ from temporal.ui.gradio_widget import GradioWidget
 from temporal.ui.reorderable_list import ReorderableList
 from temporal.ui.video_filter_editor import VideoFilterEditor
 from temporal.utils.collection import find_by_predicate, reorder_dict
+from temporal.video_filters import VIDEO_FILTERS
 from temporal.video_renderer import VideoRenderer
 
 
@@ -16,6 +17,8 @@ class VideoRendererEditor(Widget):
         value: VideoRenderer = VideoRenderer(),
     ) -> None:
         super().__init__()
+
+        value.filters = [cls() for cls in VIDEO_FILTERS]
 
         self._fps = GradioWidget(gr.Slider, label = "Frames per second", minimum = 1, maximum = 60, step = 1, value = value.fps)
 
