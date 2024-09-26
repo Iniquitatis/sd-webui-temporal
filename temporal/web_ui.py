@@ -1,11 +1,11 @@
 from collections import defaultdict
 from copy import copy
-from math import ceil
+from math import ceil, floor
 from pathlib import Path
 from typing import Optional
 
 from modules import shared as webui_shared
-from modules.images import save_image as webui_save_image
+from modules.images import resize_image, save_image as webui_save_image
 from modules.options import Options
 from modules.processing import Processed, StableDiffusionProcessing, StableDiffusionProcessingImg2Img, process_images as webui_process_images
 from modules.shared_state import State
@@ -94,6 +94,16 @@ def save_processed_image(image: PILImage, p: StableDiffusionProcessing, output_d
             forced_filename = file_name,
             extension = opts.samples_format or "png",
         )
+
+
+def upscale_image(image: PILImage, upscaler: str, scale: float) -> PILImage:
+    return resize_image(0, image, floor(image.width * scale), floor(image.height * scale), upscaler)
+
+
+def get_upscalers() -> list[str]:
+    return ["R-ESRGAN 4x+", "R-ESRGAN 4x+ Anime6B", "SwinIR_4x"]
+    # FIXME: This list isn't available until Web UI is initialized
+    #return [x.name for x in webui_shared.sd_upscalers]
 
 
 def has_schedulers() -> bool:
