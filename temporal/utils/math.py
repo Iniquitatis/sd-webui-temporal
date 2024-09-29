@@ -1,3 +1,6 @@
+from collections.abc import Iterable, Sequence
+from functools import reduce
+from operator import mul
 from typing import Any, Callable, TypeVar
 
 import numpy as np
@@ -6,6 +9,17 @@ from numpy.typing import NDArray
 
 T = TypeVar("T")
 U = TypeVar("U", float, NDArray[np.float64])
+
+
+def cartesian_product_at(*sets: Sequence[Any], index: int, major: bool = True) -> tuple[Any, ...]:
+    result = []
+
+    for set in reversed(sets) if major else sets:
+        count = len(set)
+        result.append(set[index % count])
+        index //= count
+
+    return tuple(reversed(result) if major else result)
 
 
 def clamp(value: T, min_: Any, max_: Any) -> T:
@@ -18,6 +32,10 @@ def lerp(a: U, b: U, x: Any) -> U:
 
 def normalize(value: U, min: Any, max: Any) -> U:
     return (value - min) / (max - min)
+
+
+def product(iterable: Iterable[T]) -> T:
+    return reduce(mul, iterable)
 
 
 def quantize(value: U, step: Any, rounding_func: Callable[[Any], Any] = round) -> U:

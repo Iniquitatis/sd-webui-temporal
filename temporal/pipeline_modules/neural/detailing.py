@@ -8,6 +8,7 @@ from temporal.utils.collection import get_first_element
 from temporal.utils.image import NumpyImage, ensure_image_dims
 from temporal.utils.math import quantize
 from temporal.utils.object import copy_with_overrides
+from temporal.utils.prompt import evaluate_prompt
 
 
 class DetailingModule(NeuralModule):
@@ -22,6 +23,14 @@ class DetailingModule(NeuralModule):
     def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if not (processed_images := shared.backend.images_to_batches(
             copy_with_overrides(project.parameters,
+                positive_prompts = [
+                    evaluate_prompt(x, frame_index - 1, seed + i)
+                    for i, x in enumerate(project.parameters.positive_prompts)
+                ],
+                negative_prompts = [
+                    evaluate_prompt(x, frame_index - 1, seed + i)
+                    for i, x in enumerate(project.parameters.negative_prompts)
+                ],
                 sampler = self.sampler,
                 scheduler = self.scheduler,
                 steps = self.steps,

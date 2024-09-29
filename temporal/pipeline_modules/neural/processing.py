@@ -8,6 +8,8 @@ from temporal.project import Project
 from temporal.shared import shared
 from temporal.utils.image import NumpyImage
 from temporal.utils.numpy import average_array, make_eased_weight_array, saturate_array
+from temporal.utils.object import copy_with_overrides
+from temporal.utils.prompt import evaluate_prompt
 
 
 class ProcessingModule(NeuralModule):
@@ -20,7 +22,16 @@ class ProcessingModule(NeuralModule):
 
     def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if not (processed_images := shared.backend.images_to_batches(
-            project.parameters,
+            copy_with_overrides(project.parameters,
+                positive_prompts = [
+                    evaluate_prompt(x, frame_index - 1, seed + i)
+                    for i, x in enumerate(project.parameters.positive_prompts)
+                ],
+                negative_prompts = [
+                    evaluate_prompt(x, frame_index - 1, seed + i)
+                    for i, x in enumerate(project.parameters.negative_prompts)
+                ],
+            ),
             [(x, seed + i, self.samples) for i, x in enumerate(images)],
             shared.options.processing.pixels_per_batch,
             shared.previewed_modules[self.id] and not shared.options.live_preview.show_only_finished_images,

@@ -8,6 +8,7 @@ from temporal.shared import shared
 from temporal.utils import logging
 from temporal.utils.image import NumpyImage, ensure_image_dims
 from temporal.utils.object import copy_with_overrides
+from temporal.utils.prompt import evaluate_prompt
 
 
 class Engine:
@@ -37,6 +38,14 @@ class Engine:
             if project.initial_noise.factor < 1.0:
                 if not (processed_images := shared.backend.images_to_batches(
                     copy_with_overrides(project.parameters,
+                        positive_prompts = [
+                            evaluate_prompt(x, 0)
+                            for x in project.parameters.positive_prompts
+                        ],
+                        negative_prompts = [
+                            evaluate_prompt(x, 0)
+                            for x in project.parameters.negative_prompts
+                        ],
                         strength = 1.0 - project.initial_noise.factor,
                     ),
                     [(x, project.parameters.seed + i, 1) for i, x in enumerate(noises)],
