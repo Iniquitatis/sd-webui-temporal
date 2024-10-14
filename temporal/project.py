@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterator, Optional
 
+from temporal.animation import Animation
 from temporal.compat import get_latest_version, upgrade_project
 from temporal.meta.serializable import Serializable, SerializableField as Field
 from temporal.noise import Noise
@@ -30,6 +31,7 @@ class Project(Serializable):
     parameters: ImageToImageParams = Field(factory = ImageToImageParams)
     initial_noise: InitialNoiseParams = Field(factory = InitialNoiseParams)
     pipeline: "Pipeline" = Field(factory = lambda: _make_pipeline())
+    animation: Animation = Field(factory = Animation)
     iteration: IterationData = Field(factory = IterationData)
 
     def load(self, dir: Path) -> None:

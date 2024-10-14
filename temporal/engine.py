@@ -7,7 +7,7 @@ from temporal.project import Project
 from temporal.shared import shared
 from temporal.utils import logging
 from temporal.utils.image import NumpyImage, ensure_image_dims
-from temporal.utils.object import copy_with_overrides
+from temporal.utils.object import copy_with_overrides, set_property_by_path
 from temporal.utils.prompt import evaluate_prompt
 
 
@@ -76,6 +76,9 @@ class Engine:
             start_time = perf_counter()
 
             self.on_iteration(i)
+
+            for path, value in project.animation.evaluate(project.iteration.index).items():
+                set_property_by_path(project, path, value)
 
             if not project.pipeline.run(project):
                 break
