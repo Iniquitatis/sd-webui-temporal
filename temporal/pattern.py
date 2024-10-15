@@ -13,7 +13,7 @@ class Pattern(Serializable):
     color_a: Color = Field(factory = lambda: Color(1.0, 1.0, 1.0))
     color_b: Color = Field(factory = lambda: Color(0.0, 0.0, 0.0))
 
-    def generate(self, shape: tuple[int, ...]) -> NDArray[np.float_]:
+    def generate(self, shape: tuple[int, ...]) -> NDArray[np.float64]:
         y, x = np.indices(shape[:2])
 
         if self.type == "horizontal_lines":

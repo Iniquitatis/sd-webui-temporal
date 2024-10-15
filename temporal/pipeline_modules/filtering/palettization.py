@@ -18,13 +18,13 @@ class PalettizationFilter(ImageFilter):
     dithering: bool = BoolParam("Dithering", value = False)
 
     def process(self, npim: NumpyImage, parallel_index: int, project: Project, frame_index: int, seed: int) -> NumpyImage:
-        def stretch_array(arr: NDArray[np.float_], new_length: int) -> NDArray[np.float_]:
+        def stretch_array(arr: NDArray[np.float64], new_length: int) -> NDArray[np.float64]:
             return np.interp(np.arange(new_length), np.linspace(0, new_length - 1, len(arr)), arr)
 
         if self.palette is None:
             return npim
 
-        palette_arr = np.array(self.palette, dtype = np.float_).reshape((self.palette.shape[1] * self.palette.shape[0], 3))
+        palette_arr = np.array(self.palette, dtype = np.float64).reshape((self.palette.shape[1] * self.palette.shape[0], 3))
 
         if self.stretch:
             palette_arr = apply_channelwise(palette_arr, lambda x: stretch_array(x, 256))

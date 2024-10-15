@@ -19,7 +19,7 @@ class InterpolationModule(TemporalModule):
     movement: float = FloatParam("Movement", minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
     radius: int = IntParam("Radius", minimum = 7, maximum = 31, step = 2, value = 15, ui_type = "slider")
 
-    buffer: Optional[NDArray[np.float_]] = Field(None)
+    buffer: Optional[NDArray[np.float64]] = Field(None)
 
     def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if self.buffer is None:
@@ -43,12 +43,12 @@ class InterpolationModule(TemporalModule):
         self.buffer = None
 
     def _motion_warp(self, base_im: NumpyImage, target_im: NumpyImage) -> tuple[NumpyImage, NumpyImage]:
-        def warp(im: NumpyImage, coords: NDArray[np.float_]) -> NumpyImage:
+        def warp(im: NumpyImage, coords: NDArray[np.float64]) -> NumpyImage:
             return apply_channelwise(im, lambda x: skimage.transform.warp(x, coords, mode = "symmetric"))
 
         height, width = base_im.shape[:2]
 
-        coords = np.indices((height, width)).astype(np.float_)
+        coords = np.indices((height, width)).astype(np.float64)
         offsets = skimage.registration.optical_flow_ilk(skimage.color.rgb2gray(base_im), skimage.color.rgb2gray(target_im), radius = self.radius)
 
         return warp(base_im, coords + offsets * -self.movement), warp(target_im, coords + -offsets * (-1.0 + self.movement))

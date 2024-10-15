@@ -6,7 +6,7 @@ from numpy.typing import NDArray
 from scipy import stats
 
 
-FloatArray = NDArray[np.float_]
+FloatArray = NDArray[np.float64]
 
 
 def average_array(arr: FloatArray, axis: int, trim: float = 0.0, power: float = 1.0, weights: Optional[FloatArray] = None) -> FloatArray:
@@ -43,7 +43,7 @@ def average_array(arr: FloatArray, axis: int, trim: float = 0.0, power: float = 
 
 
 def make_eased_weight_array(count: int, easing: float) -> FloatArray:
-    return (np.linspace(1, count, count, dtype = np.float_) / count) ** easing
+    return (np.linspace(1, count, count, dtype = np.float64) / count) ** easing
 
 
 def match_array_dimensions(arr: FloatArray, ref: FloatArray, axis: int) -> FloatArray:

@@ -17,12 +17,12 @@ class Noise(Serializable):
     seed: int = Field(0)
     use_global_seed: bool = Field(False)
 
-    def generate(self, shape: tuple[int, ...], global_seed: Optional[int] = None, seed_offset: int = 0) -> NDArray[np.float_]:
+    def generate(self, shape: tuple[int, ...], global_seed: Optional[int] = None, seed_offset: int = 0) -> NDArray[np.float64]:
         noise = np.random.default_rng(
             (global_seed if global_seed and self.use_global_seed else self.seed) + seed_offset
-        ).uniform(low = 0.0, high = 1.0 + np.finfo(np.float_).eps, size = shape)
+        ).uniform(low = 0.0, high = 1.0 + np.finfo(np.float64).eps, size = shape)
 
-        def scale_noise(scale: float) -> NDArray[np.float_]:
+        def scale_noise(scale: float) -> NDArray[np.float64]:
             result = skimage.transform.warp(noise, skimage.transform.AffineTransform(scale = scale).inverse, order = 4, mode = "symmetric")
 
             if self.mode == "fbm":

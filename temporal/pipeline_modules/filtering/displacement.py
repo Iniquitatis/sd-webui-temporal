@@ -25,7 +25,7 @@ class DisplacementFilter(ImageFilter):
 
         height, width = npim.shape[:2]
 
-        coords = np.indices((height, width)).astype(np.float_)
+        coords = np.indices((height, width)).astype(np.float64)
         coords[0] += gradient[..., 1] * self.y_scale
         coords[1] += gradient[..., 0] * self.x_scale
 

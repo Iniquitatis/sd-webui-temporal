@@ -17,7 +17,7 @@ class RandomSamplingModule(TemporalModule):
     chance: float = FloatParam("Chance", minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
     opacity: float = FloatParam("Opacity", minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
 
-    buffer: Optional[NDArray[np.float_]] = Field(None)
+    buffer: Optional[NDArray[np.float64]] = Field(None)
 
     def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if self.buffer is None:
@@ -32,7 +32,7 @@ class RandomSamplingModule(TemporalModule):
             chance_mask = np.random.default_rng(seed + i).random(size) <= self.chance
             opacity_mask = np.random.default_rng(seed + 1 + i).uniform(
                 low = min(max(self.opacity * 2.0 - 1.0, 0.0), 1.0),
-                high = min(max(self.opacity * 2.0, 0.0), 1.0) + np.finfo(np.float_).eps,
+                high = min(max(self.opacity * 2.0, 0.0), 1.0) + np.finfo(np.float64).eps,
                 size = size,
             )
 

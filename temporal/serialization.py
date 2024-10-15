@@ -355,7 +355,7 @@ class _(Serializer[Image.Image]):
             raise NotADirectoryError
 
 
-class _(Serializer[NDArray[np.float_]]):
+class _(Serializer[NDArray[np.float64]]):
     @classmethod
     def create(cls, ar):
         return cls.read(np.ndarray((0,)), ar)

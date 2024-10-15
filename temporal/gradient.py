@@ -17,7 +17,7 @@ class Gradient(Serializable):
     start_color: Color = Field(factory = lambda: Color(1.0, 1.0, 1.0))
     end_color: Color = Field(factory = lambda: Color(0.0, 0.0, 0.0))
 
-    def generate(self, shape: tuple[int, ...], show_points: bool = False) -> NDArray[np.float_]:
+    def generate(self, shape: tuple[int, ...], show_points: bool = False) -> NDArray[np.float64]:
         start_x, start_y = self.start_x * shape[1], self.start_y * shape[0]
         end_x, end_y = self.end_x * shape[1], self.end_y * shape[0]
 

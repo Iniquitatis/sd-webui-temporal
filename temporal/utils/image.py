@@ -11,7 +11,7 @@ from temporal.utils.numpy import saturate_array
 
 
 PILImage = Image.Image
-NumpyImage = NDArray[np.float_]
+NumpyImage = NDArray[np.float64]
 
 
 T = TypeVar("T", PILImage, NumpyImage)
@@ -28,7 +28,7 @@ def apply_channelwise(npim: NumpyImage, func: Callable[[NumpyImage], NumpyImage]
     return np.stack([func(npim[..., i]) for i in range(npim.shape[-1])], axis = -1)
 
 
-def apply_color_matrix(npim: NumpyImage, matrix: NDArray[np.float_], clip: bool = True) -> NumpyImage:
+def apply_color_matrix(npim: NumpyImage, matrix: NDArray[np.float64], clip: bool = True) -> NumpyImage:
     result = npim.copy()
     result[..., :3] @= matrix.T
 

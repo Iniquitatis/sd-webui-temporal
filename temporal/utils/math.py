@@ -4,7 +4,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 
-T = TypeVar("T", float, NDArray[np.float_])
+T = TypeVar("T", float, NDArray[np.float64])
 
 
 def lerp(a: T, b: T, x: Any) -> T:

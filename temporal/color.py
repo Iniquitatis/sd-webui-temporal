@@ -22,7 +22,7 @@ class Color(Serializable):
         )
 
     @classmethod
-    def from_numpy(cls, arr: NDArray[np.float_]) -> "Color":
+    def from_numpy(cls, arr: NDArray[np.float64]) -> "Color":
         return cls(
             arr[0],
             arr[1],
@@ -38,7 +38,7 @@ class Color(Serializable):
             f"{round(self.a * 255.0):02x}",
         )[:channels])
 
-    def to_numpy(self, channels: int = 4) -> NDArray[np.float_]:
+    def to_numpy(self, channels: int = 4) -> NDArray[np.float64]:
         return np.array((
             self.r,
             self.g,
