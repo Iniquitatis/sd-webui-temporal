@@ -7,6 +7,7 @@ from modules.ui_components import ToolButton
 
 from temporal.ui import Callback, CallbackFunc, CallbackInputs, CallbackOutputs, ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.gradio_widget import GradioWidget
+from temporal.utils.math import clamp
 
 
 class Paginator(Widget):
@@ -64,4 +65,4 @@ class Paginator(Widget):
     def _clamp(self, value: int) -> int:
         minimum = self._index._instance.minimum if self._index._instance.minimum is not None else -1e9
         maximum = self._index._instance.maximum if self._index._instance.maximum is not None else 1e9
-        return min(max(value, int(minimum)), int(maximum))
+        return clamp(value, int(minimum), int(maximum))

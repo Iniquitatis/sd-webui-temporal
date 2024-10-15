@@ -6,6 +6,7 @@ from temporal.project import IterationData, Project
 from temporal.shared import shared
 from temporal.utils.collection import find_index_by_predicate
 from temporal.utils.image import np_to_pil
+from temporal.utils.math import clamp
 
 
 class Pipeline(Serializable):
@@ -58,6 +59,6 @@ class Pipeline(Serializable):
         if shared.options.live_preview.preview_parallel_index == 0:
             preview = skimage.util.montage(iteration.images, channel_axis = -1)
         else:
-            preview = iteration.images[min(max(shared.options.live_preview.preview_parallel_index - 1, 0), len(iteration.images) - 1)]
+            preview = iteration.images[clamp(shared.options.live_preview.preview_parallel_index - 1, 0, len(iteration.images) - 1)]
 
         shared.backend.set_preview(np_to_pil(preview))
