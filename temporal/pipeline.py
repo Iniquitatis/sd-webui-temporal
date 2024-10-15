@@ -5,7 +5,6 @@ from temporal.pipeline_module import PipelineModule
 from temporal.project import IterationData, Project
 from temporal.shared import shared
 from temporal.utils.collection import find_index_by_predicate
-from temporal.utils.image import np_to_pil
 from temporal.utils.math import clamp
 
 
@@ -61,4 +60,4 @@ class Pipeline(Serializable):
         else:
             preview = iteration.images[clamp(shared.options.live_preview.preview_parallel_index - 1, 0, len(iteration.images) - 1)]
 
-        shared.backend.set_preview(np_to_pil(preview))
+        shared.backend.set_preview(preview)

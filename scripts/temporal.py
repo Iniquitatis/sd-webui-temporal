@@ -24,7 +24,7 @@ from temporal.ui.paginator import Paginator
 from temporal.ui.project_editor import ProjectEditor
 from temporal.ui.video_renderer_editor import VideoRendererEditor
 from temporal.utils.fs import load_text
-from temporal.utils.image import PILImage, np_to_pil
+from temporal.utils.image import PILImage, np_to_pil, pil_to_np
 from temporal.utils.time import wait_until
 from temporal.video_renderer import video_render_queue
 
@@ -236,7 +236,7 @@ class TemporalScript(scripts.Script):
             model = opts.sd_model_checkpoint,
             vae = opts.sd_vae,
             clip_skip = opts.CLIP_stop_at_last_layers,
-            images = [x for x in p.init_images if isinstance(x, PILImage)],
+            images = [pil_to_np(x) for x in p.init_images if isinstance(x, PILImage)],
             positive_prompts = [p.prompt],
             negative_prompts = [p.negative_prompt],
             width = p.width,

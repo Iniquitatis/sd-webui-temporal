@@ -6,7 +6,7 @@ from temporal.pipeline_modules.neural import NeuralModule
 from temporal.project import Project
 from temporal.shared import shared
 from temporal.utils.collection import get_first_element
-from temporal.utils.image import NumpyImage, PILImage, ensure_image_dims, np_to_pil, pil_to_np
+from temporal.utils.image import NumpyImage, ensure_image_dims
 
 
 class ResamplingModule(NeuralModule):
@@ -16,7 +16,7 @@ class ResamplingModule(NeuralModule):
     scale: float = FloatParam("Scale", minimum = 0.25, maximum = 4.0, step = 0.25, value = 1.0, ui_type = "slider")
 
     def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
-        def resample(im: PILImage) -> PILImage:
+        def resample(im: NumpyImage) -> NumpyImage:
             scale = self.scale
 
             if scale < 1.0:
@@ -29,6 +29,6 @@ class ResamplingModule(NeuralModule):
                 raise Exception
 
         return [
-            pil_to_np(ensure_image_dims(resample(np_to_pil(im)), "RGB", (project.parameters.width, project.parameters.height)))
+            ensure_image_dims(resample(im), "RGB", (project.parameters.width, project.parameters.height))
             for im in images
         ]

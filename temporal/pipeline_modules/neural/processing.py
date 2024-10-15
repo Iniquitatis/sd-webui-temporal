@@ -6,7 +6,7 @@ from temporal.meta.configurable import FloatParam, IntParam
 from temporal.pipeline_modules.neural import NeuralModule
 from temporal.project import Project
 from temporal.shared import shared
-from temporal.utils.image import NumpyImage, np_to_pil, pil_to_np
+from temporal.utils.image import NumpyImage
 from temporal.utils.numpy import average_array, make_eased_weight_array, saturate_array
 
 
@@ -21,15 +21,15 @@ class ProcessingModule(NeuralModule):
     def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if not (processed_images := shared.backend.images_to_batches(
             project.parameters,
-            [(np_to_pil(x), seed + i, self.samples) for i, x in enumerate(images)],
+            [(x, seed + i, self.samples) for i, x in enumerate(images)],
             shared.options.processing.pixels_per_batch,
             shared.previewed_modules[self.id] and not shared.options.live_preview.show_only_finished_images,
         )):
             return None
 
         return [
-            pil_to_np(image_array[0]) if len(image_array) == 1 else saturate_array(average_array(
-                np.stack([pil_to_np(x) for x in image_array]),
+            image_array[0] if len(image_array) == 1 else saturate_array(average_array(
+                np.stack(image_array),
                 axis = 0,
                 trim = self.trimming,
                 power = self.preference + 1.0,

@@ -5,7 +5,7 @@ from temporal.pipeline_modules.neural import NeuralModule
 from temporal.project import Project
 from temporal.shared import shared
 from temporal.utils.collection import get_first_element
-from temporal.utils.image import NumpyImage, ensure_image_dims, np_to_pil, pil_to_np
+from temporal.utils.image import NumpyImage, ensure_image_dims
 from temporal.utils.math import quantize
 from temporal.utils.object import copy_with_overrides
 
@@ -29,13 +29,13 @@ class DetailingModule(NeuralModule):
                 height = quantize(project.parameters.height * self.scale, 8),
                 denoising_strength = self.denoising_strength,
             ),
-            [(np_to_pil(x), seed + i, 1) for i, x in enumerate(images)],
+            [(x, seed + i, 1) for i, x in enumerate(images)],
             shared.options.processing.pixels_per_batch,
             shared.previewed_modules[self.id] and not shared.options.live_preview.show_only_finished_images,
         )):
             return None
 
         return [
-            pil_to_np(ensure_image_dims(image_array[0], "RGB", (project.parameters.width, project.parameters.height)))
+            ensure_image_dims(image_array[0], "RGB", (project.parameters.width, project.parameters.height))
             for image_array in processed_images
         ]

@@ -2,7 +2,7 @@ from typing import Optional
 
 from temporal.meta.serializable import Serializable, SerializableField as Field
 from temporal.utils.collection import get_with_fallback
-from temporal.utils.image import PILImage
+from temporal.utils.image import NumpyImage
 
 
 class ProcessingParams(Serializable):
@@ -50,12 +50,12 @@ class TextToImageParams(ProcessingParams):
 
 
 class ImageToImageParams(ProcessingParams):
-    images: list[PILImage] = Field(factory = list)
+    images: list[NumpyImage] = Field(factory = list)
 
     @property
-    def image(self) -> Optional[PILImage]:
+    def image(self) -> Optional[NumpyImage]:
         return get_with_fallback(self.images, 0)
 
     @image.setter
-    def image(self, value: PILImage) -> None:
+    def image(self, value: NumpyImage) -> None:
         self.images = [value]

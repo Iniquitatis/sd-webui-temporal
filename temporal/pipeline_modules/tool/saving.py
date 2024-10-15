@@ -5,7 +5,7 @@ from temporal.pipeline_modules.tool import ToolModule
 from temporal.project import Project
 from temporal.shared import shared
 from temporal.utils.fs import ensure_directory_exists
-from temporal.utils.image import NumpyImage, ensure_image_dims, np_to_pil
+from temporal.utils.image import NumpyImage, ensure_image_dims
 from temporal.utils.math import quantize
 from temporal.utils.time import wait_until
 
@@ -29,7 +29,7 @@ class SavingModule(ToolModule):
                 file_name += f"-{i + 1:02d}"
 
             shared.backend.save_image(
-                image = np_to_pil(image),
+                image = image,
                 project = project,
                 output_dir = ensure_directory_exists(project.path),
                 file_name = file_name,
@@ -42,7 +42,7 @@ class SavingModule(ToolModule):
         if self.save_final:
             for image in self._get_scaled_images(images, project):
                 shared.backend.save_image(
-                    image = np_to_pil(image),
+                    image = image,
                     project = project,
                     output_dir = ensure_directory_exists(shared.options.output.output_dir),
                     file_name = None,

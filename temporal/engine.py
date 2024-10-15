@@ -6,7 +6,7 @@ from temporal.backend import Backend
 from temporal.project import Project
 from temporal.shared import shared
 from temporal.utils import logging
-from temporal.utils.image import NumpyImage, ensure_image_dims, np_to_pil, pil_to_np
+from temporal.utils.image import NumpyImage, ensure_image_dims
 from temporal.utils.object import copy_with_overrides
 
 
@@ -39,7 +39,7 @@ class Engine:
                     copy_with_overrides(project.parameters,
                         strength = 1.0 - project.initial_noise.factor,
                     ),
-                    [(np_to_pil(x), project.parameters.seed + i, 1) for i, x in enumerate(noises)],
+                    [(x, project.parameters.seed + i, 1) for i, x in enumerate(noises)],
                     shared.options.processing.pixels_per_batch,
                     True,
                 )):
@@ -49,13 +49,13 @@ class Engine:
                 project.parameters.images[:] = [image_array[0] for image_array in processed_images]
 
             else:
-                project.parameters.images[:] = [np_to_pil(x) for x in noises]
+                project.parameters.images[:] = [x for x in noises]
 
         elif len(project.parameters.images) != project.pipeline.parallel:
             project.parameters.images[:] = [project.parameters.images[0]] * project.pipeline.parallel
 
         if not project.iteration.images:
-            project.iteration.images[:] = [pil_to_np(ensure_image_dims(x, "RGB", (project.parameters.width, project.parameters.height))) for x in project.parameters.images]
+            project.iteration.images[:] = [ensure_image_dims(x, "RGB", (project.parameters.width, project.parameters.height)) for x in project.parameters.images]
 
         last_images = project.iteration.images.copy()
 

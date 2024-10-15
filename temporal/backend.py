@@ -8,7 +8,7 @@ from typing import Optional
 from temporal.processing_params import ImageToImageParams, TextToImageParams
 from temporal.project import Project
 from temporal.utils.collection import batched
-from temporal.utils.image import PILImage
+from temporal.utils.image import NumpyImage
 from temporal.utils.object import copy_with_overrides
 
 
@@ -34,23 +34,23 @@ class Backend(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def text_to_image(self, params: TextToImageParams, preview: bool = False) -> Optional[list[PILImage]]:
+    def text_to_image(self, params: TextToImageParams, preview: bool = False) -> Optional[list[NumpyImage]]:
         raise NotImplementedError
 
     @abstractmethod
-    def image_to_image(self, params: ImageToImageParams, preview: bool = False) -> Optional[list[PILImage]]:
+    def image_to_image(self, params: ImageToImageParams, preview: bool = False) -> Optional[list[NumpyImage]]:
         raise NotImplementedError
 
     @abstractmethod
-    def upscale_image(self, image: PILImage, upscaler: str, scale: float) -> Optional[PILImage]:
+    def upscale_image(self, image: NumpyImage, upscaler: str, scale: float) -> Optional[NumpyImage]:
         raise NotImplementedError
 
     @abstractmethod
-    def set_preview(self, image: Optional[PILImage] = None) -> None:
+    def set_preview(self, image: Optional[NumpyImage] = None) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    def save_image(self, image: PILImage, project: Project, output_dir: Path, file_name: Optional[str] = None, archive_mode: bool = False) -> None:
+    def save_image(self, image: NumpyImage, project: Project, output_dir: Path, file_name: Optional[str] = None, archive_mode: bool = False) -> None:
         raise NotImplementedError
 
     @abstractmethod
@@ -61,9 +61,9 @@ class Backend(ABC):
     def is_interrupted(self) -> bool:
         raise NotImplementedError
 
-    def images_to_batches(self, params: ImageToImageParams, images: list[tuple[PILImage, int, int]], pixels_per_batch: int = 1048576, preview: bool = False) -> Optional[list[list[PILImage]]]:
+    def images_to_batches(self, params: ImageToImageParams, images: list[tuple[NumpyImage, int, int]], pixels_per_batch: int = 1048576, preview: bool = False) -> Optional[list[list[NumpyImage]]]:
         first_image, _, _ = images[0]
-        pixels_per_image = first_image.width * first_image.height
+        pixels_per_image = first_image.shape[1] * first_image.shape[0]
         batch_size = ceil(pixels_per_batch / pixels_per_image)
 
         result = defaultdict(list)

@@ -21,7 +21,7 @@ from temporal.processing_params import ImageToImageParams, TextToImageParams
 from temporal.project import Project
 from temporal.serialization import BasicObjectSerializer, Serializer
 from temporal.thread_queue import ThreadQueue
-from temporal.utils.image import PILImage, save_image
+from temporal.utils.image import NumpyImage, np_to_pil, pil_to_np, save_image
 from temporal.utils.object import copy_with_overrides, temporary_patch
 
 
@@ -66,7 +66,7 @@ class WebUIBackend(Backend):
     def list_schedulers(self) -> list[str]:
         return [x.label for x in schedulers]
 
-    def text_to_image(self, params: TextToImageParams, preview: bool = False) -> Optional[list[PILImage]]:
+    def text_to_image(self, params: TextToImageParams, preview: bool = False) -> Optional[list[NumpyImage]]:
         params = cast(WebUITextToImageParams, params)
 
         p = copy_with_overrides(params.processing,
@@ -113,13 +113,13 @@ class WebUIBackend(Backend):
         if state.interrupted or state.skipped:
             return None
 
-        return processed.images
+        return [pil_to_np(x) for x in processed.images]
 
-    def image_to_image(self, params: ImageToImageParams, preview: bool = False) -> Optional[list[PILImage]]:
+    def image_to_image(self, params: ImageToImageParams, preview: bool = False) -> Optional[list[NumpyImage]]:
         params = cast(WebUIImageToImageParams, params)
 
         p = copy_with_overrides(params.processing,
-            init_images = params.images,
+            init_images = [np_to_pil(x) for x in params.images],
             prompt = params.positive_prompts,
             negative_prompt = params.negative_prompts,
             width = params.width,
@@ -164,35 +164,39 @@ class WebUIBackend(Backend):
         if state.interrupted or state.skipped:
             return None
 
-        return processed.images
+        return [pil_to_np(x) for x in processed.images]
 
-    def upscale_image(self, image: PILImage, upscaler: str, scale: float) -> Optional[PILImage]:
-        return resize_image(0, image, floor(image.width * scale), floor(image.height * scale), upscaler)
+    def upscale_image(self, image: NumpyImage, upscaler: str, scale: float) -> Optional[NumpyImage]:
+        return pil_to_np(resize_image(0, np_to_pil(image), floor(image.shape[1] * scale), floor(image.shape[0] * scale), upscaler))
 
-    def set_preview(self, image: Optional[PILImage] = None) -> None:
+    def set_preview(self, image: Optional[NumpyImage] = None) -> None:
         if image is None:
             if self._last_preview_image is not None:
                 state.assign_current_image(self._last_preview_image)
 
             return
 
-        state.assign_current_image(image)
-        self._last_preview_image = image
+        pil_image = np_to_pil(image)
 
-    def save_image(self, image: PILImage, project: Project, output_dir: Path, file_name: Optional[str] = None, archive_mode: bool = False) -> None:
+        state.assign_current_image(pil_image)
+        self._last_preview_image = pil_image
+
+    def save_image(self, image: NumpyImage, project: Project, output_dir: Path, file_name: Optional[str] = None, archive_mode: bool = False) -> None:
+        pil_image = np_to_pil(image)
+
         if file_name and archive_mode:
             image_save_queue.enqueue(
                 save_image,
-                image,
+                pil_image,
                 (output_dir / file_name).with_suffix(".png"),
                 archive_mode = True,
             )
         else:
             p = cast(WebUIImageToImageParams, project.parameters).processing
-            processed = Processed(p, [image])
+            processed = Processed(p, [pil_image])
 
             webui_save_image(
-                image,
+                pil_image,
                 output_dir,
                 "",
                 p = p,
