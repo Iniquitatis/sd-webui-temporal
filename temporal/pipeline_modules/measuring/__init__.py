@@ -18,7 +18,7 @@ from temporal.utils.image import NumpyImage, PILImage, save_image
 
 
 class MeasuringModule(PipelineModule, abstract = True):
-    icon = "\U0001f4c8"
+    icon = "\U0001f4d0"
 
     file_name: str = ""
     channels: list[tuple[str, str]] = []
