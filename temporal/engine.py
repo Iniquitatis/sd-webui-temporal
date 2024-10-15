@@ -55,7 +55,7 @@ class Engine:
             project.parameters.images[:] = [project.parameters.images[0]] * project.pipeline.parallel
 
         if not project.iteration.images:
-            project.iteration.images[:] = [ensure_image_dims(x, "RGB", (project.parameters.width, project.parameters.height)) for x in project.parameters.images]
+            project.iteration.images[:] = [ensure_image_dims(x, (project.parameters.width, project.parameters.height), 3) for x in project.parameters.images]
 
         last_images = project.iteration.images.copy()
 

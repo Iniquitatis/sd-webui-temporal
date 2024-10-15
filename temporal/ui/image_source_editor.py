@@ -74,7 +74,7 @@ class ImageSourceEditor(Widget):
 
             if value.type == "image":
                 result[self._image]["visible"] = True
-                result[self._image]["value"] = ensure_image_dims(value.image, self._image._instance.image_mode) if value.image is not None else None
+                result[self._image]["value"] = ensure_image_dims(value.image, channels = 4 if self._image._instance.image_mode == "RGBA" else 3) if value.image is not None else None
             elif value.type == "initial_image":
                 pass
             elif value.type == "video":

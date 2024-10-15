@@ -3,7 +3,7 @@ from typing import Optional
 import skimage
 
 from temporal.meta.serializable import Serializable, SerializableField as Field
-from temporal.utils.image import NumpyImage, ensure_image_dims
+from temporal.utils.image import NumpyImage, match_image
 from temporal.utils.math import lerp, normalize
 
 
@@ -17,7 +17,7 @@ class ImageMask(Serializable):
         if self.image is None or npim is processed:
             return processed
 
-        factor = ensure_image_dims(self.image, size = (npim.shape[1], npim.shape[0]))
+        factor = match_image(self.image, npim, channels = False)
 
         if self.normalized:
             factor = normalize(factor, factor.min(), factor.max())

@@ -22,7 +22,7 @@ class LimitingModule(TemporalModule):
     def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if self.buffer is None:
             self.buffer = np.stack([
-                ensure_image_dims(image, "RGB", (project.parameters.width, project.parameters.height))
+                ensure_image_dims(image, (project.parameters.width, project.parameters.height), 3)
                 for image in images
             ], 0)
 

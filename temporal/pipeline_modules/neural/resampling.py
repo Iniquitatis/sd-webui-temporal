@@ -29,6 +29,6 @@ class ResamplingModule(NeuralModule):
                 raise Exception
 
         return [
-            ensure_image_dims(resample(im), "RGB", (project.parameters.width, project.parameters.height))
+            ensure_image_dims(resample(im), (project.parameters.width, project.parameters.height), 3)
             for im in images
         ]

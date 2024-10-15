@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Callable, Optional, TypeVar
+from typing import Callable, Optional
 
 import numpy as np
 import skimage
@@ -12,9 +12,6 @@ from temporal.utils.numpy import saturate_array
 
 PILImage = Image.Image
 NumpyImage = NDArray[np.float64]
-
-
-T = TypeVar("T", PILImage, NumpyImage)
 
 
 def alpha_blend(a: NumpyImage, b: NumpyImage) -> NumpyImage:
@@ -38,22 +35,25 @@ def apply_color_matrix(npim: NumpyImage, matrix: NDArray[np.float64], clip: bool
     return result
 
 
-def ensure_image_dims(im: T, mode: Optional[str] = None, size: Optional[tuple[int, int]] = None) -> T:
-    if isinstance(im, np.ndarray):
-        tmp_im = np_to_pil(im)
-    else:
-        tmp_im = im
+def ensure_image_dims(npim: NumpyImage, size: Optional[tuple[int, int]] = None, channels: Optional[int] = None) -> NumpyImage:
+    npim_height, npim_width, npim_channels = npim.shape
 
-    if mode is not None and tmp_im.mode != mode:
-        tmp_im = tmp_im.convert(mode)
+    target_width = size[0] if size is not None else npim_width
+    target_height = size[1] if size is not None else npim_height
+    target_channels = channels if channels is not None else npim_channels
 
-    if size is not None and tmp_im.size != size:
-        tmp_im = tmp_im.resize(size, Image.Resampling.LANCZOS)
+    if npim_width == target_width and npim_height == target_height and npim_channels == target_channels:
+        return npim
 
-    if isinstance(im, np.ndarray):
-        return pil_to_np(tmp_im)
-    else:
-        return tmp_im
+    im = np_to_pil(npim)
+
+    if npim_channels != target_channels:
+        im = im.convert("RGBA" if target_channels == 4 else "RGB")
+
+    if npim_width != target_width or npim_height != target_height:
+        im = im.resize((target_width, target_height), Image.Resampling.LANCZOS)
+
+    return pil_to_np(im)
 
 
 def join_hsv_to_rgb(h: NumpyImage, s: NumpyImage, v: NumpyImage) -> NumpyImage:
@@ -66,28 +66,19 @@ def load_image(path: str | Path) -> PILImage:
     return im
 
 
-def match_image(im: T, reference: PILImage | NumpyImage, mode: bool = True, size: bool = True) -> T:
-    if isinstance(reference, np.ndarray):
-        ref_mode = "RGBA" if reference.shape[-1] == 4 else "RGB"
-        ref_size = (reference.shape[1], reference.shape[0])
-    else:
-        ref_mode = reference.mode
-        ref_size = reference.size
-
-    return ensure_image_dims(im, ref_mode if mode else None, ref_size if size else None)
+def match_image(npim: NumpyImage, reference: NumpyImage, size: bool = True, channels: bool = True) -> NumpyImage:
+    return ensure_image_dims(
+        npim,
+        (reference.shape[1], reference.shape[0]) if size else None,
+        reference.shape[2] if channels else None,
+    )
 
 
 def np_to_pil(npim: NumpyImage) -> PILImage:
-    if isinstance(npim, Image.Image):
-        return npim
-
     return Image.fromarray(skimage.util.img_as_ubyte(npim))
 
 
 def pil_to_np(im: PILImage) -> NumpyImage:
-    if isinstance(im, np.ndarray):
-        return im
-
     return skimage.util.img_as_float(im)
 
 

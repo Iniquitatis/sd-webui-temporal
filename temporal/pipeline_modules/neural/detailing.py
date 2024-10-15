@@ -36,6 +36,6 @@ class DetailingModule(NeuralModule):
             return None
 
         return [
-            ensure_image_dims(image_array[0], "RGB", (project.parameters.width, project.parameters.height))
+            ensure_image_dims(image_array[0], (project.parameters.width, project.parameters.height), 3)
             for image_array in processed_images
         ]
