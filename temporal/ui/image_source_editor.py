@@ -4,10 +4,9 @@ import gradio as gr
 
 from temporal.image_source import ImageSource
 from temporal.ui import Callback, CallbackInputs, CallbackOutputs, ReadData, UIThing, UpdateData, UpdateRequest, Widget
-from temporal.ui.gradio_widget import GradioWidget
+from temporal.ui.image_box import ImageBox
 from temporal.ui.radio import Radio
 from temporal.ui.video_box import VideoBox
-from temporal.utils.image import ensure_image_dims
 
 
 class ImageSourceEditor(Widget):
@@ -20,7 +19,7 @@ class ImageSourceEditor(Widget):
         super().__init__()
 
         self._type = Radio(label = self._format_label(label, "Type"), choices = [("image", "Image"), ("initial_image", "Initial image"), ("video", "Video")], value = value.type)
-        self._image = GradioWidget(gr.Image, label = self._format_label(label, "Image"), type = "numpy", image_mode = "RGBA" if channels == 4 else "RGB", value = value.image, visible = value.type == "image")
+        self._image = ImageBox(label = self._format_label(label, "Image"), channels = channels, value = value.image, visible = value.type == "image")
         self._video = VideoBox(label = self._format_label(label, "Video"), value = value.video, visible = value.type == "video")
 
         @self._type.callback("change", [self._type, self._image, self._video], [self._image, self._video])
@@ -74,7 +73,7 @@ class ImageSourceEditor(Widget):
 
             if value.type == "image":
                 result[self._image]["visible"] = True
-                result[self._image]["value"] = ensure_image_dims(value.image, channels = 4 if self._image._instance.image_mode == "RGBA" else 3) if value.image is not None else None
+                result[self._image]["value"] = value.image
             elif value.type == "initial_image":
                 pass
             elif value.type == "video":

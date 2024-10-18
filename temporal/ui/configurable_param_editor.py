@@ -15,6 +15,7 @@ from temporal.ui.color_editor import ColorEditor
 from temporal.ui.dropdown import Dropdown
 from temporal.ui.gradient_editor import GradientEditor
 from temporal.ui.gradio_widget import GradioWidget
+from temporal.ui.image_box import ImageBox
 from temporal.ui.image_source_editor import ImageSourceEditor
 from temporal.ui.noise_editor import NoiseEditor
 from temporal.ui.path_editor import PathEditor
@@ -77,7 +78,7 @@ class ConfigurableParamEditor(Widget):
             self._widget = ColorEditor(label = self._format_label(param.name), channels = param.channels, value = make_static_value(Color, param))
 
         elif isinstance(param, ImageParam):
-            self._widget = GradioWidget(gr.Image, label = self._format_label(param.name), type = "numpy", image_mode = "RGBA" if param.channels == 4 else "RGB", value = make_static_value(np.ndarray, param))
+            self._widget = ImageBox(label = self._format_label(param.name), channels = param.channels, value = make_static_value(np.ndarray, param))
 
         elif isinstance(param, ImageSourceParam):
             self._widget = ImageSourceEditor(label = self._format_label(param.name), channels = param.channels, value = make_static_value(ImageSource, param))

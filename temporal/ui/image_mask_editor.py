@@ -5,6 +5,7 @@ import gradio as gr
 from temporal.image_mask import ImageMask
 from temporal.ui import Callback, ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.gradio_widget import GradioWidget
+from temporal.ui.image_box import ImageBox
 
 
 class ImageMaskEditor(Widget):
@@ -15,7 +16,7 @@ class ImageMaskEditor(Widget):
     ) -> None:
         super().__init__()
 
-        self._image = GradioWidget(gr.Image, label = self._format_label(label, "Image"), type = "numpy", image_mode = "L", interactive = True, value = value.image)
+        self._image = ImageBox(label = self._format_label(label, "Image"), channels = 1, value = value.image)
         self._normalized = GradioWidget(gr.Checkbox, label = self._format_label(label, "Normalized"), value = value.normalized)
         self._inverted = GradioWidget(gr.Checkbox, label = self._format_label(label, "Inverted"), value = value.inverted)
         self._blurring = GradioWidget(gr.Slider, label = self._format_label(label, "Blurring"), minimum = 0.0, maximum = 50.0, step = 0.1, value = value.blurring)
