@@ -1,65 +1,65 @@
-# NOTE: Hic sunt dracones
 from collections.abc import Iterable
 from typing import Any, Callable, Iterator
 
 import gradio as gr
 
 from temporal.ui import Callback, ReadData, UIThing, UpdateData, UpdateRequest, Widget
+from temporal.ui.communication_box import CommunicationBox
 from temporal.ui.gradio_widget import GradioWidget
+from temporal.utils.collection import swap_kv
 
 
 class ReorderableList(Widget):
-    index: int = 0
-    stack: list["ReorderableList"] = []
+    _stack: list["ReorderableList"] = []
 
     def __init__(
         self,
     ) -> None:
         super().__init__()
 
-        self.items: list[ReorderableAccordion] = []
+        self._order: dict[int, int] = {}
 
-        self._textbox = GradioWidget(gr.Textbox,
-            label = self._format_label("Order"),
-            elem_classes = ["temporal-reorderable-list-textbox", f"temporal-index-{ReorderableList.index}"],
-        )
-        self._textbox._instance.change(None, self._textbox._instance, None, _js = f"(x) => updateReorderableListOrder({ReorderableList.index}, x)")
+        self._communication = CommunicationBox("Order", f"temporalUpdateReorderableList({self.index}, data)")
 
-        self._column = GradioWidget(gr.Column,
-            elem_classes = ["temporal-reorderable-list", f"temporal-index-{ReorderableList.index}"],
-        )
+        self._column = GradioWidget(gr.Column, elem_classes = [
+            "temporal-reorderable-list",
+            self.index_class,
+            self._communication.communication_class,
+        ])
 
-        ReorderableList.index += 1
+    @staticmethod
+    def add_accordion(accordion: "ReorderableAccordion") -> None:
+        top_list = ReorderableList._stack[-1]
+        top_list._order[accordion.index] = len(top_list._order)
 
     def __enter__(self, *args: Any, **kwargs: Any) -> "ReorderableList":
-        self.stack.append(self)
+        self._stack.append(self)
         self._column.__enter__(*args, **kwargs)
         return self
 
     def __exit__(self, *args: Any, **kwargs: Any) -> None:
-        self.stack.pop()
+        self._stack.pop()
         self._column.__exit__(*args, **kwargs)
 
     @property
     def dependencies(self) -> Iterator[UIThing]:
-        yield self._textbox
+        yield self._communication
 
     def read(self, data: ReadData) -> list[int]:
-        def try_parse_int(x: str, default: int = -1) -> int:
-            try:
-                return int(x)
-            except ValueError:
-                return default
-
-        return [index for x in data[self._textbox].split("|") if (index := try_parse_int(x, -1)) != -1]
+        return [self._order[x] for x in data[self._communication]]
 
     def update(self, data: UpdateData) -> UpdateRequest:
         result: UpdateRequest = {}
 
         if isinstance(value := data.get("value", None), list):
-            result[self._textbox] = {"value": "|".join(str(x) for x in value)}
+            swapped_order = swap_kv(self._order)
+            result[self._communication] = {"value": [swapped_order[x] for x in value]}
 
         return result
+
+    # TODO: Send list of ordered accordion indices here
+    def setup_callback(self, callback: Callback) -> None:
+        return super().setup_callback(callback)
 
 
 class ReorderableAccordion(Widget):
@@ -71,23 +71,19 @@ class ReorderableAccordion(Widget):
     ) -> None:
         super().__init__()
 
-        list_widget = ReorderableList.stack[-1]
-        index = len(list_widget.items)
-
-        self._checkbox = GradioWidget(gr.Checkbox,
-            label = self._format_label(label),
-            value = value,
-            container = False,
-            elem_classes = ["temporal-reorderable-accordion-checkbox", f"temporal-index-{index}"],
-        )
-
-        self._accordion = GradioWidget(gr.Accordion,
+        with GradioWidget(gr.Accordion,
             label = "",
             open = open,
-            elem_classes = ["temporal-reorderable-accordion", f"temporal-index-{index}"],
-        )
+            elem_classes = ["temporal-reorderable-accordion", self.index_class],
+        ) as self._accordion:
+            self._checkbox = GradioWidget(gr.Checkbox,
+                label = self._format_label(label),
+                value = value,
+                container = False,
+                elem_classes = ["temporal-reorderable-accordion-checkbox"],
+            )
 
-        list_widget.items.append(self)
+        ReorderableList.add_accordion(self)
 
     def __enter__(self, *args: Any, **kwargs: Any) -> "ReorderableAccordion":
         self._accordion.__enter__(*args, **kwargs)

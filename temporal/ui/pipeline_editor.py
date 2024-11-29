@@ -3,7 +3,7 @@ from typing import Iterator
 import gradio as gr
 
 from temporal.pipeline import Pipeline
-from temporal.ui import ReadData, UIThing, UpdateData, UpdateRequest, Widget
+from temporal.ui import Callback, ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.gradio_widget import GradioWidget
 from temporal.ui.reorderable_list import ReorderableList
 from temporal.ui.pipeline_module_editor import PipelineModuleEditor
@@ -62,6 +62,10 @@ class PipelineEditor(Widget):
                 result[widget]["preview"] = preview_states[id]
 
         return result
+
+    # TODO: Send the pipeline object with the sorted list of modules here
+    def setup_callback(self, callback: Callback) -> None:
+        return super().setup_callback(callback)
 
     @property
     def _module_ids(self) -> list[str]:

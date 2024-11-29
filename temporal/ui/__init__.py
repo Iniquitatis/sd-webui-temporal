@@ -88,12 +88,16 @@ class Callback:
 class Widget(ABC):
     _existing_labels: set[str] = set()
     _all: list["Widget"] = []
+    _global_index: int = 0
 
     def __init__(
         self,
     ) -> None:
+        self.index = Widget._global_index
         self.pending_callbacks: list[Callback] = []
         self._all.append(self)
+
+        Widget._global_index += 1
 
     @property
     @abstractmethod
@@ -107,6 +111,10 @@ class Widget(ABC):
     @abstractmethod
     def update(self, data: UpdateData) -> UpdateRequest:
         raise NotImplementedError
+
+    @property
+    def index_class(self) -> str:
+        return f"temporal-index-{self.index}"
 
     def setup_callback(self, callback: Callback) -> None:
         pass
@@ -140,6 +148,13 @@ class Widget(ABC):
 
 
 class UI:
+    def __init__(self) -> None:
+        # NOTE: Because Web UI reruns `ui` method on scripts several times;
+        # _thanks_, Web UI!
+        Widget._existing_labels.clear()
+        Widget._all.clear()
+        Widget._global_index = 0
+
     def finalize(self, *widgets: Widget) -> list[GradioThing]:
         for widget in Widget._all:
             for callback in widget.pending_callbacks:

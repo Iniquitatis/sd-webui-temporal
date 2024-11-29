@@ -70,3 +70,7 @@ def natural_sort(iterable: Iterable[str]) -> list[str]:
 
 def reorder_dict(d: dict[T, U], order: Iterable[T]) -> dict[T, U]:
     return {x: d[x] for x in order} | d
+
+
+def swap_kv(d: dict[T, U]) -> dict[U, T]:
+    return {v: k for k, v in d.items()}

@@ -2,6 +2,157 @@
     gap: 1rem !important;
 }
 
+/*============================================================================*/
+
+.temporal-communication-input:not(.temporal-debug),
+.temporal-communication-output:not(.temporal-debug) {
+    display: none;
+}
+
+/*============================================================================*/
+
+:root {
+    --temporal-grid-width: 1px;
+    --temporal-anim-editor-cell-width: 1.5rem;
+    --temporal-anim-editor-cell-height: 1.8rem;
+}
+
+:root {
+    --temporal-text-color: black;
+    --temporal-grid-color: hsl(0, 0%, 85%);
+    --temporal-anim-editor-header-color: hsl(240, 25%, 97.5%);
+    --temporal-anim-editor-cell-color: white;
+}
+
+:root .dark {
+    --temporal-text-color: white;
+    --temporal-grid-color: hsl(240, 3%, 20%);
+    --temporal-anim-editor-header-color: hsl(240, 10%, 12%);
+    --temporal-anim-editor-cell-color: hsl(0, 0%, 8%);
+}
+
+temporal-multi-state-toggle {
+    display: inline-block;
+    text-align: center;
+    user-select: none;
+}
+
+temporal-value-input {
+    display: inline-block;
+}
+
+temporal-value-input input,
+temporal-value-input select {
+    background: unset !important;
+    border: unset !important;
+    font: unset;
+    margin: unset !important;
+    padding: unset !important;
+    box-sizing: border-box !important;
+    height: 100% !important;
+    width: 100% !important;
+}
+
+temporal-value-input input[type="checkbox"] {
+    appearance: revert !important;
+    height: calc(100% - 8px) !important;
+    margin: 4px 4px !important;
+    width: calc(100% - 8px) !important;
+}
+
+temporal-value-input input[type="number"],
+temporal-value-input input[type="text"] {
+    padding-left: 0.25rem !important;
+    padding-right: 0.25rem !important;
+}
+
+temporal-value-input input[type="text"]:not([list=""]) {
+    line-height: normal;
+}
+
+temporal-value-input select option {
+    background-color: var(--temporal-anim-editor-cell-color) !important;
+}
+
+temporal-anim-editor {
+    background-color: var(--temporal-grid-color);
+    display: grid;
+    font-family: monospace;
+    grid-auto-flow: row;
+    grid-auto-rows: calc(var(--temporal-anim-editor-cell-height) + var(--temporal-grid-width));
+    line-height: var(--temporal-anim-editor-cell-height);
+    max-height: 15rem;
+    overflow: scroll;
+}
+
+temporal-anim-editor * {
+    box-sizing: content-box !important;
+    font-size: var(--text-sm) !important;
+}
+
+temporal-anim-row,
+temporal-anim-timeline,
+temporal-anim-track {
+    border-bottom: var(--temporal-grid-width) solid var(--temporal-grid-color) !important;
+    display: grid;
+    grid-template-columns: 18rem auto;
+    width: max-content;
+}
+
+.temporal-anim-row-header {
+    background-color: var(--temporal-anim-editor-header-color);
+    border-right: var(--temporal-grid-width) solid var(--temporal-grid-color);
+}
+
+.temporal-anim-row-header > *:not(:last-child) {
+    border-right: var(--temporal-grid-width) solid var(--temporal-grid-color);
+}
+
+.temporal-anim-row-data {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: calc(var(--temporal-anim-editor-cell-width) + var(--temporal-grid-width));
+}
+
+.temporal-anim-row-cell {
+    background-color: var(--temporal-anim-editor-cell-color);
+    text-align: center;
+    width: var(--temporal-anim-editor-cell-width);
+}
+
+.temporal-anim-row-cell.highlighted {
+    background-color: var(--temporal-anim-editor-header-color);
+}
+
+.temporal-anim-row-cell:not(:last-child) {
+    border-right: var(--temporal-grid-width) solid var(--temporal-grid-color);
+}
+
+temporal-anim-timeline .temporal-anim-row-header temporal-value-input {
+    width: 100%;
+}
+
+temporal-anim-timeline .temporal-anim-row-cell {
+    background-color: var(--temporal-anim-editor-header-color);
+    cursor: pointer;
+}
+
+temporal-anim-timeline .temporal-anim-row-cell.highlighted {
+    font-weight: bold;
+}
+
+temporal-anim-track .temporal-anim-row-header {
+    display: grid;
+    grid-template-columns: auto 3rem 1.5rem 1.5rem 4rem;
+}
+
+temporal-anim-track .temporal-anim-row-cell temporal-multi-state-toggle {
+    height: 100%;
+    width: 100%;
+}
+
+/*============================================================================*/
+
 .temporal-composite-widget-title {
     background: var(--block-title-background-fill) !important;
     border-radius: var(--block-title-radius) !important;
@@ -52,9 +203,7 @@
     display: none !important;
 }
 
-.temporal-reorderable-list-textbox {
-    display: none;
-}
+/*============================================================================*/
 
 .temporal-reorderable-list .temporal-reorderable-accordion {
     user-select: none;

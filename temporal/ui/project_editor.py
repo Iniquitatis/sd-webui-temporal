@@ -3,7 +3,7 @@ from typing import Iterator
 from temporal.pipeline import Pipeline
 from temporal.pipeline_module import PIPELINE_MODULES
 from temporal.project import Project
-from temporal.ui import ReadData, UIThing, UpdateData, UpdateRequest, Widget
+from temporal.ui import CallbackInputs, CallbackOutputs, ReadData, UIThing, UpdateData, UpdateRequest, Widget
 from temporal.ui.animation_editor import AnimationEditor
 from temporal.ui.initial_noise_editor import InitialNoiseEditor
 from temporal.ui.pipeline_editor import PipelineEditor
@@ -21,6 +21,24 @@ class ProjectEditor(Widget):
         self._initial_noise = InitialNoiseEditor(value.initial_noise)
         self._pipeline = PipelineEditor(value.pipeline)
         self._animation = AnimationEditor(value.animation)
+
+        @self._pipeline.callback("change", [self._pipeline], [self._animation])
+        def _(inputs: CallbackInputs) -> CallbackOutputs:
+            pipeline = inputs[self]
+
+            # TODO: Read properties here
+            properties = {
+                "parameters.strength": "number",
+                "pipeline.modules[0].enabled": "bool",
+                "pipeline.modules[0].amount": "number",
+                "pipeline.modules[1].enabled": "bool",
+                "pipeline.modules[1].amount": "number",
+                "pipeline.modules[2].enabled": "bool",
+                "pipeline.modules[2].amount": "number",
+                "pipeline.modules[2].color": "color",
+            }
+
+            return {self._animation: {"properties": properties}}
 
     @property
     def dependencies(self) -> Iterator[UIThing]:
