@@ -105,3 +105,10 @@ class Serializable:
         tree = ET.ElementTree(ar.print_xml())
         ET.indent(tree)
         tree.write(dir / "data.xml")
+
+    # TODO
+    def to_json(self) -> dict[str, Any]:
+        ar = Archive(type_name = find_alias_for_type(type(self)) or "")
+        # self.write(ar)
+
+        return ar.print_json()

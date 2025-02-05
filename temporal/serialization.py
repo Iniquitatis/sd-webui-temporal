@@ -84,6 +84,10 @@ class Archive:
 
         return elem
 
+    # TODO
+    def print_json(self) -> dict[str, Any]:
+        return {}
+
     def _find_child(self, key: int | str) -> Optional["Archive"]:
         if isinstance(key, int):
             return self._children[key]

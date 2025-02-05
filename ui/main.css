@@ -1,0 +1,98 @@
+:root {
+    --global-hs: 0 0%;
+    --accent-hs: 210 25%;
+    --background-color: light-dark(hsl(var(--global-hs) 100%), hsl(var(--global-hs) 5%));
+    --accent-color: light-dark(hsl(var(--accent-hs) 50%), hsl(var(--accent-hs) 75%));
+    --text-color: light-dark(hsl(var(--global-hs) 0%), hsl(var(--global-hs) 100%));
+    --hint-color: light-dark(hsl(var(--global-hs) 40%), hsl(var(--global-hs) 60%));
+    --input-color: light-dark(hsl(var(--global-hs) 95%), hsl(var(--global-hs) 10%));
+    --hover-color: light-dark(hsl(var(--global-hs) 90%), hsl(var(--global-hs) 15%));
+    --active-color: light-dark(hsl(var(--accent-hs) 90%), hsl(var(--accent-hs) 20%));
+    --line-height: 1.2rem;
+    --layout-padding: 0.5rem;
+    --layout-gap: calc(var(--line-height) / 2);
+    --vertical-padding: 0.4rem;
+    --horizontal-padding: 0.5rem;
+    --padding: var(--vertical-padding) var(--horizontal-padding);
+    --widget-height: calc(var(--line-height) + var(--vertical-padding) * 2);
+    --thin-border: 1px solid light-dark(hsl(var(--global-hs) 85%), hsl(var(--global-hs) 15%));
+    --corners: 4px;
+    --checkbox-size: 1rem;
+    --small-input-width: 5rem;
+
+    color-scheme: light dark;
+}
+
+* {
+    accent-color: var(--accent-color);
+    box-sizing: border-box;
+    color: var(--text-color);
+    font: 14px "IBM Plex Sans";
+    line-height: var(--line-height);
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--background-color);
+}
+
+body.standalone {
+    padding: var(--layout-padding);
+}
+
+body.touch {
+    --line-height: 1.5rem;
+}
+
+button,
+input,
+input::file-selector-button,
+select,
+textarea {
+    border: unset;
+    background-color: var(--input-color);
+    border-radius: var(--corners);
+}
+
+button,
+input,
+input::file-selector-button,
+textarea {
+    padding: var(--padding);
+}
+
+button {
+    font-weight: 500;
+    user-select: none;
+}
+
+button:hover {
+    background-color: var(--hover-color);
+}
+
+input::file-selector-button {
+    padding: 0 calc(var(--horizontal-padding) / 2);
+}
+
+input[type="checkbox"] {
+    width: var(--checkbox-size);
+}
+
+input[type="range"] {
+    height: var(--line-height);
+    padding: 0;
+}
+
+select {
+    height: var(--widget-height);
+    padding: 0 var(--horizontal-padding);
+}
+
+.active {
+    background-color: var(--active-color);
+}
+
+.dragged {
+    opacity: 0.5;
+}

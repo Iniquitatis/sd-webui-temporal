@@ -28,6 +28,11 @@ class ConfigurableParam(SerializableField, Generic[T]):
     def default(self) -> T:
         return cast(T, super().default)
 
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "name": self.name,
+        }
+
 
 class Configurable(Registerable, Serializable):
     __params__: dict[str, ConfigurableParam[Any]]
@@ -54,6 +59,13 @@ class BoolParam(ConfigurableParam[bool]):
     ) -> None:
         super().__init__(name, value)
 
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "type": "bool",
+            "name": self.name,
+            "default": self.default,
+        }
+
 
 class IntParam(ConfigurableParam[int]):
     def __init__(
@@ -70,6 +82,17 @@ class IntParam(ConfigurableParam[int]):
         self.maximum = maximum
         self.step = step
         self.ui_type = ui_type
+
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "type": "int",
+            "name": self.name,
+            "minimum": self.minimum,
+            "maximum": self.maximum,
+            "step": self.step,
+            "default": self.default,
+            "ui_type": self.ui_type,
+        }
 
 
 class FloatParam(ConfigurableParam[float]):
@@ -88,6 +111,17 @@ class FloatParam(ConfigurableParam[float]):
         self.step = step
         self.ui_type = ui_type
 
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "type": "float",
+            "name": self.name,
+            "minimum": self.minimum,
+            "maximum": self.maximum,
+            "step": self.step,
+            "default": self.default,
+            "ui_type": self.ui_type,
+        }
+
 
 class StringParam(ConfigurableParam[str]):
     def __init__(
@@ -101,6 +135,15 @@ class StringParam(ConfigurableParam[str]):
         self.ui_type = ui_type
         self.language = language
 
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "type": "string",
+            "name": self.name,
+            "default": self.default,
+            "ui_type": self.ui_type,
+            "language": self.language,
+        }
+
 
 class PathParam(ConfigurableParam[Path]):
     def __init__(
@@ -109,6 +152,13 @@ class PathParam(ConfigurableParam[Path]):
         value: Path = Path(),
     ) -> None:
         super().__init__(name, value)
+
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "type": "path",
+            "name": self.name,
+            "default": self.default.as_posix(),
+        }
 
 
 class EnumParam(ConfigurableParam[str]):
@@ -123,6 +173,19 @@ class EnumParam(ConfigurableParam[str]):
         self.choices = choices
         self.ui_type = ui_type
 
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "type": "enum",
+            "name": self.name,
+            "choices": {
+                x[0] if isinstance(x, tuple) else x:
+                x[1] if isinstance(x, tuple) else x
+                for x in self.choices
+            },
+            "default": self.default,
+            "ui_type": self.ui_type,
+        }
+
 
 class ColorParam(ConfigurableParam[Color]):
     def __init__(
@@ -134,6 +197,14 @@ class ColorParam(ConfigurableParam[Color]):
         super().__init__(name, factory = factory)
         self.channels = channels
 
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "type": "color",
+            "name": self.name,
+            "channels": self.channels,
+            "default": self.default.to_hex(self.channels),
+        }
+
 
 class ImageParam(ConfigurableParam[NumpyImage]):
     def __init__(
@@ -143,6 +214,13 @@ class ImageParam(ConfigurableParam[NumpyImage]):
     ) -> None:
         super().__init__(name, None)
         self.channels = channels
+
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "type": "image",
+            "name": self.name,
+            "channels": self.channels,
+        }
 
 
 class ImageSourceParam(ConfigurableParam[ImageSource]):
@@ -155,6 +233,13 @@ class ImageSourceParam(ConfigurableParam[ImageSource]):
         super().__init__(name, factory = factory)
         self.channels = channels
 
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "type": "image_source",
+            "name": self.name,
+            "default": self.default.to_json(),
+        }
+
 
 class GradientParam(ConfigurableParam[Gradient]):
     def __init__(
@@ -163,6 +248,13 @@ class GradientParam(ConfigurableParam[Gradient]):
         factory: Callable[[], Gradient] = Gradient,
     ) -> None:
         super().__init__(name, factory = factory)
+
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "type": "gradient",
+            "name": self.name,
+            "default": self.default.to_json(),
+        }
 
 
 class NoiseParam(ConfigurableParam[Noise]):
@@ -173,6 +265,13 @@ class NoiseParam(ConfigurableParam[Noise]):
     ) -> None:
         super().__init__(name, factory = factory)
 
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "type": "noise",
+            "name": self.name,
+            "default": self.default.to_json(),
+        }
+
 
 class PatternParam(ConfigurableParam[Pattern]):
     def __init__(
@@ -181,3 +280,10 @@ class PatternParam(ConfigurableParam[Pattern]):
         factory: Callable[[], Pattern] = Pattern,
     ) -> None:
         super().__init__(name, factory = factory)
+
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "type": "pattern",
+            "name": self.name,
+            "default": self.default.to_json(),
+        }

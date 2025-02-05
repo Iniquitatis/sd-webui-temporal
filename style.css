@@ -1,3 +1,9 @@
+#temporal-iframe {
+    display: block;
+    height: 90vh;
+    width: 100%;
+}
+
 .temporal-gap {
     gap: 1rem !important;
 }
