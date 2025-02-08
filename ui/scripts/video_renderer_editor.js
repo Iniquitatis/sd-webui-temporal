@@ -1,5 +1,7 @@
-import {Column, Row} from "../scripts/core/layout.js";
-import {BoolEditor, NumberEditor} from "../scripts/core/value_editors.js";
+import {BoolEditor} from "../scripts/base/bool_editor.js";
+import {Column} from "../scripts/base/column.js";
+import {NumberEditor} from "../scripts/base/number_editor.js";
+import {Row} from "../scripts/base/row.js";
 
 export class VideoRendererEditor extends Column {
     constructor() {

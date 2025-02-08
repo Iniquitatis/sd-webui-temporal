@@ -1,7 +1,11 @@
-import {Button, MultiStateToggle} from "../scripts/core/buttons.js";
-import {Column, ReorderableAccordion} from "../scripts/core/layout.js";
+import {BoolEditor} from "../scripts/base/bool_editor.js";
+import {Button} from "../scripts/base/button.js";
+import {Column} from "../scripts/base/column.js";
+import {EnumEditor} from "../scripts/base/enum_editor.js";
+import {MultiStateToggle} from "../scripts/base/multi_state_toggle.js";
+import {NumberEditor} from "../scripts/base/number_editor.js";
+import {ReorderableAccordion} from "../scripts/base/reorderable_list.js";
 import {Signal} from "../scripts/core/signal.js";
-import {BoolEditor, EnumEditor, NumberEditor} from "../scripts/core/value_editors.js";
 import {createElement} from "../scripts/utils/dom.js";
 import {getObjectKeyByIndex} from "../scripts/utils/object.js";
 import {ConfigurableParamEditor} from "../scripts/configurable_param_editor.js";

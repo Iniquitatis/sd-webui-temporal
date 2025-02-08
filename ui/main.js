@@ -1,11 +1,19 @@
-import {Button, ToolButton} from "./scripts/core/buttons.js";
-import {Column, Row, Tabs} from "./scripts/core/layout.js";
-import {BoolEditor, EnumEditor, ImageEditor, NumberEditor, TextEditor} from "./scripts/core/value_editors.js";
+import {BoolEditor} from "./scripts/base/bool_editor.js";
+import {Button} from "./scripts/base/button.js";
+import {Column} from "./scripts/base/column.js";
+import {EnumEditor} from "./scripts/base/enum_editor.js";
+import {ImageEditor} from "./scripts/base/image_editor.js";
+import {NumberEditor} from "./scripts/base/number_editor.js";
+import {Row} from "./scripts/base/row.js";
+import {Tabs} from "./scripts/base/tabs.js";
+import {TextEditor} from "./scripts/base/text_editor.js";
+import {ToolButton} from "./scripts/base/tool_button.js";
+import {createElement} from "./scripts/utils/dom.js";
 import {getObjectKeyByIndex} from "./scripts/utils/object.js";
 import {getRequest, postRequest} from "./scripts/utils/requests.js";
 import {PipelineEditor} from "./scripts/pipeline_editor.js";
-import {VideoRendererEditor} from "./scripts/video_renderer_editor.js";
 import {blendModes, modules, presets, projects} from "./scripts/test_data.js";
+import {VideoRendererEditor} from "./scripts/video_renderer_editor.js";
 
 export class MainUI extends Column {
     constructor() {
@@ -13,7 +21,7 @@ export class MainUI extends Column {
 
         this.createChild(Button, (e) => {
             e.label = "Generate";
-            e._button.style.lineHeight = "calc(var(--line-height) * 2)";
+            e.style.height = "calc(var(--widget-height) * 2)";
             e.onClick.connect(() => {
                 if (e.label == "Generate") {
                     this._progressBar.value = 0;
@@ -24,26 +32,20 @@ export class MainUI extends Column {
                         this._progressBar.value %= 100;
                     }, 1000);
 
-                    postRequest("/sdapi/v1/txt2img", {
-                        "prompt": "female, happy, dynamic, colorful, smooth, soft, 3d render",
-                        "negative_prompt": "",
-                        "seed": -1,
-                        "sampler_name": "DPM++ 3M SDE",
-                        "scheduler": "DDIM",
-                        "batch_size": 4,
-                        "n_iter": 1,
-                        "steps": 10,
-                        "cfg_scale": 2.5,
+                    postRequest("/temporal/text_to_image", {
+                        "positive_prompts": ["female, happy, dynamic, colorful, smooth, soft, 3d render"],
+                        "negative_prompts": [""],
                         "width": 768,
                         "height": 1152,
+                        "sampler": "DPM++ 3M SDE",
+                        "scheduler": "DDIM",
+                        "steps": 10,
+                        "cfg": 2.5,
+                        "seeds": [-1],
                     })
                     .then((result) => {
-                        this._preview._image.innerHTML = "";
-
-                        for (let data of result.images) {
-                            let img = document.createElement("img");
-                            img.src = `data:image/png;base64,${data}`;
-                            this._preview._image.appendChild(img);
+                        for (let data of result) {
+                            this._preview.value = `data:image/png;base64,${data}`;
                         }
                     });
 
@@ -63,18 +65,18 @@ export class MainUI extends Column {
 
         this._progressInterval = null;
 
-        this._progressBar = document.createElement("progress");
-        this._progressBar.max = 100;
-        this._progressBar.value = 0;
-        this._progressBar.style.display = "none";
-        this._progressBar.style.height = "2rem";
-        this._progressBar.style.marginTop = "calc(var(--layout-gap) * -1)";
-        this._progressBar.style.width = "100%";
-        this.appendChild(this._progressBar);
+        this._progressBar = createElement(this, "progress", (e) => {
+            e.max = 100;
+            e.value = 0;
+            e.style.display = "none";
+            e.style.height = "2rem";
+            e.style.marginTop = "calc(var(--layout-gap) * -1)";
+            e.style.width = "100%";
+        });
 
         this._preview = this.createChild(ImageEditor, (e) => {
             e.label = "Preview";
-            e._input.style.height = "50vh";
+            e.height = "30rem";
         });
 
         this.createChild(EnumEditor, (e) => {

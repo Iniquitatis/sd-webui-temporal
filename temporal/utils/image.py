@@ -1,3 +1,5 @@
+from base64 import b64decode, b64encode
+from io import BytesIO
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -35,6 +37,10 @@ def apply_color_matrix(npim: NumpyImage, matrix: NDArray[np.float64], clip: bool
     return result
 
 
+def base64_to_image(data: bytes | str) -> NumpyImage:
+    return np.array(Image.open(BytesIO(b64decode(data))))
+
+
 def ensure_image_dims(npim: NumpyImage, size: Optional[tuple[int, int]] = None, channels: Optional[int] = None) -> NumpyImage:
     npim_height, npim_width, npim_channels = npim.shape
 
@@ -54,6 +60,12 @@ def ensure_image_dims(npim: NumpyImage, size: Optional[tuple[int, int]] = None, 
         im = im.resize((target_width, target_height), Image.Resampling.LANCZOS)
 
     return pil_to_np(im)
+
+
+def image_to_base64(image: NumpyImage) -> bytes:
+    with BytesIO() as stream:
+        Image.fromarray(image).save(stream, format = "PNG")
+        return b64encode(stream.getvalue())
 
 
 def join_hsv_to_rgb(h: NumpyImage, s: NumpyImage, v: NumpyImage) -> NumpyImage:

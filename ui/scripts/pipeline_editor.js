@@ -1,7 +1,10 @@
-import {ToolButton} from "../scripts/core/buttons.js";
-import {Accordion, Column, ReorderableList, Row} from "../scripts/core/layout.js";
+import {Accordion} from "../scripts/base/accordion.js";
+import {Column} from "../scripts/base/column.js";
+import {EnumEditor} from "../scripts/base/enum_editor.js";
+import {NumberEditor} from "../scripts/base/number_editor.js";
+import {ReorderableList} from "../scripts/base/reorderable_list.js";
+import {ToolButton} from "../scripts/base/tool_button.js";
 import {Signal} from "../scripts/core/signal.js";
-import {EnumEditor, NumberEditor} from "../scripts/core/value_editors.js";
 import {getObjectKeyByIndex, mapObject} from "../scripts/utils/object.js";
 import {InitialNoiseEditor} from "../scripts/initial_noise_editor.js";
 import {PipelineModuleEditor} from "../scripts/pipeline_module_editor.js";

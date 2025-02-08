@@ -1,5 +1,10 @@
+import {BoolEditor} from "../scripts/base/bool_editor.js";
+import {ColorEditor} from "../scripts/base/color_editor.js";
+import {EnumEditor} from "../scripts/base/enum_editor.js";
+import {ImageEditor} from "../scripts/base/image_editor.js";
+import {NumberEditor} from "../scripts/base/number_editor.js";
+import {TextEditor} from "../scripts/base/text_editor.js";
 import {Signal} from "../scripts/core/signal.js";
-import {BoolEditor, ColorEditor, EnumEditor, ImageEditor, NumberEditor, TextEditor} from "../scripts/core/value_editors.js";
 import {Widget} from "../scripts/core/widget.js";
 import {getObjectKeyByIndex} from "../scripts/utils/object.js";
 import {SeedEditor} from "../scripts/seed_editor.js";

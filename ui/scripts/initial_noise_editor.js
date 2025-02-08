@@ -1,6 +1,6 @@
-import {Column} from "../scripts/core/layout.js";
+import {Column} from "../scripts/base/column.js";
+import {NumberEditor} from "../scripts/base/number_editor.js";
 import {Signal} from "../scripts/core/signal.js";
-import {NumberEditor} from "../scripts/core/value_editors.js";
 import {NoiseEditor} from "../scripts/noise_editor.js";
 
 export class InitialNoiseEditor extends Column {

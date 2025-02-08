@@ -1,5 +1,5 @@
-import {ToolButton} from "../scripts/core/buttons.js";
-import {NumberEditor} from "../scripts/core/value_editors.js";
+import {NumberEditor} from "../scripts/base/number_editor.js";
+import {ToolButton} from "../scripts/base/tool_button.js";
 
 export class SeedEditor extends NumberEditor {
     constructor() {
