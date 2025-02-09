@@ -15,6 +15,18 @@ export class EnumEditor extends ValueEditor {
             });
         });
 
+        // NOTE: Intentionally disconnected
+        this._radio = createElement(null, "fieldset", (e) => {
+            e.style.display = "flex";
+            e.style.flexDirection = "column";
+            e.style.gap = "calc(var(--layout-gap) / 2)";
+            e.style.width = "100%";
+
+            createElement(e, "legend", (e) => {
+                e.innerText = "FIXME";
+            });
+        });
+
         this.onValueChange = new Signal();
     }
 
@@ -24,6 +36,10 @@ export class EnumEditor extends ValueEditor {
 
     get value() {
         return [...Object.keys(this._choices)][this._select.selectedIndex];
+    }
+
+    get variant() {
+        return this._content.contains(this._select) ? "menu" : "radio";
     }
 
     set choices(value) {
@@ -37,6 +53,16 @@ export class EnumEditor extends ValueEditor {
             createElement(this._select, "option", (e) => {
                 e.label = name;
             });
+
+            createElement(this._radio, "div", (e) => {
+                createElement(e, "input", (e) => {
+                    e.type = "radio";
+                });
+
+                createElement(e, "label", (e) => {
+                    e.innerText = name;
+                });
+            });
         }
 
         if (this._select.selectedIndex == -1 && Object.keys(value).length > 0) {
@@ -48,6 +74,16 @@ export class EnumEditor extends ValueEditor {
         this._select.selectedIndex = value ? [...Object.keys(this._choices)].indexOf(value) : 0;
 
         this.onValueChange.fire(this.value);
+    }
+
+    set variant(value) {
+        if (value == "radio" && this._content.contains(this._select) && !this._content.contains(this._radio)) {
+            this._content.removeChild(this._select);
+            this._content.appendChild(this._radio);
+        } else if (this._content.contains(this._radio) && !this._content.contains(this._select)) {
+            this._content.removeChild(this._radio);
+            this._content.appendChild(this._select);
+        }
     }
 }
 customElements.define("enum-editor", EnumEditor);

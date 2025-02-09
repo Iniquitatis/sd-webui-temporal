@@ -43,11 +43,7 @@ export class MainUI extends Column {
                         });
                     }, 1000);
 
-                    postRequest("/temporal/generate", {
-                        "parameters": project.parameters,
-                        "modules": project.modules,
-                        "iter_count": project.iter_count,
-                    })
+                    postRequest("/temporal/generate", project)
                     .then(() => {
                         // TODO: Stop process here
                     });
@@ -190,7 +186,15 @@ export class MainUI extends Column {
 
                 e.createChild(PipelineEditor, (e) => {
                     e.onValueChange.connect((value) => {
-                        project.modules = value.modules;
+                        project.pipeline = value;
+                    });
+                });
+
+                e.createChild(TextEditor, (e) => {
+                    e.label = "Animation",
+                    e.variant = "area";
+                    e.onValueChange.connect((value) => {
+                        project.animation = value;
                     });
                 });
             });

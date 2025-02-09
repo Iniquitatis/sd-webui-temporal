@@ -1,5 +1,6 @@
 import {BoolEditor} from "../scripts/base/bool_editor.js";
 import {Column} from "../scripts/base/column.js";
+import {EnumEditor} from "../scripts/base/enum_editor.js";
 import {ImageEditor} from "../scripts/base/image_editor.js";
 import {NumberEditor} from "../scripts/base/number_editor.js";
 import {Row} from "../scripts/base/row.js";
@@ -15,6 +16,21 @@ export class NoiseEditor extends Row {
         this.createChild(ImageEditor);
 
         this.createChild(Column, (e) => {
+            e.createChild(EnumEditor, (e) => {
+                e.label = "Mode";
+                e.variant = "radio";
+                e.choices = {
+                    "fbm": "fBm",
+                    "turbulence": "Turbulence",
+                    "ridge": "Ridge",
+                };
+                e.onValueChange.connect((value) => {
+                    noise.mode = value;
+
+                    this.onValueChange.fire(noise);
+                });
+            });
+
             e.createChild(NumberEditor, (e) => {
                 e.label = "Scale";
                 e.variant = "slider";
@@ -72,6 +88,7 @@ export class NoiseEditor extends Row {
             });
 
             e.createChild(SeedEditor, (e) => {
+                e.label = "Seed",
                 e.onValueChange.connect((value) => {
                     noise.seed = value;
 

@@ -5,7 +5,6 @@ export class SeedEditor extends NumberEditor {
     constructor() {
         super();
 
-        this.label = "Seed";
         this.variant = "box";
         this.minimum = -1;
         this.maximum = 4294967295;

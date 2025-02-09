@@ -5,11 +5,14 @@ from typing import Any
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+from temporal.animation.parsing import parse_animation
 from temporal.blend_modes import BLEND_MODES
 from temporal.engine import Engine
+from temporal.noise import Noise
+from temporal.pipeline import Pipeline
 from temporal.pipeline_module import PIPELINE_MODULES, PipelineModule
 from temporal.processing_params import ImageToImageParams
-from temporal.project import Project
+from temporal.project import InitialNoiseParams, Project
 from temporal.shared import shared
 from temporal.utils.image import image_to_base64, load_image, pil_to_np
 from temporal.video_filters import VIDEO_FILTERS
@@ -17,8 +20,10 @@ from temporal.video_filters import VIDEO_FILTERS
 
 class GenerateRequest(BaseModel):
     parameters: dict[str, Any] = {}
+    initial_noise: dict[str, Any] = {}
+    pipeline: dict[str, Any] = {}
+    animation: str = ""
     iter_count: int = 10
-    modules: list[dict[str, Any]] = []
 
 
 def register_api(app: FastAPI, engine: Engine) -> None:
@@ -37,9 +42,16 @@ def register_api(app: FastAPI, engine: Engine) -> None:
                 **request.parameters,
                 images = [pil_to_np(load_image("ui/_example_image.png"))],
             ),
+            initial_noise = InitialNoiseParams(
+                factor = request.initial_noise.get("factor", 0.0),
+                noise = Noise(**request.initial_noise.get("noise", {})),
+            ),
+            pipeline = Pipeline(
+                parallel = request.pipeline.get("parallel", 1),
+                modules = [PipelineModule.from_json(x) for x in request.pipeline.get("modules", [])],
+            ),
+            animation = parse_animation(request.animation),
         )
-
-        project.pipeline.modules[:] = [PipelineModule.from_json(x) for x in request.modules]
 
         thread = Thread(target = engine.start, args = (project, request.iter_count))
         thread.start()
