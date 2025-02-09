@@ -169,6 +169,10 @@ class WebUIBackend(Backend):
     def upscale_image(self, image: NumpyImage, upscaler: str, scale: float) -> Optional[NumpyImage]:
         return pil_to_np(resize_image(0, np_to_pil(image), floor(image.shape[1] * scale), floor(image.shape[0] * scale), upscaler))
 
+    def get_preview(self) -> Optional[NumpyImage]:
+        if self._last_preview_image:
+            return pil_to_np(self._last_preview_image)
+
     def set_preview(self, image: Optional[NumpyImage] = None) -> None:
         if image is None:
             if self._last_preview_image is not None:
@@ -209,6 +213,9 @@ class WebUIBackend(Backend):
 
     def are_images_saved(self) -> bool:
         return not image_save_queue.busy
+
+    def interrupt(self) -> None:
+        state.interrupt()
 
     def is_interrupted(self) -> bool:
         return state.interrupted or state.skipped

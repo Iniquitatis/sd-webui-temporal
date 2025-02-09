@@ -16,6 +16,7 @@ class WebUIAPIBackend(Backend):
         self.host = host
         self.port = port
         self.image_save_queue = ThreadQueue()
+        self._preview_image = None
 
     @property
     def url(self):
@@ -103,8 +104,8 @@ class WebUIAPIBackend(Backend):
 
         if (r := requests.post(f"{self.url}/sdapi/v1/img2img", json = {
             "init_images": [image_to_base64(x) for x in params.images],
-            "prompt": params.positive_prompts,
-            "negative_prompt": params.negative_prompts,
+            "prompt": params.positive_prompt,
+            "negative_prompt": params.negative_prompt,
             "width": params.width,
             "height": params.height,
             "sampler_name": params.sampler,
@@ -112,7 +113,7 @@ class WebUIAPIBackend(Backend):
             "steps": params.steps,
             "cfg_scale": params.cfg,
             "denoising_strength": params.strength,
-            "seed": params.seeds,
+            "seed": params.seed,
             "n_iter": 1,
             "batch_size": len(params.images),
             "do_not_save_samples": True,
@@ -136,8 +137,11 @@ class WebUIAPIBackend(Backend):
         else:
             raise requests.RequestException(response = r)
 
+    def get_preview(self) -> Optional[NumpyImage]:
+        return self._preview_image
+
     def set_preview(self, image: Optional[NumpyImage] = None) -> None:
-        pass
+        self._preview_image = image
 
     def save_image(self, image: NumpyImage, project: Project, output_dir: Path, file_name: Optional[str] = None, archive_mode: bool = False) -> None:
         if not file_name:
@@ -152,6 +156,10 @@ class WebUIAPIBackend(Backend):
 
     def are_images_saved(self) -> bool:
         return not self.image_save_queue.busy
+
+    def interrupt(self) -> None:
+        if not (r := requests.post(f"{self.url}/sdapi/v1/interrupt")).ok:
+            raise requests.RequestException(response = r)
 
     def is_interrupted(self) -> bool:
         if (r := requests.get(f"{self.url}/sdapi/v1/progress")).ok:

@@ -1,4 +1,3 @@
-import {Accordion} from "../scripts/base/accordion.js";
 import {Column} from "../scripts/base/column.js";
 import {EnumEditor} from "../scripts/base/enum_editor.js";
 import {NumberEditor} from "../scripts/base/number_editor.js";
@@ -6,7 +5,6 @@ import {ReorderableList} from "../scripts/base/reorderable_list.js";
 import {ToolButton} from "../scripts/base/tool_button.js";
 import {Signal} from "../scripts/core/signal.js";
 import {getObjectKeyByIndex, mapObject} from "../scripts/utils/object.js";
-import {InitialNoiseEditor} from "../scripts/initial_noise_editor.js";
 import {PipelineModuleEditor} from "../scripts/pipeline_module_editor.js";
 import {modules} from "../scripts/test_data.js";
 
@@ -15,18 +13,6 @@ export class PipelineEditor extends Column {
         super();
 
         let pipeline = {modules: []};
-
-        this.createChild(Accordion, (e) => {
-            e.label = "Initial noise";
-
-            e.createChild(InitialNoiseEditor, (e) => {
-                e.onValueChange.connect((value) => {
-                    pipeline.initial_noise = value;
-
-                    this.onValueChange.fire(pipeline);
-                });
-            });
-        });
 
         this.createChild(NumberEditor, (e) => {
             e.label = "Parallel";
@@ -81,7 +67,7 @@ export class PipelineEditor extends Column {
         this.onValueChange = new Signal();
 
         // FIXME: Temporary
-        this.onValueChange.connect(value => console.log(value));
+        this.onValueChange.connect((value) => console.log(value));
     }
 
     get modules() {

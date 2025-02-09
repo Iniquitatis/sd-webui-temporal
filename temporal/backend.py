@@ -46,6 +46,10 @@ class Backend(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def get_preview(self) -> Optional[NumpyImage]:
+        raise NotImplementedError
+
+    @abstractmethod
     def set_preview(self, image: Optional[NumpyImage] = None) -> None:
         raise NotImplementedError
 
@@ -55,6 +59,10 @@ class Backend(ABC):
 
     @abstractmethod
     def are_images_saved(self) -> bool:
+        raise NotImplementedError
+
+    @abstractmethod
+    def interrupt(self) -> None:
         raise NotImplementedError
 
     @abstractmethod

@@ -37,8 +37,8 @@ def apply_color_matrix(npim: NumpyImage, matrix: NDArray[np.float64], clip: bool
     return result
 
 
-def base64_to_image(data: bytes | str) -> NumpyImage:
-    return np.array(Image.open(BytesIO(b64decode(data))))
+def base64_to_image(data: str) -> NumpyImage:
+    return pil_to_np(Image.open(BytesIO(b64decode(data))))
 
 
 def ensure_image_dims(npim: NumpyImage, size: Optional[tuple[int, int]] = None, channels: Optional[int] = None) -> NumpyImage:
@@ -62,10 +62,10 @@ def ensure_image_dims(npim: NumpyImage, size: Optional[tuple[int, int]] = None, 
     return pil_to_np(im)
 
 
-def image_to_base64(image: NumpyImage) -> bytes:
+def image_to_base64(image: NumpyImage) -> str:
     with BytesIO() as stream:
-        Image.fromarray(image).save(stream, format = "PNG")
-        return b64encode(stream.getvalue())
+        np_to_pil(image).save(stream, format = "PNG")
+        return b64encode(stream.getvalue()).decode()
 
 
 def join_hsv_to_rgb(h: NumpyImage, s: NumpyImage, v: NumpyImage) -> NumpyImage:

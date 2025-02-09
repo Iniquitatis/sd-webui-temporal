@@ -1,3 +1,4 @@
+import {Accordion} from "./scripts/base/accordion.js";
 import {BoolEditor} from "./scripts/base/bool_editor.js";
 import {Button} from "./scripts/base/button.js";
 import {Column} from "./scripts/base/column.js";
@@ -11,6 +12,7 @@ import {ToolButton} from "./scripts/base/tool_button.js";
 import {createElement} from "./scripts/utils/dom.js";
 import {getObjectKeyByIndex} from "./scripts/utils/object.js";
 import {getRequest, postRequest} from "./scripts/utils/requests.js";
+import {InitialNoiseEditor} from "./scripts/initial_noise_editor.js";
 import {PipelineEditor} from "./scripts/pipeline_editor.js";
 import {blendModes, modules, presets, projects} from "./scripts/test_data.js";
 import {VideoRendererEditor} from "./scripts/video_renderer_editor.js";
@@ -18,6 +20,8 @@ import {VideoRendererEditor} from "./scripts/video_renderer_editor.js";
 export class MainUI extends Column {
     constructor() {
         super();
+
+        let project = {};
 
         this.createChild(Button, (e) => {
             e.label = "Generate";
@@ -30,9 +34,16 @@ export class MainUI extends Column {
                     this._progressInterval = window.setInterval(() => {
                         this._progressBar.value += 1;
                         this._progressBar.value %= 100;
+
+                        getRequest("/temporal/preview")
+                        .then((result) => {
+                            if (!result) return;
+
+                            this._preview.value = `data:image/png;base64,${result}`;
+                        });
                     }, 1000);
 
-                    postRequest("/temporal/text_to_image", {
+                    postRequest("/temporal/generate", {
                         "positive_prompts": ["female, happy, dynamic, colorful, smooth, soft, 3d render"],
                         "negative_prompts": [""],
                         "width": 768,
@@ -42,11 +53,11 @@ export class MainUI extends Column {
                         "steps": 10,
                         "cfg": 2.5,
                         "seeds": [-1],
+                        "iter_count": project.iter_count,
+                        "modules": project.modules,
                     })
-                    .then((result) => {
-                        for (let data of result) {
-                            this._preview.value = `data:image/png;base64,${data}`;
-                        }
+                    .then(() => {
+                        // TODO: Stop process here
                     });
 
                     e.label = "Stop";
@@ -56,7 +67,7 @@ export class MainUI extends Column {
                     window.clearInterval(this._progressInterval);
                     this._progressInterval = null;
 
-                    postRequest("/sdapi/v1/interrupt", {});
+                    postRequest("/temporal/interrupt", {});
 
                     e.label = "Generate";
                 }
@@ -182,11 +193,28 @@ export class MainUI extends Column {
                     e.maximum = 2 ** 32 - 1;
                     e.step = 1;
                     e.value = 100;
+                    e.onValueChange.connect((value) => {
+                        project.iter_count = value;
+                    });
                 });
             });
 
             e.createTab("Pipeline", Column, (e) => {
-                e.createChild(PipelineEditor);
+                e.createChild(Accordion, (e) => {
+                    e.label = "Initial noise";
+
+                    e.createChild(InitialNoiseEditor, (e) => {
+                        e.onValueChange.connect((value) => {
+                            project.initial_noise = value;
+                        });
+                    });
+                });
+
+                e.createChild(PipelineEditor, (e) => {
+                    e.onValueChange.connect((value) => {
+                        project.modules = value.modules;
+                    });
+                });
             });
 
             e.createTab("Video Rendering", Column, (e) => {

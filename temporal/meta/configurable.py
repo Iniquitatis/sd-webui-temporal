@@ -28,7 +28,7 @@ class ConfigurableParam(SerializableField, Generic[T]):
     def default(self) -> T:
         return cast(T, super().default)
 
-    def to_json(self) -> dict[str, Any]:
+    def schema(self) -> dict[str, Any]:
         return {
             "name": self.name,
         }
@@ -47,6 +47,17 @@ class Configurable(Registerable, Serializable):
             if isinstance(param, ConfigurableParam)
         }
 
+    @classmethod
+    def schema(cls) -> dict[str, Any]:
+        return {
+            "id": cls.id,
+            "name": cls.name,
+            "parameters": {
+                field_id: field.schema()
+                for field_id, field in cls.__params__.items()
+            },
+        }
+
 
 #===============================================================================
 
@@ -59,7 +70,7 @@ class BoolParam(ConfigurableParam[bool]):
     ) -> None:
         super().__init__(name, value)
 
-    def to_json(self) -> dict[str, Any]:
+    def schema(self) -> dict[str, Any]:
         return {
             "type": "bool",
             "name": self.name,
@@ -83,7 +94,7 @@ class IntParam(ConfigurableParam[int]):
         self.step = step
         self.ui_type = ui_type
 
-    def to_json(self) -> dict[str, Any]:
+    def schema(self) -> dict[str, Any]:
         return {
             "type": "int",
             "name": self.name,
@@ -111,7 +122,7 @@ class FloatParam(ConfigurableParam[float]):
         self.step = step
         self.ui_type = ui_type
 
-    def to_json(self) -> dict[str, Any]:
+    def schema(self) -> dict[str, Any]:
         return {
             "type": "float",
             "name": self.name,
@@ -135,7 +146,7 @@ class StringParam(ConfigurableParam[str]):
         self.ui_type = ui_type
         self.language = language
 
-    def to_json(self) -> dict[str, Any]:
+    def schema(self) -> dict[str, Any]:
         return {
             "type": "string",
             "name": self.name,
@@ -153,7 +164,7 @@ class PathParam(ConfigurableParam[Path]):
     ) -> None:
         super().__init__(name, value)
 
-    def to_json(self) -> dict[str, Any]:
+    def schema(self) -> dict[str, Any]:
         return {
             "type": "path",
             "name": self.name,
@@ -173,7 +184,7 @@ class EnumParam(ConfigurableParam[str]):
         self.choices = choices
         self.ui_type = ui_type
 
-    def to_json(self) -> dict[str, Any]:
+    def schema(self) -> dict[str, Any]:
         return {
             "type": "enum",
             "name": self.name,
@@ -197,7 +208,7 @@ class ColorParam(ConfigurableParam[Color]):
         super().__init__(name, factory = factory)
         self.channels = channels
 
-    def to_json(self) -> dict[str, Any]:
+    def schema(self) -> dict[str, Any]:
         return {
             "type": "color",
             "name": self.name,
@@ -215,7 +226,7 @@ class ImageParam(ConfigurableParam[NumpyImage]):
         super().__init__(name, None)
         self.channels = channels
 
-    def to_json(self) -> dict[str, Any]:
+    def schema(self) -> dict[str, Any]:
         return {
             "type": "image",
             "name": self.name,
@@ -233,7 +244,7 @@ class ImageSourceParam(ConfigurableParam[ImageSource]):
         super().__init__(name, factory = factory)
         self.channels = channels
 
-    def to_json(self) -> dict[str, Any]:
+    def schema(self) -> dict[str, Any]:
         return {
             "type": "image_source",
             "name": self.name,
@@ -249,7 +260,7 @@ class GradientParam(ConfigurableParam[Gradient]):
     ) -> None:
         super().__init__(name, factory = factory)
 
-    def to_json(self) -> dict[str, Any]:
+    def schema(self) -> dict[str, Any]:
         return {
             "type": "gradient",
             "name": self.name,
@@ -265,7 +276,7 @@ class NoiseParam(ConfigurableParam[Noise]):
     ) -> None:
         super().__init__(name, factory = factory)
 
-    def to_json(self) -> dict[str, Any]:
+    def schema(self) -> dict[str, Any]:
         return {
             "type": "noise",
             "name": self.name,
@@ -281,7 +292,7 @@ class PatternParam(ConfigurableParam[Pattern]):
     ) -> None:
         super().__init__(name, factory = factory)
 
-    def to_json(self) -> dict[str, Any]:
+    def schema(self) -> dict[str, Any]:
         return {
             "type": "pattern",
             "name": self.name,

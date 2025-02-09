@@ -1,4 +1,6 @@
 async function apiRequest(url, method, data) {
+    console.log("REQUEST", data);
+
     return fetch(url, {
         method: method,
         headers: method == "POST" ? {"Content-Type": "application/json"} : undefined,

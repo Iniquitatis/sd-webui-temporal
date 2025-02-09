@@ -15,7 +15,7 @@ export class PipelineModuleEditor extends ReorderableAccordion {
     constructor(id, definition) {
         super(id);
 
-        this.module = {id: id};
+        this.module = {id: id, enabled: true};
 
         this.label = `${definition.icon} ${definition.name}`;
 
