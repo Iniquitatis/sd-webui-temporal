@@ -23,6 +23,12 @@
     color-scheme: light dark;
 }
 
+@media (max-width: 576px) {
+    :root {
+        --line-height: 1.6rem;
+    }
+}
+
 * {
     accent-color: var(--accent-color);
     box-sizing: border-box;
@@ -35,14 +41,7 @@
 
 body {
     background-color: var(--background-color);
-}
-
-body.standalone {
     padding: var(--layout-padding);
-}
-
-body.touch {
-    --line-height: 1.5rem;
 }
 
 button,

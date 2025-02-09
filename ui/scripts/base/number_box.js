@@ -10,8 +10,6 @@ export class NumberBox extends ValueEditor {
             e.type = "number";
             e.style.width = "100%";
             e.addEventListener("input", () => {
-                this._headerInput.valueAsNumber = e.valueAsNumber;
-
                 this.onValueChange.fire(e.valueAsNumber);
             });
         });

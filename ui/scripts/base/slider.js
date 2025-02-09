@@ -6,7 +6,7 @@ export class Slider extends ValueEditor {
     constructor() {
         super();
 
-        this._headerInput = createElement(null, "input", (e) => {
+        this._headerInput = createElement(this._header, "input", (e) => {
             e.type = "number";
             e.style.textAlign = "right";
             e.style.width = "var(--small-input-width)";

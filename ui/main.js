@@ -5,13 +5,14 @@ import {CodeArea} from "./scripts/base/code_area.js";
 import {Column} from "./scripts/base/column.js";
 import {Dropdown} from "./scripts/base/dropdown.js";
 import {ImageBox} from "./scripts/base/image_box.js";
+import {MultiStateButton} from "./scripts/base/multi_state_button.js";
 import {NumberBox} from "./scripts/base/number_box.js";
+import {ProgressBar} from "./scripts/base/progress_bar.js";
 import {Row} from "./scripts/base/row.js";
 import {Tabs} from "./scripts/base/tabs.js";
 import {TextArea} from "./scripts/base/text_area.js";
 import {TextBox} from "./scripts/base/text_box.js";
 import {ToolButton} from "./scripts/base/tool_button.js";
-import {createElement} from "./scripts/utils/dom.js";
 import {getRequest, postRequest} from "./scripts/utils/requests.js";
 import {InitialNoiseEditor} from "./scripts/initial_noise_editor.js";
 import {PipelineEditor} from "./scripts/pipeline_editor.js";
@@ -25,19 +26,26 @@ export class MainUI extends Column {
 
         let project = {};
 
-        this.createChild(Button, (e) => {
-            e.label = "Generate";
+        this.createChild(MultiStateButton, (e) => {
             e.style.height = "calc(var(--widget-height) * 2)";
-            e.onClick.connect(() => {
-                if (e.label == "Generate") {
+            e.onStateChange.connect((state) => {
+                if (state == "active") {
                     this._progressBar.value = 0;
                     this._progressBar.style.display = null;
 
-                    this._progressInterval = window.setInterval(() => {
-                        this._progressBar.value += 1;
-                        this._progressBar.value %= 100;
+                    this._progressInterval = window.setInterval(async () => {
+                        await getRequest("/temporal/state")
+                        .then((result) => {
+                            if (result.state == "active") {
+                                this._progressBar.value = result.current_iteration;
+                                this._progressBar.total = result.total_iterations;
+                                this._progressBar.text = `${this._progressBar.value} / ${this._progressBar.total}`;
+                            } else if (result.state == "stopped") {
+                                e.state = "stopped";
+                            }
+                        });
 
-                        getRequest("/temporal/preview")
+                        await getRequest("/temporal/preview")
                         .then((result) => {
                             if (!result) return;
 
@@ -45,35 +53,24 @@ export class MainUI extends Column {
                         });
                     }, 1000);
 
-                    postRequest("/temporal/generate", project)
-                    .then(() => {
-                        // TODO: Stop process here
-                    });
-
-                    e.label = "Stop";
-                } else {
+                    postRequest("/temporal/generate", project);
+                } else if (state == "stopped") {
                     this._progressBar.style.display = "none";
 
                     window.clearInterval(this._progressInterval);
                     this._progressInterval = null;
 
                     postRequest("/temporal/interrupt", {});
-
-                    e.label = "Generate";
                 }
             });
+        }, {"stopped": "Generate", "active": "Stop"});
+
+        this._progressBar = this.createChild(ProgressBar, (e) => {
+            e.total = 100;
+            e.style.display = "none";
         });
 
         this._progressInterval = null;
-
-        this._progressBar = createElement(this, "progress", (e) => {
-            e.max = 100;
-            e.value = 0;
-            e.style.display = "none";
-            e.style.height = "2rem";
-            e.style.marginTop = "calc(var(--layout-gap) * -1)";
-            e.style.width = "100%";
-        });
 
         this._preview = this.createChild(ImageBox, (e) => {
             e.label = "Preview";

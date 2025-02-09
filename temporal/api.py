@@ -94,6 +94,14 @@ def register_api(app: FastAPI, engine: Engine) -> None:
     async def _() -> Any:
         return [x for x in shared.backend.list_schedulers()]
 
+    @app.get("/temporal/state")
+    async def _() -> Any:
+        return {
+            "state": engine.state,
+            "current_iteration": engine.current_iteration,
+            "total_iterations": engine.total_iterations,
+        }
+
     @app.get("/temporal/upscalers")
     async def _() -> Any:
         return [x for x in shared.backend.list_upscalers()]

@@ -13,6 +13,10 @@ from temporal.utils.prompt import evaluate_prompt
 
 class Engine:
     def __init__(self, backend: Backend, options_path: Path, presets_path: Path) -> None:
+        self.state = "stopped"
+        self.current_iteration = 0
+        self.total_iterations = 0
+
         shared.init(backend, options_path, presets_path)
 
         for path in (Path(__file__).parent / "pipeline_modules").rglob("*.py"):
@@ -29,6 +33,9 @@ class Engine:
         pass
 
     def start(self, project: Project, iter_count: int) -> list[NumpyImage]:
+        self.state = "active"
+        self.total_iterations = iter_count
+
         if not project.parameters.images:
             noises = [
                 project.initial_noise.noise.generate((project.parameters.height, project.parameters.width, 3), project.parameters.seed, i)
@@ -73,6 +80,8 @@ class Engine:
         for i in range(iter_count):
             logging.info(f"Iteration {i + 1} / {iter_count}")
 
+            self.current_iteration = i
+
             start_time = perf_counter()
 
             self.on_iteration(i)
@@ -96,5 +105,9 @@ class Engine:
         project.save(project.path)
 
         self.on_end()
+
+        self.state = "stopped"
+        self.current_iteration = 0
+        self.total_iterations = 0
 
         return last_images
