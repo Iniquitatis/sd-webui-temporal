@@ -1,13 +1,14 @@
 import {Accordion} from "./scripts/base/accordion.js";
-import {BoolEditor} from "./scripts/base/bool_editor.js";
 import {Button} from "./scripts/base/button.js";
+import {Checkbox} from "./scripts/base/checkbox.js";
 import {Column} from "./scripts/base/column.js";
-import {EnumEditor} from "./scripts/base/enum_editor.js";
-import {ImageEditor} from "./scripts/base/image_editor.js";
-import {NumberEditor} from "./scripts/base/number_editor.js";
+import {Dropdown} from "./scripts/base/dropdown.js";
+import {ImageBox} from "./scripts/base/image_box.js";
+import {NumberBox} from "./scripts/base/number_box.js";
 import {Row} from "./scripts/base/row.js";
 import {Tabs} from "./scripts/base/tabs.js";
-import {TextEditor} from "./scripts/base/text_editor.js";
+import {TextArea} from "./scripts/base/text_area.js";
+import {TextBox} from "./scripts/base/text_box.js";
 import {ToolButton} from "./scripts/base/tool_button.js";
 import {createElement} from "./scripts/utils/dom.js";
 import {getRequest, postRequest} from "./scripts/utils/requests.js";
@@ -73,14 +74,13 @@ export class MainUI extends Column {
             e.style.width = "100%";
         });
 
-        this._preview = this.createChild(ImageEditor, (e) => {
+        this._preview = this.createChild(ImageBox, (e) => {
             e.label = "Preview";
             e.height = "30rem";
         });
 
-        this.createChild(EnumEditor, (e) => {
+        this.createChild(Dropdown, (e) => {
             e.label = "Preset";
-            e.variant = "menu";
             e.choices = presets;
 
             e.createChild(Row, (e) => {
@@ -106,9 +106,8 @@ export class MainUI extends Column {
             });
         });
 
-        this.createChild(EnumEditor, (e) => {
+        this.createChild(Dropdown, (e) => {
             e.label = "Project";
-            e.variant = "menu";
             e.choices = projects;
 
             e.createChild(Row, (e) => {
@@ -132,29 +131,26 @@ export class MainUI extends Column {
 
         this.createChild(Tabs, (e) => {
             e.createTab("General", Column, (e) => {
-                e.createChild(TextEditor, (e) => {
+                e.createChild(TextBox, (e) => {
                     e.label = "Name";
-                    e.variant = "box";
                 });
 
-                e.createChild(TextEditor, (e) => {
+                e.createChild(TextArea, (e) => {
                     e.label = "Description";
-                    e.variant = "area";
                 });
 
-                e.createChild(BoolEditor, (e) => {
+                e.createChild(Checkbox, (e) => {
                     e.label = "Load parameters";
                     e.value = true;
                 });
 
-                e.createChild(BoolEditor, (e) => {
+                e.createChild(Checkbox, (e) => {
                     e.label = "Continue from last frame";
                     e.value = true;
                 });
 
-                e.createChild(NumberEditor, (e) => {
+                e.createChild(NumberBox, (e) => {
                     e.label = "Iteration count";
-                    e.variant = "box";
                     e.minimum = 1;
                     e.maximum = 2 ** 32 - 1;
                     e.step = 1;
@@ -190,9 +186,8 @@ export class MainUI extends Column {
                     });
                 });
 
-                e.createChild(TextEditor, (e) => {
+                e.createChild(TextArea, (e) => {
                     e.label = "Animation",
-                    e.variant = "area";
                     e.onValueChange.connect((value) => {
                         project.animation = value;
                     });
@@ -204,9 +199,8 @@ export class MainUI extends Column {
             });
 
             e.createTab("Measuring", Column, (e) => {
-                e.createChild(NumberEditor, (e) => {
+                e.createChild(NumberBox, (e) => {
                     e.label = "Parallel index";
-                    e.variant = "box";
                     e.minimum = 1;
                     e.maximum = 2 ** 32 - 1;
                     e.step = 1;

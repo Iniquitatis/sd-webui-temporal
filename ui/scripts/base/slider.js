@@ -2,11 +2,10 @@ import {ValueEditor} from "../../scripts/base/value_editor.js";
 import {Signal} from "../../scripts/core/signal.js";
 import {createElement} from "../../scripts/utils/dom.js";
 
-export class NumberEditor extends ValueEditor {
+export class Slider extends ValueEditor {
     constructor() {
         super();
 
-        // NOTE: Intentionally disconnected
         this._headerInput = createElement(null, "input", (e) => {
             e.type = "number";
             e.style.textAlign = "right";
@@ -19,7 +18,7 @@ export class NumberEditor extends ValueEditor {
         });
 
         this._input = createElement(this._content, "input", (e) => {
-            e.type = "number";
+            e.type = "range";
             e.style.width = "100%";
             e.addEventListener("input", () => {
                 this._headerInput.valueAsNumber = e.valueAsNumber;
@@ -47,10 +46,6 @@ export class NumberEditor extends ValueEditor {
         return this._input.valueAsNumber;
     }
 
-    get variant() {
-        return this._input.type == "range" ? "slider" : "box";
-    }
-
     set maximum(value) {
         this._input.max = value;
         this._headerInput.max = value;
@@ -68,24 +63,9 @@ export class NumberEditor extends ValueEditor {
 
     set value(value) {
         this._input.valueAsNumber = value;
-
-        if (this.variant == "slider") {
-            this._headerInput.valueAsNumber = value;
-        }
+        this._headerInput.valueAsNumber = value;
 
         this.onValueChange.fire(this.value);
     }
-
-    set variant(value) {
-        this._input.type = value == "slider" ? "range" : "number";
-
-        if (value == "slider" && !this._header.contains(this._headerInput)) {
-            this._header.appendChild(this._headerInput);
-            this._input.style.marginTop = "var(--vertical-padding)";
-        } else if (this._header.contains(this._headerInput)) {
-            this._header.removeChild(this._headerInput);
-            this._input.style.marginTop = null;
-        }
-    }
 }
-customElements.define("number-editor", NumberEditor);
+customElements.define("custom-slider", Slider);

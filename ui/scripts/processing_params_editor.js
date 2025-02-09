@@ -1,11 +1,11 @@
 import {Column} from "../scripts/base/column.js";
-import {EnumEditor} from "../scripts/base/enum_editor.js";
-import {ImageEditor} from "../scripts/base/image_editor.js";
-import {NumberEditor} from "../scripts/base/number_editor.js";
+import {Dropdown} from "../scripts/base/dropdown.js";
+import {ImageBox} from "../scripts/base/image_box.js";
 import {Row} from "../scripts/base/row.js";
-import {TextEditor} from "../scripts/base/text_editor.js";
+import {Slider} from "../scripts/base/slider.js";
+import {TextArea} from "../scripts/base/text_area.js";
 import {Signal} from "../scripts/core/signal.js";
-import {SeedEditor} from "../scripts/seed_editor.js";
+import {SeedBox} from "../scripts/seed_box.js";
 import {models, samplers, schedulers, vaes} from "../scripts/test_data.js";
 
 export class ProcessingParamsEditor extends Column {
@@ -14,7 +14,7 @@ export class ProcessingParamsEditor extends Column {
 
         let parameters = {};
 
-        this.createChild(ImageEditor, (e) => {
+        this.createChild(ImageBox, (e) => {
             e.label = "Image";
             e.onValueChange.connect((value) => {
                 parameters.images = [value];
@@ -24,9 +24,8 @@ export class ProcessingParamsEditor extends Column {
         });
 
         this.createChild(Row, (e) => {
-            e.createChild(EnumEditor, (e) => {
+            e.createChild(Dropdown, (e) => {
                 e.label = "Model";
-                e.variant = "menu";
                 e.choices = models;
                 e.onValueChange.connect((value) => {
                     parameters.model = value;
@@ -35,9 +34,8 @@ export class ProcessingParamsEditor extends Column {
                 });
             });
 
-            e.createChild(EnumEditor, (e) => {
+            e.createChild(Dropdown, (e) => {
                 e.label = "VAE";
-                e.variant = "menu";
                 e.choices = vaes;
                 e.onValueChange.connect((value) => {
                     parameters.vae = value;
@@ -47,9 +45,8 @@ export class ProcessingParamsEditor extends Column {
             });
         });
 
-        this.createChild(NumberEditor, (e) => {
+        this.createChild(Slider, (e) => {
             e.label = "CLIP skip";
-            e.variant = "slider";
             e.minimum = 1;
             e.maximum = 12;
             e.step = 1;
@@ -61,9 +58,8 @@ export class ProcessingParamsEditor extends Column {
             });
         });
 
-        this.createChild(TextEditor, (e) => {
+        this.createChild(TextArea, (e) => {
             e.label = "Positive prompt";
-            e.variant = "area";
             e.onValueChange.connect((value) => {
                 parameters.positive_prompts = [value];
 
@@ -71,9 +67,8 @@ export class ProcessingParamsEditor extends Column {
             });
         });
 
-        this.createChild(TextEditor, (e) => {
+        this.createChild(TextArea, (e) => {
             e.label = "Negative prompt";
-            e.variant = "area";
             e.onValueChange.connect((value) => {
                 parameters.negative_prompts = [value];
 
@@ -82,9 +77,8 @@ export class ProcessingParamsEditor extends Column {
         });
 
         this.createChild(Row, (e) => {
-            e.createChild(NumberEditor, (e) => {
+            e.createChild(Slider, (e) => {
                 e.label = "Width";
-                e.variant = "slider";
                 e.minimum = 64;
                 e.maximum = 2048;
                 e.step = 8;
@@ -96,9 +90,8 @@ export class ProcessingParamsEditor extends Column {
                 });
             });
 
-            e.createChild(NumberEditor, (e) => {
+            e.createChild(Slider, (e) => {
                 e.label = "Height";
-                e.variant = "slider";
                 e.minimum = 64;
                 e.maximum = 2048;
                 e.step = 8;
@@ -112,9 +105,8 @@ export class ProcessingParamsEditor extends Column {
         });
 
         this.createChild(Row, (e) => {
-            e.createChild(EnumEditor, (e) => {
+            e.createChild(Dropdown, (e) => {
                 e.label = "Sampler";
-                e.variant = "menu";
                 e.choices = samplers;
                 e.onValueChange.connect((value) => {
                     parameters.sampler = value;
@@ -123,9 +115,8 @@ export class ProcessingParamsEditor extends Column {
                 });
             });
 
-            e.createChild(EnumEditor, (e) => {
+            e.createChild(Dropdown, (e) => {
                 e.label = "Scheduler";
-                e.variant = "menu";
                 e.choices = schedulers;
                 e.onValueChange.connect((value) => {
                     parameters.scheduler = value;
@@ -135,9 +126,8 @@ export class ProcessingParamsEditor extends Column {
             });
         });
 
-        this.createChild(NumberEditor, (e) => {
+        this.createChild(Slider, (e) => {
             e.label = "Steps";
-            e.variant = "slider";
             e.minimum = 1;
             e.maximum = 150;
             e.step = 1;
@@ -149,9 +139,8 @@ export class ProcessingParamsEditor extends Column {
             });
         });
 
-        this.createChild(NumberEditor, (e) => {
+        this.createChild(Slider, (e) => {
             e.label = "CFG";
-            e.variant = "slider";
             e.minimum = 1.0;
             e.maximum = 30.0;
             e.step = 0.5;
@@ -163,9 +152,8 @@ export class ProcessingParamsEditor extends Column {
             });
         });
 
-        this.createChild(NumberEditor, (e) => {
+        this.createChild(Slider, (e) => {
             e.label = "Strength";
-            e.variant = "slider";
             e.minimum = 0.0;
             e.maximum = 1.0;
             e.step = 0.01;
@@ -177,7 +165,7 @@ export class ProcessingParamsEditor extends Column {
             });
         });
 
-        this.createChild(SeedEditor, (e) => {
+        this.createChild(SeedBox, (e) => {
             e.label = "Seed";
             e.onValueChange.connect((value) => {
                 parameters.seeds = [value];

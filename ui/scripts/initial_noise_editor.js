@@ -1,5 +1,5 @@
 import {Column} from "../scripts/base/column.js";
-import {NumberEditor} from "../scripts/base/number_editor.js";
+import {Slider} from "../scripts/base/slider.js";
 import {Signal} from "../scripts/core/signal.js";
 import {NoiseEditor} from "../scripts/noise_editor.js";
 
@@ -9,9 +9,8 @@ export class InitialNoiseEditor extends Column {
 
         let initialNoise = {};
 
-        this.createChild(NumberEditor, (e) => {
+        this.createChild(Slider, (e) => {
             e.label = "Factor";
-            e.variant = "slider";
             e.minimum = 0.0;
             e.maximum = 1.0;
             e.step = 0.01;

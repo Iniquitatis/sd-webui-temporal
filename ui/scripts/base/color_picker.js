@@ -42,7 +42,7 @@ class ChannelSlider extends ValueEditor {
 }
 customElements.define("channel-slider", ChannelSlider);
 
-export class ColorEditor extends ValueEditor {
+export class ColorPicker extends ValueEditor {
     constructor(channels) {
         super();
 
@@ -96,4 +96,4 @@ export class ColorEditor extends ValueEditor {
         this.onValueChange = new Signal();
     }
 }
-customElements.define("color-editor", ColorEditor);
+customElements.define("color-picker", ColorPicker);

@@ -1,11 +1,10 @@
-import {NumberEditor} from "../scripts/base/number_editor.js";
+import {NumberBox} from "../scripts/base/number_box.js";
 import {ToolButton} from "../scripts/base/tool_button.js";
 
-export class SeedEditor extends NumberEditor {
+export class SeedBox extends NumberBox {
     constructor() {
         super();
 
-        this.variant = "box";
         this.minimum = -1;
         this.maximum = 4294967295;
         this.step = 1;
@@ -19,4 +18,4 @@ export class SeedEditor extends NumberEditor {
         });
     }
 }
-customElements.define("seed-editor", SeedEditor);
+customElements.define("seed-box", SeedBox);

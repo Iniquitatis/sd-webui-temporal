@@ -1,6 +1,6 @@
 import {Column} from "../scripts/base/column.js";
-import {EnumEditor} from "../scripts/base/enum_editor.js";
-import {NumberEditor} from "../scripts/base/number_editor.js";
+import {Dropdown} from "../scripts/base/dropdown.js";
+import {NumberBox} from "../scripts/base/number_box.js";
 import {ReorderableList} from "../scripts/base/reorderable_list.js";
 import {ToolButton} from "../scripts/base/tool_button.js";
 import {Signal} from "../scripts/core/signal.js";
@@ -14,9 +14,8 @@ export class PipelineEditor extends Column {
 
         let pipeline = {modules: []};
 
-        this.createChild(NumberEditor, (e) => {
+        this.createChild(NumberBox, (e) => {
             e.label = "Parallel";
-            e.variant = "box";
             e.minimum = 1;
             e.step = 1;
             e.value = 1;
@@ -27,9 +26,8 @@ export class PipelineEditor extends Column {
             });
         });
 
-        let selectedModule = this.createChild(EnumEditor, (e) => {
+        let selectedModule = this.createChild(Dropdown, (e) => {
             e.label = "Add module";
-            e.variant = "menu";
             e.choices = mapObject(pipelineModules, (_, module) => `${module.icon} ${module.name}`);
 
             e.createChild(ToolButton, (e) => {

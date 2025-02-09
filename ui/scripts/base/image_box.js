@@ -64,7 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
     imageViewer = createElement(document.body, ImageViewer);
 });
 
-export class ImageEditor extends ValueEditor {
+export class ImageBox extends ValueEditor {
     constructor() {
         super();
 
@@ -146,4 +146,4 @@ export class ImageEditor extends ValueEditor {
         this.onValueChange.fire(this.value);
     }
 }
-customElements.define("image-editor", ImageEditor);
+customElements.define("image-box", ImageBox);

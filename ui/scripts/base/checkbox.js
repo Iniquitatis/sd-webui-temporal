@@ -2,7 +2,7 @@ import {ValueEditor} from "../../scripts/base/value_editor.js";
 import {Signal} from "../../scripts/core/signal.js";
 import {createElement} from "../../scripts/utils/dom.js";
 
-export class BoolEditor extends ValueEditor {
+export class Checkbox extends ValueEditor {
     constructor() {
         super();
 
@@ -39,4 +39,4 @@ export class BoolEditor extends ValueEditor {
         return createElement(this._header, cls, initializer, ...args);
     }
 }
-customElements.define("bool-editor", BoolEditor);
+customElements.define("custom-checkbox", Checkbox);
