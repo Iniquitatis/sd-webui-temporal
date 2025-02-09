@@ -1,6 +1,7 @@
 import {Accordion} from "./scripts/base/accordion.js";
 import {Button} from "./scripts/base/button.js";
 import {Checkbox} from "./scripts/base/checkbox.js";
+import {CodeArea} from "./scripts/base/code_area.js";
 import {Column} from "./scripts/base/column.js";
 import {Dropdown} from "./scripts/base/dropdown.js";
 import {ImageBox} from "./scripts/base/image_box.js";
@@ -186,7 +187,7 @@ export class MainUI extends Column {
                     });
                 });
 
-                e.createChild(TextArea, (e) => {
+                e.createChild(CodeArea, (e) => {
                     e.label = "Animation",
                     e.onValueChange.connect((value) => {
                         project.animation = value;
@@ -202,7 +203,6 @@ export class MainUI extends Column {
                 e.createChild(NumberBox, (e) => {
                     e.label = "Parallel index";
                     e.minimum = 1;
-                    e.maximum = 2 ** 32 - 1;
                     e.step = 1;
                     e.value = 1;
                 });

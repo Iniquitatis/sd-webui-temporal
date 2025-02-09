@@ -1,4 +1,5 @@
 import {Checkbox} from "../scripts/base/checkbox.js";
+import {CodeArea} from "../scripts/base/code_area.js";
 import {ColorPicker} from "../scripts/base/color_picker.js";
 import {Dropdown} from "../scripts/base/dropdown.js";
 import {ImageBox} from "../scripts/base/image_box.js";
@@ -46,7 +47,7 @@ export class ConfigurableParamEditor extends Widget {
             } break;
 
             case "string": {
-                editor = this.createChild(definition.ui_type == "area" ? TextArea : TextBox, (e) => {
+                editor = this.createChild(definition.ui_type == "code" ? CodeArea : definition.ui_type == "area" ? TextArea : TextBox, (e) => {
                     e.label = definition.name;
                     e.value = definition.default ?? "";
                 });
