@@ -30,7 +30,7 @@ class WebUIAPIBackend(Backend):
 
     def list_vaes(self) -> list[str]:
         if (r := requests.get(f"{self.url}/sdapi/v1/sd-vae")).ok:
-            return [x["model_name"] for x in r.json()]
+            return ["Automatic", "None"] + [x["model_name"] for x in r.json()]
         else:
             raise requests.RequestException(response = r)
 

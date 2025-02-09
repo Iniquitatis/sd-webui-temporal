@@ -10,11 +10,11 @@ import {Tabs} from "./scripts/base/tabs.js";
 import {TextEditor} from "./scripts/base/text_editor.js";
 import {ToolButton} from "./scripts/base/tool_button.js";
 import {createElement} from "./scripts/utils/dom.js";
-import {getObjectKeyByIndex} from "./scripts/utils/object.js";
 import {getRequest, postRequest} from "./scripts/utils/requests.js";
 import {InitialNoiseEditor} from "./scripts/initial_noise_editor.js";
 import {PipelineEditor} from "./scripts/pipeline_editor.js";
-import {blendModes, modules, presets, projects} from "./scripts/test_data.js";
+import {ProcessingParamsEditor} from "./scripts/processing_params_editor.js";
+import {blendModes, models, pipelineModules, presets, projects, samplers, schedulers, vaes} from "./scripts/test_data.js";
 import {VideoRendererEditor} from "./scripts/video_renderer_editor.js";
 
 export class MainUI extends Column {
@@ -44,17 +44,9 @@ export class MainUI extends Column {
                     }, 1000);
 
                     postRequest("/temporal/generate", {
-                        "positive_prompts": ["female, happy, dynamic, colorful, smooth, soft, 3d render"],
-                        "negative_prompts": [""],
-                        "width": 768,
-                        "height": 1152,
-                        "sampler": "DPM++ 3M SDE",
-                        "scheduler": "DDIM",
-                        "steps": 10,
-                        "cfg": 2.5,
-                        "seeds": [-1],
-                        "iter_count": project.iter_count,
+                        "parameters": project.parameters,
                         "modules": project.modules,
+                        "iter_count": project.iter_count,
                     })
                     .then(() => {
                         // TODO: Stop process here
@@ -94,7 +86,6 @@ export class MainUI extends Column {
             e.label = "Preset";
             e.variant = "menu";
             e.choices = presets;
-            e.value = getObjectKeyByIndex(e.choices, 0);
 
             e.createChild(Row, (e) => {
                 e.createChild(ToolButton, (e) => {
@@ -123,7 +114,6 @@ export class MainUI extends Column {
             e.label = "Project";
             e.variant = "menu";
             e.choices = projects;
-            e.value = getObjectKeyByIndex(e.choices, 0);
 
             e.createChild(Row, (e) => {
                 e.createChild(ToolButton, (e) => {
@@ -156,26 +146,6 @@ export class MainUI extends Column {
                     e.variant = "area";
                 });
 
-                e.createChild(Row, (e) => {
-                    e.createChild(NumberEditor, (e) => {
-                        e.label = "Width";
-                        e.variant = "slider";
-                        e.minimum = 64;
-                        e.maximum = 2048;
-                        e.step = 8;
-                        e.value = 512;
-                    });
-
-                    e.createChild(NumberEditor, (e) => {
-                        e.label = "Height";
-                        e.variant = "slider";
-                        e.minimum = 64;
-                        e.maximum = 2048;
-                        e.step = 8;
-                        e.value = 512;
-                    });
-                });
-
                 e.createChild(BoolEditor, (e) => {
                     e.label = "Load parameters";
                     e.value = true;
@@ -195,6 +165,14 @@ export class MainUI extends Column {
                     e.value = 100;
                     e.onValueChange.connect((value) => {
                         project.iter_count = value;
+                    });
+                });
+            });
+
+            e.createTab("Processing", Column, (e) => {
+                e.createChild(ProcessingParamsEditor, (e) => {
+                    e.onValueChange.connect((value) => {
+                        project.parameters = value;
                     });
                 });
             });
@@ -261,18 +239,26 @@ export class MainUI extends Column {
 customElements.define("main-ui", MainUI);
 
 window.onload = async () => {
-    await getRequest("/temporal/pipeline_modules")
-    .then((result) => {
-        for (let [k, v] of Object.entries(result)) {
-            modules[k] = v;
-        }
-    })
-    .catch(() => {});
-
     await getRequest("/temporal/blend_modes")
     .then((result) => {
         for (let [k, v] of Object.entries(result)) {
             blendModes[k] = v;
+        }
+    })
+    .catch(() => {});
+
+    await getRequest("/temporal/models")
+    .then((result) => {
+        for (let model of result) {
+            models[model] = model;
+        }
+    })
+    .catch(() => {});
+
+    await getRequest("/temporal/pipeline_modules")
+    .then((result) => {
+        for (let [k, v] of Object.entries(result)) {
+            pipelineModules[k] = v;
         }
     })
     .catch(() => {});
@@ -289,6 +275,30 @@ window.onload = async () => {
     .then((result) => {
         for (let project of result) {
             projects[project] = project;
+        }
+    })
+    .catch(() => {});
+
+    await getRequest("/temporal/samplers")
+    .then((result) => {
+        for (let sampler of result) {
+            samplers[sampler] = sampler;
+        }
+    })
+    .catch(() => {});
+
+    await getRequest("/temporal/schedulers")
+    .then((result) => {
+        for (let scheduler of result) {
+            schedulers[scheduler] = scheduler;
+        }
+    })
+    .catch(() => {});
+
+    await getRequest("/temporal/vaes")
+    .then((result) => {
+        for (let vae of result) {
+            vaes[vae] = vae;
         }
     })
     .catch(() => {});

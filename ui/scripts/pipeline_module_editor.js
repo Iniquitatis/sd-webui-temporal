@@ -7,7 +7,6 @@ import {NumberEditor} from "../scripts/base/number_editor.js";
 import {ReorderableAccordion} from "../scripts/base/reorderable_list.js";
 import {Signal} from "../scripts/core/signal.js";
 import {createElement} from "../scripts/utils/dom.js";
-import {getObjectKeyByIndex} from "../scripts/utils/object.js";
 import {ConfigurableParamEditor} from "../scripts/configurable_param_editor.js";
 import {blendModes} from "../scripts/test_data.js";
 
@@ -69,7 +68,6 @@ export class PipelineModuleEditor extends ReorderableAccordion {
                     e.label = "Blend mode";
                     e.variant = "menu";
                     e.choices = blendModes;
-                    e.value = getObjectKeyByIndex(e.choices, 0);
                     e.onValueChange.connect((value) => {
                         this.module.blend_mode = value;
 

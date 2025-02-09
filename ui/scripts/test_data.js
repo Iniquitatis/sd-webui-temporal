@@ -1,14 +1,8 @@
-export let models = {};
-
-export let vaes = {};
-
-export let samplers = {};
-
-export let schedulers = {};
-
 export let blendModes = {};
 
-export let modules = {
+export let models = {};
+
+export let pipelineModules = {
     "new_processing": {
         icon: "\u{0001f9ec}",
         name: "New Processing",
@@ -17,14 +11,22 @@ export let modules = {
                 name: "Model",
                 type: "enum",
                 ui_type: "list",
-                choices: models,
+                choices: {
+                    "blah_1.safetensors": "blah_1.safetensors",
+                    "blah_2.safetensors": "blah_2.safetensors",
+                    "blah_3.safetensors": "blah_3.safetensors",
+                },
                 default: "blah_2.safetensors",
             },
             vae: {
                 name: "VAE",
                 type: "enum",
                 ui_type: "list",
-                choices: vaes,
+                choices: {
+                    "vae_blah_1.safetensors": "vae_blah_1.safetensors",
+                    "vae_blah_2.safetensors": "vae_blah_2.safetensors",
+                    "vae_blah_3.safetensors": "vae_blah_3.safetensors",
+                },
                 default: "vae_blah_3.safetensors",
             },
             clip_skip: {
@@ -52,14 +54,22 @@ export let modules = {
                 name: "Sampler",
                 type: "enum",
                 ui_type: "list",
-                choices: samplers,
+                choices: {
+                    "dpmpp_2m": "DPM++ 2M",
+                    "dpmpp_sde": "DPM++ SDE",
+                    "euler": "Euler",
+                },
                 default: "euler",
             },
             scheduler: {
                 name: "Scheduler",
                 type: "enum",
                 ui_type: "list",
-                choices: schedulers,
+                choices: {
+                    "auto": "Automatic",
+                    "uniform": "Uniform",
+                    "karras": "Karras",
+                },
                 default: "auto",
             },
             steps: {
@@ -100,3 +110,9 @@ export let modules = {
 export let presets = {};
 
 export let projects = {};
+
+export let samplers = {};
+
+export let schedulers = {};
+
+export let vaes = {};

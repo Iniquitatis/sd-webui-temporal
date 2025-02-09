@@ -38,10 +38,14 @@ export class EnumEditor extends ValueEditor {
                 e.label = name;
             });
         }
+
+        if (this._select.selectedIndex == -1 && Object.keys(value).length > 0) {
+            this._select.selectedIndex = 0;
+        }
     }
 
     set value(value) {
-        this._select.selectedIndex = [...Object.keys(this._choices)].indexOf(value);
+        this._select.selectedIndex = value ? [...Object.keys(this._choices)].indexOf(value) : 0;
 
         this.onValueChange.fire(this.value);
     }

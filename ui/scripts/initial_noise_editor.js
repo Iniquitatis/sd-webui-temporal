@@ -17,7 +17,7 @@ export class InitialNoiseEditor extends Column {
             e.step = 0.01;
             e.value = 0.0;
             e.onValueChange.connect((value) => {
-                initialNoise.factor = value
+                initialNoise.factor = value;
 
                 this.onValueChange.fire(initialNoise);
             });

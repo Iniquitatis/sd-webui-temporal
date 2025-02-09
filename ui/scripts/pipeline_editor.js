@@ -4,9 +4,9 @@ import {NumberEditor} from "../scripts/base/number_editor.js";
 import {ReorderableList} from "../scripts/base/reorderable_list.js";
 import {ToolButton} from "../scripts/base/tool_button.js";
 import {Signal} from "../scripts/core/signal.js";
-import {getObjectKeyByIndex, mapObject} from "../scripts/utils/object.js";
+import {mapObject} from "../scripts/utils/object.js";
 import {PipelineModuleEditor} from "../scripts/pipeline_module_editor.js";
-import {modules} from "../scripts/test_data.js";
+import {pipelineModules} from "../scripts/test_data.js";
 
 export class PipelineEditor extends Column {
     constructor() {
@@ -18,7 +18,6 @@ export class PipelineEditor extends Column {
             e.label = "Parallel";
             e.variant = "box";
             e.minimum = 1;
-            e.maximum = 16;
             e.step = 1;
             e.value = 1;
             e.onValueChange.connect((value) => {
@@ -31,8 +30,7 @@ export class PipelineEditor extends Column {
         let selectedModule = this.createChild(EnumEditor, (e) => {
             e.label = "Add module";
             e.variant = "menu";
-            e.choices = mapObject(modules, (_, module) => `${module.icon} ${module.name}`);
-            e.value = getObjectKeyByIndex(e.choices, 0);
+            e.choices = mapObject(pipelineModules, (_, module) => `${module.icon} ${module.name}`);
 
             e.createChild(ToolButton, (e) => {
                 e.label = "+";
@@ -50,7 +48,7 @@ export class PipelineEditor extends Column {
 
                             this.onValueChange.fire(pipeline);
                         });
-                    }, key, modules[key]);
+                    }, key, pipelineModules[key]);
 
                     this.onValueChange.fire(pipeline);
                 });

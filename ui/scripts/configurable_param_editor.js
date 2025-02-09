@@ -6,7 +6,6 @@ import {NumberEditor} from "../scripts/base/number_editor.js";
 import {TextEditor} from "../scripts/base/text_editor.js";
 import {Signal} from "../scripts/core/signal.js";
 import {Widget} from "../scripts/core/widget.js";
-import {getObjectKeyByIndex} from "../scripts/utils/object.js";
 import {SeedEditor} from "../scripts/seed_editor.js";
 
 export class ConfigurableParamEditor extends Widget {
@@ -58,7 +57,7 @@ export class ConfigurableParamEditor extends Widget {
                     e.label = definition.name;
                     e.variant = definition.ui_type ?? "menu";
                     e.choices = definition.choices ?? {"": ""};
-                    e.value = definition.default ?? getObjectKeyByIndex(e.choices, 0);
+                    e.value = definition.default ?? null;
                 });
             } break;
 

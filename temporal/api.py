@@ -16,19 +16,7 @@ from temporal.video_filters import VIDEO_FILTERS
 
 
 class GenerateRequest(BaseModel):
-    model: str = ""
-    vae: str | None = ""
-    clip_skip: int = 1
-    positive_prompts: list[str] = []
-    negative_prompts: list[str] = []
-    width: int = 512
-    height: int = 512
-    sampler: str = ""
-    scheduler: str = ""
-    steps: int = 20
-    cfg: float = 5.0
-    strength: float = 0.5
-    seeds: list[int] = []
+    parameters: dict[str, Any] = {}
     iter_count: int = 10
     modules: list[dict[str, Any]] = []
 
@@ -46,17 +34,8 @@ def register_api(app: FastAPI, engine: Engine) -> None:
         project = Project(
             path = Path("_standalone_project"),
             parameters = ImageToImageParams(
+                **request.parameters,
                 images = [pil_to_np(load_image("ui/_example_image.png"))],
-                positive_prompts = request.positive_prompts,
-                negative_prompts = request.negative_prompts,
-                width = request.width,
-                height = request.height,
-                sampler = request.sampler,
-                scheduler = request.scheduler,
-                steps = request.steps,
-                cfg = request.cfg,
-                strength = request.strength,
-                seeds = request.seeds,
             ),
         )
 
