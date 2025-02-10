@@ -20,8 +20,7 @@ export class FSStoreBox extends Widget {
                             "operation": "refresh",
                         });
 
-                        await getRequest(`/temporal/${store}`)
-                        .then((result) => {
+                        await getRequest(`/temporal/${store}`, (result) => {
                             this.entries = result;
                         });
 
@@ -64,8 +63,7 @@ export class FSStoreBox extends Widget {
                             },
                         });
 
-                        await getRequest(`/temporal/${store}`)
-                        .then((result) => {
+                        await getRequest(`/temporal/${store}`, (result) => {
                             this.entries = result;
                         });
 
@@ -89,8 +87,7 @@ export class FSStoreBox extends Widget {
                             },
                         });
 
-                        await getRequest(`/temporal/${store}`)
-                        .then((result) => {
+                        await getRequest(`/temporal/${store}`, (result) => {
                             this.entries = result;
                         });
 

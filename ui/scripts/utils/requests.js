@@ -1,12 +1,12 @@
-async function apiRequest(url, method, data) {
-    console.log("REQUEST", data);
+async function apiRequest(url, method, data = null, successCallback = null, errorCallback = null) {
+    console.log(method, url, data);
 
     return fetch(url, {
         method: method,
         headers: method == "POST" ? {"Content-Type": "application/json"} : undefined,
-        body: method == "POST" ? JSON.stringify(data) : undefined,
+        body: method == "POST" ? JSON.stringify(data ?? {}) : undefined,
     })
-    .then(response => {
+    .then((response) => {
         console.log("RESPONSE", response);
 
         if (!response.ok) {
@@ -14,13 +14,27 @@ async function apiRequest(url, method, data) {
         }
 
         return response.json();
+    })
+    .then((json) => {
+        console.log("DATA", json);
+
+        if (successCallback) {
+            successCallback(json);
+        }
+    })
+    .catch((reason) => {
+        console.log("ERROR", reason);
+
+        if (errorCallback) {
+            errorCallback();
+        }
     });
 }
 
-export async function getRequest(url) {
-    return apiRequest(url, "GET", null);
+export async function getRequest(url, successCallback = null, errorCallback = null) {
+    return apiRequest(url, "GET", null, successCallback, errorCallback);
 }
 
-export async function postRequest(url, data) {
-    return apiRequest(url, "POST", data);
+export async function postRequest(url, data = null, successCallback = null, errorCallback = null) {
+    return apiRequest(url, "POST", data, successCallback, errorCallback);
 }

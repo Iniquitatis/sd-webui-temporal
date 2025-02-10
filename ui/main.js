@@ -32,8 +32,7 @@ export class MainUI extends Column {
                     this._progressBar.style.display = null;
 
                     this._progressInterval = window.setInterval(async () => {
-                        await getRequest("/temporal/state")
-                        .then((result) => {
+                        await getRequest("/temporal/state", (result) => {
                             if (result.state == "active") {
                                 this._progressBar.value = result.current_iteration;
                                 this._progressBar.total = result.total_iterations;
@@ -43,8 +42,7 @@ export class MainUI extends Column {
                             }
                         });
 
-                        await getRequest("/temporal/preview")
-                        .then((result) => {
+                        await getRequest("/temporal/preview", (result) => {
                             if (!result) return;
 
                             this._preview.value = `data:image/png;base64,${result}`;
@@ -58,7 +56,7 @@ export class MainUI extends Column {
                     window.clearInterval(this._progressInterval);
                     this._progressInterval = null;
 
-                    postRequest("/temporal/interrupt", {});
+                    postRequest("/temporal/interrupt");
                 }
             });
         }, {"stopped": "Generate", "active": "Stop"});
@@ -191,57 +189,49 @@ export class MainUI extends Column {
 customElements.define("main-ui", MainUI);
 
 window.onload = async () => {
-    await getRequest("/temporal/blend_modes")
-    .then((result) => {
+    await getRequest("/temporal/blend_modes", (result) => {
         for (let [k, v] of Object.entries(result)) {
             blendModes[k] = v;
         }
     });
 
-    await getRequest("/temporal/models")
-    .then((result) => {
+    await getRequest("/temporal/models", (result) => {
         for (let model of result) {
             models[model] = model;
         }
     });
 
-    await getRequest("/temporal/pipeline_modules")
-    .then((result) => {
+    await getRequest("/temporal/pipeline_modules", (result) => {
         for (let [k, v] of Object.entries(result)) {
             pipelineModules[k] = v;
         }
     });
 
-    await getRequest("/temporal/presets")
-    .then((result) => {
+    await getRequest("/temporal/presets", (result) => {
         for (let preset of result) {
             presets[preset] = preset;
         }
     });
 
-    await getRequest("/temporal/projects")
-    .then((result) => {
+    await getRequest("/temporal/projects", (result) => {
         for (let project of result) {
             projects[project] = project;
         }
     });
 
-    await getRequest("/temporal/samplers")
-    .then((result) => {
+    await getRequest("/temporal/samplers", (result) => {
         for (let sampler of result) {
             samplers[sampler] = sampler;
         }
     });
 
-    await getRequest("/temporal/schedulers")
-    .then((result) => {
+    await getRequest("/temporal/schedulers", (result) => {
         for (let scheduler of result) {
             schedulers[scheduler] = scheduler;
         }
     });
 
-    await getRequest("/temporal/vaes")
-    .then((result) => {
+    await getRequest("/temporal/vaes", (result) => {
         for (let vae of result) {
             vaes[vae] = vae;
         }
