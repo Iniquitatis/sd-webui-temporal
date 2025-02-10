@@ -29,6 +29,8 @@ export class MainUI extends Column {
             e.onStateChange.connect((state) => {
                 if (state == "active") {
                     this._progressBar.value = 0;
+                    this._progressBar.total = 0;
+                    this._progressBar.text = "(Indeterminate)";
                     this._progressBar.style.display = null;
 
                     this._progressInterval = window.setInterval(async () => {
@@ -62,7 +64,6 @@ export class MainUI extends Column {
         }, {"stopped": "Generate", "active": "Stop"});
 
         this._progressBar = this.createChild(ProgressBar, (e) => {
-            e.total = 100;
             e.style.display = "none";
         });
 

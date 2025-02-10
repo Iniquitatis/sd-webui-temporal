@@ -5,7 +5,7 @@ export class ProgressBar extends Widget {
     constructor() {
         super();
 
-        this.style.height = "var(--widget-height)";
+        this.style.height = "calc(var(--widget-height) * 1.5)";
         this.style.marginTop = "calc(var(--layout-gap) * -1)";
         this.style.position = "relative";
 
