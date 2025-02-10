@@ -5,11 +5,11 @@ export class MultiStateToggle extends Widget {
     constructor(states) {
         super();
 
-        // NOTE: Yes, `states` is a `value:caption` dictionary
         this._values = Object.keys(states);
-        this._captions = states;
+        this._labels = Object.values(states);
         this._index = 0;
 
+        this.innerText = this._labels[0];
         this.style.alignContent = "center";
         this.style.cursor = "pointer";
         this.style.height = "var(--widget-height)";
@@ -19,14 +19,12 @@ export class MultiStateToggle extends Widget {
         this.addEventListener("click", () => {
             this._index++;
             this._index %= this._values.length;
-            this._refresh();
+            this.innerText = this._labels[this._index];
 
             this.onValueChange.fire(this.value);
         });
 
         this.onValueChange = new Signal();
-
-        this._refresh();
     }
 
     get value() {
@@ -35,13 +33,9 @@ export class MultiStateToggle extends Widget {
 
     set value(value) {
         this._index = this._values.indexOf(value);
-        this._refresh();
+        this.innerText = this._labels[this._index];
 
         this.onValueChange.fire(this.value);
-    }
-
-    _refresh() {
-        this.innerText = this._captions[this.value];
     }
 }
 customElements.define("multi-state-toggle", MultiStateToggle);

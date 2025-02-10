@@ -3,17 +3,15 @@ import {Button} from "./scripts/base/button.js";
 import {Checkbox} from "./scripts/base/checkbox.js";
 import {CodeArea} from "./scripts/base/code_area.js";
 import {Column} from "./scripts/base/column.js";
-import {Dropdown} from "./scripts/base/dropdown.js";
 import {ImageBox} from "./scripts/base/image_box.js";
 import {MultiStateButton} from "./scripts/base/multi_state_button.js";
 import {NumberBox} from "./scripts/base/number_box.js";
 import {ProgressBar} from "./scripts/base/progress_bar.js";
-import {Row} from "./scripts/base/row.js";
 import {Tabs} from "./scripts/base/tabs.js";
 import {TextArea} from "./scripts/base/text_area.js";
 import {TextBox} from "./scripts/base/text_box.js";
-import {ToolButton} from "./scripts/base/tool_button.js";
 import {getRequest, postRequest} from "./scripts/utils/requests.js";
+import {FSStoreBox} from "./scripts/fs_store_box.js";
 import {InitialNoiseEditor} from "./scripts/initial_noise_editor.js";
 import {PipelineEditor} from "./scripts/pipeline_editor.js";
 import {ProcessingParamsEditor} from "./scripts/processing_params_editor.js";
@@ -77,55 +75,15 @@ export class MainUI extends Column {
             e.height = "30rem";
         });
 
-        this.createChild(Dropdown, (e) => {
+        this.createChild(FSStoreBox, (e) => {
             e.label = "Preset";
-            e.choices = presets;
+            e.entries = Object.keys(presets);
+        }, "presets", ["refresh", "load", "save", "rename", "delete"]);
 
-            e.createChild(Row, (e) => {
-                e.createChild(ToolButton, (e) => {
-                    e.label = "\u{0001f504}";
-                });
-
-                e.createChild(ToolButton, (e) => {
-                    e.label = "\u{0001f4c2}";
-                });
-
-                e.createChild(ToolButton, (e) => {
-                    e.label = "\u{0001f4be}";
-                });
-
-                e.createChild(ToolButton, (e) => {
-                    e.label = "\u{270f}\u{fe0f}";
-                });
-
-                e.createChild(ToolButton, (e) => {
-                    e.label = "\u{0001f5d1}\u{fe0f}";
-                });
-            });
-        });
-
-        this.createChild(Dropdown, (e) => {
+        this.createChild(FSStoreBox, (e) => {
             e.label = "Project";
-            e.choices = projects;
-
-            e.createChild(Row, (e) => {
-                e.createChild(ToolButton, (e) => {
-                    e.label = "\u{0001f504}";
-                });
-
-                e.createChild(ToolButton, (e) => {
-                    e.label = "\u{0001f4c2}";
-                });
-
-                e.createChild(ToolButton, (e) => {
-                    e.label = "\u{270f}\u{fe0f}";
-                });
-
-                e.createChild(ToolButton, (e) => {
-                    e.label = "\u{0001f5d1}\u{fe0f}";
-                });
-            });
-        });
+            e.entries = Object.keys(projects);
+        }, "projects", ["refresh", "load", "rename", "delete"]);
 
         this.createChild(Tabs, (e) => {
             e.createTab("General", Column, (e) => {
@@ -150,9 +108,8 @@ export class MainUI extends Column {
                 e.createChild(NumberBox, (e) => {
                     e.label = "Iteration count";
                     e.minimum = 1;
-                    e.maximum = 2 ** 32 - 1;
                     e.step = 1;
-                    e.value = 100;
+                    e.value = 10;
                     e.onValueChange.connect((value) => {
                         project.iter_count = value;
                     });
@@ -239,64 +196,56 @@ window.onload = async () => {
         for (let [k, v] of Object.entries(result)) {
             blendModes[k] = v;
         }
-    })
-    .catch(() => {});
+    });
 
     await getRequest("/temporal/models")
     .then((result) => {
         for (let model of result) {
             models[model] = model;
         }
-    })
-    .catch(() => {});
+    });
 
     await getRequest("/temporal/pipeline_modules")
     .then((result) => {
         for (let [k, v] of Object.entries(result)) {
             pipelineModules[k] = v;
         }
-    })
-    .catch(() => {});
+    });
 
     await getRequest("/temporal/presets")
     .then((result) => {
         for (let preset of result) {
             presets[preset] = preset;
         }
-    })
-    .catch(() => {});
+    });
 
     await getRequest("/temporal/projects")
     .then((result) => {
         for (let project of result) {
             projects[project] = project;
         }
-    })
-    .catch(() => {});
+    });
 
     await getRequest("/temporal/samplers")
     .then((result) => {
         for (let sampler of result) {
             samplers[sampler] = sampler;
         }
-    })
-    .catch(() => {});
+    });
 
     await getRequest("/temporal/schedulers")
     .then((result) => {
         for (let scheduler of result) {
             schedulers[scheduler] = scheduler;
         }
-    })
-    .catch(() => {});
+    });
 
     await getRequest("/temporal/vaes")
     .then((result) => {
         for (let vae of result) {
             vaes[vae] = vae;
         }
-    })
-    .catch(() => {});
+    });
 
     document.body.appendChild(new MainUI());
 };

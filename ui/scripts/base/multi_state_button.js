@@ -6,17 +6,18 @@ export class MultiStateButton extends Button {
         super();
 
         this._states = Object.keys(states);
-        this._captions = Object.values(states);
+        this._labels = Object.values(states);
         this._index = 0;
 
-        this._button.innerText = this._captions[0];
         this.addEventListener("click", () => {
             this._index++;
             this._index %= this._states.length;
-            this._button.innerText = this._captions[this._index];
+            this._button.innerText = this._labels[this._index];
 
             this.onStateChange.fire(this.state);
         });
+
+        this._button.innerText = this._labels[0];
 
         this.onStateChange = new Signal();
     }
@@ -27,7 +28,7 @@ export class MultiStateButton extends Button {
 
     set state(value) {
         this._index = this._states.indexOf(value);
-        this._button.innerText = this._captions[this._index];
+        this._button.innerText = this._labels[this._index];
 
         this.onStateChange.fire(this.state);
     }

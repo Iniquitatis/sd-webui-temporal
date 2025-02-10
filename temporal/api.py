@@ -1,6 +1,6 @@
 from pathlib import Path
 from threading import Thread
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -18,6 +18,12 @@ from temporal.utils.image import image_to_base64, load_image, pil_to_np
 from temporal.video_filters import VIDEO_FILTERS
 
 
+class FSOperationRequest(BaseModel):
+    store: Literal["presets", "projects"]
+    operation: Literal["refresh", "load", "save", "rename", "delete"]
+    args: dict[str, Any] = {}
+
+
 class GenerateRequest(BaseModel):
     parameters: dict[str, Any] = {}
     initial_noise: dict[str, Any] = {}
@@ -33,6 +39,28 @@ def register_api(app: FastAPI, engine: Engine) -> None:
             x.id: x.name
             for x in BLEND_MODES
         }
+
+    @app.post("/temporal/fs_operation")
+    async def _(request: FSOperationRequest) -> Any:
+        if request.store == "presets":
+            store = shared.preset_store
+        elif request.store == "projects":
+            store = shared.project_store
+        else:
+            raise ValueError
+
+        if request.operation == "refresh":
+            store.refresh()
+        elif request.operation == "load":  # TODO
+            raise NotImplementedError
+        elif request.operation == "save":  # TODO
+            raise NotImplementedError
+        elif request.operation == "rename":
+            store.rename_entry(request.args["old_name"], request.args["new_name"])
+        elif request.operation == "delete":
+            store.delete_entry(request.args["name"])
+        else:
+            raise ValueError
 
     @app.post("/temporal/generate")
     async def _(request: GenerateRequest) -> Any:
