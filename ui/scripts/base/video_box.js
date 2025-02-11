@@ -5,8 +5,8 @@ import {Signal} from "../../scripts/core/signal.js";
 import {Widget} from "../../scripts/core/widget.js";
 import {createElement} from "../../scripts/utils/dom.js";
 
-// FIXME: Deduplicate with VideoViewer
-class ImageViewer extends Widget {
+// FIXME: Deduplicate with ImageViewer
+class VideoViewer extends Widget {
     constructor() {
         super();
 
@@ -25,7 +25,7 @@ class ImageViewer extends Widget {
             this.value = null;
         });
 
-        this._img = this.createChild("img", (e) => {
+        this._video = this.createChild("video", (e) => {
             e.style.objectFit = "contain";
             e.style.width = "100%";
         });
@@ -53,18 +53,18 @@ class ImageViewer extends Widget {
 
         this.style.display = value ? null : "none";
 
-        this._img.src = value ?? undefined;
+        this._video.src = value ?? undefined;
     }
 }
-customElements.define("image-viewer", ImageViewer);
+customElements.define("video-viewer", VideoViewer);
 
-let imageViewer = null;
+let videoViewer = null;
 
 document.addEventListener("DOMContentLoaded", () => {
-    imageViewer = createElement(document.body, ImageViewer);
+    videoViewer = createElement(document.body, VideoViewer);
 });
 
-export class ImageBox extends ValueEditor {
+export class VideoBox extends ValueEditor {
     constructor() {
         super();
 
@@ -84,7 +84,7 @@ export class ImageBox extends ValueEditor {
 
             this._input = e.createChild("input", (e) => {
                 e.type = "file";
-                e.accept = "image/*";
+                e.accept = "video/*";
                 e.style.height = "100%";
                 e.style.width = "100%";
                 e.addEventListener("change", () => {
@@ -98,15 +98,15 @@ export class ImageBox extends ValueEditor {
                 });
             });
 
-            this._img = e.createChild("img", (e) => {
+            this._video = e.createChild("video", (e) => {
                 e.style.cursor = "pointer";
                 e.style.display = "none";
                 e.style.height = "100%";
                 e.style.maxWidth = "100%";
                 e.style.objectFit = "contain";
                 e.addEventListener("click", () => {
-                    imageViewer.value = e.src;
-                    imageViewer.viewedElement = this;
+                    videoViewer.value = e.src;
+                    videoViewer.viewedElement = this;
                 });
             });
 
@@ -128,7 +128,7 @@ export class ImageBox extends ValueEditor {
     }
 
     get value() {
-        return this._img.src;
+        return this._video.src;
     }
 
     set height(value) {
@@ -138,16 +138,16 @@ export class ImageBox extends ValueEditor {
     set value(value) {
         this._input.style.display = value ? "none" : null;
 
-        this._img.src = value ?? null;
-        this._img.style.display = value ? null : "none";
+        this._video.src = value ?? null;
+        this._video.style.display = value ? null : "none";
 
         this._deleteButton.style.display = value ? null : "none";
 
-        if (imageViewer.viewedElement == this) {
-            imageViewer.value = value;
+        if (videoViewer.viewedElement == this) {
+            videoViewer.value = value;
         }
 
         this.onValueChange.fire(this.value);
     }
 }
-customElements.define("image-box", ImageBox);
+customElements.define("video-box", VideoBox);
