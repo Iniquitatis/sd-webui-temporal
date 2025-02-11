@@ -25,10 +25,13 @@ class FSOperationRequest(BaseModel):
 
 
 class GenerateRequest(BaseModel):
+    name: str
     parameters: dict[str, Any] = {}
     initial_noise: dict[str, Any] = {}
     pipeline: dict[str, Any] = {}
     animation: str = ""
+    load_parameters: bool = True
+    continue_from_last_frame: bool = True
     iter_count: int = 10
 
 
@@ -51,10 +54,10 @@ def register_api(app: FastAPI, engine: Engine) -> None:
 
         if request.operation == "refresh":
             store.refresh()
-        elif request.operation == "load":  # TODO
-            raise NotImplementedError
-        elif request.operation == "save":  # TODO
-            raise NotImplementedError
+        elif request.operation == "load":
+            return store.load_entry(request.args["name"]).to_json()
+        elif request.operation == "save":
+            store.save_entry(request.args["name"], store.type().from_json(request.args["data"]))
         elif request.operation == "rename":
             store.rename_entry(request.args["old_name"], request.args["new_name"])
         elif request.operation == "delete":
@@ -65,7 +68,7 @@ def register_api(app: FastAPI, engine: Engine) -> None:
     @app.post("/temporal/generate")
     async def _(request: GenerateRequest) -> Any:
         project = Project(
-            path = Path("_standalone_project"),
+            path = shared.options.output.output_dir / request.name,
             parameters = ImageToImageParams(
                 **request.parameters,
                 images = [pil_to_np(load_image("ui/_example_image.png"))],
@@ -80,6 +83,13 @@ def register_api(app: FastAPI, engine: Engine) -> None:
             ),
             animation = parse_animation(request.animation),
         )
+
+        if request.load_parameters:
+            project.load(project.path)
+
+        if not request.continue_from_last_frame:
+            project.delete_all_frames()
+            project.delete_session_data()
 
         thread = Thread(target = engine.start, args = (project, request.iter_count))
         thread.start()

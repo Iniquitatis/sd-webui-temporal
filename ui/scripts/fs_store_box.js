@@ -17,6 +17,10 @@ export class FSStoreBox extends Widget {
         this.onDelete = new Signal();
 
         this._dropdown = this.createChild(Dropdown, (e) => {
+            e.onValueChange.connect((value) => {
+                this.onValueChange.fire(value);
+            });
+
             e.createChild(Row, (e) => {
                 e.createChild(ToolButton, (e) => {
                     e.label = "\u{1f504}\u{fe0e}";

@@ -82,12 +82,18 @@ export class MainUI extends Column {
         this.createChild(FSStoreBox, (e) => {
             e.label = "Project";
             e.entries = Object.keys(projects);
+            e.onValueChange.connect((value) => {
+                this._name.value = value;
+            });
         }, "projects", ["refresh", "load", "rename", "delete"]);
 
         this.createChild(Tabs, (e) => {
             e.createTab("General", Column, (e) => {
-                e.createChild(TextBox, (e) => {
+                this._name = e.createChild(TextBox, (e) => {
                     e.label = "Name";
+                    e.onValueChange.connect((value) => {
+                        project.name = value;
+                    });
                 });
 
                 e.createChild(TextArea, (e) => {
@@ -97,11 +103,17 @@ export class MainUI extends Column {
                 e.createChild(Checkbox, (e) => {
                     e.label = "Load parameters";
                     e.value = true;
+                    e.onValueChange.connect((value) => {
+                        project.load_parameters = value;
+                    });
                 });
 
                 e.createChild(Checkbox, (e) => {
                     e.label = "Continue from last frame";
                     e.value = true;
+                    e.onValueChange.connect((value) => {
+                        project.continue_from_last_frame = value;
+                    });
                 });
 
                 e.createChild(NumberBox, (e) => {

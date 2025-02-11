@@ -17,6 +17,8 @@ class PipelineModule(Configurable, abstract = True):
 
     enabled: bool = Field(False)
 
+    # FIXME: Kinda stupid--has to be a static method in the Serializable class,
+    # and also handle deserialization of all of the nested values
     @staticmethod
     def from_json(data: dict[str, Any]) -> "PipelineModule":
         id = data.pop("id")

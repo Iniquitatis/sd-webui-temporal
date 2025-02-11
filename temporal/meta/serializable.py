@@ -107,6 +107,10 @@ class Serializable:
         tree.write(dir / "data.xml")
 
     # TODO
+    def from_json(self, data: dict[str, Any]) -> None:
+        pass
+
+    # TODO
     def to_json(self) -> dict[str, Any]:
         ar = Archive(type_name = find_alias_for_type(type(self)) or "")
         # self.write(ar)

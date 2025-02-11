@@ -4,4 +4,4 @@ from temporal.project import Project
 
 class ProjectStore(FSStore[Project]):
     def __create_entry__(self, name: str) -> Project:
-        return Project(self.path / name, name)
+        return Project(path = self.path / name)
