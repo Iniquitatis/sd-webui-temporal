@@ -4,7 +4,7 @@ export let models = {};
 
 export let pipelineModules = {
     "new_processing": {
-        icon: "\u{0001f9ec}",
+        icon: "\u{1f9ec}",
         name: "New Processing",
         parameters: {
             model: {

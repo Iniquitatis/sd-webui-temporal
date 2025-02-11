@@ -13,7 +13,7 @@ PIPELINE_MODULES: list[Type["PipelineModule"]] = []
 class PipelineModule(Configurable, abstract = True):
     store = PIPELINE_MODULES
 
-    icon: str = "\U00002699"
+    icon: str = "\U00002699\ufe0f"
 
     enabled: bool = Field(False)
 

@@ -19,7 +19,7 @@ export class FSStoreBox extends Widget {
         this._dropdown = this.createChild(Dropdown, (e) => {
             e.createChild(Row, (e) => {
                 e.createChild(ToolButton, (e) => {
-                    e.label = "\u{0001f504}";
+                    e.label = "\u{1f504}\u{fe0e}";
                     e.style.display = features.includes("refresh") ? null : "none";
                     e.onClick.connect(async () => {
                         await postRequest("/temporal/fs_operation", {
@@ -36,7 +36,7 @@ export class FSStoreBox extends Widget {
                 });
 
                 e.createChild(ToolButton, (e) => {
-                    e.label = "\u{0001f4c2}";
+                    e.label = "\u{1f4c2}\u{fe0e}";
                     e.style.display = features.includes("load") ? null : "none";
                     e.onClick.connect(() => {
                         // TODO
@@ -45,7 +45,7 @@ export class FSStoreBox extends Widget {
                 });
 
                 e.createChild(ToolButton, (e) => {
-                    e.label = "\u{0001f4be}";
+                    e.label = "\u{1f4be}\u{fe0e}";
                     e.style.display = features.includes("save") ? null : "none";
                     e.onClick.connect(() => {
                         // TODO
@@ -54,7 +54,7 @@ export class FSStoreBox extends Widget {
                 });
 
                 e.createChild(ToolButton, (e) => {
-                    e.label = "\u{270f}\u{fe0f}";
+                    e.label = "\u{270e}\u{fe0f}";
                     e.style.display = features.includes("rename") ? null : "none";
                     e.onClick.connect(async () => {
                         let oldName = this._dropdown.value;
@@ -79,7 +79,7 @@ export class FSStoreBox extends Widget {
                 });
 
                 e.createChild(ToolButton, (e) => {
-                    e.label = "\u{0001f5d1}\u{fe0f}";
+                    e.label = "\u{274c}\u{fe0e}";
                     e.style.display = features.includes("delete") ? null : "none";
                     e.onClick.connect(async () => {
                         let name = this._dropdown.value;

@@ -11,7 +11,7 @@ export class SeedBox extends NumberBox {
         this.value = -1;
 
         this.createChild(ToolButton, (e) => {
-            e.label = "\u{1f3b2}";
+            e.label = "\u{1f3b2}\u{fe0e}";
             e.onClick.connect(() => {
                 this.value = Math.floor(Math.random() * (2 ** 32));
             });

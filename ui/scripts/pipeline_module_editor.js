@@ -41,7 +41,7 @@ export class PipelineModuleEditor extends ReorderableAccordion {
         this._header.insertBefore(createElement(null, MultiStateToggle, (e) => {
             e.value = "on";
             this._manager.manage(e, "preview", (value) => value ? "on" : "off", (value) => value == "on");
-        }, {"on": "\u{1f441}", "off": "\u{25ce}"}), this._header.lastChild);
+        }, {"on": "\u{1f441}\u{fe0e}", "off": "\u{20e0}\u{fe0e}"}), this._header.lastChild);
 
         this.createChild(Column, (e) => {
             if (definition.is_filter) {
@@ -89,7 +89,7 @@ export class PipelineModuleEditor extends ReorderableAccordion {
             }
 
             e.createChild(Button, (e) => {
-                e.label = "\u{274c} Remove";
+                e.label = "\u{274c}\u{fe0e} Remove";
                 e.onClick.connect(() => {
                     this.parentElement.removeChild(this)
 

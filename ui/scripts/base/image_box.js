@@ -31,7 +31,7 @@ class ImageViewer extends Widget {
         });
 
         this._closeButton = this.createChild(Block, (e) => {
-            e.innerText = "\u{274c}";
+            e.innerText = "\u{274c}\u{fe0e}";
             e.style.alignContent = "center";
             e.style.color = "white";
             e.style.cursor = "pointer";
@@ -111,7 +111,7 @@ export class ImageBox extends ValueEditor {
             });
 
             this._deleteButton = e.createChild(ToolButton, (e) => {
-                e.label = "\u{274c}";
+                e.label = "\u{274c}\u{fe0e}";
                 e.style.display = "none";
                 e.style.position = "absolute";
                 e.style.right = "0";

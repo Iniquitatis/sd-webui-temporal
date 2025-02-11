@@ -12,7 +12,7 @@ from temporal.utils.numpy import saturate_array
 
 
 class ImageFilter(PipelineModule, abstract = True):
-    icon = "\U00002728"
+    icon = "\U00002728\ufe0f"
 
     amount: float = Field(1.0)
     amount_relative: bool = Field(False)
