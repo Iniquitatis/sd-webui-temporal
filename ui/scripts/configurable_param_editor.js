@@ -12,6 +12,7 @@ import {Signal} from "../scripts/core/signal.js";
 import {Widget} from "../scripts/core/widget.js";
 import {GradientEditor} from "../scripts/gradient_editor.js";
 import {NoiseEditor} from "../scripts/noise_editor.js";
+import {PatternEditor} from "../scripts/pattern_editor.js";
 import {SeedBox} from "../scripts/seed_box.js";
 
 export class ConfigurableParamEditor extends Widget {
@@ -81,14 +82,21 @@ export class ConfigurableParamEditor extends Widget {
             case "gradient": {
                 this._editor = this.createChild(GradientEditor, (e) => {
                     e.label = definition.name;
-                    e.value =  definition.default ?? {};
+                    e.value = definition.default ?? {};
                 });
             } break;
 
             case "noise": {
                 this._editor = this.createChild(NoiseEditor, (e) => {
                     e.label = definition.name;
-                    e.value =  definition.default ?? {};
+                    e.value = definition.default ?? {};
+                });
+            } break;
+
+            case "pattern": {
+                this._editor = this.createChild(PatternEditor, (e) => {
+                    e.label = definition.name;
+                    e.value = definition.default ?? {};
                 });
             } break;
 
