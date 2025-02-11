@@ -14,9 +14,10 @@ export class ValueEditor extends Widget {
             e.style.justifyContent = "space-between";
 
             this._label = e.createChild(Block, (e) => {
+                e.style.alignContent = "center";
                 e.style.color = "var(--hint-color)";
                 e.style.fontSize = "0.9rem";
-                e.style.padding = "var(--vertical-padding) 0";
+                e.style.height = "var(--widget-height)";
             });
         });
 

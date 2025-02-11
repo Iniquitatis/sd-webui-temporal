@@ -85,6 +85,8 @@ export class VideoBox extends ValueEditor {
             this._input = e.createChild("input", (e) => {
                 e.type = "file";
                 e.accept = "video/*";
+                e.style.border = "unset";
+                e.style.borderRadius = "unset";
                 e.style.height = "100%";
                 e.style.width = "100%";
                 e.addEventListener("change", () => {

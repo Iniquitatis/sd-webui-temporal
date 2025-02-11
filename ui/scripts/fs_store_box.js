@@ -22,6 +22,8 @@ export class FSStoreBox extends Widget {
             });
 
             e.createChild(Row, (e) => {
+                e.style.gap = "calc(var(--layout-gap) / 2)";
+
                 e.createChild(ToolButton, (e) => {
                     e.label = "\u{1f504}\u{fe0e}";
                     e.style.display = features.includes("refresh") ? null : "none";

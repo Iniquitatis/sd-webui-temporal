@@ -1,13 +1,13 @@
 :root {
     --global-hs: 0 0%;
     --accent-hs: 210 25%;
-    --background-color: light-dark(hsl(var(--global-hs) 100%), hsl(var(--global-hs) 5%));
+    --background-color: light-dark(hsl(var(--global-hs) 100%), hsl(var(--global-hs) 10%));
     --accent-color: light-dark(hsl(var(--accent-hs) 50%), hsl(var(--accent-hs) 75%));
     --text-color: light-dark(hsl(var(--global-hs) 0%), hsl(var(--global-hs) 100%));
-    --hint-color: light-dark(hsl(var(--global-hs) 40%), hsl(var(--global-hs) 60%));
-    --input-color: light-dark(hsl(var(--global-hs) 95%), hsl(var(--global-hs) 10%));
-    --hover-color: light-dark(hsl(var(--global-hs) 90%), hsl(var(--global-hs) 15%));
-    --active-color: light-dark(hsl(var(--accent-hs) 90%), hsl(var(--accent-hs) 20%));
+    --hint-color: light-dark(hsl(var(--global-hs) 40%), hsl(var(--global-hs) 70%));
+    --input-color: light-dark(hsl(var(--global-hs) 96%), hsl(var(--global-hs) 16%));
+    --hover-color: light-dark(hsl(var(--global-hs) 90%), hsl(var(--global-hs) 24%));
+    --active-color: light-dark(hsl(var(--accent-hs) 90%), hsl(var(--accent-hs) 24%));
     --line-height: 1.2rem;
     --layout-padding: 0.5rem;
     --layout-gap: calc(var(--line-height) / 2);
@@ -15,7 +15,7 @@
     --horizontal-padding: 0.5rem;
     --padding: var(--vertical-padding) var(--horizontal-padding);
     --widget-height: calc(var(--line-height) + var(--vertical-padding) * 2);
-    --thin-border: 1px solid light-dark(hsl(var(--global-hs) 85%), hsl(var(--global-hs) 15%));
+    --thin-border: 1px solid light-dark(hsl(var(--global-hs) 85%), hsl(var(--global-hs) 24%));
     --corners: 4px;
     --checkbox-size: 1rem;
     --small-input-width: 5rem;
@@ -44,25 +44,13 @@ body {
     padding: var(--layout-padding);
 }
 
-button,
-input,
-input::file-selector-button,
-select,
-textarea {
-    border: unset;
-    background-color: var(--input-color);
-    border-radius: var(--corners);
-}
-
-button,
-input,
-input::file-selector-button,
-textarea {
-    padding: var(--padding);
-}
-
 button {
+    background-color: var(--input-color);
+    border: var(--thin-border);
+    border-radius: var(--corners);
     font-weight: 500;
+    height: var(--widget-height);
+    padding: 0 var(--horizontal-padding);
     user-select: none;
 }
 
@@ -70,12 +58,27 @@ button:hover {
     background-color: var(--hover-color);
 }
 
-input::file-selector-button {
-    padding: 0 calc(var(--horizontal-padding) / 2);
+input {
+    background-color: var(--input-color);
+    border: var(--thin-border);
+    border-radius: var(--corners);
+    height: var(--widget-height);
+}
+
+input:not([type="range"]) {
+    padding: 0 var(--horizontal-padding);
 }
 
 input[type="checkbox"] {
     width: var(--checkbox-size);
+}
+
+input[type="file"] {
+    align-content: center;
+}
+
+input[type="file"]::file-selector-button {
+    display: none;
 }
 
 input[type="radio"] {
@@ -83,14 +86,19 @@ input[type="radio"] {
     width: var(--checkbox-size);
 }
 
-input[type="range"] {
-    height: var(--line-height);
-    padding: 0;
-}
-
 select {
+    background-color: var(--input-color);
+    border: var(--thin-border);
+    border-radius: var(--corners);
     height: var(--widget-height);
     padding: 0 var(--horizontal-padding);
+}
+
+textarea {
+    background-color: var(--input-color);
+    border: var(--thin-border);
+    border-radius: var(--corners);
+    padding: var(--padding);
 }
 
 .active {

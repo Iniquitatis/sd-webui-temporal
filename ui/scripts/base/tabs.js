@@ -32,8 +32,9 @@ export class Tabs extends Widget {
     createTab(name, cls, initializer, ...args) {
         this._bar.createChild("button", (e) => {
             e.innerText = name;
-            e.style.borderBottomLeftRadius = "0";
-            e.style.borderBottomRightRadius = "0";
+            e.style.borderBottom = "unset";
+            e.style.borderBottomLeftRadius = "unset";
+            e.style.borderBottomRightRadius = "unset";
             e.style.fontWeight = "unset";
             e.addEventListener("click", () => {
                 this.setActiveTab(name);

@@ -14,7 +14,7 @@ export class Radio extends ValueEditor {
 
         this._buttons = this._content.createChild(Block, (e) => {
             e.style.display = "flex";
-            e.style.flexDirection = "column";
+            e.style.flexWrap = "wrap";
             e.style.gap = "var(--layout-gap)";
             e.style.width = "100%";
         });
@@ -36,9 +36,14 @@ export class Radio extends ValueEditor {
         for (let [key, name] of Object.entries(this._choices)) {
             this._buttons.createChild(Block, (e) => {
                 e.style.alignItems = "center";
+                e.style.background = "var(--input-color)";
+                e.style.border = "var(--thin-border)";
+                e.style.borderRadius = "var(--corners)";
                 e.style.display = "flex";
                 e.style.flexDirection = "row";
-                e.style.gap = "calc(var(--horizontal-padding) / 2)";
+                e.style.gap = "calc(var(--horizontal-padding))";
+                e.style.height = "var(--widget-height)";
+                e.style.padding = "0 var(--horizontal-padding)";
 
                 let callback = (event) => {
                     this._value = event.target.key;

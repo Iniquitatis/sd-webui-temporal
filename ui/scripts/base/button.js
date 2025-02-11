@@ -7,6 +7,7 @@ export class Button extends Widget {
 
         this.onClick = new Signal();
 
+        this.style.height = "var(--widget-height)";
         this.style.width = "100%";
 
         this._button = this.createChild("button", (e) => {

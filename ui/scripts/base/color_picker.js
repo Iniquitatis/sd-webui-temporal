@@ -63,6 +63,8 @@ export class ColorPicker extends ValueEditor {
         this._manager._value = {r: 0.0, g: 0.0, b: 0.0, a: 1.0};
 
         this._content.createChild(Column, (e) => {
+            e.style.gap = "calc(var(--layout-gap) / 2)";
+
             for (let channel of Object.keys(this._manager._value).slice(0, channels)) {
                 e.createChild(ChannelSlider, (e) => {
                     e.label = channel.toUpperCase();

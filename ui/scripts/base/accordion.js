@@ -22,7 +22,9 @@ export class Accordion extends Widget {
 
             this._label = e.createChild("div", (e) => {
                 e.innerText = "Untitled";
-                e.style.padding = "var(--padding)";
+                e.style.alignContent = "center";
+                e.style.height = "var(--widget-height)";
+                e.style.padding = "0 var(--horizontal-padding)";
                 e.style.userSelect = "none";
                 e.style.width = "100%";
                 e.addEventListener("click", callback);
