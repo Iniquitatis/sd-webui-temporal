@@ -5,6 +5,8 @@ export class MultiStateToggle extends Widget {
     constructor(states) {
         super();
 
+        this.onValueChange = new Signal();
+
         this._values = Object.keys(states);
         this._labels = Object.values(states);
         this._index = 0;
@@ -23,8 +25,6 @@ export class MultiStateToggle extends Widget {
 
             this.onValueChange.fire(this.value);
         });
-
-        this.onValueChange = new Signal();
     }
 
     get value() {

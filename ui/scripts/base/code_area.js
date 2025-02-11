@@ -1,12 +1,13 @@
 import {ValueEditor} from "../../scripts/base/value_editor.js";
 import {Signal} from "../../scripts/core/signal.js";
-import {createElement} from "../../scripts/utils/dom.js";
 
 export class CodeArea extends ValueEditor {
     constructor() {
         super();
 
-        this._textArea = createElement(this._content, "textarea", (e) => {
+        this.onValueChange = new Signal();
+
+        this._textArea = this._content.createChild("textarea", (e) => {
             e.rows = 5;
             e.style.display = "block";
             e.style.fontFamily = "monospace";
@@ -31,8 +32,6 @@ export class CodeArea extends ValueEditor {
                 this.onValueChange.fire(e.value);
             });
         });
-
-        this.onValueChange = new Signal();
     }
 
     get value() {

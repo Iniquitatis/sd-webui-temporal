@@ -1,5 +1,6 @@
 export class Signal {
     constructor() {
+        this._enabled = true;
         this._listeners = [];
     }
 
@@ -13,8 +14,16 @@ export class Signal {
     }
 
     fire(...args) {
+        if (!this._enabled) return;
+
         for (let listener of this._listeners) {
             listener(...args);
         }
+    }
+
+    withDisabled(callback) {
+        this._enabled = false;
+        callback();
+        this._enabled = true;
     }
 }

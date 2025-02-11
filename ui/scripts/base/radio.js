@@ -1,37 +1,31 @@
+import {Block} from "../../scripts/base/block.js";
 import {ValueEditor} from "../../scripts/base/value_editor.js";
 import {Signal} from "../../scripts/core/signal.js";
-import {clearElement, createElement} from "../../scripts/utils/dom.js";
+import {clearElement} from "../../scripts/utils/dom.js";
 
 export class Radio extends ValueEditor {
     constructor() {
         super();
 
-        this._choices = {};
-
-        this._radio = createElement(this._content, "fieldset", (e) => {
-            e.style.width = "100%";
-
-            createElement(e, "legend", (e) => {
-                e.innerText = "FIXME";
-            });
-
-            this._buttons = createElement(e, "div", (e) => {
-                e.style.display = "flex";
-                e.style.flexDirection = "column";
-                e.style.gap = "calc(var(--layout-gap) / 2)";
-            });
-        });
-
         this.onValueChange = new Signal();
+
+        this._choices = {};
+        this._value = null;
+
+        this._buttons = this._content.createChild(Block, (e) => {
+            e.style.display = "flex";
+            e.style.flexDirection = "column";
+            e.style.gap = "var(--layout-gap)";
+            e.style.width = "100%";
+        });
     }
 
-    // TODO: From here and onwards
     get choices() {
         return this._choices;
     }
 
     get value() {
-        return [...Object.keys(this._choices)][this._select.selectedIndex];
+        return this._value;
     }
 
     set choices(value) {
@@ -39,27 +33,50 @@ export class Radio extends ValueEditor {
 
         clearElement(this._buttons);
 
-        for (let name of Object.values(this._choices)) {
-            createElement(this._buttons, "div", (e) => {
-                createElement(e, "input", (e) => {
+        for (let [key, name] of Object.entries(this._choices)) {
+            this._buttons.createChild(Block, (e) => {
+                e.style.alignItems = "center";
+                e.style.display = "flex";
+                e.style.flexDirection = "row";
+                e.style.gap = "calc(var(--horizontal-padding) / 2)";
+
+                let callback = (event) => {
+                    this._value = event.target.key;
+                    this._updateButtons();
+
+                    this.onValueChange.fire(this._value);
+                };
+
+                e.createChild("input", (e) => {
+                    e.key = key;
                     e.type = "radio";
+                    e.addEventListener("click", callback);
                 });
 
-                createElement(e, "label", (e) => {
+                e.createChild("label", (e) => {
+                    e.key = key;
                     e.innerText = name;
+                    e.addEventListener("click", callback);
                 });
             });
         }
 
-        // if (this._select.selectedIndex == -1 && Object.keys(value).length > 0) {
-        //     this._select.selectedIndex = 0;
-        // }
+        if (!this._value) {
+            this._value = Object.keys(this._choices)[0];
+        }
     }
 
     set value(value) {
-        // this._select.selectedIndex = value ? [...Object.keys(this._choices)].indexOf(value) : 0;
+        this._value = value;
+        this._updateButtons();
 
-        this.onValueChange.fire(this.value);
+        this.onValueChange.fire(value);
+    }
+
+    _updateButtons() {
+        for (let button of this._buttons.querySelectorAll("input")) {
+            button.checked = button.key == this._value;
+        }
     }
 }
 customElements.define("custom-radio", Radio);

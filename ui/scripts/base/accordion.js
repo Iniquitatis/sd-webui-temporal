@@ -1,5 +1,5 @@
+import {Block} from "../../scripts/base/block.js";
 import {Widget} from "../../scripts/core/widget.js";
-import {createElement} from "../../scripts/utils/dom.js";
 
 export class Accordion extends Widget {
     constructor() {
@@ -10,25 +10,25 @@ export class Accordion extends Widget {
 
         let callback = () => {
             let visible = this._openToggle.innerText == "\u{25bc}";
-            this._content.style.display = visible ? "none" : null;
+            this._content.style.display = visible ? "none" : "block";
             this._openToggle.innerText = visible ? "\u{25c0}" : "\u{25bc}";
         };
 
-        this._header = createElement(this, "div", (e) => {
+        this._header = super.createChild(Block, (e) => {
             e.style.alignItems = "center";
             e.style.display = "flex"
             e.style.flexDirection = "row";
             e.style.justifyContent = "space-between";
 
-            this._label = createElement(e, "span", (e) => {
+            this._label = e.createChild("div", (e) => {
                 e.innerText = "Untitled";
                 e.style.padding = "var(--padding)";
-                e.style.width = "100%";
                 e.style.userSelect = "none";
+                e.style.width = "100%";
                 e.addEventListener("click", callback);
             });
 
-            this._openToggle = createElement(e, "div", (e) => {
+            this._openToggle = e.createChild("div", (e) => {
                 e.innerText = "\u{25c0}";
                 e.style.alignContent = "center";
                 e.style.cursor = "pointer";
@@ -41,7 +41,7 @@ export class Accordion extends Widget {
             });
         });
 
-        this._content = createElement(this, "div", (e) => {
+        this._content = super.createChild(Block, (e) => {
             e.style.display = "none";
             e.style.padding = "var(--layout-padding)";
         });
@@ -55,8 +55,8 @@ export class Accordion extends Widget {
         this._label.innerText = value;
     }
 
-    createChild(cls, initializer, ...args) {
-        return createElement(this._content, cls, initializer, ...args);
+    createChild(tagOrClass, initializer, ...args) {
+        return this._content.createChild(tagOrClass, initializer, ...args);
     }
 }
 customElements.define("layout-accordion", Accordion);

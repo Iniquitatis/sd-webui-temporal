@@ -4,6 +4,7 @@ import {ImageBox} from "../scripts/base/image_box.js";
 import {Radio} from "../scripts/base/radio.js";
 import {Slider} from "../scripts/base/slider.js";
 import {Row} from "../scripts/base/row.js";
+import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
 import {SeedBox} from "../scripts/seed_box.js";
 
@@ -11,9 +12,11 @@ export class NoiseEditor extends Row {
     constructor() {
         super();
 
-        let noise = {};
+        this.onValueChange = new Signal();
 
-        this.createChild(ImageBox);
+        this._manager = new FieldManager(this.onValueChange);
+
+        this._preview = this.createChild(ImageBox);
 
         this.createChild(Column, (e) => {
             e.createChild(Radio, (e) => {
@@ -23,11 +26,8 @@ export class NoiseEditor extends Row {
                     "turbulence": "Turbulence",
                     "ridge": "Ridge",
                 };
-                e.onValueChange.connect((value) => {
-                    noise.mode = value;
-
-                    this.onValueChange.fire(noise);
-                });
+                e.value = "fbm";
+                this._manager.manage(e, "mode");
             });
 
             e.createChild(Slider, (e) => {
@@ -36,11 +36,7 @@ export class NoiseEditor extends Row {
                 e.maximum = 1024;
                 e.step = 1;
                 e.value = 1;
-                e.onValueChange.connect((value) => {
-                    noise.scale = value;
-
-                    this.onValueChange.fire(noise);
-                });
+                this._manager.manage(e, "scale");
             });
 
             e.createChild(Slider, (e) => {
@@ -49,11 +45,7 @@ export class NoiseEditor extends Row {
                 e.maximum = 10.0;
                 e.step = 0.01;
                 e.value = 1.0;
-                e.onValueChange.connect((value) => {
-                    noise.detail = value;
-
-                    this.onValueChange.fire(noise);
-                });
+                this._manager.manage(e, "detail");
             });
 
             e.createChild(Slider, (e) => {
@@ -62,11 +54,7 @@ export class NoiseEditor extends Row {
                 e.maximum = 4.0;
                 e.step = 0.01;
                 e.value = 2.0;
-                e.onValueChange.connect((value) => {
-                    noise.lacunarity = value;
-
-                    this.onValueChange.fire(noise);
-                });
+                this._manager.manage(e, "lacunarity");
             });
 
             e.createChild(Slider, (e) => {
@@ -75,34 +63,28 @@ export class NoiseEditor extends Row {
                 e.maximum = 1.0;
                 e.step = 0.01;
                 e.value = 0.5;
-                e.onValueChange.connect((value) => {
-                    noise.persistence = value;
-
-                    this.onValueChange.fire(noise);
-                });
+                this._manager.manage(e, "persistence");
             });
 
             e.createChild(SeedBox, (e) => {
                 e.label = "Seed",
-                e.onValueChange.connect((value) => {
-                    noise.seed = value;
-
-                    this.onValueChange.fire(noise);
-                });
+                this._manager.manage(e, "seed");
             });
 
             e.createChild(Checkbox, (e) => {
                 e.label = "Use global seed";
                 e.value = false;
-                e.onValueChange.connect((value) => {
-                    noise.use_global_seed = value;
-
-                    this.onValueChange.fire(noise);
-                });
+                this._manager.manage(e, "use_global_seed");
             });
         });
+    }
 
-        this.onValueChange = new Signal();
+    get value() {
+        return this._manager.value;
+    }
+
+    set value(value) {
+        this._manager.value = value;
     }
 }
 customElements.define("noise-editor", NoiseEditor);

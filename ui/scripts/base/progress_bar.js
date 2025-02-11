@@ -1,5 +1,5 @@
+import {Block} from "../../scripts/base/block.js";
 import {Widget} from "../../scripts/core/widget.js";
-import {createElement} from "../../scripts/utils/dom.js";
 
 export class ProgressBar extends Widget {
     constructor() {
@@ -9,13 +9,13 @@ export class ProgressBar extends Widget {
         this.style.marginTop = "calc(var(--layout-gap) * -1)";
         this.style.position = "relative";
 
-        this._progress = createElement(this, "progress", (e) => {
+        this._progress = this.createChild("progress", (e) => {
             e.value = 0.0;
             e.style.height = "100%";
             e.style.width = "100%";
         });
 
-        this._text = createElement(this, "div", (e) => {
+        this._text = this.createChild(Block, (e) => {
             e.style.alignContent = "center";
             e.style.color = "var(--background-color)";
             e.style.fontWeight = "bold";

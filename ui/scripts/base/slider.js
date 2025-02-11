@@ -1,12 +1,13 @@
 import {ValueEditor} from "../../scripts/base/value_editor.js";
 import {Signal} from "../../scripts/core/signal.js";
-import {createElement} from "../../scripts/utils/dom.js";
 
 export class Slider extends ValueEditor {
     constructor() {
         super();
 
-        this._headerInput = createElement(this._header, "input", (e) => {
+        this.onValueChange = new Signal();
+
+        this._headerInput = this._header.createChild("input", (e) => {
             e.type = "number";
             e.style.textAlign = "right";
             e.style.width = "var(--small-input-width)";
@@ -17,7 +18,7 @@ export class Slider extends ValueEditor {
             });
         });
 
-        this._input = createElement(this._content, "input", (e) => {
+        this._input = this._content.createChild("input", (e) => {
             e.type = "range";
             e.style.width = "100%";
             e.addEventListener("input", () => {
@@ -26,8 +27,6 @@ export class Slider extends ValueEditor {
                 this.onValueChange.fire(e.valueAsNumber);
             });
         });
-
-        this.onValueChange = new Signal();
     }
 
     get maximum() {

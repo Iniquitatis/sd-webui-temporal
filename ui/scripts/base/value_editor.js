@@ -1,5 +1,6 @@
+import {Block} from "../../scripts/base/block.js";
+import {Row} from "../../scripts/base/row.js";
 import {Widget} from "../../scripts/core/widget.js";
-import {createElement} from "../../scripts/utils/dom.js";
 
 export class ValueEditor extends Widget {
     constructor() {
@@ -7,23 +8,19 @@ export class ValueEditor extends Widget {
 
         this.style.width = "100%";
 
-        this._header = createElement(this, "div", (e) => {
+        this._header = super.createChild(Block, (e) => {
             e.style.alignItems = "center";
             e.style.display = "flex";
             e.style.justifyContent = "space-between";
 
-            this._label = createElement(e, "label", (e) => {
+            this._label = e.createChild(Block, (e) => {
                 e.style.color = "var(--hint-color)";
                 e.style.fontSize = "0.9rem";
                 e.style.padding = "var(--vertical-padding) 0";
             });
         });
 
-        this._content = createElement(this, "div", (e) => {
-            e.style.display = "flex";
-            e.style.flexDirection = "row";
-            e.style.gap = "var(--layout-gap)";
-        });
+        this._content = super.createChild(Row);
     }
 
     get label() {
@@ -34,7 +31,7 @@ export class ValueEditor extends Widget {
         this._label.innerText = value;
     }
 
-    createChild(cls, initializer, ...args) {
-        return createElement(this._content, cls, initializer, ...args);
+    createChild(tagOrClass, initializer, ...args) {
+        return this._content.createChild(tagOrClass, initializer, ...args);
     }
 }

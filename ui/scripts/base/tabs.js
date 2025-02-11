@@ -1,5 +1,5 @@
+import {Block} from "../../scripts/base/block.js";
 import {Widget} from "../../scripts/core/widget.js";
-import {createElement} from "../../scripts/utils/dom.js";
 
 class Tab extends Widget {
     constructor() {
@@ -14,7 +14,7 @@ export class Tabs extends Widget {
     constructor() {
         super();
 
-        this._bar = createElement(this, "div", (e) => {
+        this._bar = this.createChild(Block, (e) => {
             e.style.display = "flex";
             e.style.flexDirection = "row";
             e.style.flexWrap = "wrap";
@@ -22,7 +22,7 @@ export class Tabs extends Widget {
             e.style.margin = "0 var(--corners)";
         });
 
-        this._content = createElement(this, "div", (e) => {
+        this._content = this.createChild(Block, (e) => {
             e.style.border = "var(--thin-border)";
             e.style.borderRadius = "var(--corners)";
             e.style.padding = "var(--layout-padding)";
@@ -30,7 +30,7 @@ export class Tabs extends Widget {
     }
 
     createTab(name, cls, initializer, ...args) {
-        createElement(this._bar, "button", (e) => {
+        this._bar.createChild("button", (e) => {
             e.innerText = name;
             e.style.borderBottomLeftRadius = "0";
             e.style.borderBottomRightRadius = "0";
@@ -40,7 +40,7 @@ export class Tabs extends Widget {
             });
         });
 
-        let tab = createElement(this._content, Tab, (e) => {
+        let tab = this._content.createChild(Tab, (e) => {
             e.name = name;
             e.style.display = "none";
         });

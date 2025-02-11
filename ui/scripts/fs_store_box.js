@@ -9,6 +9,13 @@ export class FSStoreBox extends Widget {
     constructor(store, features) {
         super();
 
+        this.onValueChange = new Signal();
+        this.onRefresh = new Signal();
+        this.onLoad = new Signal();
+        this.onSave = new Signal();
+        this.onRename = new Signal();
+        this.onDelete = new Signal();
+
         this._dropdown = this.createChild(Dropdown, (e) => {
             e.createChild(Row, (e) => {
                 e.createChild(ToolButton, (e) => {
@@ -96,13 +103,6 @@ export class FSStoreBox extends Widget {
                 });
             });
         });
-
-        this.onValueChange = new Signal();
-        this.onRefresh = new Signal();
-        this.onLoad = new Signal();
-        this.onSave = new Signal();
-        this.onRename = new Signal();
-        this.onDelete = new Signal();
     }
 
     get entries() {

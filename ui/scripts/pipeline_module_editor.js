@@ -5,7 +5,9 @@ import {Dropdown} from "../scripts/base/dropdown.js";
 import {MultiStateToggle} from "../scripts/base/multi_state_toggle.js";
 import {ReorderableAccordion} from "../scripts/base/reorderable_list.js";
 import {Slider} from "../scripts/base/slider.js";
+import {Tabs} from "../scripts/base/tabs.js";
 import {Signal} from "../scripts/core/signal.js";
+import {FieldManager} from "../scripts/core/field_manager.js";
 import {createElement} from "../scripts/utils/dom.js";
 import {ConfigurableParamEditor} from "../scripts/configurable_param_editor.js";
 import {blendModes} from "../scripts/test_data.js";
@@ -14,7 +16,11 @@ export class PipelineModuleEditor extends ReorderableAccordion {
     constructor(id, definition) {
         super(id);
 
-        this.module = {id: id, enabled: true};
+        this.onValueChange = new Signal();
+        this.onRemove = new Signal();
+
+        this._manager = new FieldManager(this.onValueChange);
+        this._manager.value = {id: id, enabled: true};
 
         this.label = `${definition.icon} ${definition.name}`;
 
@@ -22,19 +28,18 @@ export class PipelineModuleEditor extends ReorderableAccordion {
             e.type = "checkbox";
             e.checked = true;
             e.addEventListener("change", () => {
-                this.module.enabled = e.checked;
+                this._manager._value.enabled = e.checked;
 
-                this.onValueChange.fire(this.module);
+                this.onValueChange.fire(this._value);
+            });
+            this._manager._onValueReceive.connect((value) => {
+                e.checked = value.enabled;
             });
         }), this._header.firstChild.nextSibling);
 
         this._header.insertBefore(createElement(null, MultiStateToggle, (e) => {
             e.value = "on";
-            e.onValueChange.connect((value) => {
-                this.module.preview = value == "on";
-
-                this.onValueChange.fire(this.module);
-            });
+            this._manager.manage(e, "preview", (value) => value ? "on" : "off", (value) => value == "on");
         }, {"on": "\u{1f441}", "off": "\u{25ce}"}), this._header.lastChild);
 
         this.createChild(Column, (e) => {
@@ -45,43 +50,43 @@ export class PipelineModuleEditor extends ReorderableAccordion {
                     e.maximum = 1.0;
                     e.step = 0.01;
                     e.value = 1.0;
-                    e.onValueChange.connect((value) => {
-                        this.module.amount = value;
-
-                        this.onValueChange.fire(this.module);
-                    });
+                    this._manager.manage(e, "amount");
 
                     e.createChild(Checkbox, (e) => {
                         e.label = "Relative";
                         e.value = false;
                         e.style.width = "unset";
-                        e.onValueChange.connect((value) => {
-                            this.module.relative = value;
-
-                            this.onValueChange.fire(this.module);
-                        });
+                        this._manager.manage(e, "amount_relative");
                     });
                 });
 
                 e.createChild(Dropdown, (e) => {
                     e.label = "Blend mode";
                     e.choices = blendModes;
-                    e.onValueChange.connect((value) => {
-                        this.module.blend_mode = value;
+                    this._manager.manage(e, "blend_mode");
+                });
 
-                        this.onValueChange.fire(this.module);
+                e.createChild(Tabs, (e) => {
+                    e.createTab("Parameters", Column, (e) => {
+                        for (let [id, param] of Object.entries(definition.parameters)) {
+                            e.createChild(ConfigurableParamEditor, (e) => {
+                                this._manager.manage(e, id);
+                            }, param);
+                        }
+                    });
+
+                    e.createTab("Mask", Column, (e) => {
+                        e.createChild(Checkbox, (e) => {
+                            e.label = "FIXME: Replace by MaskEditor";
+                        });
                     });
                 });
-            }
-
-            for (let [id, param] of Object.entries(definition.parameters)) {
-                e.createChild(ConfigurableParamEditor, (e) => {
-                    e.onValueChange.connect((value) => {
-                        this.module[id] = value;
-
-                        this.onValueChange.fire(this.module);
-                    });
-                }, param);
+            } else {
+                for (let [id, param] of Object.entries(definition.parameters)) {
+                    e.createChild(ConfigurableParamEditor, (e) => {
+                        this._manager.manage(e, id);
+                    }, param);
+                }
             }
 
             e.createChild(Button, (e) => {
@@ -93,9 +98,14 @@ export class PipelineModuleEditor extends ReorderableAccordion {
                 });
             });
         });
+    }
 
-        this.onValueChange = new Signal();
-        this.onRemove = new Signal();
+    get value() {
+        return this._manager.value;
+    }
+
+    set value(value) {
+        this._manager.value = value;
     }
 }
 customElements.define("pipeline-module-editor", PipelineModuleEditor);

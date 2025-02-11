@@ -5,6 +5,8 @@ export class MultiStateButton extends Button {
     constructor(states) {
         super();
 
+        this.onStateChange = new Signal();
+
         this._states = Object.keys(states);
         this._labels = Object.values(states);
         this._index = 0;
@@ -18,8 +20,6 @@ export class MultiStateButton extends Button {
         });
 
         this._button.innerText = this._labels[0];
-
-        this.onStateChange = new Signal();
     }
 
     get state() {

@@ -1,3 +1,4 @@
+import {Block} from "../../scripts/base/block.js";
 import {ToolButton} from "../../scripts/base/tool_button.js";
 import {ValueEditor} from "../../scripts/base/value_editor.js";
 import {Signal} from "../../scripts/core/signal.js";
@@ -23,14 +24,14 @@ class ImageViewer extends Widget {
             this.value = null;
         });
 
-        this._img = createElement(this, "img", (e) => {
+        this._img = this.createChild("img", (e) => {
             e.style.height = "100%";
             e.style.objectFit = "contain";
             e.style.position = "absolute";
             e.style.width = "100%";
         });
 
-        this._closeButton = createElement(this, "div", (e) => {
+        this._closeButton = this.createChild(Block, (e) => {
             e.innerText = "\u{274c}";
             e.style.alignContent = "center";
             e.style.color = "white";
@@ -68,9 +69,11 @@ export class ImageBox extends ValueEditor {
     constructor() {
         super();
 
+        this.onValueChange = new Signal();
+
         this._content.style.height = "calc(100% - var(--widget-height))";
 
-        createElement(this._content, "div", (e) => {
+        this._content.createChild(Block, (e) => {
             e.style.alignContent = "center";
             e.style.border = "var(--thin-border)";
             e.style.borderRadius = "var(--corners)";
@@ -80,7 +83,7 @@ export class ImageBox extends ValueEditor {
             e.style.userSelect = "none";
             e.style.width = "100%";
 
-            this._input = createElement(e, "input", (e) => {
+            this._input = e.createChild("input", (e) => {
                 e.type = "file";
                 e.accept = "image/*";
                 e.style.height = "100%";
@@ -96,7 +99,7 @@ export class ImageBox extends ValueEditor {
                 });
             });
 
-            this._img = createElement(e, "img", (e) => {
+            this._img = e.createChild("img", (e) => {
                 e.style.cursor = "pointer";
                 e.style.display = "none";
                 e.style.height = "100%";
@@ -108,7 +111,7 @@ export class ImageBox extends ValueEditor {
                 });
             });
 
-            this._deleteButton = createElement(e, ToolButton, (e) => {
+            this._deleteButton = e.createChild(ToolButton, (e) => {
                 e.label = "\u{274c}";
                 e.style.display = "none";
                 e.style.position = "absolute";
@@ -119,8 +122,10 @@ export class ImageBox extends ValueEditor {
                 });
             });
         });
+    }
 
-        this.onValueChange = new Signal();
+    get height() {
+        return this.style.height;
     }
 
     get value() {

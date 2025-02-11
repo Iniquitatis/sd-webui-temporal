@@ -6,16 +6,16 @@ export class Dropdown extends ValueEditor {
     constructor() {
         super();
 
+        this.onValueChange = new Signal();
+
         this._choices = {};
 
-        this._select = createElement(this._content, "select", (e) => {
+        this._select = this.createChild("select", (e) => {
             e.style.width = "100%";
             e.addEventListener("change", () => {
                 this.onValueChange.fire(this.value);
             });
         });
-
-        this.onValueChange = new Signal();
     }
 
     get choices() {
@@ -23,7 +23,7 @@ export class Dropdown extends ValueEditor {
     }
 
     get value() {
-        return [...Object.keys(this._choices)][this._select.selectedIndex];
+        return Object.keys(this._choices)[this._select.selectedIndex];
     }
 
     set choices(value) {
@@ -43,7 +43,7 @@ export class Dropdown extends ValueEditor {
     }
 
     set value(value) {
-        this._select.selectedIndex = value ? [...Object.keys(this._choices)].indexOf(value) : 0;
+        this._select.selectedIndex = value ? Object.keys(this._choices).indexOf(value) : 0;
 
         this.onValueChange.fire(this.value);
     }

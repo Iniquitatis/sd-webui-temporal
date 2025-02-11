@@ -16,18 +16,18 @@ export class ConfigurableParamEditor extends Widget {
     constructor(definition) {
         super();
 
-        let editor = null;
+        this._editor = null;
 
         switch (definition.type) {
             case "bool": {
-                editor = this.createChild(Checkbox, (e) => {
+                this._editor = this.createChild(Checkbox, (e) => {
                     e.label = definition.name;
                     e.value = definition.value;
                 });
             } break;
 
             case "int": {
-                editor = this.createChild(definition.ui_type == "slider" ? Slider : NumberBox, (e) => {
+                this._editor = this.createChild(definition.ui_type == "slider" ? Slider : NumberBox, (e) => {
                     e.label = definition.name;
                     e.minimum = definition.minimum ?? undefined;
                     e.maximum = definition.maximum ?? undefined;
@@ -37,7 +37,7 @@ export class ConfigurableParamEditor extends Widget {
             } break;
 
             case "float": {
-                editor = this.createChild(definition.ui_type == "slider" ? Slider : NumberBox, (e) => {
+                this._editor = this.createChild(definition.ui_type == "slider" ? Slider : NumberBox, (e) => {
                     e.label = definition.name;
                     e.minimum = definition.minimum ?? undefined;
                     e.maximum = definition.maximum ?? undefined;
@@ -47,14 +47,14 @@ export class ConfigurableParamEditor extends Widget {
             } break;
 
             case "string": {
-                editor = this.createChild(definition.ui_type == "code" ? CodeArea : definition.ui_type == "area" ? TextArea : TextBox, (e) => {
+                this._editor = this.createChild(definition.ui_type == "code" ? CodeArea : definition.ui_type == "area" ? TextArea : TextBox, (e) => {
                     e.label = definition.name;
                     e.value = definition.default ?? "";
                 });
             } break;
 
             case "enum": {
-                editor = this.createChild(definition.ui_type == "radio" ? Radio : Dropdown, (e) => {
+                this._editor = this.createChild(definition.ui_type == "radio" ? Radio : Dropdown, (e) => {
                     e.label = definition.name;
                     e.choices = definition.choices ?? {"": ""};
                     e.value = definition.default ?? null;
@@ -62,7 +62,7 @@ export class ConfigurableParamEditor extends Widget {
             } break;
 
             case "color": {
-                editor = this.createChild(ColorPicker, (e) => {
+                this._editor = this.createChild(ColorPicker, (e) => {
                     e.label = definition.name;
                     e.channels = definition.channels ?? 3;
                     e.value = definition.default ?? "#000000";
@@ -70,7 +70,7 @@ export class ConfigurableParamEditor extends Widget {
             } break;
 
             case "image": {
-                editor = this.createChild(ImageBox, (e) => {
+                this._editor = this.createChild(ImageBox, (e) => {
                     e.label = definition.name;
                     e.channels = definition.channels ?? 3;
                 });
@@ -78,7 +78,7 @@ export class ConfigurableParamEditor extends Widget {
 
             // TODO
             case "seed": {
-                editor = this.createChild(SeedBox, (e) => {
+                this._editor = this.createChild(SeedBox, (e) => {
                     e.label = definition.name;
                 });
             } break;
@@ -88,13 +88,21 @@ export class ConfigurableParamEditor extends Widget {
             } break;
         }
 
-        if (editor) {
-            editor.onValueChange.connect((value) => {
+        if (this._editor) {
+            this._editor.onValueChange.connect((value) => {
                 this.onValueChange.fire(value);
             });
         }
 
         this.onValueChange = new Signal();
+    }
+
+    get value() {
+        return this._editor.value;
+    }
+
+    set value(value) {
+        this._editor.value = value;
     }
 }
 customElements.define("configurable-param-editor", ConfigurableParamEditor);

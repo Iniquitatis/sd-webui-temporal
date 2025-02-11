@@ -1,4 +1,5 @@
 import {Accordion} from "../../scripts/base/accordion.js";
+import {Block} from "../../scripts/base/block.js";
 import {Column} from "../../scripts/base/column.js";
 import {Signal} from "../../scripts/core/signal.js";
 import {createElement} from "../../scripts/utils/dom.js";
@@ -63,7 +64,7 @@ export class ReorderableList extends Column {
         return [...this.childNodes].map((node) => node.key);
     }
 }
-customElements.define("layout-reorderable-list", ReorderableList);
+customElements.define("reorderable-list", ReorderableList);
 
 export class ReorderableAccordion extends Accordion {
     constructor(key) {
@@ -71,7 +72,7 @@ export class ReorderableAccordion extends Accordion {
 
         this.key = key;
 
-        this._header.insertBefore(createElement(null, "span", (e) => {
+        this._header.insertBefore(createElement(null, Block, (e) => {
             e.innerText = ":::";
             e.style.alignContent = "center";
             e.style.color = "var(--hint-color)";
@@ -90,4 +91,4 @@ export class ReorderableAccordion extends Accordion {
         }), this._header.firstChild);
     }
 }
-customElements.define("layout-reorderable-accordion", ReorderableAccordion);
+customElements.define("reorderable-accordion", ReorderableAccordion);

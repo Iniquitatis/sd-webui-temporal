@@ -1,20 +1,19 @@
 import {ValueEditor} from "../../scripts/base/value_editor.js";
 import {Signal} from "../../scripts/core/signal.js";
-import {createElement} from "../../scripts/utils/dom.js";
 
 export class NumberBox extends ValueEditor {
     constructor() {
         super();
 
-        this._input = createElement(this._content, "input", (e) => {
+        this.onValueChange = new Signal();
+
+        this._input = this._content.createChild("input", (e) => {
             e.type = "number";
             e.style.width = "100%";
             e.addEventListener("input", () => {
                 this.onValueChange.fire(e.valueAsNumber);
             });
         });
-
-        this.onValueChange = new Signal();
     }
 
     get maximum() {

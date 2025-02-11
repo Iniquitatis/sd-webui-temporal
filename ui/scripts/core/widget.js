@@ -1,13 +1,7 @@
+import {createElement} from "../../scripts/utils/dom.js";
+
 export class Widget extends HTMLElement {
-    createChild(cls, initializer, ...args) {
-        let elem = new cls(...args);
-
-        if (initializer) {
-            initializer(elem);
-        }
-
-        this.appendChild(elem);
-
-        return elem;
+    createChild(tagOrClass, initializer, ...args) {
+        return createElement(this, tagOrClass, initializer, ...args);
     }
 }

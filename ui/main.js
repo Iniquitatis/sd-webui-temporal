@@ -120,6 +120,20 @@ export class MainUI extends Column {
                     e.onValueChange.connect((value) => {
                         project.parameters = value;
                     });
+                    // FIXME: Temporary
+                    e.value = {
+                        "clip_skip": 1,
+                        "positive_prompts": ["female, portrait, forest, cinematic, backlighting"],
+                        "negative_prompts": ["male, gray theme, 2d"],
+                        "width": 768,
+                        "height": 1152,
+                        "sampler": "DPM++ 3M SDE",
+                        "scheduler": "DDIM",
+                        "steps": 10,
+                        "cfg": 2.5,
+                        "strength": 1.0,
+                        "seeds": [-1],
+                    };
                 });
             });
 
@@ -131,6 +145,21 @@ export class MainUI extends Column {
                         e.onValueChange.connect((value) => {
                             project.initial_noise = value;
                         });
+                        // FIXME: Temporary
+                        e.value = {
+                            "factor": 0.16,
+                            "noise": {
+                                "mode": "ridge",
+                                "scale": 69,
+                                "detail": 4.51,
+                                "lacunarity": 2.87,
+                                "persistence": 0.42,
+                                "seed": 31337,
+                                "use_global_seed": true,
+                            },
+                        };
+                        // FIXME: Temporary
+                        e.onValueChange.connect((value) => console.log(value));
                     });
                 });
 
@@ -138,6 +167,55 @@ export class MainUI extends Column {
                     e.onValueChange.connect((value) => {
                         project.pipeline = value;
                     });
+                    // FIXME: Temporary
+                    e.value = {
+                        "parallel": 2,
+                        "modules": [
+                            {
+                                "id": "new_processing",
+                                "enabled": true,
+                                "preview": false,
+                                "model": "blah_1.safetensors",
+                                "vae": "vae_blah_2.safetensors",
+                                "clip_skip": 4,
+                                "positive_prompt": "The first positive",
+                                "negative_prompt": "The first negative",
+                                "sampler": "dpmpp_2m",
+                                "scheduler": "karras",
+                                "steps": 42,
+                                "cfg": 21.5,
+                                "strength": 0.75,
+                                "seed": 1337,
+                            },
+                            {
+                                "id": "new_processing",
+                                "enabled": false,
+                                "preview": true,
+                                "model": "blah_2.safetensors",
+                                "vae": "vae_blah_3.safetensors",
+                                "clip_skip": 2,
+                                "positive_prompt": "The second positive",
+                                "negative_prompt": "The second negative",
+                                "sampler": "dpmpp_sde",
+                                "scheduler": "uniform",
+                                "steps": 133,
+                                "cfg": 12.5,
+                                "strength": 0.25,
+                                "seed": 42069,
+                            },
+                            {
+                                "id": "temporal.pipeline_modules.painting.color.ColorPaintingModule",
+                                "enabled": false,
+                                "preview": false,
+                                "amount": 0.3,
+                                "amount_relative": true,
+                                "blend_mode": "temporal.blend_modes.ScreenBlendMode",
+                                "color": "#4080ffc0",
+                            }
+                        ],
+                    };
+                    // FIXME: Temporary
+                    e.onValueChange.connect((value) => console.log(value, project));
                 });
 
                 e.createChild(CodeArea, (e) => {

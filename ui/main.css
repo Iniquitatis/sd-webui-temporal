@@ -78,6 +78,11 @@ input[type="checkbox"] {
     width: var(--checkbox-size);
 }
 
+input[type="radio"] {
+    height: var(--checkbox-size);
+    width: var(--checkbox-size);
+}
+
 input[type="range"] {
     height: var(--line-height);
     padding: 0;
