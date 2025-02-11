@@ -16,7 +16,9 @@ export class NoiseEditor extends Row {
 
         this._manager = new FieldManager(this.onValueChange);
 
-        this._preview = this.createChild(ImageBox);
+        this._preview = this.createChild(ImageBox, (e) => {
+            e.label = "Preview";
+        });
 
         this.createChild(Column, (e) => {
             e.createChild(Radio, (e) => {

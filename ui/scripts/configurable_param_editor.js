@@ -10,6 +10,8 @@ import {TextArea} from "../scripts/base/text_area.js";
 import {TextBox} from "../scripts/base/text_box.js";
 import {Signal} from "../scripts/core/signal.js";
 import {Widget} from "../scripts/core/widget.js";
+import {GradientEditor} from "../scripts/gradient_editor.js";
+import {NoiseEditor} from "../scripts/noise_editor.js";
 import {SeedBox} from "../scripts/seed_box.js";
 
 export class ConfigurableParamEditor extends Widget {
@@ -73,6 +75,20 @@ export class ConfigurableParamEditor extends Widget {
                 this._editor = this.createChild(ImageBox, (e) => {
                     e.label = definition.name;
                     e.channels = definition.channels ?? 3;
+                });
+            } break;
+
+            case "gradient": {
+                this._editor = this.createChild(GradientEditor, (e) => {
+                    e.label = definition.name;
+                    e.value =  definition.default ?? {};
+                });
+            } break;
+
+            case "noise": {
+                this._editor = this.createChild(NoiseEditor, (e) => {
+                    e.label = definition.name;
+                    e.value =  definition.default ?? {};
                 });
             } break;
 
