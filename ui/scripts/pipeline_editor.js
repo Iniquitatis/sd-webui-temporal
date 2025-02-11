@@ -89,7 +89,7 @@ export class PipelineEditor extends Column {
                 e.onClick.connect(() => {
                     this._list.addModule(selectedModule.value);
 
-                    this.onValueChange.fire(this._value);
+                    this.onValueChange.fire(this.value);
                 });
             });
         });

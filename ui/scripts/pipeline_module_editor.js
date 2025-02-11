@@ -10,6 +10,7 @@ import {Signal} from "../scripts/core/signal.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {createElement} from "../scripts/utils/dom.js";
 import {ConfigurableParamEditor} from "../scripts/configurable_param_editor.js";
+import {ImageMaskEditor} from "../scripts/image_mask_editor.js";
 import {blendModes} from "../scripts/test_data.js";
 
 export class PipelineModuleEditor extends ReorderableAccordion {
@@ -75,10 +76,8 @@ export class PipelineModuleEditor extends ReorderableAccordion {
                         }
                     });
 
-                    e.createTab("Mask", Column, (e) => {
-                        e.createChild(Checkbox, (e) => {
-                            e.label = "FIXME: Replace by MaskEditor";
-                        });
+                    e.createTab("Mask", ImageMaskEditor, (e) => {
+                        this._manager.manage(e, "mask");
                     });
                 });
             } else {
