@@ -57,6 +57,14 @@ class Archive:
 
         return self
 
+    # TODO
+    def parse_json(self, value: Any) -> None:
+        pass
+
+    # TODO
+    def print_json(self) -> Any:
+        return {}
+
     def parse_xml(self, elem: ET.Element) -> None:
         self.key = elem.get("key", "_")
 
@@ -83,10 +91,6 @@ class Archive:
             elem.append(child.print_xml())
 
         return elem
-
-    # TODO
-    def print_json(self) -> dict[str, Any]:
-        return {}
 
     def _find_child(self, key: int | str) -> Optional["Archive"]:
         if isinstance(key, int):
@@ -196,8 +200,8 @@ import numpy as np
 from PIL import Image
 from numpy.typing import NDArray
 
-from temporal.utils.image import load_image, save_image
-from temporal.utils.numpy import load_array, save_array
+from temporal.utils.image import base64_to_image, image_to_base64, load_image, np_to_pil, pil_to_np, save_image
+from temporal.utils.numpy import array_to_base64, base64_to_array, load_array, save_array
 
 
 class _(Serializer[NoneType]):
@@ -346,8 +350,10 @@ class _(Serializer[Image.Image]):
     def read(cls, obj, ar):
         if ar.data_dir is not None:
             return load_image(ar.data_dir / ar.data)
+        elif isinstance(obj, str):
+            return np_to_pil(base64_to_image(obj))
         else:
-            raise NotADirectoryError
+            raise ValueError
 
     @classmethod
     def write(cls, obj, ar):
@@ -356,7 +362,7 @@ class _(Serializer[Image.Image]):
             save_image(obj, path)
             ar.data = path.name
         else:
-            raise NotADirectoryError
+            ar.data = image_to_base64(pil_to_np(obj))
 
 
 class _(Serializer[NDArray[np.float64]]):
@@ -368,8 +374,10 @@ class _(Serializer[NDArray[np.float64]]):
     def read(cls, obj, ar):
         if ar.data_dir is not None:
             return load_array(ar.data_dir / ar.data)
+        elif isinstance(obj, str):
+            return base64_to_array(obj)
         else:
-            raise NotADirectoryError
+            raise ValueError
 
     @classmethod
     def write(cls, obj, ar):
@@ -378,4 +386,4 @@ class _(Serializer[NDArray[np.float64]]):
             save_array(obj, path)
             ar.data = path.name
         else:
-            raise NotADirectoryError
+            ar.data = array_to_base64(obj)

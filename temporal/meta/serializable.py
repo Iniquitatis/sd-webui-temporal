@@ -9,6 +9,7 @@ from temporal.utils.fs import recreate_directory
 
 
 T = TypeVar("T")
+U = TypeVar("U", bound = "Serializable")
 
 
 class SerializableField:
@@ -89,9 +90,7 @@ class Serializable:
             logging.warning(f"Cannot load {self.__class__.__name__} from {dir.as_posix()}")
             return
 
-        ar = Archive(data_dir = dir)
-        ar.parse_xml(ET.ElementTree(file = xml_path).getroot())
-        self.read(ar)
+        self.from_xml(ET.ElementTree(file = xml_path).getroot(), data_dir = dir)
 
     def save(self, dir: Path) -> None:
         if dir == Path("."):
@@ -99,20 +98,34 @@ class Serializable:
 
         recreate_directory(dir)
 
-        ar = Archive(type_name = find_alias_for_type(type(self)) or "", data_dir = dir)
+        tree = self.to_xml(data_dir = dir)
+        tree.write(dir / "data.xml")
+
+    def from_json(self: U, data: dict[str, Any], data_dir: Optional[Path] = None) -> U:
+        ar = Archive(data_dir = data_dir)
+        ar.parse_json(data)
+        self.read(ar)
+
+        return self
+
+    def to_json(self, data_dir: Optional[Path] = None) -> dict[str, Any]:
+        ar = Archive(type_name = find_alias_for_type(type(self)) or "", data_dir = data_dir)
+        self.write(ar)
+
+        return ar.print_json()
+
+    def from_xml(self: U, elem: ET.Element, data_dir: Optional[Path] = None) -> U:
+        ar = Archive(data_dir = data_dir)
+        ar.parse_xml(elem)
+        self.read(ar)
+
+        return self
+
+    def to_xml(self, data_dir: Optional[Path] = None) -> ET.ElementTree:
+        ar = Archive(type_name = find_alias_for_type(type(self)) or "", data_dir = data_dir)
         self.write(ar)
 
         tree = ET.ElementTree(ar.print_xml())
         ET.indent(tree)
-        tree.write(dir / "data.xml")
 
-    # TODO
-    def from_json(self, data: dict[str, Any]) -> None:
-        pass
-
-    # TODO
-    def to_json(self) -> dict[str, Any]:
-        ar = Archive(type_name = find_alias_for_type(type(self)) or "")
-        # self.write(ar)
-
-        return ar.print_json()
+        return tree

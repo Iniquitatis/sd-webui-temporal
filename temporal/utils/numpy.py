@@ -1,3 +1,5 @@
+from base64 import b64decode, b64encode
+from io import BytesIO
 from pathlib import Path
 from typing import Optional
 
@@ -7,6 +9,12 @@ from scipy import stats
 
 
 FloatArray = NDArray[np.float64]
+
+
+def array_to_base64(arr: FloatArray) -> str:
+    with BytesIO() as stream:
+        np.savez_compressed(stream, arr)
+        return b64encode(stream.getvalue()).decode()
 
 
 def average_array(arr: FloatArray, axis: int, trim: float = 0.0, power: float = 1.0, weights: Optional[FloatArray] = None) -> FloatArray:
@@ -40,6 +48,10 @@ def average_array(arr: FloatArray, axis: int, trim: float = 0.0, power: float = 
         result -= 1.0
 
     return result
+
+
+def base64_to_array(data: str) -> FloatArray:
+    return np.load(BytesIO(b64decode(data)))["arr_0"]
 
 
 def make_eased_weight_array(count: int, easing: float) -> FloatArray:

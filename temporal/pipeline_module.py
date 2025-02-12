@@ -19,8 +19,8 @@ class PipelineModule(Configurable, abstract = True):
 
     # FIXME: Kinda stupid--has to be a static method in the Serializable class,
     # and also handle deserialization of all of the nested values
-    @staticmethod
-    def from_json(data: dict[str, Any]) -> "PipelineModule":
+    @classmethod
+    def from_json(cls, data: dict[str, Any]) -> "PipelineModule":
         id = data.pop("id")
 
         if not (type := find_by_predicate(PIPELINE_MODULES, lambda x: x.id == id)):
