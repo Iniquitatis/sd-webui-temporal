@@ -6,6 +6,7 @@ import {Slider} from "../scripts/base/slider.js";
 import {Row} from "../scripts/base/row.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
+import {postRequest} from "../scripts/utils/requests.js";
 import {SeedBox} from "../scripts/seed_box.js";
 
 export class NoiseEditor extends Row {
@@ -18,6 +19,17 @@ export class NoiseEditor extends Row {
 
         this._preview = this.createChild(ImageBox, (e) => {
             e.label = "Preview";
+
+            this.onValueChange.connect((value) => {
+                postRequest("/temporal/render_preview", {
+                    "type": "noise",
+                    "data": value,
+                    "size": [256, 256],
+                    "channels": 3,
+                }, (result) => {
+                    e.value = `data:image/png;base64,${result}`;
+                });
+            });
         });
 
         this.createChild(Column, (e) => {

@@ -6,6 +6,7 @@ import {Radio} from "../scripts/base/radio.js";
 import {Row} from "../scripts/base/row.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
+import {postRequest} from "../scripts/utils/requests.js";
 
 export class GradientEditor extends Row {
     constructor() {
@@ -17,6 +18,17 @@ export class GradientEditor extends Row {
 
         this._preview = this.createChild(ImageBox, (e) => {
             e.label = "Preview";
+
+            this.onValueChange.connect((value) => {
+                postRequest("/temporal/render_preview", {
+                    "type": "gradient",
+                    "data": value,
+                    "size": [256, 256],
+                    "channels": 4,
+                }, (result) => {
+                    e.value = `data:image/png;base64,${result}`;
+                });
+            });
         });
 
         this.createChild(Column, (e) => {

@@ -5,6 +5,9 @@ from pydantic import BaseModel
 
 from temporal.blend_modes import BLEND_MODES
 from temporal.engine import Engine
+from temporal.gradient import Gradient
+from temporal.noise import Noise
+from temporal.pattern import Pattern
 from temporal.pipeline_module import PIPELINE_MODULES
 from temporal.project import Project
 from temporal.shared import shared
@@ -25,6 +28,13 @@ class GenerateRequest(BaseModel):
     load_parameters: bool = True
     continue_from_last_frame: bool = True
     iter_count: int = 10
+
+
+class RenderPreviewRequest(BaseModel):
+    type: Literal["gradient", "noise", "pattern"]
+    data: dict[str, Any] = {}
+    size: tuple[int, int] = (256, 256)
+    channels: int = 3
 
 
 def register_api(app: FastAPI, engine: Engine) -> None:
@@ -106,6 +116,23 @@ def register_api(app: FastAPI, engine: Engine) -> None:
     @app.get("/temporal/projects")
     async def _() -> Any:
         return [x for x in shared.project_store.entry_names]
+
+    @app.post("/temporal/render_preview")
+    async def _(request: RenderPreviewRequest) -> Any:
+        if request.type == "gradient":
+            cls = Gradient
+        elif request.type == "noise":
+            cls = Noise
+        elif request.type == "pattern":
+            cls = Pattern
+        else:
+            raise ValueError
+
+        obj = cls.from_json(request.data)
+
+        return image_to_base64(obj.generate((request.size[1], request.size[0], request.channels)), "fast")
+
+    generation_queue = ThreadQueue()
 
     @app.get("/temporal/samplers")
     async def _() -> Any:
