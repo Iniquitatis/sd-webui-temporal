@@ -20,7 +20,7 @@ export class GradientEditor extends Row {
             e.label = "Preview";
 
             this.onValueChange.connect((value) => {
-                postRequest("/temporal/render_preview", {
+                postRequest("/temporal/render_texture", {
                     "type": "gradient",
                     "data": value,
                     "size": [256, 256],

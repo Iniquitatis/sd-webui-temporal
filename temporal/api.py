@@ -30,7 +30,7 @@ class GenerateRequest(BaseModel):
     iter_count: int = 10
 
 
-class RenderPreviewRequest(BaseModel):
+class RenderTextureRequest(BaseModel):
     type: Literal["gradient", "noise", "pattern"]
     data: dict[str, Any] = {}
     size: tuple[int, int] = (256, 256)
@@ -117,8 +117,8 @@ def register_api(app: FastAPI, engine: Engine) -> None:
     async def _() -> Any:
         return [x for x in shared.project_store.entry_names]
 
-    @app.post("/temporal/render_preview")
-    async def _(request: RenderPreviewRequest) -> Any:
+    @app.post("/temporal/render_texture")
+    async def _(request: RenderTextureRequest) -> Any:
         if request.type == "gradient":
             cls = Gradient
         elif request.type == "noise":
