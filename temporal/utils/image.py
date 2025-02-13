@@ -1,6 +1,6 @@
-from base64 import b64decode, b64encode
 from io import BytesIO
 from pathlib import Path
+from pybase64 import b64decode, b64encode
 from typing import Callable, Literal, Optional
 
 import numpy as np
@@ -43,7 +43,7 @@ def base64_to_image(data: str) -> NumpyImage:
     if data.startswith(png_prefix):
         data = data[len(png_prefix):]
 
-    return pil_to_np(Image.open(BytesIO(b64decode(data))))
+    return pil_to_np(Image.open(BytesIO(b64decode(data, validate = True))))
 
 
 def ensure_image_dims(npim: NumpyImage, size: Optional[tuple[int, int]] = None, channels: Optional[int] = None) -> NumpyImage:
@@ -70,7 +70,7 @@ def ensure_image_dims(npim: NumpyImage, size: Optional[tuple[int, int]] = None, 
 def image_to_base64(image: NumpyImage, mode: Literal["default", "fast", "archive"] = "default") -> str:
     kwargs = {
         "default": dict(),
-        "fast": dict(optimize = True, compress_level = 0),
+        "fast": dict(optimize = False, compress_level = 0),
         "archive": dict(optimize = True, compress_level = 9),
     }
 

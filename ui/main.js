@@ -175,19 +175,7 @@ export class MainUI extends Column {
                         preset.project.general.parameters = value;
                     });
                     // FIXME: Temporary
-                    e.value = {
-                        "clip_skip": 1,
-                        "positive_prompts": ["female, portrait, forest, cinematic, backlighting"],
-                        "negative_prompts": ["male, gray theme, 2d"],
-                        "width": 768,
-                        "height": 1152,
-                        "sampler": "DPM++ 3M SDE",
-                        "scheduler": "DDIM",
-                        "steps": 10,
-                        "cfg": 2.5,
-                        "strength": 1.0,
-                        "seeds": [-1],
-                    };
+                    e.onValueChange.connect((value) => console.log(value));
                 });
             });
 
@@ -200,19 +188,6 @@ export class MainUI extends Column {
                             generation.project.initial_noise = value;
                             preset.project.initial_noise = value;
                         });
-                        // FIXME: Temporary
-                        e.value = {
-                            "factor": 0.16,
-                            "noise": {
-                                "mode": "ridge",
-                                "scale": 69,
-                                "detail": 4.51,
-                                "lacunarity": 2.87,
-                                "persistence": 0.42,
-                                "seed": 31337,
-                                "use_global_seed": true,
-                            },
-                        };
                         // FIXME: Temporary
                         e.onValueChange.connect((value) => console.log(value));
                     });
@@ -235,29 +210,7 @@ export class MainUI extends Column {
                         preset.project.modules = value;
                     });
                     // FIXME: Temporary
-                    e.value = [
-                        {
-                            "id": "temporal.pipeline_modules.painting.color.ColorPaintingModule",
-                            "enabled": true,
-                            "preview": false,
-                            "amount": 0.3,
-                            "blend_mode": {"id": "temporal.blend_modes.MultiplyBlendMode"},
-                            "color": {r: 0.25, g: 0.5, b: 0.9, a: 1.0},
-                        },
-                        {
-                            "id": "temporal.pipeline_modules.neural.processing.ProcessingModule",
-                            "enabled": true,
-                            "preview": false,
-                        },
-                        {
-                            "id": "temporal.pipeline_modules.tool.saving.SavingModule",
-                            "enabled": true,
-                            "preview": true,
-                            "archive_mode": true,
-                        },
-                    ];
-                    // FIXME: Temporary
-                    e.onValueChange.connect((value) => console.log(value, generation));
+                    e.onValueChange.connect((value) => console.log(value));
                 }, "Add module", PipelineModuleEditor, mapObject(pipelineModules, (_, module) => `${module.icon} ${module.name}`), pipelineModules);
 
                 this._animation = e.createChild(CodeArea, (e) => {
@@ -274,6 +227,8 @@ export class MainUI extends Column {
                     e.onValueChange.connect((value) => {
                         preset.video_renderer = value;
                     });
+                    // FIXME: Temporary
+                    e.onValueChange.connect((value) => console.log(value));
                 });
             });
 

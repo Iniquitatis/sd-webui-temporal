@@ -1,6 +1,6 @@
-from base64 import b64decode, b64encode
 from io import BytesIO
 from pathlib import Path
+from pybase64 import b64decode, b64encode
 from typing import Optional
 
 import numpy as np
@@ -51,7 +51,7 @@ def average_array(arr: FloatArray, axis: int, trim: float = 0.0, power: float = 
 
 
 def base64_to_array(data: str) -> FloatArray:
-    return np.load(BytesIO(b64decode(data)))["arr_0"]
+    return np.load(BytesIO(b64decode(data, validate = True)))["arr_0"]
 
 
 def make_eased_weight_array(count: int, easing: float) -> FloatArray:
