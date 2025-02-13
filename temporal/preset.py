@@ -1,7 +1,13 @@
-from typing import Any
-
 from temporal.meta.serializable import Serializable, SerializableField as Field
+from temporal.project import Project
+from temporal.video_renderer import VideoRenderer
 
 
 class Preset(Serializable):
-    data: dict[str, Any] = Field(factory = dict)
+    name: str = Field("")
+    load_parameters: bool = Field(True)
+    continue_from_last_frame: bool = Field(True)
+    iter_count: int = Field(10)
+    project: Project = Field(factory = Project)
+    video_renderer: VideoRenderer = Field(factory = VideoRenderer)
+    measuring_parallel_index: int = Field(1)

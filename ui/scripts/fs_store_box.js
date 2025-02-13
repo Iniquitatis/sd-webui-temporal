@@ -9,6 +9,8 @@ export class FSStoreBox extends Widget {
     constructor(store, features) {
         super();
 
+        this.saveCallback = null;
+
         this.onValueChange = new Signal();
         this.onRefresh = new Signal();
         this.onLoad = new Signal();
@@ -45,17 +47,39 @@ export class FSStoreBox extends Widget {
                     e.label = "\u{1f4c2}\u{fe0e}";
                     e.style.display = features.includes("load") ? null : "none";
                     e.onClick.connect(() => {
-                        // TODO
-                        this.onLoad.fire(this._dropdown.value);
+                        postRequest("/temporal/fs_operation", {
+                            "store": store,
+                            "operation": "load",
+                            "args": {
+                                "name": this._dropdown.value,
+                            },
+                        }, (result) => {
+                            this.onLoad.fire(result);
+                        });
                     });
                 });
 
                 e.createChild(ToolButton, (e) => {
                     e.label = "\u{1f4be}\u{fe0e}";
                     e.style.display = features.includes("save") ? null : "none";
-                    e.onClick.connect(() => {
-                        // TODO
-                        this.onSave.fire(this._dropdown.value);
+                    e.onClick.connect(async () => {
+                        if (!this.saveCallback) return;
+
+                        await postRequest("/temporal/fs_operation", {
+                            "store": store,
+                            "operation": "save",
+                            "args": {
+                                // FIXME
+                                "name": "DEFAULT",
+                                "data": this.saveCallback(),
+                            },
+                        });
+
+                        await getRequest(`/temporal/${store}`, (result) => {
+                            this.entries = result;
+                        });
+
+                        this.onSave.fire();
                     });
                 });
 

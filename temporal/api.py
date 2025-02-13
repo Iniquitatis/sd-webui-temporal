@@ -1,4 +1,3 @@
-from threading import Thread
 from typing import Any, Literal
 
 from fastapi import FastAPI
@@ -9,6 +8,7 @@ from temporal.engine import Engine
 from temporal.pipeline_module import PIPELINE_MODULES
 from temporal.project import Project
 from temporal.shared import shared
+from temporal.thread_queue import ThreadQueue
 from temporal.utils.image import image_to_base64
 from temporal.video_filters import VIDEO_FILTERS
 
@@ -57,8 +57,13 @@ def register_api(app: FastAPI, engine: Engine) -> None:
         else:
             raise ValueError
 
+    generation_queue = ThreadQueue()
+
     @app.post("/temporal/generate")
     async def _(request: GenerateRequest) -> Any:
+        if generation_queue.busy:
+            return
+
         project = Project.from_json(request.project)
         project.general.path = shared.options.output.output_dir / request.name
 
@@ -69,12 +74,12 @@ def register_api(app: FastAPI, engine: Engine) -> None:
             project.general.delete_all_frames()
             project.delete_session_data()
 
-        thread = Thread(target = engine.start, args = (project, request.iter_count))
-        thread.start()
+        generation_queue.enqueue(engine.start, project, request.iter_count)
 
     @app.post("/temporal/interrupt")
     async def _() -> Any:
         shared.backend.interrupt()
+        engine.running = False
 
     @app.get("/temporal/models")
     async def _() -> Any:

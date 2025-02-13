@@ -40,7 +40,7 @@ export class VideoRendererEditor extends Column {
                 e.label = "Last frame";
                 e.minimum = 0;
                 e.step = 1;
-                e.value = 1;
+                e.value = 0;
                 this._manager.manage(e, "last_frame");
             });
         });
@@ -62,6 +62,14 @@ export class VideoRendererEditor extends Column {
         this.createChild(ModuleList, (e) => {
             this._manager.manage(e, "filters");
         }, "Add filter", VideoFilterEditor, mapObject(videoFilters, (_, filter) => filter.name), videoFilters);
+    }
+
+    get value() {
+        return this._manager.value;
+    }
+
+    set value(value) {
+        this._manager.value = value;
     }
 }
 customElements.define("video-renderer-editor", VideoRendererEditor);

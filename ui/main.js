@@ -29,6 +29,11 @@ export class MainUI extends Column {
                 general: {},
             },
         };
+        let preset = {
+            project: {
+                general: {},
+            },
+        };
 
         this.createChild(MultiStateButton, (e) => {
             e.style.height = "calc(var(--widget-height) * 2)";
@@ -83,6 +88,23 @@ export class MainUI extends Column {
         this.createChild(FSStoreBox, (e) => {
             e.label = "Preset";
             e.entries = Object.keys(presets);
+            e.saveCallback = () => preset;
+            e.onLoad.connect((value) => {
+                // FIXME: Unsure where exactly it should be fixed
+                value.project.general.parameters.images = value.project.general.parameters.images.map((data) => `data:image/png;base64,${data}`);
+
+                this._name.value = value.name;
+                this._loadParameters.value = value.load_parameters;
+                this._continueFromLastFrame.value = value.continue_from_last_frame;
+                this._iterCount.value = value.iter_count;
+                this._processing.value = value.project.general.parameters;
+                this._initialNoise.value = value.project.initial_noise;
+                this._parallel.value = value.project.general.parallel;
+                this._pipelineModules.value = value.project.modules;
+                this._animation.value = value.project.animation.code;
+                this._videoRenderer.value = value.video_renderer;
+                this._measuringParallelIndex.value = value.measuring_parallel_index;
+            });
         }, "presets", ["refresh", "load", "save", "rename", "delete"]);
 
         this.createChild(FSStoreBox, (e) => {
@@ -90,6 +112,15 @@ export class MainUI extends Column {
             e.entries = Object.keys(projects);
             e.onValueChange.connect((value) => {
                 this._name.value = value;
+            });
+            e.onLoad.connect((value) => {
+                // FIXME: Unsure where exactly it should be fixed
+                value.general.parameters.images = value.general.parameters.images.map((data) => `data:image/png;base64,${data}`);
+
+                this._processing.value = value.general.parameters;
+                this._initialNoise.value = value.initial_noise;
+                this._parallel.value = value.general.parallel;
+                this._pipelineModules.value = value.modules;
             });
         }, "projects", ["refresh", "load", "rename", "delete"]);
 
@@ -99,6 +130,7 @@ export class MainUI extends Column {
                     e.label = "Name";
                     e.onValueChange.connect((value) => {
                         generation.name = value;
+                        preset.name = value;
                     });
                 });
 
@@ -106,37 +138,41 @@ export class MainUI extends Column {
                     e.label = "Description";
                 });
 
-                e.createChild(Checkbox, (e) => {
+                this._loadParameters = e.createChild(Checkbox, (e) => {
                     e.label = "Load parameters";
                     e.value = true;
                     e.onValueChange.connect((value) => {
                         generation.load_parameters = value;
+                        preset.load_parameters = value;
                     });
                 });
 
-                e.createChild(Checkbox, (e) => {
+                this._continueFromLastFrame = e.createChild(Checkbox, (e) => {
                     e.label = "Continue from last frame";
                     e.value = true;
                     e.onValueChange.connect((value) => {
                         generation.continue_from_last_frame = value;
+                        preset.continue_from_last_frame = value;
                     });
                 });
 
-                e.createChild(NumberBox, (e) => {
+                this._iterCount = e.createChild(NumberBox, (e) => {
                     e.label = "Iteration count";
                     e.minimum = 1;
                     e.step = 1;
                     e.value = 10;
                     e.onValueChange.connect((value) => {
                         generation.iter_count = value;
+                        preset.iter_count = value;
                     });
                 });
             });
 
             e.createTab("Processing", Column, (e) => {
-                e.createChild(ProcessingParamsEditor, (e) => {
+                this._processing = e.createChild(ProcessingParamsEditor, (e) => {
                     e.onValueChange.connect((value) => {
                         generation.project.general.parameters = value;
+                        preset.project.general.parameters = value;
                     });
                     // FIXME: Temporary
                     e.value = {
@@ -159,9 +195,10 @@ export class MainUI extends Column {
                 e.createChild(Accordion, (e) => {
                     e.label = "Initial noise";
 
-                    e.createChild(InitialNoiseEditor, (e) => {
+                    this._initialNoise = e.createChild(InitialNoiseEditor, (e) => {
                         e.onValueChange.connect((value) => {
                             generation.project.initial_noise = value;
+                            preset.project.initial_noise = value;
                         });
                         // FIXME: Temporary
                         e.value = {
@@ -181,19 +218,21 @@ export class MainUI extends Column {
                     });
                 });
 
-                e.createChild(NumberBox, (e) => {
+                this._parallel = e.createChild(NumberBox, (e) => {
                     e.label = "Parallel";
                     e.minimum = 1;
                     e.step = 1;
                     e.value = 1;
                     e.onValueChange.connect((value) => {
                         generation.project.general.parallel = value;
+                        preset.project.general.parallel = value;
                     });
                 });
 
-                e.createChild(ModuleList, (e) => {
+                this._pipelineModules = e.createChild(ModuleList, (e) => {
                     e.onValueChange.connect((value) => {
                         generation.project.modules = value;
+                        preset.project.modules = value;
                     });
                     // FIXME: Temporary
                     e.value = [
@@ -221,24 +260,32 @@ export class MainUI extends Column {
                     e.onValueChange.connect((value) => console.log(value, generation));
                 }, "Add module", PipelineModuleEditor, mapObject(pipelineModules, (_, module) => `${module.icon} ${module.name}`), pipelineModules);
 
-                e.createChild(CodeArea, (e) => {
+                this._animation = e.createChild(CodeArea, (e) => {
                     e.label = "Animation",
                     e.onValueChange.connect((value) => {
-                        generation.project.animation = value;
+                        generation.project.animation = {code: value};
+                        preset.project.animation = {code: value};
                     });
                 });
             });
 
             e.createTab("Video Rendering", Column, (e) => {
-                e.createChild(VideoRendererEditor);
+                this._videoRenderer = e.createChild(VideoRendererEditor, (e) => {
+                    e.onValueChange.connect((value) => {
+                        preset.video_renderer = value;
+                    });
+                });
             });
 
             e.createTab("Measuring", Column, (e) => {
-                e.createChild(NumberBox, (e) => {
+                this._measuringParallelIndex = e.createChild(NumberBox, (e) => {
                     e.label = "Parallel index";
                     e.minimum = 1;
                     e.step = 1;
                     e.value = 1;
+                    e.onValueChange.connect((value) => {
+                        preset.measuring_parallel_index = value;
+                    });
                 });
 
                 e.createChild(Button, (e) => {

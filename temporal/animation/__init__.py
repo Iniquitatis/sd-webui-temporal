@@ -73,6 +73,17 @@ class Track(Serializable):
 class Animation(Serializable):
     tracks: dict[str, Track] = Field(factory = dict)
 
+    @classmethod
+    def from_json(cls, data: dict[str, Any]) -> "Animation":
+        from temporal.animation.parsing import parse_animation
+
+        return parse_animation(data["code"])
+
+    def to_json(self) -> dict[str, Any]:
+        from temporal.animation.printing import print_animation
+
+        return {"code": print_animation(self)}
+
     def get_track(self, property_name: str) -> Track:
         if (property := self.tracks.get(property_name, None)) is None:
             self.tracks[property_name] = property = Track()

@@ -1,5 +1,5 @@
 from threading import Lock, Thread
-from typing import Callable, ParamSpec
+from typing import Any, Callable, ParamSpec
 
 
 P = ParamSpec("P")
@@ -16,7 +16,7 @@ class ThreadQueue:
         with self._queue_lock:
             return len(self._queue) > 0
 
-    def enqueue(self, target: Callable[P, None], *args: P.args, **kwargs: P.kwargs) -> None:
+    def enqueue(self, target: Callable[P, Any], *args: P.args, **kwargs: P.kwargs) -> None:
         def callback() -> None:
             with self._execution_lock:
                 target(*args, **kwargs)

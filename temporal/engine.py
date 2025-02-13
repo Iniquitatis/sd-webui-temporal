@@ -14,6 +14,7 @@ from temporal.utils.prompt import evaluate_prompt
 
 class Engine:
     def __init__(self, backend: Backend, options_path: Path, presets_path: Path) -> None:
+        self.running = False
         self.state = "stopped"
         self.current_iteration = 0
         self.total_iterations = 0
@@ -34,6 +35,7 @@ class Engine:
         pass
 
     def start(self, project: Project, iter_count: int) -> list[NumpyImage]:
+        self.running = True
         self.state = "active"
         self.total_iterations = iter_count
 
@@ -81,6 +83,9 @@ class Engine:
         self.on_start()
 
         for i in range(iter_count):
+            if not self.running:
+                break
+
             logging.info(f"Iteration {i + 1} / {iter_count}")
 
             self.current_iteration = i
@@ -110,6 +115,7 @@ class Engine:
 
         self.on_end()
 
+        self.running = False
         self.state = "stopped"
         self.current_iteration = 0
         self.total_iterations = 0
