@@ -3,7 +3,7 @@ import {Column} from "../../scripts/base/column.js";
 import {ValueEditor} from "../../scripts/base/value_editor.js";
 import {FieldManager} from "../../scripts/core/field_manager.js";
 import {Signal} from "../../scripts/core/signal.js";
-import {colorToHex, hexToColor} from "../../scripts/utils/color.js";
+import {colorToHex} from "../../scripts/utils/color.js";
 
 class ChannelSlider extends ValueEditor {
     constructor() {
@@ -59,7 +59,7 @@ export class ColorPicker extends ValueEditor {
 
         this.onValueChange = new Signal();
 
-        this._manager = new FieldManager(this.onValueChange, colorToHex, hexToColor);
+        this._manager = new FieldManager(this.onValueChange);
         this._manager._value = {r: 0.0, g: 0.0, b: 0.0, a: 1.0};
 
         this._content.createChild(Column, (e) => {
@@ -94,7 +94,7 @@ export class ColorPicker extends ValueEditor {
                 e.style.height = "100%";
                 e.style.width = "100%";
                 this.onValueChange.connect((value) => {
-                    e.style.backgroundColor = value;
+                    e.style.backgroundColor = colorToHex(value);
                 });
             });
         });

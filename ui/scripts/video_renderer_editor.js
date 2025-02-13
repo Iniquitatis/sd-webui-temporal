@@ -5,6 +5,10 @@ import {Slider} from "../scripts/base/slider.js";
 import {Row} from "../scripts/base/row.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
+import {mapObject} from "../scripts/utils/object.js";
+import {ModuleList} from "../scripts/module_list.js";
+import {videoFilters} from "../scripts/shared_data.js";
+import {VideoFilterEditor} from "../scripts/video_filter_editor.js";
 
 export class VideoRendererEditor extends Column {
     constructor() {
@@ -54,6 +58,10 @@ export class VideoRendererEditor extends Column {
             e.value = false;
             this._manager.manage(e, "looping");
         });
+
+        this.createChild(ModuleList, (e) => {
+            this._manager.manage(e, "filters");
+        }, "Add filter", VideoFilterEditor, mapObject(videoFilters, (_, filter) => filter.name), videoFilters);
     }
 }
 customElements.define("video-renderer-editor", VideoRendererEditor);

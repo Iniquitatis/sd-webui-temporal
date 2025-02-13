@@ -6,24 +6,22 @@ import {MultiStateToggle} from "../scripts/base/multi_state_toggle.js";
 import {ReorderableAccordion} from "../scripts/base/reorderable_list.js";
 import {Slider} from "../scripts/base/slider.js";
 import {Tabs} from "../scripts/base/tabs.js";
-import {Signal} from "../scripts/core/signal.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
+import {Signal} from "../scripts/core/signal.js";
 import {createElement} from "../scripts/utils/dom.js";
 import {ConfigurableParamEditor} from "../scripts/configurable_param_editor.js";
 import {ImageMaskEditor} from "../scripts/image_mask_editor.js";
-import {blendModes} from "../scripts/test_data.js";
+import {blendModes} from "../scripts/shared_data.js";
 
 export class PipelineModuleEditor extends ReorderableAccordion {
-    constructor(id, definition) {
-        super(id);
+    constructor(definition) {
+        super();
 
         this.onValueChange = new Signal();
         this.onRemove = new Signal();
 
         this._manager = new FieldManager(this.onValueChange);
-        this._manager.value = {id: id, enabled: true};
-
-        this.label = `${definition.icon} ${definition.name}`;
+        this._manager.value = {id: definition.id, enabled: true};
 
         this._header.insertBefore(createElement(null, "input", (e) => {
             e.type = "checkbox";
@@ -64,7 +62,7 @@ export class PipelineModuleEditor extends ReorderableAccordion {
                 e.createChild(Dropdown, (e) => {
                     e.label = "Blend mode";
                     e.choices = blendModes;
-                    this._manager.manage(e, "blend_mode");
+                    this._manager.manage(e, "blend_mode", (value) => value.id, (value) => ({id: value}));
                 });
 
                 e.createChild(Tabs, (e) => {
@@ -91,7 +89,7 @@ export class PipelineModuleEditor extends ReorderableAccordion {
             e.createChild(Button, (e) => {
                 e.label = "\u{274c}\u{fe0e} Remove";
                 e.onClick.connect(() => {
-                    this.parentElement.removeChild(this)
+                    this.parentElement.removeChild(this);
 
                     this.onRemove.fire();
                 });

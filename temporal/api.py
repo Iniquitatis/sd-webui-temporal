@@ -4,13 +4,9 @@ from typing import Any, Literal
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from temporal.animation.parsing import parse_animation
 from temporal.blend_modes import BLEND_MODES
 from temporal.engine import Engine
-from temporal.general_data import GeneralData
-from temporal.initial_noise_params import InitialNoiseParams
-from temporal.pipeline_module import PIPELINE_MODULES, PipelineModule
-from temporal.processing_params import ImageToImageParams
+from temporal.pipeline_module import PIPELINE_MODULES
 from temporal.project import Project
 from temporal.shared import shared
 from temporal.utils.image import image_to_base64
@@ -25,10 +21,7 @@ class FSOperationRequest(BaseModel):
 
 class GenerateRequest(BaseModel):
     name: str
-    parameters: dict[str, Any] = {}
-    initial_noise: dict[str, Any] = {}
-    pipeline: dict[str, Any] = {}
-    animation: str = ""
+    project: dict[str, Any]
     load_parameters: bool = True
     continue_from_last_frame: bool = True
     iter_count: int = 10
@@ -66,16 +59,8 @@ def register_api(app: FastAPI, engine: Engine) -> None:
 
     @app.post("/temporal/generate")
     async def _(request: GenerateRequest) -> Any:
-        project = Project(
-            general = GeneralData(
-                path = shared.options.output.output_dir / request.name,
-                parameters = ImageToImageParams.from_json(request.parameters),
-                parallel = request.pipeline.get("parallel", 1),
-            ),
-            initial_noise = InitialNoiseParams.from_json(request.initial_noise),
-            modules = [PipelineModule.from_json(x) for x in request.pipeline.get("modules", [])],
-            animation = parse_animation(request.animation),
-        )
+        project = Project.from_json(request.project)
+        project.general.path = shared.options.output.output_dir / request.name
 
         if request.load_parameters:
             project.load(project.general.path)

@@ -7,7 +7,7 @@ import {TextArea} from "../scripts/base/text_area.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
 import {SeedBox} from "../scripts/seed_box.js";
-import {models, samplers, schedulers, vaes} from "../scripts/test_data.js";
+import {models, samplers, schedulers, vaes} from "../scripts/shared_data.js";
 
 export class ProcessingParamsEditor extends Column {
     constructor() {

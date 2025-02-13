@@ -10,19 +10,25 @@ import {ProgressBar} from "./scripts/base/progress_bar.js";
 import {Tabs} from "./scripts/base/tabs.js";
 import {TextArea} from "./scripts/base/text_area.js";
 import {TextBox} from "./scripts/base/text_box.js";
+import {mapObject} from "../scripts/utils/object.js";
 import {getRequest, postRequest} from "./scripts/utils/requests.js";
 import {FSStoreBox} from "./scripts/fs_store_box.js";
 import {InitialNoiseEditor} from "./scripts/initial_noise_editor.js";
-import {PipelineEditor} from "./scripts/pipeline_editor.js";
+import {ModuleList} from "./scripts/module_list.js";
+import {PipelineModuleEditor} from "./scripts/pipeline_module_editor.js";
 import {ProcessingParamsEditor} from "./scripts/processing_params_editor.js";
-import {blendModes, models, pipelineModules, presets, projects, samplers, schedulers, vaes} from "./scripts/test_data.js";
+import {blendModes, models, pipelineModules, presets, projects, samplers, schedulers, vaes, videoFilters} from "./scripts/shared_data.js";
 import {VideoRendererEditor} from "./scripts/video_renderer_editor.js";
 
 export class MainUI extends Column {
     constructor() {
         super();
 
-        let project = {};
+        let generation = {
+            project: {
+                general: {},
+            },
+        };
 
         this.createChild(MultiStateButton, (e) => {
             e.style.height = "calc(var(--widget-height) * 2)";
@@ -51,7 +57,7 @@ export class MainUI extends Column {
                         });
                     }, 1000);
 
-                    postRequest("/temporal/generate", project);
+                    postRequest("/temporal/generate", generation);
                 } else if (state == "stopped") {
                     this._progressBar.style.display = "none";
 
@@ -92,7 +98,7 @@ export class MainUI extends Column {
                 this._name = e.createChild(TextBox, (e) => {
                     e.label = "Name";
                     e.onValueChange.connect((value) => {
-                        project.name = value;
+                        generation.name = value;
                     });
                 });
 
@@ -104,7 +110,7 @@ export class MainUI extends Column {
                     e.label = "Load parameters";
                     e.value = true;
                     e.onValueChange.connect((value) => {
-                        project.load_parameters = value;
+                        generation.load_parameters = value;
                     });
                 });
 
@@ -112,7 +118,7 @@ export class MainUI extends Column {
                     e.label = "Continue from last frame";
                     e.value = true;
                     e.onValueChange.connect((value) => {
-                        project.continue_from_last_frame = value;
+                        generation.continue_from_last_frame = value;
                     });
                 });
 
@@ -122,7 +128,7 @@ export class MainUI extends Column {
                     e.step = 1;
                     e.value = 10;
                     e.onValueChange.connect((value) => {
-                        project.iter_count = value;
+                        generation.iter_count = value;
                     });
                 });
             });
@@ -130,7 +136,7 @@ export class MainUI extends Column {
             e.createTab("Processing", Column, (e) => {
                 e.createChild(ProcessingParamsEditor, (e) => {
                     e.onValueChange.connect((value) => {
-                        project.parameters = value;
+                        generation.project.general.parameters = value;
                     });
                     // FIXME: Temporary
                     e.value = {
@@ -155,7 +161,7 @@ export class MainUI extends Column {
 
                     e.createChild(InitialNoiseEditor, (e) => {
                         e.onValueChange.connect((value) => {
-                            project.initial_noise = value;
+                            generation.project.initial_noise = value;
                         });
                         // FIXME: Temporary
                         e.value = {
@@ -175,65 +181,50 @@ export class MainUI extends Column {
                     });
                 });
 
-                e.createChild(PipelineEditor, (e) => {
+                e.createChild(NumberBox, (e) => {
+                    e.label = "Parallel";
+                    e.minimum = 1;
+                    e.step = 1;
+                    e.value = 1;
                     e.onValueChange.connect((value) => {
-                        project.pipeline = value;
+                        generation.project.general.parallel = value;
+                    });
+                });
+
+                e.createChild(ModuleList, (e) => {
+                    e.onValueChange.connect((value) => {
+                        generation.project.modules = value;
                     });
                     // FIXME: Temporary
-                    e.value = {
-                        "parallel": 2,
-                        "modules": [
-                            {
-                                "id": "new_processing",
-                                "enabled": true,
-                                "preview": false,
-                                "model": "blah_1.safetensors",
-                                "vae": "vae_blah_2.safetensors",
-                                "clip_skip": 4,
-                                "positive_prompt": "The first positive",
-                                "negative_prompt": "The first negative",
-                                "sampler": "dpmpp_2m",
-                                "scheduler": "karras",
-                                "steps": 42,
-                                "cfg": 21.5,
-                                "strength": 0.75,
-                                "seed": 1337,
-                            },
-                            {
-                                "id": "new_processing",
-                                "enabled": false,
-                                "preview": true,
-                                "model": "blah_2.safetensors",
-                                "vae": "vae_blah_3.safetensors",
-                                "clip_skip": 2,
-                                "positive_prompt": "The second positive",
-                                "negative_prompt": "The second negative",
-                                "sampler": "dpmpp_sde",
-                                "scheduler": "uniform",
-                                "steps": 133,
-                                "cfg": 12.5,
-                                "strength": 0.25,
-                                "seed": 42069,
-                            },
-                            {
-                                "id": "temporal.pipeline_modules.painting.color.ColorPaintingModule",
-                                "enabled": false,
-                                "preview": false,
-                                "amount": 0.3,
-                                "amount_relative": true,
-                                "blend_mode": "temporal.blend_modes.ScreenBlendMode",
-                                "color": "#4080ffc0",
-                            }
-                        ],
-                    };
+                    e.value = [
+                        {
+                            "id": "temporal.pipeline_modules.painting.color.ColorPaintingModule",
+                            "enabled": true,
+                            "preview": false,
+                            "amount": 0.3,
+                            "blend_mode": {"id": "temporal.blend_modes.MultiplyBlendMode"},
+                            "color": {r: 0.25, g: 0.5, b: 0.9, a: 1.0},
+                        },
+                        {
+                            "id": "temporal.pipeline_modules.neural.processing.ProcessingModule",
+                            "enabled": true,
+                            "preview": false,
+                        },
+                        {
+                            "id": "temporal.pipeline_modules.tool.saving.SavingModule",
+                            "enabled": true,
+                            "preview": true,
+                            "archive_mode": true,
+                        },
+                    ];
                     // FIXME: Temporary
-                    e.onValueChange.connect((value) => console.log(value, project));
-                });
+                    e.onValueChange.connect((value) => console.log(value, generation));
+                }, "Add module", PipelineModuleEditor, mapObject(pipelineModules, (_, module) => `${module.icon} ${module.name}`), pipelineModules);
 
                 e.createChild(CodeArea, (e) => {
                     e.label = "Animation",
                     e.onValueChange.connect((value) => {
-                        project.animation = value;
+                        generation.project.animation = value;
                     });
                 });
             });
@@ -325,6 +316,12 @@ window.onload = async () => {
     await getRequest("/temporal/vaes", (result) => {
         for (let vae of result) {
             vaes[vae] = vae;
+        }
+    });
+
+    await getRequest("/temporal/video_filters", (result) => {
+        for (let [k, v] of Object.entries(result)) {
+            videoFilters[k] = v;
         }
     });
 

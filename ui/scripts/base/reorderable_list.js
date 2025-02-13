@@ -18,22 +18,22 @@ window.addEventListener("pointermove", (event) => {
 
     event.stopPropagation();
 
-    let parent = draggedAccordion.parentElement;
+    let list = draggedAccordion.parentElement;
 
-    parent.accordions.forEach((other) => {
-        if (draggedAccordion == other) return;
+    for (let other of list.childNodes) {
+        if (draggedAccordion == other) continue;
 
         let selfRect = draggedAccordion.getBoundingClientRect();
         let otherRect = other.getBoundingClientRect();
 
         if (selfRect.top < otherRect.top && event.clientY > otherRect.top) {
-            parent.insertBefore(other, draggedAccordion);
+            list.insertBefore(other, draggedAccordion);
         }
 
         if (selfRect.top > otherRect.top && event.clientY < otherRect.bottom) {
-            parent.insertBefore(draggedAccordion, other);
+            list.insertBefore(draggedAccordion, other);
         }
-    })
+    }
 });
 
 window.addEventListener("pointerup", (event) => {
@@ -42,7 +42,7 @@ window.addEventListener("pointerup", (event) => {
     event.stopPropagation();
 
     let list = draggedAccordion.parentElement;
-    list.onOrderChange.fire(list.order);
+    list.onOrderChange.fire();
 
     draggedAccordion.classList.remove("dragged");
 
@@ -55,22 +55,12 @@ export class ReorderableList extends Column {
 
         this.onOrderChange = new Signal();
     }
-
-    get accordions() {
-        return [...this.childNodes].filter((node) => node instanceof ReorderableAccordion);
-    }
-
-    get order() {
-        return [...this.childNodes].map((node) => node.key);
-    }
 }
 customElements.define("reorderable-list", ReorderableList);
 
 export class ReorderableAccordion extends Accordion {
-    constructor(key) {
+    constructor() {
         super();
-
-        this.key = key;
 
         this._header.insertBefore(createElement(null, Block, (e) => {
             e.innerText = ":::";

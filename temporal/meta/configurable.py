@@ -53,8 +53,8 @@ class Configurable(Registerable, Serializable):
             "id": cls.id,
             "name": cls.name,
             "parameters": {
-                field_id: field.schema()
-                for field_id, field in cls.__params__.items()
+                param_id: param.schema()
+                for param_id, param in cls.__params__.items()
             },
         }
 
@@ -213,7 +213,7 @@ class ColorParam(ConfigurableParam[Color]):
             "type": "color",
             "name": self.name,
             "channels": self.channels,
-            "default": self.default.to_hex(self.channels),
+            "default": self.default.to_json(),
         }
 
 
