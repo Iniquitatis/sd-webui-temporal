@@ -1,8 +1,8 @@
 from typing import Any, Optional, Type
 
+from temporal.general_data import GeneralData
 from temporal.meta.configurable import Configurable
 from temporal.meta.serializable import SerializableField as Field
-from temporal.project import Project
 from temporal.utils.collection import find_by_predicate
 from temporal.utils.image import NumpyImage
 
@@ -17,23 +17,14 @@ class PipelineModule(Configurable, abstract = True):
 
     enabled: bool = Field(False)
 
-    # FIXME: Kinda stupid--has to be a static method in the Serializable class,
-    # and also handle deserialization of all of the nested values
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> "PipelineModule":
-        id = data.pop("id")
+        id = data.pop("id", "")
 
-        if not (type := find_by_predicate(PIPELINE_MODULES, lambda x: x.id == id)):
-            raise ValueError
-
-        result = type()
-        result.enabled = data.pop("enabled", True)
-
-        for key, param in data.items():
-            if key in result.__dict__:
-                result.__dict__[key] = param
-
-        return result
+        if type := find_by_predicate(PIPELINE_MODULES, lambda x: x.id == id):
+            return type.from_json(data)
+        else:
+            return super().from_json(data)
 
     @classmethod
     def schema(cls) -> dict[str, Any]:
@@ -44,10 +35,13 @@ class PipelineModule(Configurable, abstract = True):
             "is_filter": issubclass(cls, ImageFilter),
         }
 
-    def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
+    def to_json(self) -> dict[str, Any]:
+        return {"id": self.id} | super().to_json()
+
+    def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         return images
 
-    def finalize(self, images: list[NumpyImage], project: Project) -> None:
+    def finalize(self, images: list[NumpyImage], general: GeneralData) -> None:
         pass
 
     def reset(self) -> None:

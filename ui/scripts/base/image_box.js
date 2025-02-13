@@ -26,6 +26,7 @@ class ImageViewer extends Widget {
         });
 
         this._img = this.createChild("img", (e) => {
+            e.style.maxHeight = "100%";
             e.style.objectFit = "contain";
             e.style.width = "100%";
         });

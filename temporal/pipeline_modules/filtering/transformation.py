@@ -1,9 +1,9 @@
 import numpy as np
 import skimage
 
+from temporal.general_data import GeneralData
 from temporal.meta.configurable import FloatParam
 from temporal.pipeline_modules.filtering import ImageFilter
-from temporal.project import Project
 from temporal.utils.image import NumpyImage
 
 
@@ -15,7 +15,7 @@ class TransformationFilter(ImageFilter):
     rotation: float = FloatParam("Rotation", minimum = -90.0, maximum = 90.0, step = 0.1, value = 0.0, ui_type = "slider")
     scaling: float = FloatParam("Scaling", minimum = 0.0, maximum = 2.0, step = 0.001, value = 1.0, ui_type = "slider")
 
-    def process(self, npim: NumpyImage, parallel_index: int, project: Project, frame_index: int, seed: int) -> NumpyImage:
+    def process(self, npim: NumpyImage, parallel_index: int, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         height, width = npim.shape[:2]
 
         o_transform = skimage.transform.AffineTransform(translation = (-width / 2, -height / 2))

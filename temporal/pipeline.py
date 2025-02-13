@@ -1,37 +1,27 @@
 import skimage
 
-from temporal.meta.serializable import Serializable, SerializableField as Field
-from temporal.pipeline_module import PipelineModule
-from temporal.project import IterationData, Project
+from temporal.iteration_data import IterationData
+from temporal.project import Project
 from temporal.shared import shared
-from temporal.utils.collection import find_index_by_predicate
 from temporal.utils.math import clamp
 
 
-class Pipeline(Serializable):
-    parallel: int = Field(1)
-    modules: list[PipelineModule] = Field(factory = list)
-
+class Pipeline:
     def run(self, project: Project) -> bool:
-        if project.iteration.module_id is not None:
-            skip_index = find_index_by_predicate(self.modules, lambda x: x.id == project.iteration.module_id)
-        else:
-            skip_index = -1
-
-        for i, module in enumerate(self.modules):
-            if i <= skip_index or not module.enabled:
+        for i, module in enumerate(project.modules):
+            if i < project.iteration.step or not module.enabled:
                 continue
 
             if not (images := module.forward(
                 project.iteration.images,
-                project,
+                project.general,
                 project.iteration.index,
-                project.parameters.seed + project.iteration.index,
+                project.general.parameters.seed + project.iteration.index,
             )):
                 return False
 
             project.iteration.images[:] = images
-            project.iteration.module_id = module.id
+            project.iteration.step += 1
 
             if shared.backend.is_interrupted():
                 return False
@@ -40,7 +30,7 @@ class Pipeline(Serializable):
                 self._show_images(project.iteration)
 
         project.iteration.index += 1
-        project.iteration.module_id = None
+        project.iteration.step = 0
 
         if shared.options.live_preview.show_only_finished_images:
             self._show_images(project.iteration)
@@ -48,11 +38,11 @@ class Pipeline(Serializable):
         return True
 
     def finalize(self, project: Project) -> None:
-        for module in self.modules:
+        for module in project.modules:
             if not module.enabled:
                 continue
 
-            module.finalize(project.iteration.images, project)
+            module.finalize(project.iteration.images, project.general)
 
     def _show_images(self, iteration: IterationData) -> None:
         if shared.options.live_preview.preview_parallel_index == 0:

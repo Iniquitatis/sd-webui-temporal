@@ -4,9 +4,9 @@ import numpy as np
 from PIL import Image
 from numpy.typing import NDArray
 
+from temporal.general_data import GeneralData
 from temporal.meta.configurable import BoolParam, ImageParam
 from temporal.pipeline_modules.filtering import ImageFilter
-from temporal.project import Project
 from temporal.utils.image import NumpyImage, apply_channelwise, np_to_pil, pil_to_np
 
 
@@ -17,7 +17,7 @@ class PalettizationFilter(ImageFilter):
     stretch: bool = BoolParam("Stretch", value = False)
     dithering: bool = BoolParam("Dithering", value = False)
 
-    def process(self, npim: NumpyImage, parallel_index: int, project: Project, frame_index: int, seed: int) -> NumpyImage:
+    def process(self, npim: NumpyImage, parallel_index: int, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         def stretch_array(arr: NDArray[np.float64], new_length: int) -> NDArray[np.float64]:
             return np.interp(np.arange(new_length), np.linspace(0, new_length - 1, len(arr)), arr)
 

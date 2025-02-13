@@ -1,7 +1,7 @@
 from base64 import b64decode, b64encode
 from io import BytesIO
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable, Literal, Optional
 
 import numpy as np
 import skimage
@@ -38,6 +38,11 @@ def apply_color_matrix(npim: NumpyImage, matrix: NDArray[np.float64], clip: bool
 
 
 def base64_to_image(data: str) -> NumpyImage:
+    png_prefix = "data:image/png;base64,"
+
+    if data.startswith(png_prefix):
+        data = data[len(png_prefix):]
+
     return pil_to_np(Image.open(BytesIO(b64decode(data))))
 
 
@@ -62,9 +67,15 @@ def ensure_image_dims(npim: NumpyImage, size: Optional[tuple[int, int]] = None, 
     return pil_to_np(im)
 
 
-def image_to_base64(image: NumpyImage) -> str:
+def image_to_base64(image: NumpyImage, mode: Literal["default", "fast", "archive"] = "default") -> str:
+    kwargs = {
+        "default": dict(),
+        "fast": dict(optimize = True, compress_level = 0),
+        "archive": dict(optimize = True, compress_level = 9),
+    }
+
     with BytesIO() as stream:
-        np_to_pil(image).save(stream, format = "PNG")
+        np_to_pil(image).save(stream, "PNG", **kwargs[mode])
         return b64encode(stream.getvalue()).decode()
 
 

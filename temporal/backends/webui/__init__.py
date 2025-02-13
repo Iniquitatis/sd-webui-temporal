@@ -16,9 +16,9 @@ from modules.styles import StyleDatabase
 
 from temporal.backend import Backend
 from temporal.backends.webui.controlnet import ControlNetUnitList, ControlNetUnitWrapper
+from temporal.general_data import GeneralData
 from temporal.meta.serializable import SerializableField as Field
 from temporal.processing_params import ImageToImageParams, TextToImageParams
-from temporal.project import Project
 from temporal.serialization import BasicObjectSerializer, Serializer
 from temporal.thread_queue import ThreadQueue
 from temporal.utils.image import NumpyImage, np_to_pil, pil_to_np, save_image
@@ -185,7 +185,7 @@ class WebUIBackend(Backend):
         state.assign_current_image(pil_image)
         self._last_preview_image = pil_image
 
-    def save_image(self, image: NumpyImage, project: Project, output_dir: Path, file_name: Optional[str] = None, archive_mode: bool = False) -> None:
+    def save_image(self, image: NumpyImage, general: GeneralData, output_dir: Path, file_name: Optional[str] = None, archive_mode: bool = False) -> None:
         pil_image = np_to_pil(image)
 
         if file_name and archive_mode:
@@ -196,7 +196,7 @@ class WebUIBackend(Backend):
                 archive_mode = True,
             )
         else:
-            p = cast(WebUIImageToImageParams, project.parameters).processing
+            p = cast(WebUIImageToImageParams, general.parameters).processing
             processed = Processed(p, [pil_image])
 
             webui_save_image(

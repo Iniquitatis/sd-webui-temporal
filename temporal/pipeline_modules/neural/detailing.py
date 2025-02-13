@@ -1,8 +1,8 @@
 from typing import Optional
 
+from temporal.general_data import GeneralData
 from temporal.meta.configurable import EnumParam, FloatParam, IntParam
 from temporal.pipeline_modules.neural import NeuralModule
-from temporal.project import Project
 from temporal.shared import shared
 from temporal.utils.collection import get_first_element
 from temporal.utils.image import NumpyImage, ensure_image_dims
@@ -20,22 +20,22 @@ class DetailingModule(NeuralModule):
     steps: int = IntParam("Steps", minimum = 1, maximum = 150, step = 1, value = 15, ui_type = "slider")
     denoising_strength: float = FloatParam("Denoising strength", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.2, ui_type = "slider")
 
-    def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
+    def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if not (processed_images := shared.backend.images_to_batches(
-            copy_with_overrides(project.parameters,
+            copy_with_overrides(general.parameters,
                 positive_prompts = [
                     evaluate_prompt(x, frame_index - 1, seed + i)
-                    for i, x in enumerate(project.parameters.positive_prompts)
+                    for i, x in enumerate(general.parameters.positive_prompts)
                 ],
                 negative_prompts = [
                     evaluate_prompt(x, frame_index - 1, seed + i)
-                    for i, x in enumerate(project.parameters.negative_prompts)
+                    for i, x in enumerate(general.parameters.negative_prompts)
                 ],
                 sampler = self.sampler,
                 scheduler = self.scheduler,
                 steps = self.steps,
-                width = quantize(project.parameters.width * self.scale, 8),
-                height = quantize(project.parameters.height * self.scale, 8),
+                width = quantize(general.parameters.width * self.scale, 8),
+                height = quantize(general.parameters.height * self.scale, 8),
                 denoising_strength = self.denoising_strength,
             ),
             [(x, seed + i, 1) for i, x in enumerate(images)],
@@ -45,6 +45,6 @@ class DetailingModule(NeuralModule):
             return None
 
         return [
-            ensure_image_dims(image_array[0], (project.parameters.width, project.parameters.height), 3)
+            ensure_image_dims(image_array[0], (general.parameters.width, general.parameters.height), 3)
             for image_array in processed_images
         ]

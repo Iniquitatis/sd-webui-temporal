@@ -1,8 +1,8 @@
 from typing import Optional
 
+from temporal.general_data import GeneralData
 from temporal.meta.configurable import BoolParam, FloatParam, IntParam
 from temporal.pipeline_modules.tool import ToolModule
-from temporal.project import Project
 from temporal.shared import shared
 from temporal.utils.fs import ensure_directory_exists
 from temporal.utils.image import NumpyImage, ensure_image_dims
@@ -18,11 +18,11 @@ class SavingModule(ToolModule):
     save_final: bool = BoolParam("Save final", value = False)
     archive_mode: bool = BoolParam("Archive mode", value = False)
 
-    def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
+    def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if frame_index % self.save_every_nth_frame != 0:
             return images
 
-        for i, image in enumerate(self._get_scaled_images(images, project)):
+        for i, image in enumerate(self._get_scaled_images(images, general)):
             file_name = f"{frame_index:05d}"
 
             if len(images) > 1:
@@ -30,20 +30,20 @@ class SavingModule(ToolModule):
 
             shared.backend.save_image(
                 image = image,
-                project = project,
-                output_dir = ensure_directory_exists(project.path),
+                general = general,
+                output_dir = ensure_directory_exists(general.path),
                 file_name = file_name,
                 archive_mode = self.archive_mode,
             )
 
         return images
 
-    def finalize(self, images: list[NumpyImage], project: Project) -> None:
+    def finalize(self, images: list[NumpyImage], general: GeneralData) -> None:
         if self.save_final:
-            for image in self._get_scaled_images(images, project):
+            for image in self._get_scaled_images(images, general):
                 shared.backend.save_image(
                     image = image,
-                    project = project,
+                    general = general,
                     output_dir = ensure_directory_exists(shared.options.output.output_dir),
                     file_name = None,
                     archive_mode = self.archive_mode,
@@ -51,8 +51,8 @@ class SavingModule(ToolModule):
 
         wait_until(shared.backend.are_images_saved)
 
-    def _get_scaled_images(self, images: list[NumpyImage], project: Project) -> list[NumpyImage]:
+    def _get_scaled_images(self, images: list[NumpyImage], general: GeneralData) -> list[NumpyImage]:
         return [ensure_image_dims(x, size = (
-            int(quantize(project.parameters.width * self.scale, 8)),
-            int(quantize(project.parameters.height * self.scale, 8)),
+            int(quantize(general.parameters.width * self.scale, 8)),
+            int(quantize(general.parameters.height * self.scale, 8)),
         )) for x in images] if self.scale != 1.0 else images

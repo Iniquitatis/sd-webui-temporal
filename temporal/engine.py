@@ -3,6 +3,7 @@ from pathlib import Path
 from time import perf_counter
 
 from temporal.backend import Backend
+from temporal.pipeline import Pipeline
 from temporal.project import Project
 from temporal.shared import shared
 from temporal.utils import logging
@@ -36,42 +37,44 @@ class Engine:
         self.state = "active"
         self.total_iterations = iter_count
 
-        if not project.parameters.images:
+        if not project.general.parameters.images:
             noises = [
-                project.initial_noise.noise.generate((project.parameters.height, project.parameters.width, 3), project.parameters.seed, i)
-                for i in range(project.pipeline.parallel)
+                project.initial_noise.noise.generate((project.general.parameters.height, project.general.parameters.width, 3), project.general.parameters.seed, i)
+                for i in range(project.general.parallel)
             ]
 
             if project.initial_noise.factor < 1.0:
                 if not (processed_images := shared.backend.images_to_batches(
-                    copy_with_overrides(project.parameters,
+                    copy_with_overrides(project.general.parameters,
                         positive_prompts = [
                             evaluate_prompt(x, 0)
-                            for x in project.parameters.positive_prompts
+                            for x in project.general.parameters.positive_prompts
                         ],
                         negative_prompts = [
                             evaluate_prompt(x, 0)
-                            for x in project.parameters.negative_prompts
+                            for x in project.general.parameters.negative_prompts
                         ],
                         strength = 1.0 - project.initial_noise.factor,
                     ),
-                    [(x, project.parameters.seed + i, 1) for i, x in enumerate(noises)],
+                    [(x, project.general.parameters.seed + i, 1) for i, x in enumerate(noises)],
                     shared.options.processing.pixels_per_batch,
                     True,
                 )):
                     return []
 
-                project.parameters.images.clear()
-                project.parameters.images[:] = [image_array[0] for image_array in processed_images]
+                project.general.parameters.images.clear()
+                project.general.parameters.images[:] = [image_array[0] for image_array in processed_images]
 
             else:
-                project.parameters.images[:] = [x for x in noises]
+                project.general.parameters.images[:] = [x for x in noises]
 
-        elif len(project.parameters.images) != project.pipeline.parallel:
-            project.parameters.images[:] = [project.parameters.images[0]] * project.pipeline.parallel
+        elif len(project.general.parameters.images) != project.general.parallel:
+            project.general.parameters.images[:] = [project.general.parameters.images[0]] * project.general.parallel
 
         if not project.iteration.images:
-            project.iteration.images[:] = [ensure_image_dims(x, (project.parameters.width, project.parameters.height), 3) for x in project.parameters.images]
+            project.iteration.images[:] = [ensure_image_dims(x, (project.general.parameters.width, project.general.parameters.height), 3) for x in project.general.parameters.images]
+
+        pipeline = Pipeline()
 
         last_images = project.iteration.images.copy()
 
@@ -89,20 +92,21 @@ class Engine:
             for path, value in project.animation.evaluate(project.iteration.index).items():
                 set_property_by_path(project, path, value)
 
-            if not project.pipeline.run(project):
+            if not pipeline.run(project):
                 break
 
             last_images = project.iteration.images.copy()
 
             if i % shared.options.output.autosave_every_n_iterations == 0:
-                project.save(project.path)
+                project.save(project.general.path)
 
             end_time = perf_counter()
 
             logging.info(f"Iteration took {end_time - start_time:.6f} second(s)")
 
-        project.pipeline.finalize(project)
-        project.save(project.path)
+        pipeline.finalize(project)
+
+        project.save(project.general.path)
 
         self.on_end()
 

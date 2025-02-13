@@ -1,8 +1,8 @@
 import skimage
 
+from temporal.general_data import GeneralData
 from temporal.meta.configurable import FloatParam
 from temporal.pipeline_modules.filtering import ImageFilter
-from temporal.project import Project
 from temporal.utils.image import NumpyImage
 
 
@@ -12,7 +12,7 @@ class NoiseCompressionFilter(ImageFilter):
     constant: float = FloatParam("Constant", minimum = 0.0, maximum = 1.0, step = 1e-5, value = 0.0, ui_type = "slider")
     adaptive: float = FloatParam("Adaptive", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, ui_type = "slider")
 
-    def process(self, npim: NumpyImage, parallel_index: int, project: Project, frame_index: int, seed: int) -> NumpyImage:
+    def process(self, npim: NumpyImage, parallel_index: int, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         weight = 0.0
 
         if self.constant > 0.0:

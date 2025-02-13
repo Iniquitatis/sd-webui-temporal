@@ -5,8 +5,8 @@ from math import ceil
 from pathlib import Path
 from typing import Optional
 
+from temporal.general_data import GeneralData
 from temporal.processing_params import ImageToImageParams, TextToImageParams
-from temporal.project import Project
 from temporal.utils.collection import batched
 from temporal.utils.image import NumpyImage
 from temporal.utils.object import copy_with_overrides
@@ -54,7 +54,7 @@ class Backend(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def save_image(self, image: NumpyImage, project: Project, output_dir: Path, file_name: Optional[str] = None, archive_mode: bool = False) -> None:
+    def save_image(self, image: NumpyImage, general: GeneralData, output_dir: Path, file_name: Optional[str] = None, archive_mode: bool = False) -> None:
         raise NotImplementedError
 
     @abstractmethod

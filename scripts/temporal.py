@@ -140,8 +140,8 @@ class TemporalScript(scripts.Script):
             project_obj = inputs[stored_project].data
 
             return {
-                description: {"value": project_obj.get_description()},
-                gallery: {"value": project_obj.list_all_frame_paths()[:shared.options.ui.gallery_size]},
+                description: {"value": project_obj.general.get_description()},
+                gallery: {"value": project_obj.general.list_all_frame_paths()[:shared.options.ui.gallery_size]},
                 gallery_page: {"value": 1},
                 gallery_parallel: {"value": 1},
             }
@@ -158,7 +158,7 @@ class TemporalScript(scripts.Script):
             parallel = inputs[gallery_parallel]
             gallery_size = shared.options.ui.gallery_size
 
-            return {gallery: {"value": project_obj.list_all_frame_paths(parallel)[(page - 1) * gallery_size:page * gallery_size]}}
+            return {gallery: {"value": project_obj.general.list_all_frame_paths(parallel)[(page - 1) * gallery_size:page * gallery_size]}}
 
         def render_video(inputs: CallbackInputs, is_final: bool) -> Iterator[CallbackOutputs]:
             yield {
@@ -168,7 +168,7 @@ class TemporalScript(scripts.Script):
 
             shared.video_renderer = inputs[video_renderer]
 
-            video_path = inputs[stored_project].data.render_video(shared.video_renderer, is_final, inputs[video_parallel_index])
+            video_path = inputs[stored_project].data.general.render_video(shared.video_renderer, is_final, inputs[video_parallel_index])
             wait_until(lambda: not video_render_queue.busy)
 
             yield {
@@ -196,11 +196,11 @@ class TemporalScript(scripts.Script):
         @delete_intermediate_frames.callback("click", [stored_project], [description, gallery])
         def _(inputs: CallbackInputs) -> CallbackOutputs:
             project_obj = inputs[stored_project].data
-            project_obj.delete_intermediate_frames()
+            project_obj.general.delete_intermediate_frames()
 
             return {
-                description: {"value": project_obj.get_description()},
-                gallery: {"value": project_obj.list_all_frame_paths()[:shared.options.ui.gallery_size]},
+                description: {"value": project_obj.general.get_description()},
+                gallery: {"value": project_obj.general.list_all_frame_paths()[:shared.options.ui.gallery_size]},
             }
 
         @delete_session_data.callback("click", [stored_project], [])
@@ -231,8 +231,8 @@ class TemporalScript(scripts.Script):
 
         fix_seed(p)
 
-        project.path = stored_project.data.path
-        project.parameters = WebUIImageToImageParams(
+        project.general.path = stored_project.data.general.path
+        project.general.parameters = WebUIImageToImageParams(
             model = opts.sd_model_checkpoint,
             vae = opts.sd_vae,
             clip_skip = opts.CLIP_stop_at_last_layers,
@@ -253,10 +253,10 @@ class TemporalScript(scripts.Script):
         )
 
         if load_parameters:
-            project.load(stored_project.data.path)
+            project.load(stored_project.data.general.path)
 
         if not continue_from_last_frame:
-            project.delete_all_frames()
+            project.general.delete_all_frames()
             project.delete_session_data()
 
         state.job_count = iter_count

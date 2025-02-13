@@ -1,4 +1,3 @@
-from pathlib import Path
 from threading import Thread
 from typing import Any, Literal
 
@@ -8,13 +7,13 @@ from pydantic import BaseModel
 from temporal.animation.parsing import parse_animation
 from temporal.blend_modes import BLEND_MODES
 from temporal.engine import Engine
-from temporal.noise import Noise
-from temporal.pipeline import Pipeline
+from temporal.general_data import GeneralData
+from temporal.initial_noise_params import InitialNoiseParams
 from temporal.pipeline_module import PIPELINE_MODULES, PipelineModule
 from temporal.processing_params import ImageToImageParams
-from temporal.project import InitialNoiseParams, Project
+from temporal.project import Project
 from temporal.shared import shared
-from temporal.utils.image import image_to_base64, load_image, pil_to_np
+from temporal.utils.image import image_to_base64
 from temporal.video_filters import VIDEO_FILTERS
 
 
@@ -57,7 +56,7 @@ def register_api(app: FastAPI, engine: Engine) -> None:
         elif request.operation == "load":
             return store.load_entry(request.args["name"]).to_json()
         elif request.operation == "save":
-            store.save_entry(request.args["name"], store.type().from_json(request.args["data"]))
+            store.save_entry(request.args["name"], store.type.from_json(request.args["data"]))
         elif request.operation == "rename":
             store.rename_entry(request.args["old_name"], request.args["new_name"])
         elif request.operation == "delete":
@@ -68,27 +67,21 @@ def register_api(app: FastAPI, engine: Engine) -> None:
     @app.post("/temporal/generate")
     async def _(request: GenerateRequest) -> Any:
         project = Project(
-            path = shared.options.output.output_dir / request.name,
-            parameters = ImageToImageParams(
-                **request.parameters,
-                images = [pil_to_np(load_image("ui/_example_image.png"))],
-            ),
-            initial_noise = InitialNoiseParams(
-                factor = request.initial_noise.get("factor", 0.0),
-                noise = Noise(**request.initial_noise.get("noise", {})),
-            ),
-            pipeline = Pipeline(
+            general = GeneralData(
+                path = shared.options.output.output_dir / request.name,
+                parameters = ImageToImageParams.from_json(request.parameters),
                 parallel = request.pipeline.get("parallel", 1),
-                modules = [PipelineModule.from_json(x) for x in request.pipeline.get("modules", [])],
             ),
+            initial_noise = InitialNoiseParams.from_json(request.initial_noise),
+            modules = [PipelineModule.from_json(x) for x in request.pipeline.get("modules", [])],
             animation = parse_animation(request.animation),
         )
 
         if request.load_parameters:
-            project.load(project.path)
+            project.load(project.general.path)
 
         if not request.continue_from_last_frame:
-            project.delete_all_frames()
+            project.general.delete_all_frames()
             project.delete_session_data()
 
         thread = Thread(target = engine.start, args = (project, request.iter_count))
@@ -118,7 +111,7 @@ def register_api(app: FastAPI, engine: Engine) -> None:
 
         if (image := shared.backend.get_preview()) is not None and image is not last_preview:
             last_preview = image
-            return image_to_base64(image)
+            return image_to_base64(image, "fast")
 
     @app.get("/temporal/projects")
     async def _() -> Any:

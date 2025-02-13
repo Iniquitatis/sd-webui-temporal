@@ -1,6 +1,7 @@
-from typing import Optional
+from typing import Annotated, Optional
 
 from temporal.meta.serializable import Serializable, SerializableField as Field
+from temporal.serialization import Variant
 from temporal.utils.collection import get_with_fallback
 from temporal.utils.image import NumpyImage
 
@@ -50,7 +51,7 @@ class TextToImageParams(ProcessingParams):
 
 
 class ImageToImageParams(ProcessingParams):
-    images: list[NumpyImage] = Field(factory = list)
+    images: list[Annotated[NumpyImage, Variant("image")]] = Field(factory = list)
 
     @property
     def image(self) -> Optional[NumpyImage]:

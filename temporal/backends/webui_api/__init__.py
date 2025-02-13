@@ -5,8 +5,8 @@ from typing import Any, Optional
 import requests
 
 from temporal.backend import Backend
+from temporal.general_data import GeneralData
 from temporal.processing_params import ImageToImageParams, TextToImageParams
-from temporal.project import Project
 from temporal.thread_queue import ThreadQueue
 from temporal.utils.image import NumpyImage, base64_to_image, image_to_base64, np_to_pil, save_image
 
@@ -103,7 +103,7 @@ class WebUIAPIBackend(Backend):
             settings["show_progress_every_n_steps"] = -1
 
         if (r := requests.post(f"{self.url}/sdapi/v1/img2img", json = {
-            "init_images": [image_to_base64(x) for x in params.images],
+            "init_images": [image_to_base64(x, "fast") for x in params.images],
             "prompt": params.positive_prompt,
             "negative_prompt": params.negative_prompt,
             "width": params.width,
@@ -127,7 +127,7 @@ class WebUIAPIBackend(Backend):
 
     def upscale_image(self, image: NumpyImage, upscaler: str, scale: float) -> Optional[NumpyImage]:
         if (r := requests.post(f"{self.url}/sdapi/v1/extra-single-image", json = {
-            "image": image_to_base64(image),
+            "image": image_to_base64(image, "fast"),
             "resize_mode": 0,
             "upscaling_resize_w": floor(image.shape[1] * scale),
             "upscaling_resize_h": floor(image.shape[1] * scale),
@@ -143,7 +143,7 @@ class WebUIAPIBackend(Backend):
     def set_preview(self, image: Optional[NumpyImage] = None) -> None:
         self._preview_image = image
 
-    def save_image(self, image: NumpyImage, project: Project, output_dir: Path, file_name: Optional[str] = None, archive_mode: bool = False) -> None:
+    def save_image(self, image: NumpyImage, general: GeneralData, output_dir: Path, file_name: Optional[str] = None, archive_mode: bool = False) -> None:
         if not file_name:
             return
 

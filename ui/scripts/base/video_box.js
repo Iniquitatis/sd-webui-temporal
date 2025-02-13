@@ -26,6 +26,7 @@ class VideoViewer extends Widget {
         });
 
         this._video = this.createChild("video", (e) => {
+            e.style.maxHeight = "100%";
             e.style.objectFit = "contain";
             e.style.width = "100%";
         });

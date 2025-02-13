@@ -2,9 +2,9 @@ from typing import Optional
 
 import numpy as np
 
+from temporal.general_data import GeneralData
 from temporal.meta.configurable import FloatParam, IntParam
 from temporal.pipeline_modules.neural import NeuralModule
-from temporal.project import Project
 from temporal.shared import shared
 from temporal.utils.image import NumpyImage
 from temporal.utils.numpy import average_array, make_eased_weight_array, saturate_array
@@ -20,16 +20,16 @@ class ProcessingModule(NeuralModule):
     easing: float = FloatParam("Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0, ui_type = "slider")
     preference: float = FloatParam("Preference", minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0, ui_type = "slider")
 
-    def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
+    def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if not (processed_images := shared.backend.images_to_batches(
-            copy_with_overrides(project.parameters,
+            copy_with_overrides(general.parameters,
                 positive_prompts = [
                     evaluate_prompt(x, frame_index - 1, seed + i)
-                    for i, x in enumerate(project.parameters.positive_prompts)
+                    for i, x in enumerate(general.parameters.positive_prompts)
                 ],
                 negative_prompts = [
                     evaluate_prompt(x, frame_index - 1, seed + i)
-                    for i, x in enumerate(project.parameters.negative_prompts)
+                    for i, x in enumerate(general.parameters.negative_prompts)
                 ],
             ),
             [(x, seed + i, self.samples) for i, x in enumerate(images)],

@@ -1,8 +1,8 @@
 import numpy as np
 
+from temporal.general_data import GeneralData
 from temporal.meta.configurable import IntParam
 from temporal.pipeline_modules.filtering import ImageFilter
-from temporal.project import Project
 from temporal.utils.image import NumpyImage
 
 
@@ -11,7 +11,7 @@ class PixelizationFilter(ImageFilter):
 
     pixel_size: int = IntParam("Pixel size", minimum = 1, step = 1, value = 1, ui_type = "box")
 
-    def process(self, npim: NumpyImage, parallel_index: int, project: Project, frame_index: int, seed: int) -> NumpyImage:
+    def process(self, npim: NumpyImage, parallel_index: int, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         height, width = npim.shape[:2]
 
         y, x = np.indices((height, width))

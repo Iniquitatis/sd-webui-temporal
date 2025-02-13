@@ -3,10 +3,10 @@ from typing import Optional
 import numpy as np
 from numpy.typing import NDArray
 
+from temporal.general_data import GeneralData
 from temporal.meta.configurable import FloatParam
 from temporal.meta.serializable import SerializableField as Field
 from temporal.pipeline_modules.temporal import TemporalModule
-from temporal.project import Project
 from temporal.utils.image import NumpyImage, ensure_image_dims
 from temporal.utils.math import clamp, lerp
 
@@ -19,10 +19,10 @@ class RandomSamplingModule(TemporalModule):
 
     buffer: Optional[NDArray[np.float64]] = Field(None)
 
-    def forward(self, images: list[NumpyImage], project: Project, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
+    def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if self.buffer is None:
             self.buffer = np.stack([
-                ensure_image_dims(image, (project.parameters.width, project.parameters.height), 3)
+                ensure_image_dims(image, (general.parameters.width, general.parameters.height), 3)
                 for image in images
             ], 0)
 

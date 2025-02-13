@@ -1,12 +1,18 @@
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field as datafield
 from pathlib import Path
-from typing import Any, Generic, Iterator, Optional, Type, TypeVar, get_args, get_origin
+from typing import Any, Generic, Iterator, Optional, Type, TypeVar, get_args
 
 from temporal.utils.object import get_property_by_path, set_property_by_path
+from temporal.utils.typing import safe_get_origin
 
 
 T = TypeVar("T")
+
+
+@dataclass(frozen = True, slots = True)
+class Variant:
+    data: str = ""
 
 
 @dataclass(slots = True)
@@ -35,35 +41,27 @@ class Archive:
         return child
 
     def create(self) -> Any:
-        if self.type_name in _serializers:
-            return _serializers[self.type_name].create(self)
+        if (self.type_name, Variant()) in _serializers:
+            return _serializers[(self.type_name, Variant())].create(self)
         else:
             raise NotImplementedError
 
     def read(self, obj: T) -> T:
         if self.type_name != find_alias_for_type(type(obj)):
-            return _serializers[self.type_name].create(self)
-        elif self.type_name in _serializers:
-            return _serializers[self.type_name].read(obj, self)
+            return _serializers[(self.type_name, Variant())].create(self)
+        elif (self.type_name, Variant()) in _serializers:
+            return _serializers[(self.type_name, Variant())].read(obj, self)
         else:
             raise NotImplementedError
 
     def write(self, obj: Any) -> "Archive":
         if (type_name := find_alias_for_type(type(obj))) is not None:
             self.type_name = type_name
-            _serializers[type_name].write(obj, self)
+            _serializers[(type_name, Variant())].write(obj, self)
         else:
             raise NotImplementedError
 
         return self
-
-    # TODO
-    def parse_json(self, value: Any) -> None:
-        pass
-
-    # TODO
-    def print_json(self) -> Any:
-        return {}
 
     def parse_xml(self, elem: ET.Element) -> None:
         self.key = elem.get("key", "_")
@@ -102,32 +100,28 @@ class Archive:
 
 
 _type_aliases: dict[Type[Any], str] = {}
-_serializers: dict[str, Type["Serializer[Any]"]] = {}
+_serializers: dict[tuple[str, Variant], Type["Serializer[Any]"]] = {}
 
 
 class Serializer(Generic[T]):
-    def __init_subclass__(cls, alias: Optional[str] = None, abstract: bool = False) -> None:
+    def __init_subclass__(cls, variant: Optional[str] = None, abstract: bool = False) -> None:
         if abstract:
             return
 
         serialized_type = cls.get_type()
         full_name = f"{serialized_type.__module__}.{serialized_type.__qualname__}" if serialized_type.__module__ != "builtins" else serialized_type.__name__
+        variant_obj = Variant(variant or "")
 
-        _type_aliases[serialized_type] = actual_alias = alias if alias is not None else full_name
+        _type_aliases[serialized_type] = full_name
 
-        if actual_alias in _serializers:
-            raise Exception(f"{actual_alias} is already registered")
+        if (full_name, variant_obj) in _serializers:
+            raise Exception(f"{full_name} is already registered")
 
-        _serializers[actual_alias] = cls
+        _serializers[(full_name, variant_obj)] = cls
 
     @classmethod
     def get_type(cls) -> Type[T]:
-        type = get_args(getattr(cls, "__orig_bases__")[0])[0]
-
-        if (origin := get_origin(type)) is not None:
-            return origin
-        else:
-            return type
+        return safe_get_origin(get_args(getattr(cls, "__orig_bases__")[0])[0])
 
     @classmethod
     def create(cls, ar: Archive) -> T:
@@ -141,12 +135,20 @@ class Serializer(Generic[T]):
     def write(cls, obj: T, ar: Archive) -> None:
         raise NotImplementedError
 
+    @classmethod
+    def read_json(cls, obj: Any) -> T:
+        raise NotImplementedError
+
+    @classmethod
+    def write_json(cls, obj: T) -> Any:
+        raise NotImplementedError
+
 
 class BasicObjectSerializer(Serializer[T], abstract = True):
     keys: list[Any] = []
 
-    def __init_subclass__(cls, alias: Optional[str] = None, create: bool = True) -> None:
-        super().__init_subclass__(alias)
+    def __init_subclass__(cls, create: bool = True) -> None:
+        super().__init_subclass__()
 
         if not create:
             setattr(cls, "create", lambda ar: None)
@@ -191,15 +193,21 @@ def find_alias_for_type(type: Type[Any]) -> Optional[str]:
     return best_alias
 
 
+def find_serializer(type: Type[Any], variant: Variant = Variant()) -> Optional[Type[Serializer[Any]]]:
+    if alias := find_alias_for_type(type):
+        return _serializers[(alias, variant)]
+
+
 #===============================================================================
 
 
-from types import NoneType, SimpleNamespace
+from types import NoneType
 
 import numpy as np
 from PIL import Image
 from numpy.typing import NDArray
 
+from temporal.utils.bytes import base64_to_bytes, bytes_to_base64
 from temporal.utils.image import base64_to_image, image_to_base64, load_image, np_to_pil, pil_to_np, save_image
 from temporal.utils.numpy import array_to_base64, base64_to_array, load_array, save_array
 
@@ -213,6 +221,14 @@ class _(Serializer[NoneType]):
     def write(cls, obj, ar):
         ar.data = ""
 
+    @classmethod
+    def read_json(cls, obj):
+        return obj
+
+    @classmethod
+    def write_json(cls, obj):
+        return obj
+
 
 class _(Serializer[bool]):
     @classmethod
@@ -222,6 +238,14 @@ class _(Serializer[bool]):
     @classmethod
     def write(cls, obj, ar):
         ar.data = str(obj)
+
+    @classmethod
+    def read_json(cls, obj):
+        return obj
+
+    @classmethod
+    def write_json(cls, obj):
+        return obj
 
 
 class _(Serializer[int]):
@@ -233,6 +257,14 @@ class _(Serializer[int]):
     def write(cls, obj, ar):
         ar.data = str(obj)
 
+    @classmethod
+    def read_json(cls, obj):
+        return obj
+
+    @classmethod
+    def write_json(cls, obj):
+        return obj
+
 
 class _(Serializer[float]):
     @classmethod
@@ -243,6 +275,14 @@ class _(Serializer[float]):
     def write(cls, obj, ar):
         ar.data = str(obj)
 
+    @classmethod
+    def read_json(cls, obj):
+        return obj
+
+    @classmethod
+    def write_json(cls, obj):
+        return obj
+
 
 class _(Serializer[str]):
     @classmethod
@@ -252,6 +292,14 @@ class _(Serializer[str]):
     @classmethod
     def write(cls, obj, ar):
         ar.data = obj
+
+    @classmethod
+    def read_json(cls, obj):
+        return obj
+
+    @classmethod
+    def write_json(cls, obj):
+        return obj
 
 
 class _(Serializer[tuple[Any, ...]]):
@@ -312,19 +360,14 @@ class _(Serializer[Path]):
     def write(cls, obj, ar):
         ar.data = obj.as_posix()
 
-
-class _(Serializer[SimpleNamespace]):
     @classmethod
-    def read(cls, obj, ar):
-        for child_ar in ar:
-            setattr(obj, child_ar.key, child_ar.create())
-
-        return obj
+    def read_json(cls, obj):
+        return Path(obj)
 
     @classmethod
-    def write(cls, obj, ar):
-        for key, value in vars(obj).items():
-            ar[key].write(value)
+    def write_json(cls, obj):
+        return obj.as_posix()
+
 
 
 class _(Serializer[bytes]):
@@ -343,6 +386,14 @@ class _(Serializer[bytes]):
             ar.data = path.name
         else:
             raise NotADirectoryError
+
+    @classmethod
+    def read_json(cls, obj):
+        return base64_to_bytes(obj)
+
+    @classmethod
+    def write_json(cls, obj):
+        return bytes_to_base64(obj)
 
 
 class _(Serializer[Image.Image]):
@@ -363,6 +414,14 @@ class _(Serializer[Image.Image]):
             ar.data = path.name
         else:
             ar.data = image_to_base64(pil_to_np(obj))
+
+    @classmethod
+    def read_json(cls, obj):
+        return np_to_pil(base64_to_image(obj))
+
+    @classmethod
+    def write_json(cls, obj):
+        return image_to_base64(pil_to_np(obj), "fast")
 
 
 class _(Serializer[NDArray[np.float64]]):
@@ -387,3 +446,21 @@ class _(Serializer[NDArray[np.float64]]):
             ar.data = path.name
         else:
             ar.data = array_to_base64(obj)
+
+    @classmethod
+    def read_json(cls, obj):
+        return base64_to_array(obj)
+
+    @classmethod
+    def write_json(cls, obj):
+        return array_to_base64(obj)
+
+
+class _(Serializer[NDArray[np.float64]], variant = "image"):
+    @classmethod
+    def read_json(cls, obj):
+        return base64_to_image(obj)
+
+    @classmethod
+    def write_json(cls, obj):
+        return image_to_base64(obj)

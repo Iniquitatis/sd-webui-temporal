@@ -1,11 +1,13 @@
 import xml.etree.ElementTree as ET
 from itertools import chain
 from pathlib import Path
-from typing import Any, Callable, Optional, TypeVar, cast
+from types import NoneType
+from typing import Any, Callable, Literal, Optional, Type, TypeVar, cast, get_args, get_type_hints
 
-from temporal.serialization import Archive, Serializer, find_alias_for_type
+from temporal.serialization import Archive, Serializer, Variant, find_alias_for_type, find_serializer
 from temporal.utils import logging
 from temporal.utils.fs import recreate_directory
+from temporal.utils.typing import get_annotated_arg, get_annotated_type, get_optional_type, is_annotated, is_optional, safe_get_origin
 
 
 T = TypeVar("T")
@@ -20,12 +22,14 @@ class SerializableField:
 
     def __init__(self, value: Optional[T] = None, *, factory: Optional[Callable[[], T]] = None, saved: bool = True) -> None:
         self.key = ""
+        self.type: Type[Any]
         self.value = value
         self.factory = factory
         self.saved = saved
 
     def __set_name__(self, owner: Any, name: str) -> None:
         self.key = name
+        self.type = get_type_hints(owner, include_extras = True)[name]
 
     @property
     def default(self) -> Any:
@@ -46,6 +50,14 @@ class Serializable:
             @classmethod
             def write(cls, obj, ar):
                 obj.write(ar)
+
+            @classmethod
+            def read_json(cls, obj):
+                return cls.get_type().from_json(obj)
+
+            @classmethod
+            def write_json(cls, obj):
+                return obj.to_json()
 
         cls.__fields__ = {
             key: field
@@ -101,18 +113,76 @@ class Serializable:
         tree = self.to_xml(data_dir = dir)
         tree.write(dir / "data.xml")
 
-    def from_json(self: U, data: dict[str, Any], data_dir: Optional[Path] = None) -> U:
-        ar = Archive(data_dir = data_dir)
-        ar.parse_json(data)
-        self.read(ar)
+    @classmethod
+    def from_json(cls: Type[U], data: dict[str, Any]) -> U:
+        def read_value(type: Type[Any], obj: Any, variant: Variant = Variant()) -> Any:
+            if safe_get_origin(type) is list:
+                return [
+                    read_value(get_args(type)[0], value)
+                    for value in obj
+                ]
 
-        return self
+            elif safe_get_origin(type) is dict:
+                return {
+                    key: read_value(get_args(type)[1], value)
+                    for key, value in obj.items()
+                }
 
-    def to_json(self, data_dir: Optional[Path] = None) -> dict[str, Any]:
-        ar = Archive(type_name = find_alias_for_type(type(self)) or "", data_dir = data_dir)
-        self.write(ar)
+            elif safe_get_origin(type) is Literal:
+                return read_value(str, obj)
 
-        return ar.print_json()
+            elif is_optional(type):
+                return read_value(get_optional_type(type) if obj is not None else NoneType, obj)
+
+            elif is_annotated(type):
+                return read_value(get_annotated_type(type), obj, get_annotated_arg(type, Variant))
+
+            elif serializer := find_serializer(type, variant):
+                print(serializer.get_type())
+                return serializer.read_json(obj)
+
+            else:
+                raise Exception(f"Couldn't find a serializer for '{type}'")
+
+        return cls(**{
+            key: read_value(field.type, data[key])
+            for key, field in cls.__fields__.items()
+            if key in data
+        })
+
+    def to_json(self) -> dict[str, Any]:
+        def write_value(type: Type[Any], obj: Any, variant: Variant = Variant()) -> Any:
+            if safe_get_origin(type) is list:
+                return [
+                    write_value(get_args(type)[0], value)
+                    for value in obj
+                ]
+
+            elif safe_get_origin(type) is dict:
+                return {
+                    key: write_value(get_args(type)[1], value)
+                    for key, value in obj.items()
+                }
+
+            elif safe_get_origin(type) is Literal:
+                return write_value(str, obj)
+
+            elif is_optional(type):
+                return write_value(get_optional_type(type) if obj is not None else NoneType, obj)
+
+            elif is_annotated(type):
+                return write_value(get_annotated_type(type), obj, get_annotated_arg(type, Variant))
+
+            elif serializer := find_serializer(type, variant):
+                return serializer.write_json(obj)
+
+            else:
+                raise Exception(f"Couldn't find a serializer for '{type}'")
+
+        return {
+            key: write_value(field.type, self.__dict__[key])
+            for key, field in self.__fields__.items()
+        }
 
     def from_xml(self: U, elem: ET.Element, data_dir: Optional[Path] = None) -> U:
         ar = Archive(data_dir = data_dir)
