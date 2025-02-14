@@ -2,9 +2,10 @@ from abc import abstractmethod
 from typing import Any, Type
 
 from temporal.color import Color
-from temporal.meta.configurable import BoolParam, ColorParam, Configurable, EnumParam, FloatParam, IntParam, StringParam
+from temporal.meta.configurable import BoolParam, ColorParam, Configurable, EnumParam, FloatParam, FloatVectorParam, IntParam, IntVectorParam, StringParam
 from temporal.meta.serializable import SerializableField as Field
 from temporal.utils.collection import find_by_predicate
+from temporal.vector import FloatVector, IntVector
 
 
 VIDEO_FILTERS: list[Type["VideoFilter"]] = []
@@ -90,8 +91,7 @@ class InterpolationFilter(VideoFilter):
 class ScalingFilter(VideoFilter):
     name = "Scaling"
 
-    width: int = IntParam("Width", minimum = 16, maximum = 2560, step = 8, value = 512, ui_type = "slider")
-    height: int = IntParam("Height", minimum = 16, maximum = 2560, step = 8, value = 512, ui_type = "slider")
+    size: IntVector = IntVectorParam("Size", axes = ["Width", "Height"], minimum = 16, maximum = 2560, step = 8, factory = lambda: IntVector(512, 512), ui_type = "slider")
     padded: bool = BoolParam("Padded", value = False)
     background_color: Color = ColorParam("Background color", channels = 3, factory = lambda: Color(0.0, 0.0, 0.0))
     backdrop: bool = BoolParam("Backdrop", value = False)
@@ -104,31 +104,31 @@ class ScalingFilter(VideoFilter):
         if self.padded:
             parts.append(f"split[bg][fg]")
 
-            if self.width > self.height:
-                bgsw, bgsh = self.width, -1
-                fgsw, fgsh = -1, self.height
-                pw, ph = self.width, "ih"
+            if self.size.x > self.size.y:
+                bgsw, bgsh = self.size.x, -1
+                fgsw, fgsh = -1, self.size.y
+                pw, ph = self.size.x, "ih"
                 px, py = "(ow-iw)/2", 0
             else:
-                bgsw, bgsh = -1, self.height
-                fgsw, fgsh = self.width, -1
-                pw, ph = "iw", self.height
+                bgsw, bgsh = -1, self.size.y
+                fgsw, fgsh = self.size.x, -1
+                pw, ph = "iw", self.size.y
                 px, py = 0, "(oh-ih)/2"
 
             if self.backdrop:
                 parts.append(f"[bg]scale='w={bgsw}:h={bgsh}:flags=lanczos'[bg]")
-                parts.append(f"[bg]crop='w={self.width}:h={self.height}'[bg]")
+                parts.append(f"[bg]crop='w={self.size.x}:h={self.size.y}'[bg]")
                 parts.append(f"[bg]eq='brightness={self.backdrop_brightness - 1.0}'[bg]")
                 parts.append(f"[bg]gblur='sigma={self.backdrop_blurring}'[bg]")
             else:
-                parts.append(f"[bg]scale='w={self.width}:h={self.height}:flags=neighbor'[bg]")
-                parts.append(f"[bg]drawbox='w={self.width}:h={self.height}:color={self.background_color}:thickness=fill'[bg]")
+                parts.append(f"[bg]scale='w={self.size.x}:h={self.size.y}:flags=neighbor'[bg]")
+                parts.append(f"[bg]drawbox='w={self.size.x}:h={self.size.y}:color={self.background_color}:thickness=fill'[bg]")
 
             parts.append(f"[fg]scale='w={fgsw}:h={fgsh}:flags=lanczos'[fg]")
             parts.append(f"[fg]pad='w={pw}:h={ph}:x={px}:y={py}:color=#00000000'[fg]")
             parts.append(f"[bg][fg]overlay")
         else:
-            parts.append(f"scale='{self.width}:{self.height}:flags=lanczos'")
+            parts.append(f"scale='{self.size.x}:{self.size.y}:flags=lanczos'")
 
         return ",".join(parts)
 
@@ -166,15 +166,12 @@ class TextOverlayFilter(VideoFilter):
     name = "Text overlay"
 
     text: str = StringParam("Text", value = "{frame}", ui_type = "box")
-    anchor_x: float = FloatParam("Anchor X", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, ui_type = "slider")
-    anchor_y: float = FloatParam("Anchor Y", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, ui_type = "slider")
-    offset_x: int = IntParam("Offset X", step = 1, value = 0, ui_type = "box")
-    offset_y: int = IntParam("Offset Y", step = 1, value = 0, ui_type = "box")
+    anchor: FloatVector = FloatVectorParam("Anchor", axes = ["X", "Y"], minimum = 0.0, maximum = 1.0, step = 0.01, factory = lambda: FloatVector(0.0, 0.0), ui_type = "slider")
+    offset: IntVector = IntVectorParam("Offset", axes = ["X", "Y"], step = 1, factory = lambda: IntVector(0, 0), ui_type = "box")
     font: str = StringParam("Font", value = "sans", ui_type = "box")
     font_size: int = IntParam("Font size", minimum = 1, maximum = 144, step = 1, value = 16, ui_type = "slider")
     text_color: Color = ColorParam("Text color", channels = 4, factory = lambda: Color(1.0, 1.0, 1.0, 1.0))
-    shadow_offset_x: int = IntParam("Shadow offset X", step = 1, value = 1, ui_type = "box")
-    shadow_offset_y: int = IntParam("Shadow offset Y", step = 1, value = 1, ui_type = "box")
+    shadow_offset: IntVector = IntVectorParam("Shadow offset", axes = ["X", "Y"], step = 1, factory = lambda: IntVector(1, 1), ui_type = "box")
     shadow_color: Color = ColorParam("Shadow color", channels = 4, factory = lambda: Color(0.0, 0.0, 0.0, 1.0))
 
     def print(self, fps: int) -> str:
@@ -187,4 +184,4 @@ class TextOverlayFilter(VideoFilter):
             .replace(":", "\\:")
             .replace("'", "\\'")
         )
-        return f"drawtext='text={text}:x=(W-tw)*{self.anchor_x}+{self.offset_x}:y=(H-th)*{self.anchor_y}+{self.offset_y}:font={self.font}:fontsize={self.font_size}:fontcolor={self.text_color.to_hex()}:shadowx={self.shadow_offset_x}:shadowy={self.shadow_offset_y}:shadowcolor={self.shadow_color.to_hex()}'"
+        return f"drawtext='text={text}:x=(W-tw)*{self.anchor.x}+{self.offset.x}:y=(H-th)*{self.anchor.y}+{self.offset.y}:font={self.font}:fontsize={self.font_size}:fontcolor={self.text_color.to_hex()}:shadowx={self.shadow_offset.x}:shadowy={self.shadow_offset.y}:shadowcolor={self.shadow_color.to_hex()}'"

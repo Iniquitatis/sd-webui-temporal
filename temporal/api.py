@@ -1,3 +1,4 @@
+from asyncio import get_event_loop
 from typing import Any, Literal
 
 from fastapi import FastAPI
@@ -128,11 +129,10 @@ def register_api(app: FastAPI, engine: Engine) -> None:
         else:
             raise ValueError
 
-        obj = cls.from_json(request.data)
+        def render() -> str:
+            return image_to_base64(cls.from_json(request.data).generate((request.size[1], request.size[0], request.channels)), "fast")
 
-        return image_to_base64(obj.generate((request.size[1], request.size[0], request.channels)), "fast")
-
-    generation_queue = ThreadQueue()
+        return await get_event_loop().run_in_executor(None, render)
 
     @app.get("/temporal/samplers")
     async def _() -> Any:

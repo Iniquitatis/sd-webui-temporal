@@ -8,6 +8,7 @@ import {Radio} from "../scripts/base/radio.js";
 import {Slider} from "../scripts/base/slider.js";
 import {TextArea} from "../scripts/base/text_area.js";
 import {TextBox} from "../scripts/base/text_box.js";
+import {VectorEditor} from "../scripts/base/vector_editor.js";
 import {Signal} from "../scripts/core/signal.js";
 import {Widget} from "../scripts/core/widget.js";
 import {GradientEditor} from "../scripts/gradient_editor.js";
@@ -62,6 +63,32 @@ export class ConfigurableParamEditor extends Widget {
                     e.label = definition.name;
                     e.choices = definition.choices ?? {"": ""};
                     e.value = definition.default ?? null;
+                });
+            } break;
+
+            case "int_vector": {
+                this._editor = this.createChild(VectorEditor, (e) => {
+                    e.label = definition.name;
+                    e.minimum = definition.minimum ?? undefined;
+                    e.maximum = definition.maximum ?? undefined;
+                    e.step = definition.step ?? 1;
+                    e.value = definition.default ?? {x: e.minimum, y: e.minimum};
+                }, definition.ui_type == "slider" ? Slider : NumberBox, {
+                    x: definition.axes?.[0] ?? "X",
+                    y: definition.axes?.[1] ?? "Y",
+                });
+            } break;
+
+            case "float_vector": {
+                this._editor = this.createChild(VectorEditor, (e) => {
+                    e.label = definition.name;
+                    e.minimum = definition.minimum ?? undefined;
+                    e.maximum = definition.maximum ?? undefined;
+                    e.step = definition.step ?? 0.1;
+                    e.value = definition.default ?? {x: e.minimum, y: e.minimum};
+                }, definition.ui_type == "slider" ? Slider : NumberBox, {
+                    x: definition.axes?.[0] ?? "X",
+                    y: definition.axes?.[1] ?? "Y",
                 });
             } break;
 

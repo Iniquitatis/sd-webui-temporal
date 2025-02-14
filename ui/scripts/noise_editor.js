@@ -27,6 +27,8 @@ export class NoiseEditor extends Row {
                     "size": [256, 256],
                     "channels": 3,
                 }, (result) => {
+                    if (!result) return;
+
                     e.value = `data:image/png;base64,${result}`;
                 });
             });

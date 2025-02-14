@@ -26,6 +26,8 @@ export class PatternEditor extends Row {
                     "size": [256, 256],
                     "channels": 4,
                 }, (result) => {
+                    if (!result) return;
+
                     e.value = `data:image/png;base64,${result}`;
                 });
             });
@@ -55,13 +57,13 @@ export class PatternEditor extends Row {
 
             e.createChild(ColorPicker, (e) => {
                 e.label = "Color A";
-                e.value = "#ffffffff";
+                e.value = {r: 1.0, g: 1.0, b: 1.0, a: 1.0};
                 this._manager.manage(e, "color_a");
             }, 4);
 
             e.createChild(ColorPicker, (e) => {
                 e.label = "Color B";
-                e.value = "#000000ff";
+                e.value = {r: 0.0, g: 0.0, b: 0.0, a: 1.0};
                 this._manager.manage(e, "color_b");
             }, 4);
         });

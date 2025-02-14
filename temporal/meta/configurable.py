@@ -9,6 +9,7 @@ from temporal.meta.serializable import Serializable, SerializableField
 from temporal.noise import Noise
 from temporal.pattern import Pattern
 from temporal.utils.image import NumpyImage
+from temporal.vector import FloatVector, IntVector
 
 
 T = TypeVar("T")
@@ -194,6 +195,68 @@ class EnumParam(ConfigurableParam[str]):
                 for x in self.choices
             },
             "default": self.default,
+            "ui_type": self.ui_type,
+        }
+
+
+class IntVectorParam(ConfigurableParam[IntVector]):
+    def __init__(
+        self,
+        name: str = "Parameter",
+        axes: list[str] = ["X", "Y"],
+        minimum: Optional[int] = None,
+        maximum: Optional[int] = None,
+        step: int = 1,
+        factory: Callable[[], IntVector] = IntVector,
+        ui_type: Literal["box", "slider"] = "box",
+    ) -> None:
+        super().__init__(name, factory = factory)
+        self.axes = axes
+        self.minimum = minimum
+        self.maximum = maximum
+        self.step = step
+        self.ui_type = ui_type
+
+    def schema(self) -> dict[str, Any]:
+        return {
+            "type": "int_vector",
+            "name": self.name,
+            "axes": self.axes,
+            "minimum": self.minimum,
+            "maximum": self.maximum,
+            "step": self.step,
+            "default": self.default.to_json(),
+            "ui_type": self.ui_type,
+        }
+
+
+class FloatVectorParam(ConfigurableParam[FloatVector]):
+    def __init__(
+        self,
+        name: str = "Parameter",
+        axes: list[str] = ["X", "Y"],
+        minimum: Optional[float] = None,
+        maximum: Optional[float] = None,
+        step: float = 1.0,
+        factory: Callable[[], FloatVector] = FloatVector,
+        ui_type: Literal["box", "slider"] = "box",
+    ) -> None:
+        super().__init__(name, factory = factory)
+        self.axes = axes
+        self.minimum = minimum
+        self.maximum = maximum
+        self.step = step
+        self.ui_type = ui_type
+
+    def schema(self) -> dict[str, Any]:
+        return {
+            "type": "float_vector",
+            "name": self.name,
+            "axes": self.axes,
+            "minimum": self.minimum,
+            "maximum": self.maximum,
+            "step": self.step,
+            "default": self.default.to_json(),
             "ui_type": self.ui_type,
         }
 

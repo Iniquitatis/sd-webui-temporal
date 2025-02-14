@@ -1,3 +1,5 @@
+from typing import Iterator
+
 import numpy as np
 from numpy.typing import NDArray
 
@@ -5,43 +7,30 @@ from temporal.meta.serializable import Serializable, SerializableField as Field
 
 
 class Color(Serializable):
-    r: float = Field(1.0)
-    g: float = Field(1.0)
-    b: float = Field(1.0)
+    r: float = Field(0.0)
+    g: float = Field(0.0)
+    b: float = Field(0.0)
     a: float = Field(1.0)
+
+    def __iter__(self) -> Iterator[float]:
+        yield from self.__dict__.values()
 
     @classmethod
     def from_hex(cls, hex: str) -> "Color":
-        parts = [hex[i:i + 2] for i in range(1, 9, 2)]
-
-        return cls(
-            int(parts[0], 16) / 255.0,
-            int(parts[1], 16) / 255.0,
-            int(parts[2], 16) / 255.0,
-            int(parts[3], 16) / 255.0 if parts[3] else 1.0,
-        )
+        return cls(*(
+            int(hex[i:i + 2], 16) / 255.0
+            for i in range(1, len(hex), 2)
+        ))
 
     @classmethod
     def from_numpy(cls, arr: NDArray[np.float64]) -> "Color":
-        return cls(
-            arr[0],
-            arr[1],
-            arr[2],
-            arr[3] if arr.shape[0] == 4 else 1.0,
-        )
+        return cls(*arr)
 
     def to_hex(self, channels: int = 4) -> str:
-        return "#" + "".join((
-            f"{round(self.r * 255.0):02x}",
-            f"{round(self.g * 255.0):02x}",
-            f"{round(self.b * 255.0):02x}",
-            f"{round(self.a * 255.0):02x}",
-        )[:channels])
+        return "#" + "".join([
+            f"{round(x * 255.0):02x}"
+            for x in self
+        ][:channels])
 
     def to_numpy(self, channels: int = 4) -> NDArray[np.float64]:
-        return np.array((
-            self.r,
-            self.g,
-            self.b,
-            self.a,
-        )[:channels])
+        return np.fromiter(self, np.float64)[:channels]

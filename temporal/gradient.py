@@ -6,47 +6,30 @@ from numpy.typing import NDArray
 from temporal.color import Color
 from temporal.meta.serializable import Serializable, SerializableField as Field
 from temporal.utils.math import lerp
+from temporal.vector import FloatVector
 
 
 class Gradient(Serializable):
     type: Literal["linear", "radial"] = Field("linear")
-    start_x: float = Field(0.0)
-    start_y: float = Field(0.0)
-    end_x: float = Field(1.0)
-    end_y: float = Field(1.0)
+    start: FloatVector = Field(factory = lambda: FloatVector(0.0, 0.0))
+    end: FloatVector = Field(factory = lambda: FloatVector(1.0, 1.0))
     start_color: Color = Field(factory = lambda: Color(1.0, 1.0, 1.0))
     end_color: Color = Field(factory = lambda: Color(0.0, 0.0, 0.0))
 
     def generate(self, shape: tuple[int, ...], show_points: bool = False) -> NDArray[np.float64]:
-        start_x, start_y = self.start_x * shape[1], self.start_y * shape[0]
-        end_x, end_y = self.end_x * shape[1], self.end_y * shape[0]
+        start = self.start.to_numpy()[[1, 0]] * shape[:2]
+        end = self.end.to_numpy()[[1, 0]] * shape[:2]
 
-        y, x = np.indices(shape[:2])
+        coords = np.indices(shape[:2]).transpose(1, 2, 0)
 
         if self.type == "linear":
-            point_to_start = (
-                (x - start_x) * (end_x - start_x) +
-                (y - start_y) * (end_y - start_y)
-            )
-
-            end_to_start = (
-                (end_x - start_x) * (end_x - start_x) +
-                (end_y - start_y) * (end_y - start_y)
-            )
-
+            point_to_start = np.dot(coords - start, end - start)
+            end_to_start = np.dot(end - start, end - start)
             factor = np.clip(point_to_start / end_to_start, 0.0, 1.0)
 
         elif self.type == "radial":
-            point_to_start = np.sqrt(
-                np.power(x - start_x, 2.0) +
-                np.power(y - start_y, 2.0),
-            )
-
-            end_to_start = np.sqrt(
-                np.power(end_x - start_x, 2.0) +
-                np.power(end_y - start_y, 2.0),
-            )
-
+            point_to_start = np.sqrt(np.power(coords - start, 2.0).sum(-1))
+            end_to_start = np.sqrt(np.power(end - start, 2.0).sum(-1))
             factor = np.clip(point_to_start / end_to_start, 0.0, 1.0)
 
         else:
@@ -59,13 +42,13 @@ class Gradient(Serializable):
         )
 
         if show_points:
-            start_x, start_y = int(start_x), int(start_y)
-            end_x, end_y = int(end_x), int(end_y)
+            start = start.astype(np.int32)
+            end = end.astype(np.int32)
 
-            if start_x in range(shape[1]) and start_y in range(shape[0]):
-                result[start_y, start_x] = [0.0, 1.0, 0.0, 1.0]
+            if all((start >= 0) & (start < shape[:2])):
+                result[*start] = [0.0, 1.0, 0.0, 1.0][:shape[-1]]
 
-            if end_x in range(shape[1]) and end_y in range(shape[0]):
-                result[end_y, end_x] = [1.0, 0.0, 0.0, 1.0]
+            if all((end >= 0) & (end < shape[:2])):
+                result[*end] = [1.0, 0.0, 0.0, 1.0][:shape[-1]]
 
         return result
