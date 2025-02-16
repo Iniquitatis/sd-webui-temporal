@@ -1,6 +1,5 @@
 import {Dropdown} from "../scripts/base/dropdown.js";
 import {Form} from "../scripts/base/form.js";
-import {ImageBox} from "../scripts/base/image_box.js";
 import {Slider} from "../scripts/base/slider.js";
 import {TextArea} from "../scripts/base/text_area.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
@@ -15,10 +14,6 @@ export class ProcessingParamsEditor extends Form {
         this.onValueChange = new Signal();
 
         this._manager = new FieldManager(this.onValueChange);
-
-        this.createField("Image", ImageBox, (e) => {
-            this._manager.manage(e, "images", (value) => value[0], (value) => [value]);
-        });
 
         this.createRow((e) => {
             e.createField("Model", Dropdown, (e) => {
@@ -41,29 +36,11 @@ export class ProcessingParamsEditor extends Form {
         });
 
         this.createField("Positive prompt", TextArea, (e) => {
-            this._manager.manage(e, "positive_prompts", (value) => value[0], (value) => [value]);
+            this._manager.manage(e, "positive_prompt");
         });
 
         this.createField("Negative prompt", TextArea, (e) => {
-            this._manager.manage(e, "negative_prompts", (value) => value[0], (value) => [value]);
-        });
-
-        this.createRow((e) => {
-            e.createField("Width", Slider, (e) => {
-                e.minimum = 64;
-                e.maximum = 2048;
-                e.step = 8;
-                e.value = 512;
-                this._manager.manage(e, "width");
-            });
-
-            e.createField("Height", Slider, (e) => {
-                e.minimum = 64;
-                e.maximum = 2048;
-                e.step = 8;
-                e.value = 512;
-                this._manager.manage(e, "height");
-            });
+            this._manager.manage(e, "negative_prompt");
         });
 
         this.createRow((e) => {
@@ -103,7 +80,7 @@ export class ProcessingParamsEditor extends Form {
         });
 
         this.createField("Seed", SeedBox, (e) => {
-            this._manager.manage(e, "seeds", (value) => value[0], (value) => [value]);
+            this._manager.manage(e, "seed");
         });
     }
 

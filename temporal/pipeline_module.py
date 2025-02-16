@@ -15,7 +15,7 @@ class PipelineModule(Configurable, abstract = True):
 
     icon: str = "\U00002699\ufe0f"
 
-    enabled: bool = Field(False)
+    enabled: bool = Field(True)
 
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> "PipelineModule":

@@ -14,7 +14,7 @@ VIDEO_FILTERS: list[Type["VideoFilter"]] = []
 class VideoFilter(Configurable, abstract = True):
     store = VIDEO_FILTERS
 
-    enabled: bool = Field(False)
+    enabled: bool = Field(True)
 
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> "VideoFilter":

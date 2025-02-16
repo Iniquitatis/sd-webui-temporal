@@ -21,7 +21,7 @@ class ResamplingModule(NeuralModule):
 
             if scale < 1.0:
                 scale = 1.0 / scale
-                im = ensure_image_dims(im, size = (floor(general.parameters.width / scale), floor(general.parameters.height / scale)))
+                im = ensure_image_dims(im, size = (floor(general.image_size.x / scale), floor(general.image_size.y / scale)))
 
             if (result := shared.backend.upscale_image(im, self.upscaler, scale)) is not None:
                 return result
@@ -29,6 +29,6 @@ class ResamplingModule(NeuralModule):
                 raise Exception
 
         return [
-            ensure_image_dims(resample(im), (general.parameters.width, general.parameters.height), 3)
+            ensure_image_dims(resample(im), (general.image_size.x, general.image_size.y), 3)
             for im in images
         ]

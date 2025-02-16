@@ -144,7 +144,7 @@ def register_api(app: FastAPI, engine: Engine) -> None:
     @app.post("/temporal/render_video")
     async def _(request: RenderVideoRequest) -> Any:
         def render() -> Optional[str]:
-            renderer = VideoRenderer.from_json(request.data)
+            shared.video_renderer = VideoRenderer.from_json(request.data)
 
             with engine._state_lock:
                 project = engine.active_project
@@ -152,7 +152,7 @@ def register_api(app: FastAPI, engine: Engine) -> None:
             if not project:
                 return
 
-            return bytes_to_base64(project.general.render_video(renderer, request.type == "final", request.parallel_index, False).read_bytes())
+            return bytes_to_base64(project.general.render_video(shared.video_renderer, request.type == "final", request.parallel_index, False).read_bytes())
 
         return await get_event_loop().run_in_executor(None, render)
 

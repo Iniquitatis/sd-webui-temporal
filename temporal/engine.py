@@ -4,13 +4,11 @@ from threading import Lock
 from time import perf_counter
 
 from temporal.backend import Backend
-from temporal.pipeline import Pipeline
 from temporal.project import Project
 from temporal.shared import shared
 from temporal.utils import logging
 from temporal.utils.image import NumpyImage, ensure_image_dims
-from temporal.utils.object import copy_with_overrides, set_property_by_path
-from temporal.utils.prompt import evaluate_prompt
+from temporal.utils.object import set_property_by_path
 
 
 class Engine:
@@ -44,44 +42,19 @@ class Engine:
             self.state = "active"
             self.total_iterations = iter_count
 
-        if not project.general.parameters.images:
+        if project.general.image.size == 0:
             noises = [
-                project.initial_noise.noise.generate((project.general.parameters.height, project.general.parameters.width, 3), project.general.parameters.seed, i)
+                project.general.initial_noise.generate((project.general.image_size.x, project.general.image_size.y, 3), project.general.seed, i)
                 for i in range(project.general.parallel)
             ]
 
-            if project.initial_noise.factor < 1.0:
-                if not (processed_images := shared.backend.images_to_batches(
-                    copy_with_overrides(project.general.parameters,
-                        positive_prompts = [
-                            evaluate_prompt(x, 0)
-                            for x in project.general.parameters.positive_prompts
-                        ],
-                        negative_prompts = [
-                            evaluate_prompt(x, 0)
-                            for x in project.general.parameters.negative_prompts
-                        ],
-                        strength = 1.0 - project.initial_noise.factor,
-                    ),
-                    [(x, project.general.parameters.seed + i, 1) for i, x in enumerate(noises)],
-                    shared.options.processing.pixels_per_batch,
-                    True,
-                )):
-                    return []
+            project.general.image = noises[0]
+            project.iteration.images[:] = noises
 
-                project.general.parameters.images.clear()
-                project.general.parameters.images[:] = [image_array[0] for image_array in processed_images]
-
-            else:
-                project.general.parameters.images[:] = [x for x in noises]
-
-        elif len(project.general.parameters.images) != project.general.parallel:
-            project.general.parameters.images[:] = [project.general.parameters.images[0]] * project.general.parallel
+        project.general.image = ensure_image_dims(project.general.image, (project.general.image_size.x, project.general.image_size.y), 3)
 
         if not project.iteration.images:
-            project.iteration.images[:] = [ensure_image_dims(x, (project.general.parameters.width, project.general.parameters.height), 3) for x in project.general.parameters.images]
-
-        pipeline = Pipeline()
+            project.iteration.images[:] = [project.general.image] * project.general.parallel
 
         last_images = project.iteration.images.copy()
 
@@ -104,7 +77,7 @@ class Engine:
             for path, value in project.animation.evaluate(project.iteration.index).items():
                 set_property_by_path(project, path, value)
 
-            if not pipeline.run(project):
+            if not project.pipeline.run(project.general, project.iteration):
                 break
 
             last_images = project.iteration.images.copy()
@@ -116,7 +89,7 @@ class Engine:
 
             logging.info(f"Iteration took {end_time - start_time:.6f} second(s)")
 
-        pipeline.finalize(project)
+        project.pipeline.finalize(project.general, project.iteration)
 
         project.save(project.general.path)
 

@@ -1,13 +1,13 @@
+from math import floor
 from typing import Optional
 
-import numpy as np
-
 from temporal.general_data import GeneralData
-from temporal.meta.configurable import FloatParam, IntParam
+from temporal.meta.configurable import FloatParam, ProcessingParamsParam
 from temporal.pipeline_modules.neural import NeuralModule
+from temporal.processing_params import ProcessingParams
 from temporal.shared import shared
 from temporal.utils.image import NumpyImage
-from temporal.utils.numpy import average_array, make_eased_weight_array, saturate_array
+from temporal.utils.math import quantize
 from temporal.utils.object import copy_with_overrides
 from temporal.utils.prompt import evaluate_prompt
 
@@ -15,36 +15,20 @@ from temporal.utils.prompt import evaluate_prompt
 class ProcessingModule(NeuralModule):
     name = "Processing"
 
-    samples: int = IntParam("Sample count", minimum = 1, value = 1, ui_type = "box")
-    trimming: float = FloatParam("Trimming", minimum = 0.0, maximum = 0.5, step = 0.01, value = 0.0, ui_type = "slider")
-    easing: float = FloatParam("Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0, ui_type = "slider")
-    preference: float = FloatParam("Preference", minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0, ui_type = "slider")
+    parameters: ProcessingParams = ProcessingParamsParam("Processing parameters")
+    scale: float = FloatParam("Scale", minimum = 0.25, maximum = 4.0, step = 0.25, value = 1.0, ui_type = "slider")
 
     def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
-        if not (processed_images := shared.backend.images_to_batches(
-            copy_with_overrides(general.parameters,
-                positive_prompts = [
-                    evaluate_prompt(x, frame_index - 1, seed + i)
-                    for i, x in enumerate(general.parameters.positive_prompts)
-                ],
-                negative_prompts = [
-                    evaluate_prompt(x, frame_index - 1, seed + i)
-                    for i, x in enumerate(general.parameters.negative_prompts)
-                ],
+        if processed_images := shared.backend.image_to_image_batched(
+            images,
+            copy_with_overrides(self.parameters,
+                positive_prompt = evaluate_prompt(self.parameters.positive_prompt, frame_index - 1, seed),
+                negative_prompt = evaluate_prompt(self.parameters.negative_prompt, frame_index - 1, seed),
+                seed = seed,
             ),
-            [(x, seed + i, self.samples) for i, x in enumerate(images)],
+            int(quantize(floor(general.image_size.x * self.scale), 8)),
+            int(quantize(floor(general.image_size.y * self.scale), 8)),
             shared.options.processing.pixels_per_batch,
             shared.previewed_modules[self.id] and not shared.options.live_preview.show_only_finished_images,
-        )):
-            return None
-
-        return [
-            image_array[0] if len(image_array) == 1 else saturate_array(average_array(
-                np.stack(image_array),
-                axis = 0,
-                trim = self.trimming,
-                power = self.preference + 1.0,
-                weights = np.flip(make_eased_weight_array(len(image_array), self.easing)),
-            ))
-            for image_array in processed_images
-        ]
+        ):
+            return processed_images

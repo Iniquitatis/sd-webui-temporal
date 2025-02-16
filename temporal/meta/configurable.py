@@ -8,6 +8,7 @@ from temporal.meta.registerable import Registerable
 from temporal.meta.serializable import Serializable, SerializableField
 from temporal.noise import Noise
 from temporal.pattern import Pattern
+from temporal.processing_params import ProcessingParams
 from temporal.utils.image import NumpyImage
 from temporal.vector import FloatVector, IntVector
 
@@ -358,6 +359,22 @@ class PatternParam(ConfigurableParam[Pattern]):
     def schema(self) -> dict[str, Any]:
         return {
             "type": "pattern",
+            "name": self.name,
+            "default": self.default.to_json(),
+        }
+
+
+class ProcessingParamsParam(ConfigurableParam[ProcessingParams]):
+    def __init__(
+        self,
+        name: str = "Parameter",
+        factory: Callable[[], ProcessingParams] = ProcessingParams,
+    ) -> None:
+        super().__init__(name, factory = factory)
+
+    def schema(self) -> dict[str, Any]:
+        return {
+            "type": "processing_params",
             "name": self.name,
             "default": self.default.to_json(),
         }

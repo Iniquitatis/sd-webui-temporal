@@ -53,7 +53,11 @@ class ImageViewer extends Widget {
 
         this.style.display = value ? null : "none";
 
-        this._img.src = value ?? undefined;
+        if (value) {
+            this._img.src = value;
+        } else {
+            this._img.removeAttribute("src");
+        }
     }
 }
 customElements.define("image-viewer", ImageViewer);
@@ -75,6 +79,7 @@ export class ImageBox extends Block {
         this.style.border = "var(--thin-border)";
         this.style.borderRadius = "var(--corners)";
         this.style.height = "100%";
+        this.style.overflow = "hidden";
         this.style.position = "relative";
         this.style.textAlign = "center";
         this.style.userSelect = "none";
@@ -129,7 +134,7 @@ export class ImageBox extends Block {
     }
 
     get value() {
-        return this._img.src;
+        return this._img.src ?? null;
     }
 
     set height(value) {
@@ -141,7 +146,12 @@ export class ImageBox extends Block {
     set value(value) {
         this._input.style.display = value ? "none" : null;
 
-        this._img.src = value ?? null;
+        if (value) {
+            this._img.src = value;
+        } else {
+            this._img.removeAttribute("src");
+        }
+
         this._img.style.display = value ? null : "none";
 
         this._deleteButton.style.display = value ? null : "none";

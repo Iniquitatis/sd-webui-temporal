@@ -1,7 +1,7 @@
 import re
 from random import Random
 
-from temporal.utils.math import clamp, cartesian_product_at, product
+from temporal.utils.math import cartesian_product_at, clamp, product
 
 
 def evaluate_prompt(prompt: str, iteration: int, seed: int = -1) -> str:

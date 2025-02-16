@@ -12,14 +12,15 @@ import {Row} from "./scripts/base/row.js";
 import {Tabs} from "./scripts/base/tabs.js";
 import {TextArea} from "./scripts/base/text_area.js";
 import {TextBox} from "./scripts/base/text_box.js";
+import {VectorEditor} from "./scripts/base/vector_editor.js";
 import {VideoBox} from "./scripts/base/video_box.js";
 import {mapObject} from "../scripts/utils/object.js";
 import {getRequest, postRequest} from "./scripts/utils/requests.js";
 import {FSStoreBox} from "./scripts/fs_store_box.js";
-import {InitialNoiseEditor} from "./scripts/initial_noise_editor.js";
 import {ModuleList} from "./scripts/module_list.js";
+import {NoiseEditor} from "./scripts/noise_editor.js";
 import {PipelineModuleEditor} from "./scripts/pipeline_module_editor.js";
-import {ProcessingParamsEditor} from "./scripts/processing_params_editor.js";
+import {SeedBox} from "./scripts/seed_box.js";
 import {blendModes, models, pipelineModules, presets, projects, samplers, schedulers, vaes, videoFilters} from "./scripts/shared_data.js";
 import {VideoRendererEditor} from "./scripts/video_renderer_editor.js";
 
@@ -30,11 +31,13 @@ export class MainUI extends Column {
         let generation = {
             project: {
                 general: {},
+                pipeline: {},
             },
         };
         let preset = {
             project: {
                 general: {},
+                pipeline: {},
             },
         };
 
@@ -94,17 +97,16 @@ export class MainUI extends Column {
                 e.entries = Object.keys(presets);
                 e.saveCallback = () => preset;
                 e.onLoad.connect((value) => {
-                    // FIXME: Unsure where exactly it should be fixed
-                    value.project.general.parameters.images = value.project.general.parameters.images.map((data) => `data:image/png;base64,${data}`);
-
                     this._name.value = value.name;
+                    this._image.value = `data:image/png;base64,${value.project.general.image}`;
+                    this._initialNoise.value = value.project.general.initial_noise;
+                    this._imageSize.value = value.project.general.image_size;
+                    this._parallel.value = value.project.general.parallel;
+                    this._seed.value = value.project.general.seed;
                     this._loadParameters.value = value.load_parameters;
                     this._continueFromLastFrame.value = value.continue_from_last_frame;
                     this._iterCount.value = value.iter_count;
-                    this._processing.value = value.project.general.parameters;
-                    this._initialNoise.value = value.project.initial_noise;
-                    this._parallel.value = value.project.general.parallel;
-                    this._pipelineModules.value = value.project.modules;
+                    this._pipelineModules.value = value.project.pipeline.modules;
                     this._animation.value = value.project.animation.code;
                     this._videoRenderer.value = value.video_renderer;
                     this._measuringParallelIndex.value = value.measuring_parallel_index;
@@ -117,13 +119,12 @@ export class MainUI extends Column {
                     this._name.value = value;
                 });
                 e.onLoad.connect((value) => {
-                    // FIXME: Unsure where exactly it should be fixed
-                    value.general.parameters.images = value.general.parameters.images.map((data) => `data:image/png;base64,${data}`);
-
-                    this._processing.value = value.general.parameters;
-                    this._initialNoise.value = value.initial_noise;
+                    this._image.value = `data:image/png;base64,${value.general.image}`;
+                    this._initialNoise.value = value.general.initial_noise;
+                    this._imageSize.value = value.general.image_size;
                     this._parallel.value = value.general.parallel;
-                    this._pipelineModules.value = value.modules;
+                    this._seed.value = value.general.seed;
+                    this._pipelineModules.value = value.pipeline.modules;
                 });
             }, "projects", ["refresh", "load", "rename", "delete"]);
         });
@@ -138,6 +139,53 @@ export class MainUI extends Column {
                 });
 
                 e.createField("Description", TextArea);
+
+                e.createChild(Tabs, (e) => {
+                    this._image = e.createTab("Image", ImageBox, (e) => {
+                        e.onValueChange.connect((value) => {
+                            generation.project.general.image = value;
+                            preset.project.general.image = value;
+                        });
+                    });
+
+                    this._initialNoise = e.createTab("Initial noise", NoiseEditor, (e) => {
+                        e.onValueChange.connect((value) => {
+                            generation.project.general.initial_noise = value;
+                            preset.project.general.initial_noise = value;
+                        });
+                        // FIXME: Temporary
+                        e.onValueChange.connect((value) => console.log(value));
+                    });
+                });
+
+                this._imageSize = e.createField("Image size", VectorEditor, (e) => {
+                    e.minimum = 64;
+                    e.maximum = 2048;
+                    e.step = 8;
+                    e.value = {x: 512, y: 512};
+                    e.onValueChange.connect((value) => {
+                        generation.project.general.image_size = value;
+                        preset.project.general.image_size = value;
+                    });
+                }, NumberBox, {x: "X", y: "Y"});
+
+                this._parallel = e.createField("Parallel", NumberBox, (e) => {
+                    e.minimum = 1;
+                    e.step = 1;
+                    e.value = 1;
+                    e.onValueChange.connect((value) => {
+                        generation.project.general.parallel = value;
+                        preset.project.general.parallel = value;
+                    });
+                });
+
+                this._seed = e.createField("Seed", SeedBox, (e) => {
+                    e.value = -1;
+                    e.onValueChange.connect((value) => {
+                        generation.project.general.seed = value;
+                        preset.project.general.seed = value;
+                    });
+                });
 
                 this._loadParameters = e.createField("Load parameters", Checkbox, (e) => {
                     e.value = true;
@@ -166,54 +214,20 @@ export class MainUI extends Column {
                 });
             });
 
-            this._processing = e.createTab("Processing", ProcessingParamsEditor, (e) => {
-                e.onValueChange.connect((value) => {
-                    generation.project.general.parameters = value;
-                    preset.project.general.parameters = value;
-                });
-                // FIXME: Temporary
-                e.onValueChange.connect((value) => console.log(value));
-            });
-
-            e.createTab("Pipeline", Column, (e) => {
-                e.createChild(Accordion, (e) => {
-                    e.label = "Initial noise";
-
-                    this._initialNoise = e.createChild(InitialNoiseEditor, (e) => {
-                        e.onValueChange.connect((value) => {
-                            generation.project.initial_noise = value;
-                            preset.project.initial_noise = value;
-                        });
-                        // FIXME: Temporary
-                        e.onValueChange.connect((value) => console.log(value));
+            e.createTab("Pipeline", Form, (e) => {
+                this._pipelineModules = e.createField("Add module", ModuleList, (e) => {
+                    e.onValueChange.connect((value) => {
+                        generation.project.pipeline.modules = value;
+                        preset.project.pipeline.modules = value;
                     });
-                });
+                    // FIXME: Temporary
+                    e.onValueChange.connect((value) => console.log(value));
+                }, PipelineModuleEditor, mapObject(pipelineModules, (_, module) => `${module.icon} ${module.name}`), pipelineModules);
 
-                e.createChild(Form, (e) => {
-                    this._parallel = e.createField("Parallel", NumberBox, (e) => {
-                        e.minimum = 1;
-                        e.step = 1;
-                        e.value = 1;
-                        e.onValueChange.connect((value) => {
-                            generation.project.general.parallel = value;
-                            preset.project.general.parallel = value;
-                        });
-                    });
-
-                    this._pipelineModules = e.createField("Add module", ModuleList, (e) => {
-                        e.onValueChange.connect((value) => {
-                            generation.project.modules = value;
-                            preset.project.modules = value;
-                        });
-                        // FIXME: Temporary
-                        e.onValueChange.connect((value) => console.log(value));
-                    }, PipelineModuleEditor, mapObject(pipelineModules, (_, module) => `${module.icon} ${module.name}`), pipelineModules);
-
-                    this._animation = e.createField("Animation", CodeArea, (e) => {
-                        e.onValueChange.connect((value) => {
-                            generation.project.animation = {code: value};
-                            preset.project.animation = {code: value};
-                        });
+                this._animation = e.createField("Animation", CodeArea, (e) => {
+                    e.onValueChange.connect((value) => {
+                        generation.project.animation = {code: value};
+                        preset.project.animation = {code: value};
                     });
                 });
             });

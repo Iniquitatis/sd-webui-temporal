@@ -6,7 +6,7 @@ import requests
 
 from temporal.backend import Backend
 from temporal.general_data import GeneralData
-from temporal.processing_params import ImageToImageParams, TextToImageParams
+from temporal.processing_params import ProcessingParams
 from temporal.thread_queue import ThreadQueue
 from temporal.utils.image import NumpyImage, base64_to_image, image_to_base64, np_to_pil, save_image
 
@@ -52,43 +52,7 @@ class WebUIAPIBackend(Backend):
         else:
             raise requests.RequestException(response = r)
 
-    def text_to_image(self, params: TextToImageParams, preview: bool = False) -> Optional[list[NumpyImage]]:
-        settings: dict[str, Any] = {
-            "samples_format": "png",
-            "save_to_dirs": False,
-            "sd_model_checkpoint": params.model,
-            "CLIP_stop_at_last_layers": params.clip_skip,
-        }
-
-        if params.vae:
-            settings["sd_vae"] = params.vae
-
-        if not preview:
-            settings["show_progress_every_n_steps"] = -1
-
-        if (r := requests.post(f"{self.url}/sdapi/v1/txt2img", json = {
-            "prompt": params.positive_prompt,
-            "negative_prompt": params.negative_prompt,
-            "width": params.width,
-            "height": params.height,
-            "sampler_name": params.sampler,
-            "scheduler": params.scheduler,
-            "steps": params.steps,
-            "cfg_scale": params.cfg,
-            "denoising_strength": params.strength,
-            "seed": params.seed,
-            "n_iter": 1,
-            "batch_size": 1,
-            "do_not_save_samples": True,
-            "do_not_save_grid": True,
-            "override_settings": settings,
-            "override_settings_restore_afterwards": False,
-        })).ok:
-            return [base64_to_image(x) for x in r.json()["images"]]
-        else:
-            raise requests.RequestException(response = r)
-
-    def image_to_image(self, params: ImageToImageParams, preview: bool = False) -> Optional[list[NumpyImage]]:
+    def image_to_image(self, images: list[NumpyImage], params: ProcessingParams, width: int, height: int, preview: bool = False) -> Optional[list[NumpyImage]]:
         settings: dict[str, Any] = {
             "samples_format": "png",
             "save_to_dirs": False,
@@ -103,11 +67,11 @@ class WebUIAPIBackend(Backend):
             settings["show_progress_every_n_steps"] = -1
 
         if (r := requests.post(f"{self.url}/sdapi/v1/img2img", json = {
-            "init_images": [image_to_base64(x, "fast") for x in params.images],
+            "init_images": [image_to_base64(x, "fast") for x in images],
             "prompt": params.positive_prompt,
             "negative_prompt": params.negative_prompt,
-            "width": params.width,
-            "height": params.height,
+            "width": width,
+            "height": height,
             "sampler_name": params.sampler,
             "scheduler": params.scheduler,
             "steps": params.steps,
@@ -115,13 +79,13 @@ class WebUIAPIBackend(Backend):
             "denoising_strength": params.strength,
             "seed": params.seed,
             "n_iter": 1,
-            "batch_size": len(params.images),
+            "batch_size": len(images),
             "do_not_save_samples": True,
             "do_not_save_grid": True,
             "override_settings": settings,
             "override_settings_restore_afterwards": False,
         })).ok:
-            return [base64_to_image(x) for x in r.json()["images"]]
+            return [base64_to_image(x) for x in r.json()["images"][:len(images)]]
         else:
             raise requests.RequestException(response = r)
 
@@ -130,7 +94,7 @@ class WebUIAPIBackend(Backend):
             "image": image_to_base64(image, "fast"),
             "resize_mode": 0,
             "upscaling_resize_w": floor(image.shape[1] * scale),
-            "upscaling_resize_h": floor(image.shape[1] * scale),
+            "upscaling_resize_h": floor(image.shape[0] * scale),
             "upscaler_1": upscaler,
         })).ok:
             return base64_to_image(r.json()["image"])

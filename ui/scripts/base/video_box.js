@@ -60,7 +60,11 @@ class VideoViewer extends Widget {
 
         this.style.display = value ? null : "none";
 
-        this._video.src = value ?? undefined;
+        if (value) {
+            this._video.src = value;
+        } else {
+            this._video.removeAttribute("src");
+        }
     }
 }
 customElements.define("video-viewer", VideoViewer);
@@ -82,6 +86,7 @@ export class VideoBox extends Block {
         this.style.border = "var(--thin-border)";
         this.style.borderRadius = "var(--corners)";
         this.style.height = "100%";
+        this.style.overflow = "hidden";
         this.style.position = "relative";
         this.style.textAlign = "center";
         this.style.userSelect = "none";
@@ -136,7 +141,7 @@ export class VideoBox extends Block {
     }
 
     get value() {
-        return this._video.src;
+        return this._video.src ?? null;
     }
 
     set height(value) {
@@ -148,7 +153,12 @@ export class VideoBox extends Block {
     set value(value) {
         this._input.style.display = value ? "none" : null;
 
-        this._video.src = value ?? null;
+        if (value) {
+            this._video.src = value;
+        } else {
+            this._video.removeAttribute("src");
+        }
+
         this._video.style.display = value ? null : "none";
 
         this._deleteButton.style.display = value ? null : "none";

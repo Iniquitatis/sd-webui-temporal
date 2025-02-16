@@ -1,3 +1,4 @@
+import {Accordion} from "../scripts/base/accordion.js";
 import {Button} from "../scripts/base/button.js";
 import {Checkbox} from "../scripts/base/checkbox.js";
 import {Dropdown} from "../scripts/base/dropdown.js";
@@ -5,7 +6,6 @@ import {Form} from "../scripts/base/form.js";
 import {MultiStateToggle} from "../scripts/base/multi_state_toggle.js";
 import {ReorderableAccordion} from "../scripts/base/reorderable_list.js";
 import {Slider} from "../scripts/base/slider.js";
-import {Tabs} from "../scripts/base/tabs.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
 import {createElement} from "../scripts/utils/dom.js";
@@ -36,45 +36,34 @@ export class PipelineModuleEditor extends ReorderableAccordion {
 
         this.createChild(Form, (e) => {
             if (definition.is_filter) {
-                e.createRow((e) => {
-                    e.createField("Amount", Slider, (e) => {
-                        e.minimum = 0.0;
-                        e.maximum = 1.0;
-                        e.step = 0.01;
-                        e.value = 1.0;
-                        this._manager.manage(e, "amount");
-                    });
-
-                    e.createField("Relative", Checkbox, (e) => {
-                        e.value = false;
-                        this._manager.manage(e, "amount_relative");
-                    });
+                e.createField("Amount", Slider, (e) => {
+                    e.minimum = 0.0;
+                    e.maximum = 1.0;
+                    e.step = 0.01;
+                    e.value = 1.0;
+                    this._manager.manage(e, "amount");
                 });
 
                 e.createField("Blend mode", Dropdown, (e) => {
                     e.choices = blendModes;
                     this._manager.manage(e, "blend_mode", (value) => value.id, (value) => ({id: value}));
                 });
+            }
 
-                e.createChild(Tabs, (e) => {
-                    e.createTab("Parameters", Form, (e) => {
-                        for (let [id, param] of Object.entries(definition.parameters)) {
-                            e.createField(param.name, ConfigurableParamEditor, (e) => {
-                                this._manager.manage(e, id);
-                            }, param);
-                        }
-                    });
+            for (let [id, param] of Object.entries(definition.parameters)) {
+                e.createField(param.name, ConfigurableParamEditor, (e) => {
+                    this._manager.manage(e, id);
+                }, param);
+            }
 
-                    e.createTab("Mask", ImageMaskEditor, (e) => {
+            if (definition.is_filter) {
+                e.createChild(Accordion, (e) => {
+                    e.label = "Mask";
+
+                    e.createChild(ImageMaskEditor, (e) => {
                         this._manager.manage(e, "mask");
                     });
                 });
-            } else {
-                for (let [id, param] of Object.entries(definition.parameters)) {
-                    e.createField(param.name, ConfigurableParamEditor, (e) => {
-                        this._manager.manage(e, id);
-                    }, param);
-                }
             }
 
             e.createChild(Button, (e) => {

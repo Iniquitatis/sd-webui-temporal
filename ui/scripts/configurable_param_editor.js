@@ -15,6 +15,7 @@ import {GradientEditor} from "../scripts/gradient_editor.js";
 import {ImageSourceEditor} from "../scripts/image_source_editor.js";
 import {NoiseEditor} from "../scripts/noise_editor.js";
 import {PatternEditor} from "../scripts/pattern_editor.js";
+import {ProcessingParamsEditor} from "../scripts/processing_params_editor.js";
 
 export class ConfigurableParamEditor extends Widget {
     constructor(definition) {
@@ -116,6 +117,12 @@ export class ConfigurableParamEditor extends Widget {
 
             case "pattern": {
                 this._editor = this.createChild(PatternEditor, (e) => {
+                    e.value = definition.default ?? {};
+                });
+            } break;
+
+            case "processing_params": {
+                this._editor = this.createChild(ProcessingParamsEditor, (e) => {
                     e.value = definition.default ?? {};
                 });
             } break;

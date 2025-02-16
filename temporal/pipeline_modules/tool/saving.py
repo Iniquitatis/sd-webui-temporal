@@ -53,6 +53,6 @@ class SavingModule(ToolModule):
 
     def _get_scaled_images(self, images: list[NumpyImage], general: GeneralData) -> list[NumpyImage]:
         return [ensure_image_dims(x, size = (
-            int(quantize(general.parameters.width * self.scale, 8)),
-            int(quantize(general.parameters.height * self.scale, 8)),
+            int(quantize(general.image_size.x * self.scale, 8)),
+            int(quantize(general.image_size.y * self.scale, 8)),
         )) for x in images] if self.scale != 1.0 else images

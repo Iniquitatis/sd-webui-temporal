@@ -24,7 +24,7 @@ class InterpolationModule(TemporalModule):
     def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if self.buffer is None:
             self.buffer = np.stack([
-                ensure_image_dims(image, (general.parameters.width, general.parameters.height), 3)
+                ensure_image_dims(image, (general.image_size.x, general.image_size.y), 3)
                 for image in images
             ], 0)
 

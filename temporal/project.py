@@ -3,17 +3,15 @@ from pathlib import Path
 from temporal.animation import Animation
 from temporal.compat import get_latest_version, upgrade_project
 from temporal.general_data import GeneralData
-from temporal.initial_noise_params import InitialNoiseParams
 from temporal.iteration_data import IterationData
 from temporal.meta.serializable import Serializable, SerializableField as Field
-from temporal.pipeline_module import PipelineModule
+from temporal.pipeline import Pipeline
 
 
 class Project(Serializable):
     version: int = Field(get_latest_version())
     general: GeneralData = Field(factory = GeneralData)
-    initial_noise: InitialNoiseParams = Field(factory = InitialNoiseParams)
-    modules: list[PipelineModule] = Field(factory = list)
+    pipeline: Pipeline = Field(factory = Pipeline)
     animation: Animation = Field(factory = Animation)
     iteration: IterationData = Field(factory = IterationData)
 
@@ -25,7 +23,7 @@ class Project(Serializable):
         super().save(dir / "project")
 
     def delete_session_data(self) -> None:
-        for module in self.modules:
+        for module in self.pipeline.modules:
             module.reset()
 
         self.iteration = IterationData()
