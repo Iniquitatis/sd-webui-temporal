@@ -1,13 +1,13 @@
-import {ValueEditor} from "../../scripts/base/value_editor.js";
 import {Signal} from "../../scripts/core/signal.js";
+import {Widget} from "../../scripts/core/widget.js";
 
-export class NumberBox extends ValueEditor {
+export class NumberBox extends Widget {
     constructor() {
         super();
 
         this.onValueChange = new Signal();
 
-        this._input = this._content.createChild("input", (e) => {
+        this._input = this.createChild("input", (e) => {
             e.type = "number";
             e.style.width = "100%";
             e.addEventListener("input", () => {

@@ -21,6 +21,8 @@ async function apiRequest(url, method, data = null, successCallback = null, erro
         if (successCallback) {
             successCallback(json);
         }
+
+        return json;
     })
     .catch((reason) => {
         console.log("ERROR", reason);

@@ -1,7 +1,7 @@
 import {Button} from "../scripts/base/button.js";
 import {Checkbox} from "../scripts/base/checkbox.js";
-import {Column} from "../scripts/base/column.js";
 import {Dropdown} from "../scripts/base/dropdown.js";
+import {Form} from "../scripts/base/form.js";
 import {MultiStateToggle} from "../scripts/base/multi_state_toggle.js";
 import {ReorderableAccordion} from "../scripts/base/reorderable_list.js";
 import {Slider} from "../scripts/base/slider.js";
@@ -23,52 +23,43 @@ export class PipelineModuleEditor extends ReorderableAccordion {
         this._manager = new FieldManager(this.onValueChange);
         this._manager.value = {id: definition.id, enabled: true};
 
-        this._header.insertBefore(createElement(null, "input", (e) => {
-            e.type = "checkbox";
-            e.checked = true;
-            e.addEventListener("change", () => {
-                this._manager._value.enabled = e.checked;
-
-                this.onValueChange.fire(this._value);
-            });
-            this._manager._onValueReceive.connect((value) => {
-                e.checked = value.enabled;
-            });
+        this._header.insertBefore(createElement(null, Checkbox, (e) => {
+            e.value = true;
+            this._manager.manage(e, "enabled");
         }), this._header.firstChild.nextSibling);
 
         this._header.insertBefore(createElement(null, MultiStateToggle, (e) => {
+            e.states = {on: "\u{1f441}\u{fe0e}", off: "\u{20e0}\u{fe0e}"};
             e.value = "on";
             this._manager.manage(e, "preview", (value) => value ? "on" : "off", (value) => value == "on");
-        }, {"on": "\u{1f441}\u{fe0e}", "off": "\u{20e0}\u{fe0e}"}), this._header.lastChild);
+        }), this._header.lastChild);
 
-        this.createChild(Column, (e) => {
+        this.createChild(Form, (e) => {
             if (definition.is_filter) {
-                e.createChild(Slider, (e) => {
-                    e.label = "Amount"
-                    e.minimum = 0.0;
-                    e.maximum = 1.0;
-                    e.step = 0.01;
-                    e.value = 1.0;
-                    this._manager.manage(e, "amount");
+                e.createRow((e) => {
+                    e.createField("Amount", Slider, (e) => {
+                        e.minimum = 0.0;
+                        e.maximum = 1.0;
+                        e.step = 0.01;
+                        e.value = 1.0;
+                        this._manager.manage(e, "amount");
+                    });
 
-                    e.createChild(Checkbox, (e) => {
-                        e.label = "Relative";
+                    e.createField("Relative", Checkbox, (e) => {
                         e.value = false;
-                        e.style.width = "unset";
                         this._manager.manage(e, "amount_relative");
                     });
                 });
 
-                e.createChild(Dropdown, (e) => {
-                    e.label = "Blend mode";
+                e.createField("Blend mode", Dropdown, (e) => {
                     e.choices = blendModes;
                     this._manager.manage(e, "blend_mode", (value) => value.id, (value) => ({id: value}));
                 });
 
                 e.createChild(Tabs, (e) => {
-                    e.createTab("Parameters", Column, (e) => {
+                    e.createTab("Parameters", Form, (e) => {
                         for (let [id, param] of Object.entries(definition.parameters)) {
-                            e.createChild(ConfigurableParamEditor, (e) => {
+                            e.createField(param.name, ConfigurableParamEditor, (e) => {
                                 this._manager.manage(e, id);
                             }, param);
                         }
@@ -80,7 +71,7 @@ export class PipelineModuleEditor extends ReorderableAccordion {
                 });
             } else {
                 for (let [id, param] of Object.entries(definition.parameters)) {
-                    e.createChild(ConfigurableParamEditor, (e) => {
+                    e.createField(param.name, ConfigurableParamEditor, (e) => {
                         this._manager.manage(e, id);
                     }, param);
                 }

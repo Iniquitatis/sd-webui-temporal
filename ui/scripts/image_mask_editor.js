@@ -1,11 +1,11 @@
 import {Checkbox} from "../scripts/base/checkbox.js";
-import {Column} from "../scripts/base/column.js";
+import {Form} from "../scripts/base/form.js";
 import {ImageBox} from "../scripts/base/image_box.js";
 import {Slider} from "../scripts/base/slider.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
 
-export class ImageMaskEditor extends Column {
+export class ImageMaskEditor extends Form {
     constructor() {
         super();
 
@@ -13,25 +13,21 @@ export class ImageMaskEditor extends Column {
 
         this._manager = new FieldManager(this.onValueChange);
 
-        this.createChild(ImageBox, (e) => {
-            e.label = "Image";
+        this.createField("Image", ImageBox, (e) => {
             this._manager.manage(e, "image");
         });
 
-        this.createChild(Checkbox, (e) => {
-            e.label = "Normalized";
+        this.createField("Normalized", Checkbox, (e) => {
             e.value = false;
             this._manager.manage(e, "normalized");
         });
 
-        this.createChild(Checkbox, (e) => {
-            e.label = "Inverted";
+        this.createField("Inverted", Checkbox, (e) => {
             e.value = false;
             this._manager.manage(e, "inverted");
         });
 
-        this.createChild(Slider, (e) => {
-            e.label = "Blurring";
+        this.createField("Blurring", Slider, (e) => {
             e.minimum = 0.0;
             e.maximum = 50.0;
             e.step = 0.1;

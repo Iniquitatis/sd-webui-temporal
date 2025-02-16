@@ -68,9 +68,9 @@ export class ReorderableAccordion extends Accordion {
             e.style.color = "var(--hint-color)";
             e.style.cursor = "move";
             e.style.height = "var(--widget-height)";
+            e.style.padding = "0 var(--horizontal-padding)";
             e.style.textAlign = "center";
             e.style.userSelect = "none";
-            e.style.width = "calc(var(--widget-height) * 1.2)";
             e.addEventListener("pointerdown", (event) => {
                 event.stopPropagation();
 

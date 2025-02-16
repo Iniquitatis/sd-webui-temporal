@@ -1,5 +1,5 @@
 from asyncio import get_event_loop
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -13,8 +13,10 @@ from temporal.pipeline_module import PIPELINE_MODULES
 from temporal.project import Project
 from temporal.shared import shared
 from temporal.thread_queue import ThreadQueue
+from temporal.utils.bytes import bytes_to_base64
 from temporal.utils.image import image_to_base64
 from temporal.video_filters import VIDEO_FILTERS
+from temporal.video_renderer import VideoRenderer
 
 
 class FSOperationRequest(BaseModel):
@@ -36,6 +38,12 @@ class RenderTextureRequest(BaseModel):
     data: dict[str, Any] = {}
     size: tuple[int, int] = (256, 256)
     channels: int = 3
+
+
+class RenderVideoRequest(BaseModel):
+    type: Literal["draft", "final"]
+    data: dict[str, Any] = {}
+    parallel_index: int = 1
 
 
 def register_api(app: FastAPI, engine: Engine) -> None:
@@ -89,8 +97,7 @@ def register_api(app: FastAPI, engine: Engine) -> None:
 
     @app.post("/temporal/interrupt")
     async def _() -> Any:
-        shared.backend.interrupt()
-        engine.running = False
+        engine.stop()
 
     @app.get("/temporal/models")
     async def _() -> Any:
@@ -134,6 +141,21 @@ def register_api(app: FastAPI, engine: Engine) -> None:
 
         return await get_event_loop().run_in_executor(None, render)
 
+    @app.post("/temporal/render_video")
+    async def _(request: RenderVideoRequest) -> Any:
+        def render() -> Optional[str]:
+            renderer = VideoRenderer.from_json(request.data)
+
+            with engine._state_lock:
+                project = engine.active_project
+
+            if not project:
+                return
+
+            return bytes_to_base64(project.general.render_video(renderer, request.type == "final", request.parallel_index, False).read_bytes())
+
+        return await get_event_loop().run_in_executor(None, render)
+
     @app.get("/temporal/samplers")
     async def _() -> Any:
         return [x for x in shared.backend.list_samplers()]
@@ -144,11 +166,12 @@ def register_api(app: FastAPI, engine: Engine) -> None:
 
     @app.get("/temporal/state")
     async def _() -> Any:
-        return {
-            "state": engine.state,
-            "current_iteration": engine.current_iteration,
-            "total_iterations": engine.total_iterations,
-        }
+        with engine._state_lock:
+            return {
+                "state": engine.state,
+                "current_iteration": engine.current_iteration,
+                "total_iterations": engine.total_iterations,
+            }
 
     @app.get("/temporal/upscalers")
     async def _() -> Any:

@@ -1,6 +1,5 @@
 import {Block} from "../../scripts/base/block.js";
 import {ToolButton} from "../../scripts/base/tool_button.js";
-import {ValueEditor} from "../../scripts/base/value_editor.js";
 import {Signal} from "../../scripts/core/signal.js";
 import {Widget} from "../../scripts/core/widget.js";
 import {createElement} from "../../scripts/utils/dom.js";
@@ -21,11 +20,14 @@ class VideoViewer extends Widget {
         this.style.top = "0";
         this.style.width = "100%";
         this.style.zIndex = "1";
-        this.addEventListener("click", () => {
-            this.value = null;
-        });
+        // TODO: Difference with ImageViewer
+        // this.addEventListener("click", () => {
+        //     this.value = null;
+        // });
 
         this._video = this.createChild("video", (e) => {
+            // TODO: Difference with ImageViewer
+            e.controls = "controls";
             e.style.maxHeight = "100%";
             e.style.objectFit = "contain";
             e.style.width = "100%";
@@ -44,6 +46,10 @@ class VideoViewer extends Widget {
             e.style.textAlign = "center";
             e.style.top = "0";
             e.style.width = "4rem";
+            // TODO: Difference with ImageViewer
+            e.addEventListener("click", () => {
+                this.value = null;
+            });
         });
     }
 
@@ -65,69 +71,68 @@ document.addEventListener("DOMContentLoaded", () => {
     videoViewer = createElement(document.body, VideoViewer);
 });
 
-export class VideoBox extends ValueEditor {
+export class VideoBox extends Block {
     constructor() {
         super();
 
         this.onValueChange = new Signal();
 
-        this._content.style.height = "calc(100% - var(--widget-height))";
+        this.style.alignContent = "center";
+        this.style.background = "var(--input-color)";
+        this.style.border = "var(--thin-border)";
+        this.style.borderRadius = "var(--corners)";
+        this.style.height = "100%";
+        this.style.position = "relative";
+        this.style.textAlign = "center";
+        this.style.userSelect = "none";
 
-        this._content.createChild(Block, (e) => {
-            e.style.alignContent = "center";
-            e.style.border = "var(--thin-border)";
-            e.style.borderRadius = "var(--corners)";
+        this._input = this.createChild("input", (e) => {
+            e.type = "file";
+            e.accept = "video/*";
+            e.style.border = "unset";
+            e.style.borderRadius = "unset";
+            e.style.height = "100%";
             e.style.minHeight = "10rem";
-            e.style.position = "relative";
-            e.style.textAlign = "center";
-            e.style.userSelect = "none";
             e.style.width = "100%";
+            e.addEventListener("change", () => {
+                let reader = new FileReader();
+                reader.addEventListener("load", () => {
+                    this.value = reader.result;
 
-            this._input = e.createChild("input", (e) => {
-                e.type = "file";
-                e.accept = "video/*";
-                e.style.border = "unset";
-                e.style.borderRadius = "unset";
-                e.style.height = "100%";
-                e.style.width = "100%";
-                e.addEventListener("change", () => {
-                    let reader = new FileReader();
-                    reader.addEventListener("load", () => {
-                        this.value = reader.result;
-
-                        e.value = null;
-                    });
-                    reader.readAsDataURL(e.files[0]);
+                    e.value = null;
                 });
+                reader.readAsDataURL(e.files[0]);
             });
+        });
 
-            this._video = e.createChild("video", (e) => {
-                e.style.cursor = "pointer";
-                e.style.display = "none";
-                e.style.height = "100%";
-                e.style.maxWidth = "100%";
-                e.style.objectFit = "contain";
-                e.addEventListener("click", () => {
-                    videoViewer.value = e.src;
-                    videoViewer.viewedElement = this;
-                });
+        this._video = this.createChild("video", (e) => {
+            e.style.cursor = "pointer";
+            e.style.display = "none";
+            e.style.height = "100%";
+            e.style.maxWidth = "100%";
+            e.style.objectFit = "contain";
+            e.style.verticalAlign = "middle";
+            e.style.width = "auto";
+            e.addEventListener("click", () => {
+                videoViewer.value = e.src;
+                videoViewer.viewedElement = this;
             });
+        });
 
-            this._deleteButton = e.createChild(ToolButton, (e) => {
-                e.label = "\u{274c}\u{fe0e}";
-                e.style.display = "none";
-                e.style.position = "absolute";
-                e.style.right = "0";
-                e.style.top = "0";
-                e.onClick.connect(() => {
-                    this.value = null;
-                });
+        this._deleteButton = this.createChild(ToolButton, (e) => {
+            e.label = "\u{274c}\u{fe0e}";
+            e.style.display = "none";
+            e.style.position = "absolute";
+            e.style.right = "0";
+            e.style.top = "0";
+            e.onClick.connect(() => {
+                this.value = null;
             });
         });
     }
 
     get height() {
-        return this.style.height;
+        return this._video.style.minHeight;
     }
 
     get value() {
@@ -135,7 +140,9 @@ export class VideoBox extends ValueEditor {
     }
 
     set height(value) {
-        this.style.height = value;
+        this._input.style.minHeight = value;
+        this._video.style.maxHeight = value;
+        this._video.style.minHeight = value;
     }
 
     set value(value) {

@@ -29,7 +29,7 @@ export class Tabs extends Widget {
         });
     }
 
-    createTab(name, cls, initializer, ...args) {
+    createTab(name, tagOrClass, initializer, ...args) {
         this._bar.createChild("button", (e) => {
             e.innerText = name;
             e.style.borderBottom = "unset";
@@ -50,7 +50,7 @@ export class Tabs extends Widget {
             this.setActiveTab(name);
         }
 
-        return tab.createChild(cls, initializer, ...args);
+        return tab.createChild(tagOrClass, initializer, ...args);
     }
 
     setActiveTab(name) {

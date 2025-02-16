@@ -138,7 +138,6 @@ class Serializable:
                 return read_value(get_annotated_type(type), obj, get_annotated_arg(type, Variant))
 
             elif serializer := find_serializer(type, variant):
-                print(serializer.get_type())
                 return serializer.read_json(obj)
 
             else:

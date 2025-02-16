@@ -1,8 +1,7 @@
 import {Checkbox} from "../scripts/base/checkbox.js";
-import {Column} from "../scripts/base/column.js";
+import {Form} from "../scripts/base/form.js";
 import {NumberBox} from "../scripts/base/number_box.js";
 import {Slider} from "../scripts/base/slider.js";
-import {Row} from "../scripts/base/row.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
 import {mapObject} from "../scripts/utils/object.js";
@@ -10,7 +9,7 @@ import {ModuleList} from "../scripts/module_list.js";
 import {videoFilters} from "../scripts/shared_data.js";
 import {VideoFilterEditor} from "../scripts/video_filter_editor.js";
 
-export class VideoRendererEditor extends Column {
+export class VideoRendererEditor extends Form {
     constructor() {
         super();
 
@@ -18,8 +17,7 @@ export class VideoRendererEditor extends Column {
 
         this._manager = new FieldManager(this.onValueChange);
 
-        this.createChild(Slider, (e) => {
-            e.label = "Frames per second";
+        this.createField("Frames per second", Slider, (e) => {
             e.minimum = 1;
             e.maximum = 60;
             e.step = 1;
@@ -27,17 +25,15 @@ export class VideoRendererEditor extends Column {
             this._manager.manage(e, "fps");
         });
 
-        this.createChild(Row, (e) => {
-            e.createChild(NumberBox, (e) => {
-                e.label = "First frame";
+        this.createRow((e) => {
+            e.createField("First frame", NumberBox, (e) => {
                 e.minimum = 1;
                 e.step = 1;
                 e.value = 1;
                 this._manager.manage(e, "first_frame");
             });
 
-            e.createChild(NumberBox, (e) => {
-                e.label = "Last frame";
+            e.createField("Last frame", NumberBox, (e) => {
                 e.minimum = 0;
                 e.step = 1;
                 e.value = 0;
@@ -45,23 +41,21 @@ export class VideoRendererEditor extends Column {
             });
         });
 
-        this.createChild(NumberBox, (e) => {
-            e.label = "Frame stride";
+        this.createField("Frame stride", NumberBox, (e) => {
             e.minimum = 1;
             e.step = 1;
             e.value = 1;
             this._manager.manage(e, "frame_stride");
         });
 
-        this.createChild(Checkbox, (e) => {
-            e.label = "Looping";
+        this.createField("Looping", Checkbox, (e) => {
             e.value = false;
             this._manager.manage(e, "looping");
         });
 
-        this.createChild(ModuleList, (e) => {
+        this.createField("Add filter", ModuleList, (e) => {
             this._manager.manage(e, "filters");
-        }, "Add filter", VideoFilterEditor, mapObject(videoFilters, (_, filter) => filter.name), videoFilters);
+        }, VideoFilterEditor, mapObject(videoFilters, (_, filter) => filter.name), videoFilters);
     }
 
     get value() {

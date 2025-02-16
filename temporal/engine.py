@@ -1,5 +1,6 @@
 from importlib import import_module
 from pathlib import Path
+from threading import Lock
 from time import perf_counter
 
 from temporal.backend import Backend
@@ -14,10 +15,12 @@ from temporal.utils.prompt import evaluate_prompt
 
 class Engine:
     def __init__(self, backend: Backend, options_path: Path, presets_path: Path) -> None:
+        self.active_project = None
         self.running = False
         self.state = "stopped"
         self.current_iteration = 0
         self.total_iterations = 0
+        self._state_lock = Lock()
 
         shared.init(backend, options_path, presets_path)
 
@@ -35,9 +38,11 @@ class Engine:
         pass
 
     def start(self, project: Project, iter_count: int) -> list[NumpyImage]:
-        self.running = True
-        self.state = "active"
-        self.total_iterations = iter_count
+        with self._state_lock:
+            self.active_project = project
+            self.running = True
+            self.state = "active"
+            self.total_iterations = iter_count
 
         if not project.general.parameters.images:
             noises = [
@@ -83,12 +88,14 @@ class Engine:
         self.on_start()
 
         for i in range(iter_count):
-            if not self.running:
-                break
+            with self._state_lock:
+                if not self.running:
+                    break
 
             logging.info(f"Iteration {i + 1} / {iter_count}")
 
-            self.current_iteration = i
+            with self._state_lock:
+                self.current_iteration = i
 
             start_time = perf_counter()
 
@@ -115,9 +122,17 @@ class Engine:
 
         self.on_end()
 
-        self.running = False
-        self.state = "stopped"
-        self.current_iteration = 0
-        self.total_iterations = 0
+        with self._state_lock:
+            self.active_project = None
+            self.running = False
+            self.state = "stopped"
+            self.current_iteration = 0
+            self.total_iterations = 0
 
         return last_images
+
+    def stop(self) -> None:
+        shared.backend.interrupt()
+
+        with self._state_lock:
+            self.running = False

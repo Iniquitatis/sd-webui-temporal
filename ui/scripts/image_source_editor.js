@@ -1,11 +1,11 @@
-import {Column} from "../scripts/base/column.js";
+import {Form} from "../scripts/base/form.js";
 import {ImageBox} from "../scripts/base/image_box.js";
 import {Radio} from "../scripts/base/radio.js";
 import {VideoBox} from "../scripts/base/video_box.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
 
-export class ImageSourceEditor extends Column {
+export class ImageSourceEditor extends Form {
     constructor() {
         super();
 
@@ -13,8 +13,7 @@ export class ImageSourceEditor extends Column {
 
         this._manager = new FieldManager(this.onValueChange);
 
-        this.createChild(Radio, (e) => {
-            e.label = "Type";
+        this.createField("Type", Radio, (e) => {
             e.choices = {
                 "image": "Image",
                 "initial_image": "Initial image",
@@ -41,12 +40,10 @@ export class ImageSourceEditor extends Column {
         });
 
         this._imageBox = this.createChild(ImageBox, (e) => {
-            e.label = "Image";
             this._manager.manage(e, "value");
         });
 
         this._videoBox = this.createChild(VideoBox, (e) => {
-            e.label = "Video";
             e.style.display = "none";
             this._manager.manage(e, "value");
         });

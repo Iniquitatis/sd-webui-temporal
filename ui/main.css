@@ -105,6 +105,26 @@ textarea {
     background-color: var(--active-color);
 }
 
+.checkerboard-bg {
+    --gradient: linear-gradient(
+        45deg,
+        hsl(0 0% 75%) 25%,
+        transparent 25%,
+        transparent 75%,
+        hsl(0 0% 75%) 75%
+    );
+
+    background: var(--gradient), var(--gradient), hsl(0 0% 50%);
+    background-position: 0 0, 8px 8px;
+    background-repeat: repeat repeat;
+    background-size: 16px 16px;
+}
+
+.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
 .dragged {
     opacity: 0.5;
 }

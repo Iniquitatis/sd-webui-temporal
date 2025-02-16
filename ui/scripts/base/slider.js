@@ -1,31 +1,38 @@
-import {ValueEditor} from "../../scripts/base/value_editor.js";
+import {Row} from "../../scripts/base/row.js";
 import {Signal} from "../../scripts/core/signal.js";
+import {Widget} from "../../scripts/core/widget.js";
 
-export class Slider extends ValueEditor {
-    constructor() {
+export class Slider extends Widget {
+    constructor(withNumber = true) {
         super();
 
         this.onValueChange = new Signal();
 
-        this._headerInput = this._header.createChild("input", (e) => {
-            e.type = "number";
-            e.style.textAlign = "right";
-            e.style.width = "var(--small-input-width)";
-            e.addEventListener("input", () => {
-                this._input.valueAsNumber = e.valueAsNumber;
+        this.createChild(Row, (e) => {
+            this._input = e.createChild("input", (e) => {
+                e.type = "range";
+                e.style.width = "100%";
+                e.addEventListener("input", () => {
+                    if (this._numberInput) {
+                        this._numberInput.valueAsNumber = e.valueAsNumber;
+                    }
 
-                this.onValueChange.fire(e.valueAsNumber);
+                    this.onValueChange.fire(e.valueAsNumber);
+                });
             });
-        });
 
-        this._input = this._content.createChild("input", (e) => {
-            e.type = "range";
-            e.style.width = "100%";
-            e.addEventListener("input", () => {
-                this._headerInput.valueAsNumber = e.valueAsNumber;
+            if (withNumber) {
+                this._numberInput = e.createChild("input", (e) => {
+                    e.type = "number";
+                    e.style.textAlign = "right";
+                    e.style.width = "var(--small-input-width)";
+                    e.addEventListener("input", () => {
+                        this._input.valueAsNumber = e.valueAsNumber;
 
-                this.onValueChange.fire(e.valueAsNumber);
-            });
+                        this.onValueChange.fire(e.valueAsNumber);
+                    });
+                });
+            }
         });
     }
 
@@ -47,24 +54,36 @@ export class Slider extends ValueEditor {
 
     set maximum(value) {
         this._input.max = value;
-        this._headerInput.max = value;
+
+        if (this._numberInput) {
+            this._numberInput.max = value;
+        }
     }
 
     set minimum(value) {
         this._input.min = value;
-        this._headerInput.min = value;
+
+        if (this._numberInput) {
+            this._numberInput.min = value;
+        }
     }
 
     set step(value) {
         this._input.step = value;
-        this._headerInput.step = value;
+
+        if (this._numberInput) {
+            this._numberInput.step = value;
+        }
     }
 
     set value(value) {
         this._input.valueAsNumber = value;
-        this._headerInput.valueAsNumber = value;
 
-        this.onValueChange.fire(this.value);
+        if (this._numberInput) {
+            this._numberInput.valueAsNumber = value;
+        }
+
+        this.onValueChange.fire(value);
     }
 }
 customElements.define("custom-slider", Slider);

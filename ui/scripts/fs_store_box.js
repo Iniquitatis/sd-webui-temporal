@@ -2,10 +2,9 @@ import {Dropdown} from "../scripts/base/dropdown.js";
 import {Row} from "../scripts/base/row.js";
 import {ToolButton} from "../scripts/base/tool_button.js";
 import {Signal} from "../scripts/core/signal.js";
-import {Widget} from "../scripts/core/widget.js";
 import {getRequest, postRequest} from "../scripts/utils/requests.js";
 
-export class FSStoreBox extends Widget {
+export class FSStoreBox extends Row {
     constructor(store, features) {
         super();
 
@@ -19,117 +18,109 @@ export class FSStoreBox extends Widget {
         this.onDelete = new Signal();
 
         this._dropdown = this.createChild(Dropdown, (e) => {
+            e.style.width = "100%";
+
             e.onValueChange.connect((value) => {
                 this.onValueChange.fire(value);
             });
+        });
 
-            e.createChild(Row, (e) => {
-                e.style.gap = "calc(var(--layout-gap) / 2)";
+        this.createChild(Row, (e) => {
+            e.style.gap = "calc(var(--layout-gap) / 2)";
 
-                e.createChild(ToolButton, (e) => {
-                    e.label = "\u{1f504}\u{fe0e}";
-                    e.style.display = features.includes("refresh") ? null : "none";
-                    e.onClick.connect(async () => {
-                        await postRequest("/temporal/fs_operation", {
-                            "store": store,
-                            "operation": "refresh",
-                        });
-
-                        await getRequest(`/temporal/${store}`, (result) => {
-                            this.entries = result;
-                        });
-
-                        this.onRefresh.fire();
+            e.createChild(ToolButton, (e) => {
+                e.label = "\u{1f504}\u{fe0e}";
+                e.style.display = features.includes("refresh") ? null : "none";
+                e.onClick.connect(async () => {
+                    await postRequest("/temporal/fs_operation", {
+                        "store": store,
+                        "operation": "refresh",
                     });
+
+                    this.entries = await getRequest(`/temporal/${store}`);
+
+                    this.onRefresh.fire();
                 });
+            });
 
-                e.createChild(ToolButton, (e) => {
-                    e.label = "\u{1f4c2}\u{fe0e}";
-                    e.style.display = features.includes("load") ? null : "none";
-                    e.onClick.connect(() => {
-                        postRequest("/temporal/fs_operation", {
-                            "store": store,
-                            "operation": "load",
-                            "args": {
-                                "name": this._dropdown.value,
-                            },
-                        }, (result) => {
-                            this.onLoad.fire(result);
-                        });
-                    });
+            e.createChild(ToolButton, (e) => {
+                e.label = "\u{1f4c2}\u{fe0e}";
+                e.style.display = features.includes("load") ? null : "none";
+                e.onClick.connect(async () => {
+                    this.onLoad.fire(await postRequest("/temporal/fs_operation", {
+                        "store": store,
+                        "operation": "load",
+                        "args": {
+                            "name": this._dropdown.value,
+                        },
+                    }));
                 });
+            });
 
-                e.createChild(ToolButton, (e) => {
-                    e.label = "\u{1f4be}\u{fe0e}";
-                    e.style.display = features.includes("save") ? null : "none";
-                    e.onClick.connect(async () => {
-                        if (!this.saveCallback) return;
+            e.createChild(ToolButton, (e) => {
+                e.label = "\u{1f4be}\u{fe0e}";
+                e.style.display = features.includes("save") ? null : "none";
+                e.onClick.connect(async () => {
+                    if (!this.saveCallback) return;
 
-                        await postRequest("/temporal/fs_operation", {
-                            "store": store,
-                            "operation": "save",
-                            "args": {
-                                // FIXME
-                                "name": "DEFAULT",
-                                "data": this.saveCallback(),
-                            },
-                        });
-
-                        await getRequest(`/temporal/${store}`, (result) => {
-                            this.entries = result;
-                        });
-
-                        this.onSave.fire();
+                    await postRequest("/temporal/fs_operation", {
+                        "store": store,
+                        "operation": "save",
+                        "args": {
+                            // FIXME
+                            "name": "DEFAULT",
+                            "data": this.saveCallback(),
+                        },
                     });
+
+                    this.entries = await getRequest(`/temporal/${store}`);
+
+                    this.onSave.fire();
                 });
+            });
 
-                e.createChild(ToolButton, (e) => {
-                    e.label = "\u{270e}\u{fe0f}";
-                    e.style.display = features.includes("rename") ? null : "none";
-                    e.onClick.connect(async () => {
-                        let oldName = this._dropdown.value;
-                        let newName = window.prompt("Enter new name:", oldName);
-                        if (!newName) return;
+            e.createChild(ToolButton, (e) => {
+                e.label = "\u{270e}\u{fe0f}";
+                e.style.display = features.includes("rename") ? null : "none";
+                e.onClick.connect(async () => {
+                    let oldName = this._dropdown.value;
+                    let newName = window.prompt("Enter new name:", oldName);
+                    if (!newName) return;
 
-                        await postRequest("/temporal/fs_operation", {
-                            "store": store,
-                            "operation": "rename",
-                            "args": {
-                                "old_name": oldName,
-                                "new_name": newName,
-                            },
-                        });
-
-                        await getRequest(`/temporal/${store}`, (result) => {
-                            this.entries = result;
-                        });
-
-                        this.onRename.fire(oldName, newName);
+                    await postRequest("/temporal/fs_operation", {
+                        "store": store,
+                        "operation": "rename",
+                        "args": {
+                            "old_name": oldName,
+                            "new_name": newName,
+                        },
                     });
+
+                    this.entries = await getRequest(`/temporal/${store}`);
+
+                    this.onRename.fire(oldName, newName);
                 });
+            });
 
-                e.createChild(ToolButton, (e) => {
-                    e.label = "\u{274c}\u{fe0e}";
-                    e.style.display = features.includes("delete") ? null : "none";
-                    e.onClick.connect(async () => {
-                        let name = this._dropdown.value;
+            e.createChild(ToolButton, (e) => {
+                e.label = "\u{274c}\u{fe0e}";
+                e.style.display = features.includes("delete") ? null : "none";
+                e.onClick.connect(async () => {
+                    let name = this._dropdown.value;
 
-                        if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
+                    if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
 
-                        await postRequest("/temporal/fs_operation", {
-                            "store": store,
-                            "operation": "delete",
-                            "args": {
-                                "name": name,
-                            },
-                        });
-
-                        await getRequest(`/temporal/${store}`, (result) => {
-                            this.entries = result;
-                        });
-
-                        this.onDelete.fire(name);
+                    await postRequest("/temporal/fs_operation", {
+                        "store": store,
+                        "operation": "delete",
+                        "args": {
+                            "name": name,
+                        },
                     });
+
+                    this.entries = await getRequest(`/temporal/${store}`);
+
+                    this.onDelete.fire(name);
                 });
             });
         });
@@ -137,10 +128,6 @@ export class FSStoreBox extends Widget {
 
     get entries() {
         return this._dropdown.choices;
-    }
-
-    get label() {
-        return this._dropdown.label;
     }
 
     get value() {
@@ -155,10 +142,6 @@ export class FSStoreBox extends Widget {
         }
 
         this._dropdown.choices = choices;
-    }
-
-    set label(value) {
-        this._dropdown.label = value;
     }
 
     set value(value) {

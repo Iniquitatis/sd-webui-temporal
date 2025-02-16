@@ -5,7 +5,8 @@ export class ToolButton extends Button {
         super();
 
         this.style.height = "var(--widget-height)";
-        this.style.width = "var(--widget-height)";
+        this.style.maxWidth = "var(--widget-height)";
+        this.style.minWidth = "var(--widget-height)";
 
         this._button.style.padding = "unset";
     }

@@ -47,9 +47,17 @@ class GeneralData(Serializable):
             if frame_index not in kept_indices:
                 remove_entry(image_path)
 
-    def render_video(self, renderer: VideoRenderer, is_final: bool, parallel_index: int = 1) -> Path:
+    def render_video(self, renderer: VideoRenderer, is_final: bool, parallel_index: int = 1, enqueue: bool = True) -> Path:
+        # FIXME
         video_path = ensure_directory_exists(self.path / "videos") / f"{parallel_index:02d}-{'final' if is_final else 'draft'}.mp4"
-        renderer.enqueue_video_render(video_path, self.list_all_frame_paths(parallel_index), is_final)
+
+        if enqueue:
+            method = renderer.enqueue_video_render
+        else:
+            method = renderer._render_video
+
+        method(video_path, self.list_all_frame_paths(parallel_index), is_final)
+
         return video_path
 
     def _iterate_frame_paths(self) -> Iterator[Path]:

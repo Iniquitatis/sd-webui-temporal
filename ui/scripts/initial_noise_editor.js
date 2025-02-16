@@ -1,10 +1,10 @@
-import {Column} from "../scripts/base/column.js";
+import {Form} from "../scripts/base/form.js";
 import {Slider} from "../scripts/base/slider.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
 import {NoiseEditor} from "../scripts/noise_editor.js";
 
-export class InitialNoiseEditor extends Column {
+export class InitialNoiseEditor extends Form {
     constructor() {
         super();
 
@@ -12,8 +12,7 @@ export class InitialNoiseEditor extends Column {
 
         this._manager = new FieldManager(this.onValueChange);
 
-        this.createChild(Slider, (e) => {
-            e.label = "Factor";
+        this.createField("Factor", Slider, (e) => {
             e.minimum = 0.0;
             e.maximum = 1.0;
             e.step = 0.01;
@@ -21,7 +20,7 @@ export class InitialNoiseEditor extends Column {
             this._manager.manage(e, "factor");
         });
 
-        this.createChild(NoiseEditor, (e) => {
+        this.createField("Noise", NoiseEditor, (e) => {
             this._manager.manage(e, "noise");
         });
     }

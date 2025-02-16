@@ -1,36 +1,43 @@
 import {Button} from "../../scripts/base/button.js";
 import {Signal} from "../../scripts/core/signal.js";
+import {StateManager} from "../../scripts/core/state_manager.js";
 
 export class MultiStateButton extends Button {
-    constructor(states) {
+    constructor() {
         super();
 
         this.onStateChange = new Signal();
 
-        this._states = Object.keys(states);
-        this._labels = Object.values(states);
-        this._index = 0;
+        this._stateManager = new StateManager();
+        this._stateManager.onValueChange.connect((value, data) => {
+            this._button.innerText = data;
 
-        this.addEventListener("click", () => {
-            this._index++;
-            this._index %= this._states.length;
-            this._button.innerText = this._labels[this._index];
-
-            this.onStateChange.fire(this.state);
+            this.onStateChange.fire(value);
         });
 
-        this._button.innerText = this._labels[0];
+        this.onClick.connect(() => {
+            this._stateManager.nextState();
+        });
     }
 
     get state() {
-        return this._states[this._index];
+        return this._stateManager.value;
+    }
+
+    get states() {
+        return this._stateManager.states;
     }
 
     set state(value) {
-        this._index = this._states.indexOf(value);
-        this._button.innerText = this._labels[this._index];
+        this._stateManager.value = value;
+    }
 
-        this.onStateChange.fire(this.state);
+    set states(value) {
+        this._stateManager.states = value;
+    }
+
+    nextState() {
+        this._stateManager.nextState();
     }
 }
 customElements.define("multi-state-button", MultiStateButton);

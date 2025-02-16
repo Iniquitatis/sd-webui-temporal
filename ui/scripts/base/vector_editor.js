@@ -1,8 +1,9 @@
-import {ValueEditor} from "../../scripts/base/value_editor.js";
+import {Block} from "../../scripts/base/block.js";
+import {Row} from "../../scripts/base/row.js";
 import {FieldManager} from "../../scripts/core/field_manager.js";
 import {Signal} from "../../scripts/core/signal.js";
 
-export class VectorEditor extends ValueEditor {
+export class VectorEditor extends Row {
     constructor(cls, axes) {
         super();
 
@@ -12,8 +13,17 @@ export class VectorEditor extends ValueEditor {
         this._editors = [];
 
         for (let [key, label] of Object.entries(axes)) {
-            this._editors.push(this._content.createChild(cls, (e) => {
-                e.label = label;
+            this.createChild(Block, (e) => {
+                e.innerText = label;
+                e.style.alignContent = "center";
+                e.style.color = "var(--hint-color)";
+                e.style.fontSize = "0.9rem";
+                e.style.height = "var(--widget-height)";
+                e.style.width = "1rem";
+            });
+
+            this._editors.push(this.createChild(cls, (e) => {
+                e.style.width = "100%";
                 this._manager.manage(e, key);
             }));
         }

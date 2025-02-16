@@ -1,12 +1,13 @@
 import {Column} from "../scripts/base/column.js";
 import {Dropdown} from "../scripts/base/dropdown.js";
 import {ReorderableList} from "../scripts/base/reorderable_list.js";
+import {Row} from "../scripts/base/row.js";
 import {ToolButton} from "../scripts/base/tool_button.js";
 import {Signal} from "../scripts/core/signal.js";
 import {clearElement} from "../scripts/utils/dom.js";
 
 export class ModuleList extends Column {
-    constructor(label, moduleClass, names, definitions) {
+    constructor(moduleClass, names, definitions) {
         super();
 
         this.onValueChange = new Signal();
@@ -16,9 +17,11 @@ export class ModuleList extends Column {
         this._definitions = definitions;
         this._value = [];
 
-        let selectedModule = this.createChild(Dropdown, (e) => {
-            e.label = label;
-            e.choices = names;
+        this.createChild(Row, (e) => {
+            let selectedModule = e.createChild(Dropdown, (e) => {
+                e.choices = names;
+                e.style.width = "100%";
+            });
 
             e.createChild(ToolButton, (e) => {
                 e.label = "+";

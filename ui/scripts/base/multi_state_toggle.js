@@ -1,41 +1,50 @@
 import {Signal} from "../../scripts/core/signal.js";
+import {StateManager} from "../../scripts/core/state_manager.js";
 import {Widget} from "../../scripts/core/widget.js";
 
 export class MultiStateToggle extends Widget {
-    constructor(states) {
+    constructor() {
         super();
 
         this.onValueChange = new Signal();
 
-        this._values = Object.keys(states);
-        this._labels = Object.values(states);
-        this._index = 0;
+        this._stateManager = new StateManager();
+        this._stateManager.onValueChange.connect((value, data) => {
+            this.innerText = data;
 
-        this.innerText = this._labels[0];
+            this.onValueChange.fire(value);
+        });
+
         this.style.alignContent = "center";
         this.style.cursor = "pointer";
         this.style.height = "var(--widget-height)";
+        this.style.maxWidth = "var(--widget-height)";
+        this.style.minWidth = "var(--widget-height)";
         this.style.textAlign = "center";
         this.style.userSelect = "none";
-        this.style.width = "var(--widget-height)";
         this.addEventListener("click", () => {
-            this._index++;
-            this._index %= this._values.length;
-            this.innerText = this._labels[this._index];
-
-            this.onValueChange.fire(this.value);
+            this._stateManager.nextState();
         });
     }
 
+    get states() {
+        return this._stateManager.states;
+    }
+
     get value() {
-        return this._values[this._index];
+        return this._stateManager.value;
+    }
+
+    set states(value) {
+        this._stateManager.states = value;
     }
 
     set value(value) {
-        this._index = this._values.indexOf(value);
-        this.innerText = this._labels[this._index];
+        this._stateManager.value = value;
+    }
 
-        this.onValueChange.fire(this.value);
+    nextState() {
+        this._stateManager.nextState();
     }
 }
 customElements.define("multi-state-toggle", MultiStateToggle);

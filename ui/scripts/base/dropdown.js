@@ -1,51 +1,54 @@
-import {ValueEditor} from "../../scripts/base/value_editor.js";
 import {Signal} from "../../scripts/core/signal.js";
+import {StateManager} from "../../scripts/core/state_manager.js";
+import {Widget} from "../../scripts/core/widget.js";
 import {clearElement, createElement} from "../../scripts/utils/dom.js";
 
-export class Dropdown extends ValueEditor {
+export class Dropdown extends Widget {
     constructor() {
         super();
 
         this.onValueChange = new Signal();
 
-        this._choices = {};
+        this._stateManager = new StateManager();
+        this._stateManager.onStatesChange.connect((_states, _names, data) => {
+            clearElement(this._select);
+
+            for (let name of data) {
+                createElement(this._select, "option", (e) => {
+                    e.label = name;
+                });
+            }
+
+            this._select.selectedIndex = this._stateManager.index;
+        });
+        this._stateManager.onValueChange.connect((value, _) => {
+            this._select.selectedIndex = this._stateManager.index;
+
+            this.onValueChange.fire(value);
+        });
 
         this._select = this.createChild("select", (e) => {
             e.style.width = "100%";
             e.addEventListener("change", () => {
-                this.onValueChange.fire(this.value);
+                this._stateManager.index = e.selectedIndex;
             });
         });
     }
 
     get choices() {
-        return this._choices;
+        return this._stateManager.states;
     }
 
     get value() {
-        return Object.keys(this._choices)[this._select.selectedIndex];
+        return this._stateManager.value;
     }
 
     set choices(value) {
-        this._choices = value;
-
-        clearElement(this._select);
-
-        for (let name of Object.values(this._choices)) {
-            createElement(this._select, "option", (e) => {
-                e.label = name;
-            });
-        }
-
-        if (this._select.selectedIndex == -1 && Object.keys(value).length > 0) {
-            this._select.selectedIndex = 0;
-        }
+        this._stateManager.states = value;
     }
 
     set value(value) {
-        this._select.selectedIndex = value ? Object.keys(this._choices).indexOf(value) : 0;
-
-        this.onValueChange.fire(this.value);
+        this._stateManager.value = value;
     }
 }
 customElements.define("custom-dropdown", Dropdown);

@@ -1,13 +1,13 @@
-import {ValueEditor} from "../../scripts/base/value_editor.js";
 import {Signal} from "../../scripts/core/signal.js";
+import {Widget} from "../../scripts/core/widget.js";
 
-export class CodeArea extends ValueEditor {
+export class CodeArea extends Widget {
     constructor() {
         super();
 
         this.onValueChange = new Signal();
 
-        this._textArea = this._content.createChild("textarea", (e) => {
+        this._textArea = this.createChild("textarea", (e) => {
             e.rows = 5;
             e.style.display = "block";
             e.style.fontFamily = "monospace";
