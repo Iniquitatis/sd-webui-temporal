@@ -36,6 +36,7 @@ class UICategory(OptionCategory):
     gallery_size: int = IntParam("Gallery size", minimum = 1, maximum = 1000, step = 1, value = 10, ui_type = "box")
 
 
+# TODO: Rename to Settings
 class GlobalOptions(Serializable):
     output: OutputCategory = Field(factory = OutputCategory)
     live_preview: LivePreviewCategory = Field(factory = LivePreviewCategory)

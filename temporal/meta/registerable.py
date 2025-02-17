@@ -10,11 +10,10 @@ class Registerable:
     def __init_subclass__(cls: Type["Registerable"], abstract: bool = False, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
 
+        cls.id = f"{cls.__module__}.{cls.__name__}"
+
         if abstract or cls.store is None:
             return
-
-        if cls.id == "__UNDEFINED__":
-            cls.id = f"{cls.__module__}.{cls.__name__}"
 
         if cls not in cls.store:
             cls.store.append(cls)

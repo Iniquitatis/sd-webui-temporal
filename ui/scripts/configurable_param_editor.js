@@ -54,6 +54,12 @@ export class ConfigurableParamEditor extends Widget {
                 });
             } break;
 
+            case "path":{
+                this._editor = this.createChild(TextBox, (e) => {
+                    e.value = definition.default ?? "";
+                });
+            } break;
+
             case "enum": {
                 this._editor = this.createChild(definition.ui_type == "radio" ? Radio : Dropdown, (e) => {
                     e.choices = definition.choices ?? {"": ""};

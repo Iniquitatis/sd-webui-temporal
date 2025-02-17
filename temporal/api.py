@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from temporal.blend_modes import BLEND_MODES
 from temporal.engine import Engine
+from temporal.global_options import GlobalOptions
 from temporal.gradient import Gradient
 from temporal.noise import Noise
 from temporal.pattern import Pattern
@@ -17,6 +18,10 @@ from temporal.utils.bytes import bytes_to_base64
 from temporal.utils.image import image_to_base64
 from temporal.video_filters import VIDEO_FILTERS
 from temporal.video_renderer import VideoRenderer
+
+
+class ApplySettingsRequest(BaseModel):
+    data: dict[str, Any] = {}
 
 
 class FSOperationRequest(BaseModel):
@@ -47,12 +52,14 @@ class RenderVideoRequest(BaseModel):
 
 
 def register_api(app: FastAPI, engine: Engine) -> None:
+    @app.post("/temporal/apply_settings")
+    async def _(request: ApplySettingsRequest) -> Any:
+        shared.options = GlobalOptions.from_json(request.data)
+        shared.options.save(shared.options_path)
+
     @app.get("/temporal/blend_modes")
     async def _() -> Any:
-        return {
-            x.id: x.name
-            for x in BLEND_MODES
-        }
+        return {x.id: x.name for x in BLEND_MODES}
 
     @app.post("/temporal/fs_operation")
     async def _(request: FSOperationRequest) -> Any:
@@ -102,6 +109,10 @@ def register_api(app: FastAPI, engine: Engine) -> None:
     @app.get("/temporal/models")
     async def _() -> Any:
         return [x for x in shared.backend.list_models()]
+
+    @app.get("/temporal/option_categories")
+    async def _() -> Any:
+        return {key: field.type.schema() for key, field in shared.options.__fields__.items()}
 
     @app.get("/temporal/pipeline_modules")
     async def _() -> Any:

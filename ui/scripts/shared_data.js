@@ -2,6 +2,8 @@ export let blendModes = {};
 
 export let models = {};
 
+export let optionCategories = {};
+
 export let pipelineModules = {};
 
 export let presets = {};

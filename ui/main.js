@@ -1,4 +1,3 @@
-import {Accordion} from "./scripts/base/accordion.js";
 import {Button} from "./scripts/base/button.js";
 import {Checkbox} from "./scripts/base/checkbox.js";
 import {CodeArea} from "./scripts/base/code_area.js";
@@ -19,9 +18,10 @@ import {getRequest, postRequest} from "./scripts/utils/requests.js";
 import {FSStoreBox} from "./scripts/fs_store_box.js";
 import {ModuleList} from "./scripts/module_list.js";
 import {NoiseEditor} from "./scripts/noise_editor.js";
+import {OptionsEditor} from "./scripts/options_editor.js";
 import {PipelineModuleEditor} from "./scripts/pipeline_module_editor.js";
 import {SeedBox} from "./scripts/seed_box.js";
-import {blendModes, models, pipelineModules, presets, projects, samplers, schedulers, vaes, videoFilters} from "./scripts/shared_data.js";
+import {blendModes, models, optionCategories, pipelineModules, presets, projects, samplers, schedulers, vaes, videoFilters} from "./scripts/shared_data.js";
 import {VideoRendererEditor} from "./scripts/video_renderer_editor.js";
 
 export class MainUI extends Column {
@@ -308,10 +308,15 @@ export class MainUI extends Column {
                 });
             });
 
-            e.createTab("Settings", Column, (e) => {
-                e.createChild(Button, (e) => {
-                    e.label = "Apply";
+            e.createTab("Settings", OptionsEditor, (e) => {
+                e.onApply.connect(async (value) => {
+                    await postRequest("/temporal/apply_settings", {
+                        "data": value,
+                    });
                 });
+
+                // FIXME: Temporary
+                e.onValueChange.connect((value) => console.log(value));
             });
 
             e.createTab("Help", Column, (e) => {
@@ -337,6 +342,7 @@ function createMappingFromArray(array) {
 window.onload = async () => {
     Object.assign(blendModes, await getRequest("/temporal/blend_modes"));
     Object.assign(models, createMappingFromArray(await getRequest("/temporal/models")));
+    Object.assign(optionCategories, await getRequest("/temporal/option_categories"));
     Object.assign(pipelineModules, await getRequest("/temporal/pipeline_modules"));
     Object.assign(presets, createMappingFromArray(await getRequest("/temporal/presets")));
     Object.assign(projects, createMappingFromArray(await getRequest("/temporal/projects")));

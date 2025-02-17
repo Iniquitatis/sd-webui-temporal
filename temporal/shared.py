@@ -13,6 +13,8 @@ class SharedData:
         from temporal.project_store import ProjectStore
 
         self.backend = backend
+        self.options_path = options_path
+        self.presets_path = presets_path
         self.options = GlobalOptions()
         self.options.load(options_path)
         self.preset_store = PresetStore(presets_path, self.options.ui.preset_sorting_order)
