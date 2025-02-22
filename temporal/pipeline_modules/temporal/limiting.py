@@ -17,7 +17,7 @@ class LimitingModule(TemporalModule):
     mode: str = EnumParam("Mode", choices = [("clamp", "Clamp"), ("compress", "Compress")], value = "clamp", ui_type = "menu")
     max_difference: float = FloatParam("Maximum difference", minimum = 0.001, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
 
-    buffer: Optional[NDArray[np.float64]] = Field(None)
+    buffer: Optional[NDArray[np.float64]] = Field(None, flags = {"private"})
 
     def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if self.buffer is None:

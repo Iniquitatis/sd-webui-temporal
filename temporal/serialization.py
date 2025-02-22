@@ -3,16 +3,10 @@ from dataclasses import dataclass, field as datafield
 from pathlib import Path
 from typing import Any, Generic, Iterator, Optional, Type, TypeVar, get_args
 
-from temporal.utils.object import get_property_by_path, set_property_by_path
 from temporal.utils.typing import safe_get_origin
 
 
 T = TypeVar("T")
-
-
-@dataclass(frozen = True, slots = True)
-class Variant:
-    data: str = ""
 
 
 @dataclass(slots = True)
@@ -41,23 +35,23 @@ class Archive:
         return child
 
     def create(self) -> Any:
-        if (self.type_name, Variant()) in _serializers:
-            return _serializers[(self.type_name, Variant())].create(self)
+        if (self.type_name, "") in _serializers:
+            return _serializers[(self.type_name, "")].create(self)
         else:
             raise NotImplementedError
 
     def read(self, obj: T) -> T:
         if self.type_name != find_alias_for_type(type(obj)):
-            return _serializers[(self.type_name, Variant())].create(self)
-        elif (self.type_name, Variant()) in _serializers:
-            return _serializers[(self.type_name, Variant())].read(obj, self)
+            return _serializers[(self.type_name, "")].create(self)
+        elif (self.type_name, "") in _serializers:
+            return _serializers[(self.type_name, "")].read(obj, self)
         else:
             raise NotImplementedError
 
     def write(self, obj: Any) -> "Archive":
         if (type_name := find_alias_for_type(type(obj))) is not None:
             self.type_name = type_name
-            _serializers[(type_name, Variant())].write(obj, self)
+            _serializers[(type_name, "")].write(obj, self)
         else:
             raise NotImplementedError
 
@@ -99,25 +93,20 @@ class Archive:
                     return child
 
 
-_type_aliases: dict[Type[Any], str] = {}
-_serializers: dict[tuple[str, Variant], Type["Serializer[Any]"]] = {}
-
-
 class Serializer(Generic[T]):
-    def __init_subclass__(cls, variant: Optional[str] = None, abstract: bool = False) -> None:
+    def __init_subclass__(cls, variant: str = "", abstract: bool = False) -> None:
         if abstract:
             return
 
         serialized_type = cls.get_type()
         full_name = f"{serialized_type.__module__}.{serialized_type.__qualname__}" if serialized_type.__module__ != "builtins" else serialized_type.__name__
-        variant_obj = Variant(variant or "")
 
         _type_aliases[serialized_type] = full_name
 
-        if (full_name, variant_obj) in _serializers:
+        if (full_name, variant) in _serializers:
             raise Exception(f"{full_name} is already registered")
 
-        _serializers[(full_name, variant_obj)] = cls
+        _serializers[(full_name, variant)] = cls
 
     @classmethod
     def get_type(cls) -> Type[T]:
@@ -144,36 +133,6 @@ class Serializer(Generic[T]):
         raise NotImplementedError
 
 
-class BasicObjectSerializer(Serializer[T], abstract = True):
-    keys: list[Any] = []
-
-    def __init_subclass__(cls, create: bool = True) -> None:
-        super().__init_subclass__()
-
-        if not create:
-            setattr(cls, "create", lambda ar: None)
-
-    @classmethod
-    def read(cls, obj: T, ar: Archive) -> T:
-        for key in cls.keys:
-            cls._create_value(obj, ar, key)
-
-        return obj
-
-    @classmethod
-    def write(cls, obj: T, ar: Archive) -> None:
-        for key in cls.keys:
-            cls._write_value(obj, ar, key)
-
-    @staticmethod
-    def _create_value(obj: Any, ar: Archive, key: str) -> None:
-        set_property_by_path(obj, key, ar[key].create())
-
-    @staticmethod
-    def _write_value(obj: Any, ar: Archive, key: str) -> None:
-        ar[key].write(get_property_by_path(obj, key))
-
-
 def find_alias_for_type(type: Type[Any]) -> Optional[str]:
     best_index = int(1e9)
     best_alias = None
@@ -193,9 +152,13 @@ def find_alias_for_type(type: Type[Any]) -> Optional[str]:
     return best_alias
 
 
-def find_serializer(type: Type[Any], variant: Variant = Variant()) -> Optional[Type[Serializer[Any]]]:
+def find_serializer(type: Type[Any], variant: str = "") -> Optional[Type[Serializer[Any]]]:
     if alias := find_alias_for_type(type):
         return _serializers[(alias, variant)]
+
+
+_type_aliases: dict[Type[Any], str] = {}
+_serializers: dict[tuple[str, str], Type[Serializer[Any]]] = {}
 
 
 #===============================================================================

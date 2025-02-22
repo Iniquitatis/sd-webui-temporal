@@ -52,7 +52,7 @@ class Configurable(Registerable, Serializable):
     @classmethod
     def schema(cls) -> dict[str, Any]:
         return {
-            "id": cls.id,
+            "type": cls.id,
             "name": cls.name,
             "parameters": {
                 param_id: param.schema()

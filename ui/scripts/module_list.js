@@ -53,15 +53,15 @@ export class ModuleList extends Column {
         clearElement(this._list);
 
         for (let module of value) {
-            this._createModule(module.id, module);
+            this._createModule(module.__type__, module);
         }
 
         this.onValueChange.fire(value);
     }
 
-    _createModule(id, initialValue = null) {
+    _createModule(type, initialValue = null) {
         return this._list.createChild(this._moduleClass, (e) => {
-            e.label = this._names[id];
+            e.label = this._names[type];
 
             if (initialValue) {
                 e.value = initialValue;
@@ -75,7 +75,7 @@ export class ModuleList extends Column {
 
                 this.onValueChange.fire(this._value);
             });
-        }, this._definitions[id]);
+        }, this._definitions[type]);
     }
 }
 customElements.define("module-list", ModuleList);

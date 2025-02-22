@@ -21,7 +21,7 @@ export class PipelineModuleEditor extends ReorderableAccordion {
         this.onRemove = new Signal();
 
         this._manager = new FieldManager(this.onValueChange);
-        this._manager.value = {id: definition.id, enabled: true};
+        this._manager.value = {__type__: definition.type, enabled: true};
 
         this._header.insertBefore(createElement(null, Checkbox, (e) => {
             e.value = true;
@@ -46,7 +46,7 @@ export class PipelineModuleEditor extends ReorderableAccordion {
 
                 e.createField("Blend mode", Dropdown, (e) => {
                     e.choices = blendModes;
-                    this._manager.manage(e, "blend_mode", (value) => value.id, (value) => ({id: value}));
+                    this._manager.manage(e, "blend_mode", (value) => value.__type__, (value) => ({__type__: value}));
                 });
             }
 

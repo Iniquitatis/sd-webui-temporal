@@ -19,7 +19,7 @@ class InterpolationModule(TemporalModule):
     movement: float = FloatParam("Movement", minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
     radius: int = IntParam("Radius", minimum = 7, maximum = 31, step = 2, value = 15, ui_type = "slider")
 
-    buffer: Optional[NDArray[np.float64]] = Field(None)
+    buffer: Optional[NDArray[np.float64]] = Field(None, flags = {"private"})
 
     def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if self.buffer is None:

@@ -12,7 +12,7 @@ from temporal.utils.image import NumpyImage, pil_to_np
 
 
 class Video(Serializable):
-    path: Optional[Path] = Field(None, saved = False)
+    path: Optional[Path] = Field(None, flags = {"runtime"})
     format: Literal["unknown", "avi", "mkv", "mp4"] = Field("unknown")
     data: Optional[bytes] = Field(None)
 

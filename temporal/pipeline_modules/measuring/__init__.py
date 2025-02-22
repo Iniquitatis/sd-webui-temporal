@@ -25,8 +25,8 @@ class MeasuringModule(PipelineModule, abstract = True):
 
     plot_every_nth_frame: int = IntParam("Plot every N-th frame", minimum = 1, step = 1, value = 10, ui_type = "box")
 
-    data: Optional[NDArray[np.float_]] = Field(None)
-    count: int = Field(0)
+    data: Optional[NDArray[np.float_]] = Field(None, flags = {"private"})
+    count: int = Field(0, flags = {"private"})
 
     def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if frame_index % self.plot_every_nth_frame != 0:

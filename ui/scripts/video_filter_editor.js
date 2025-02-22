@@ -15,7 +15,7 @@ export class VideoFilterEditor extends ReorderableAccordion {
         this.onRemove = new Signal();
 
         this._manager = new FieldManager(this.onValueChange);
-        this._manager.value = {id: definition.id, enabled: true};
+        this._manager.value = {__type__: definition.type, enabled: true};
 
         this._header.insertBefore(createElement(null, Checkbox, (e) => {
             e.value = true;

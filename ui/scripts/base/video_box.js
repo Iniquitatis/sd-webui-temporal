@@ -141,7 +141,7 @@ export class VideoBox extends Block {
     }
 
     get value() {
-        return this._video.src ?? null;
+        return this._video.src || null;
     }
 
     set height(value) {

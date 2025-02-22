@@ -134,7 +134,7 @@ export class ImageBox extends Block {
     }
 
     get value() {
-        return this._img.src ?? null;
+        return this._img.src || null;
     }
 
     set height(value) {

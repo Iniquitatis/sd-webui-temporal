@@ -4,28 +4,32 @@ from pathlib import Path
 from types import NoneType
 from typing import Any, Callable, Literal, Optional, Type, TypeVar, cast, get_args, get_type_hints
 
-from temporal.serialization import Archive, Serializer, Variant, find_alias_for_type, find_serializer
+from temporal.serialization import Archive, Serializer, find_alias_for_type, find_serializer
 from temporal.utils import logging
 from temporal.utils.fs import recreate_directory
-from temporal.utils.typing import get_annotated_arg, get_annotated_type, get_optional_type, is_annotated, is_optional, safe_get_origin
+from temporal.utils.typing import get_optional_type, is_optional, safe_get_origin
 
 
 T = TypeVar("T")
 U = TypeVar("U", bound = "Serializable")
 
 
+SerializableFieldFlag = Literal["private", "runtime"]
+
+
 class SerializableField:
-    def __new__(cls, value: Optional[T] = None, *, factory: Optional[Callable[[], T]] = None, saved: bool = True) -> T:
+    def __new__(cls, value: Optional[T] = None, *, factory: Optional[Callable[[], T]] = None, variant: str = "", flags: set[SerializableFieldFlag] = set()) -> T:
         instance = object.__new__(cls)
-        instance.__init__(value, factory = factory, saved = saved)
+        instance.__init__(value, factory = factory, flags = flags, variant = variant)
         return cast(T, instance)
 
-    def __init__(self, value: Optional[T] = None, *, factory: Optional[Callable[[], T]] = None, saved: bool = True) -> None:
+    def __init__(self, value: Optional[T] = None, *, factory: Optional[Callable[[], T]] = None, variant: str = "", flags: set[SerializableFieldFlag] = set()) -> None:
         self.key = ""
         self.type: Type[Any]
         self.value = value
         self.factory = factory
-        self.saved = saved
+        self.variant = variant
+        self.flags = flags
 
     def __set_name__(self, owner: Any, name: str) -> None:
         self.key = name
@@ -37,28 +41,13 @@ class SerializableField:
 
 
 class Serializable:
+    __type_name__: str
     __fields__: dict[str, SerializableField]
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
 
-        class _(Serializer[cls]):
-            @classmethod
-            def read(cls, obj, ar):
-                return obj.read(ar) or obj
-
-            @classmethod
-            def write(cls, obj, ar):
-                obj.write(ar)
-
-            @classmethod
-            def read_json(cls, obj):
-                return cls.get_type().from_json(obj)
-
-            @classmethod
-            def write_json(cls, obj):
-                return obj.to_json()
-
+        cls.__type_name__ = f"{cls.__module__}.{getattr(cls, '__qualname__', cls.__name__)}"
         cls.__fields__ = {
             key: field
             for base_cls in list(reversed(cls.__mro__)) + [cls]
@@ -66,6 +55,8 @@ class Serializable:
             for key, field in base_cls.__dict__.items()
             if isinstance(field, SerializableField)
         }
+
+        _serializables[cls.__type_name__] = cls
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         initialized_keys = set()
@@ -94,15 +85,27 @@ class Serializable:
 
     def write(self, ar: Archive) -> None:
         for key, field in self.__fields__.items():
-            if field.saved:
+            if "runtime" not in field.flags:
                 ar[key].write(getattr(self, key))
 
     def load(self, dir: Path) -> None:
-        if not dir.is_dir() or not (xml_path := dir / "data.xml").is_file():
+        # FIXME
+        # if not dir.is_dir() or not (xml_path := dir / "data.xml").is_file():
+        #     logging.warning(f"Cannot load {self.__class__.__name__} from {dir.as_posix()}")
+        #     return
+
+        # self.from_xml(ET.ElementTree(file = xml_path).getroot(), data_dir = dir)
+
+        from json import loads
+
+        if not dir.is_dir() or not (json_path := dir / "data.json").is_file():
             logging.warning(f"Cannot load {self.__class__.__name__} from {dir.as_posix()}")
             return
 
-        self.from_xml(ET.ElementTree(file = xml_path).getroot(), data_dir = dir)
+        loaded_obj = self.from_json(loads(json_path.read_text()))
+
+        for key in loaded_obj.__fields__.keys():
+            self.__dict__[key] = loaded_obj.__dict__[key]
 
     def save(self, dir: Path) -> None:
         if dir == Path("."):
@@ -110,12 +113,17 @@ class Serializable:
 
         recreate_directory(dir)
 
-        tree = self.to_xml(data_dir = dir)
-        tree.write(dir / "data.xml")
+        # FIXME
+        # tree = self.to_xml(data_dir = dir)
+        # tree.write(dir / "data.xml")
+
+        from json import dumps
+
+        (dir / "data.json").write_text(dumps(self.to_json(include_flags = {"private"}), indent = 4))
 
     @classmethod
     def from_json(cls: Type[U], data: dict[str, Any]) -> U:
-        def read_value(type: Type[Any], obj: Any, variant: Variant = Variant()) -> Any:
+        def read_value(type: Type[Any], obj: Any, variant: str = "") -> Any:
             if safe_get_origin(type) is list:
                 return [
                     read_value(get_args(type)[0], value)
@@ -134,8 +142,8 @@ class Serializable:
             elif is_optional(type):
                 return read_value(get_optional_type(type) if obj is not None else NoneType, obj)
 
-            elif is_annotated(type):
-                return read_value(get_annotated_type(type), obj, get_annotated_arg(type, Variant))
+            elif issubclass(type, Serializable):
+                return type.from_json(obj)
 
             elif serializer := find_serializer(type, variant):
                 return serializer.read_json(obj)
@@ -143,14 +151,17 @@ class Serializable:
             else:
                 raise Exception(f"Couldn't find a serializer for '{type}'")
 
+        if "__type__" in data:
+            cls = cast(Type[U], _serializables[data["__type__"]])
+
         return cls(**{
-            key: read_value(field.type, data[key])
+            key: read_value(field.type, data[key], field.variant)
             for key, field in cls.__fields__.items()
             if key in data
         })
 
-    def to_json(self) -> dict[str, Any]:
-        def write_value(type: Type[Any], obj: Any, variant: Variant = Variant()) -> Any:
+    def to_json(self, include_flags: set[SerializableFieldFlag] = set()) -> dict[str, Any]:
+        def write_value(type: Type[Any], obj: Any, variant: str = "") -> Any:
             if safe_get_origin(type) is list:
                 return [
                     write_value(get_args(type)[0], value)
@@ -169,8 +180,8 @@ class Serializable:
             elif is_optional(type):
                 return write_value(get_optional_type(type) if obj is not None else NoneType, obj)
 
-            elif is_annotated(type):
-                return write_value(get_annotated_type(type), obj, get_annotated_arg(type, Variant))
+            elif issubclass(type, Serializable):
+                return obj.to_json(include_flags)
 
             elif serializer := find_serializer(type, variant):
                 return serializer.write_json(obj)
@@ -178,9 +189,10 @@ class Serializable:
             else:
                 raise Exception(f"Couldn't find a serializer for '{type}'")
 
-        return {
-            key: write_value(field.type, self.__dict__[key])
+        return {"__type__": self.__type_name__} | {
+            key: write_value(field.type, self.__dict__[key], field.variant)
             for key, field in self.__fields__.items()
+            if field.flags.issubset(include_flags)
         }
 
     def from_xml(self: U, elem: ET.Element, data_dir: Optional[Path] = None) -> U:
@@ -198,3 +210,6 @@ class Serializable:
         ET.indent(tree)
 
         return tree
+
+
+_serializables: dict[str, Type[Serializable]] = {}

@@ -1,11 +1,10 @@
 from abc import abstractmethod
-from typing import Any, Type
+from typing import Type
 
 import numpy as np
 
 from temporal.meta.registerable import Registerable
 from temporal.meta.serializable import Serializable
-from temporal.utils.collection import find_by_predicate
 from temporal.utils.image import NumpyImage, join_hsv_to_rgb, split_hsv
 
 
@@ -14,18 +13,6 @@ BLEND_MODES: list[Type["BlendMode"]] = []
 
 class BlendMode(Registerable, Serializable, abstract = True):
     store = BLEND_MODES
-
-    @classmethod
-    def from_json(cls, data: dict[str, Any]) -> "BlendMode":
-        id = data.pop("id", "")
-
-        if type := find_by_predicate(BLEND_MODES, lambda x: x.id == id):
-            return type.from_json(data)
-        else:
-            return super().from_json(data)
-
-    def to_json(self) -> dict[str, Any]:
-        return {"id": self.id} | super().to_json()
 
     @staticmethod
     @abstractmethod

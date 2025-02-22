@@ -19,8 +19,8 @@ class AveragingModule(TemporalModule):
     easing: float = FloatParam("Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0, ui_type = "slider")
     preference: float = FloatParam("Preference", minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0, ui_type = "slider")
 
-    buffer: Optional[NDArray[np.float64]] = Field(None)
-    last_index: int = Field(0)
+    buffer: Optional[NDArray[np.float64]] = Field(None, flags = {"private"})
+    last_index: int = Field(0, flags = {"private"})
 
     def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if self.buffer is None:

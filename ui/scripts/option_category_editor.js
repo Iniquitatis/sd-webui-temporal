@@ -10,7 +10,7 @@ export class OptionCategoryEditor extends Form {
         this.onValueChange = new Signal();
 
         this._manager = new FieldManager(this.onValueChange);
-        this._manager.value = {id: definition.id};
+        this._manager.value = {__type__: definition.type};
 
         for (let [id, param] of Object.entries(definition.parameters)) {
             this.createField(param.name, ConfigurableParamEditor, (e) => {

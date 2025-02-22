@@ -1,10 +1,9 @@
 from abc import abstractmethod
-from typing import Any, Type
+from typing import Type
 
 from temporal.color import Color
 from temporal.meta.configurable import BoolParam, ColorParam, Configurable, EnumParam, FloatParam, FloatVectorParam, IntParam, IntVectorParam, StringParam
 from temporal.meta.serializable import SerializableField as Field
-from temporal.utils.collection import find_by_predicate
 from temporal.vector import FloatVector, IntVector
 
 
@@ -15,18 +14,6 @@ class VideoFilter(Configurable, abstract = True):
     store = VIDEO_FILTERS
 
     enabled: bool = Field(True)
-
-    @classmethod
-    def from_json(cls, data: dict[str, Any]) -> "VideoFilter":
-        id = data.pop("id", "")
-
-        if type := find_by_predicate(VIDEO_FILTERS, lambda x: x.id == id):
-            return type.from_json(data)
-        else:
-            return super().from_json(data)
-
-    def to_json(self) -> dict[str, Any]:
-        return {"id": self.id} | super().to_json()
 
     @abstractmethod
     def print(self, fps: int) -> str:
