@@ -31,4 +31,4 @@ class ProcessingModule(NeuralModule):
             shared.options.processing.pixels_per_batch,
             shared.previewed_modules[self.id] and not shared.options.live_preview.show_only_finished_images,
         ):
-            return processed_images
+            return [self._blend(a, b) for a, b in zip(images, processed_images)]

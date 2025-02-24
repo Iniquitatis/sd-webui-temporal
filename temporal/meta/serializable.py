@@ -137,10 +137,10 @@ class Serializable:
                 }
 
             elif safe_get_origin(type) is Literal:
-                return read_value(str, obj)
+                return read_value(str, obj, variant)
 
             elif is_optional(type):
-                return read_value(get_optional_type(type) if obj is not None else NoneType, obj)
+                return read_value(get_optional_type(type) if obj is not None else NoneType, obj, variant if obj is not None else "")
 
             elif issubclass(type, Serializable):
                 return type.from_json(obj)
@@ -175,10 +175,10 @@ class Serializable:
                 }
 
             elif safe_get_origin(type) is Literal:
-                return write_value(str, obj)
+                return write_value(str, obj, variant)
 
             elif is_optional(type):
-                return write_value(get_optional_type(type) if obj is not None else NoneType, obj)
+                return write_value(get_optional_type(type) if obj is not None else NoneType, obj, variant if obj is not None else "")
 
             elif issubclass(type, Serializable):
                 return obj.to_json(include_flags)

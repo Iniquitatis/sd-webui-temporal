@@ -8,7 +8,7 @@ from temporal.utils.math import lerp, normalize
 
 
 class ImageMask(Serializable):
-    image: Optional[NumpyImage] = Field(None)
+    image: Optional[NumpyImage] = Field(None, variant = "image")
     normalized: bool = Field(False)
     inverted: bool = Field(False)
     blurring: float = Field(0.0)

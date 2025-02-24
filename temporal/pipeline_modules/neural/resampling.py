@@ -29,6 +29,6 @@ class ResamplingModule(NeuralModule):
                 raise Exception
 
         return [
-            ensure_image_dims(resample(im), (general.image_size.x, general.image_size.y), 3)
+            self._blend(im, ensure_image_dims(resample(im), (general.image_size.x, general.image_size.y), 3))
             for im in images
         ]
