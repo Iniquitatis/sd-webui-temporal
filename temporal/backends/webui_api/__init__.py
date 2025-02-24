@@ -1,6 +1,6 @@
 from math import floor
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 import requests
 
@@ -23,34 +23,19 @@ class WebUIAPIBackend(Backend):
         return f"{self.host}:{self.port}"
 
     def list_models(self) -> list[str]:
-        if (r := requests.get(f"{self.url}/sdapi/v1/sd-models")).ok:
-            return [x["model_name"] for x in r.json()]
-        else:
-            raise requests.RequestException(response = r)
+        return [x["model_name"] for x in _safe_request("GET", f"{self.url}/sdapi/v1/sd-models").json()]
 
     def list_vaes(self) -> list[str]:
-        if (r := requests.get(f"{self.url}/sdapi/v1/sd-vae")).ok:
-            return ["Automatic", "None"] + [x["model_name"] for x in r.json()]
-        else:
-            raise requests.RequestException(response = r)
+        return ["Automatic", "None"] + [x["model_name"] for x in _safe_request("GET", f"{self.url}/sdapi/v1/sd-vae").json()]
 
     def list_upscalers(self) -> list[str]:
-        if (r := requests.get(f"{self.url}/sdapi/v1/upscalers")).ok:
-            return [x["name"] for x in r.json()]
-        else:
-            raise requests.RequestException(response = r)
+        return [x["name"] for x in _safe_request("GET", f"{self.url}/sdapi/v1/upscalers").json()]
 
     def list_samplers(self) -> list[str]:
-        if (r := requests.get(f"{self.url}/sdapi/v1/samplers")).ok:
-            return [x["name"] for x in r.json()]
-        else:
-            raise requests.RequestException(response = r)
+        return [x["name"] for x in _safe_request("GET", f"{self.url}/sdapi/v1/samplers").json()]
 
     def list_schedulers(self) -> list[str]:
-        if (r := requests.get(f"{self.url}/sdapi/v1/schedulers")).ok:
-            return [x["label"] for x in r.json()]
-        else:
-            raise requests.RequestException(response = r)
+        return [x["label"] for x in _safe_request("GET", f"{self.url}/sdapi/v1/schedulers").json()]
 
     def image_to_image(self, images: list[NumpyImage], params: ProcessingParams, width: int, height: int, preview: bool = False) -> Optional[list[NumpyImage]]:
         settings: dict[str, Any] = {
@@ -66,7 +51,7 @@ class WebUIAPIBackend(Backend):
         if not preview:
             settings["show_progress_every_n_steps"] = -1
 
-        if (r := requests.post(f"{self.url}/sdapi/v1/img2img", json = {
+        return [base64_to_image(x) for x in _safe_request("POST", f"{self.url}/sdapi/v1/img2img", json = {
             "init_images": [image_to_base64(x, "fast") for x in images],
             "prompt": params.positive_prompt,
             "negative_prompt": params.negative_prompt,
@@ -84,22 +69,16 @@ class WebUIAPIBackend(Backend):
             "do_not_save_grid": True,
             "override_settings": settings,
             "override_settings_restore_afterwards": False,
-        })).ok:
-            return [base64_to_image(x) for x in r.json()["images"][:len(images)]]
-        else:
-            raise requests.RequestException(response = r)
+        }).json()["images"][:len(images)]]
 
     def upscale_image(self, image: NumpyImage, upscaler: str, scale: float) -> Optional[NumpyImage]:
-        if (r := requests.post(f"{self.url}/sdapi/v1/extra-single-image", json = {
+        return base64_to_image(_safe_request("POST", f"{self.url}/sdapi/v1/extra-single-image", json = {
             "image": image_to_base64(image, "fast"),
             "resize_mode": 0,
             "upscaling_resize_w": floor(image.shape[1] * scale),
             "upscaling_resize_h": floor(image.shape[0] * scale),
             "upscaler_1": upscaler,
-        })).ok:
-            return base64_to_image(r.json()["image"])
-        else:
-            raise requests.RequestException(response = r)
+        }).json()["image"])
 
     def get_preview(self) -> Optional[NumpyImage]:
         return self._preview_image
@@ -122,12 +101,15 @@ class WebUIAPIBackend(Backend):
         return not self.image_save_queue.busy
 
     def interrupt(self) -> None:
-        if not (r := requests.post(f"{self.url}/sdapi/v1/interrupt")).ok:
-            raise requests.RequestException(response = r)
+        _safe_request("POST", f"{self.url}/sdapi/v1/interrupt")
 
     def is_interrupted(self) -> bool:
-        if (r := requests.get(f"{self.url}/sdapi/v1/progress")).ok:
-            data = r.json()
-            return data["state"]["interrupted"] or data["state"]["skipped"]
-        else:
-            raise requests.RequestException(response = r)
+        state = _safe_request("GET", f"{self.url}/sdapi/v1/progress").json()["state"]
+        return state["interrupted"] or state["skipped"]
+
+
+def _safe_request(method: Literal["GET", "POST"], *args: Any, **kwargs: Any) -> requests.Response:
+    if (r := getattr(requests, method.lower())(*args, **kwargs)).ok:
+        return r
+    else:
+        raise requests.RequestException(response = r)
