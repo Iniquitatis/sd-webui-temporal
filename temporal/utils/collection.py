@@ -1,6 +1,6 @@
 import re
 from collections.abc import Iterable, Sequence
-from typing import Callable, Iterator, Optional, TypeVar
+from typing import Any, Callable, Iterator, Optional, TypeVar
 
 
 T = TypeVar("T")
@@ -22,6 +22,17 @@ def batched(iterable: Iterable[T], size: int) -> Iterator[list[T]]:
 
     if len(batch) > 0:
         yield batch
+
+
+def cartesian_product_at(*sets: Sequence[Any], index: int, major: bool = True) -> tuple[Any, ...]:
+    result = []
+
+    for set in reversed(sets) if major else sets:
+        count = len(set)
+        result.append(set[index % count])
+        index //= count
+
+    return tuple(reversed(result) if major else result)
 
 
 def find_by_predicate(iterable: Iterable[T], pred: Callable[[T], bool]) -> Optional[T]:

@@ -1,4 +1,4 @@
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable
 from functools import reduce
 from operator import mul
 from typing import Any, Callable, TypeVar
@@ -8,17 +8,6 @@ from temporal.utils.numpy import FloatArray
 
 T = TypeVar("T")
 U = TypeVar("U", float, FloatArray)
-
-
-def cartesian_product_at(*sets: Sequence[Any], index: int, major: bool = True) -> tuple[Any, ...]:
-    result = []
-
-    for set in reversed(sets) if major else sets:
-        count = len(set)
-        result.append(set[index % count])
-        index //= count
-
-    return tuple(reversed(result) if major else result)
 
 
 def clamp(value: T, min_: Any, max_: Any) -> T:
