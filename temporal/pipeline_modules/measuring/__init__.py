@@ -7,7 +7,6 @@ import numpy as np
 import scipy
 from PIL import Image
 from matplotlib.ticker import MaxNLocator
-from numpy.typing import NDArray
 
 from temporal.general_data import GeneralData
 from temporal.meta.configurable import IntParam
@@ -15,6 +14,7 @@ from temporal.meta.serializable import SerializableField as Field
 from temporal.pipeline_module import PipelineModule
 from temporal.utils.fs import ensure_directory_exists
 from temporal.utils.image import NumpyImage, PILImage, save_image
+from temporal.utils.numpy import FloatArray
 
 
 class MeasuringModule(PipelineModule, abstract = True):
@@ -25,7 +25,7 @@ class MeasuringModule(PipelineModule, abstract = True):
 
     plot_every_nth_frame: int = IntParam("Plot every N-th frame", minimum = 1, step = 1, value = 10, ui_type = "box")
 
-    data: Optional[NDArray[np.float_]] = Field(None, flags = {"private"})
+    data: Optional[FloatArray] = Field(None, flags = {"private"})
     count: int = Field(0, flags = {"private"})
 
     def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:

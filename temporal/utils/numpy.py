@@ -8,7 +8,10 @@ from numpy.typing import NDArray
 from scipy import stats
 
 
-FloatArray = NDArray[np.float64]
+IntType = np.int32
+IntArray = NDArray[IntType]
+FloatType = np.float64
+FloatArray = NDArray[FloatType]
 
 
 def array_to_base64(arr: FloatArray) -> str:
@@ -55,7 +58,7 @@ def base64_to_array(data: str) -> FloatArray:
 
 
 def make_eased_weight_array(count: int, easing: float) -> FloatArray:
-    return (np.linspace(1, count, count, dtype = np.float64) / count) ** easing
+    return (np.linspace(1, count, count, dtype = FloatType) / count) ** easing
 
 
 def match_array_dimensions(arr: FloatArray, ref: FloatArray, axis: int) -> FloatArray:
@@ -72,3 +75,7 @@ def saturate_array(arr: FloatArray) -> FloatArray:
 
 def save_array(arr: FloatArray, path: str | Path) -> None:
     np.savez_compressed(path, arr)
+
+
+def stretch_array(arr: FloatArray, new_length: int) -> FloatArray:
+    return np.interp(np.arange(new_length), np.linspace(0, new_length - 1, len(arr)), arr)

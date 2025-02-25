@@ -1,7 +1,6 @@
 from typing import Optional
 
 import numpy as np
-from numpy.typing import NDArray
 
 from temporal.general_data import GeneralData
 from temporal.meta.configurable import FloatParam
@@ -9,6 +8,7 @@ from temporal.meta.serializable import SerializableField as Field
 from temporal.pipeline_modules.temporal import TemporalModule
 from temporal.utils.image import NumpyImage, ensure_image_dims
 from temporal.utils.math import clamp, lerp
+from temporal.utils.numpy import FloatArray, FloatType
 
 
 class RandomSamplingModule(TemporalModule):
@@ -17,7 +17,7 @@ class RandomSamplingModule(TemporalModule):
     chance: float = FloatParam("Chance", minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
     opacity: float = FloatParam("Opacity", minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
 
-    buffer: Optional[NDArray[np.float64]] = Field(None, flags = {"private"})
+    buffer: Optional[FloatArray] = Field(None, flags = {"private"})
 
     def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if self.buffer is None:
@@ -32,7 +32,7 @@ class RandomSamplingModule(TemporalModule):
             chance_mask = np.random.default_rng(seed + i).random(size) <= self.chance
             opacity_mask = np.random.default_rng(seed + 1 + i).uniform(
                 low = clamp(self.opacity * 2.0 - 1.0, 0.0, 1.0),
-                high = clamp(self.opacity * 2.0, 0.0, 1.0) + np.finfo(np.float64).eps,
+                high = clamp(self.opacity * 2.0, 0.0, 1.0) + np.finfo(FloatType).eps,
                 size = size,
             )
 

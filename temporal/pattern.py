@@ -1,10 +1,10 @@
 from typing import Literal
 
 import numpy as np
-from numpy.typing import NDArray
 
 from temporal.color import Color
 from temporal.meta.serializable import Serializable, SerializableField as Field
+from temporal.utils.numpy import FloatArray
 
 
 class Pattern(Serializable):
@@ -13,7 +13,7 @@ class Pattern(Serializable):
     color_a: Color = Field(factory = lambda: Color(1.0, 1.0, 1.0))
     color_b: Color = Field(factory = lambda: Color(0.0, 0.0, 0.0))
 
-    def generate(self, shape: tuple[int, ...]) -> NDArray[np.float64]:
+    def generate(self, shape: tuple[int, ...]) -> FloatArray:
         y, x = np.indices(shape[:2])
 
         if self.type == "horizontal_lines":

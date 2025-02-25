@@ -3,12 +3,11 @@ from functools import reduce
 from operator import mul
 from typing import Any, Callable, TypeVar
 
-import numpy as np
-from numpy.typing import NDArray
+from temporal.utils.numpy import FloatArray
 
 
 T = TypeVar("T")
-U = TypeVar("U", float, NDArray[np.float64])
+U = TypeVar("U", float, FloatArray)
 
 
 def cartesian_product_at(*sets: Sequence[Any], index: int, major: bool = True) -> tuple[Any, ...]:

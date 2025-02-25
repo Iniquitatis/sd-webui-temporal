@@ -6,6 +6,7 @@ from temporal.image_source import ImageSource
 from temporal.meta.configurable import FloatVectorParam, ImageSourceParam
 from temporal.pipeline_modules.filtering import ImageFilter
 from temporal.utils.image import NumpyImage, apply_channelwise, ensure_image_dims
+from temporal.utils.numpy import FloatType
 from temporal.vector import FloatVector
 
 
@@ -23,7 +24,7 @@ class DisplacementFilter(ImageFilter):
 
         gradient = image[..., :2] * 2.0 - 1.0
 
-        coords = np.indices(npim.shape[:2]).astype(np.float64)
+        coords = np.indices(npim.shape[:2]).astype(FloatType)
         coords[[1, 0], ...] += (gradient * self.scale.to_numpy()).transpose(2, 0, 1)
 
         return apply_channelwise(npim, lambda x: skimage.transform.warp(x, coords, mode = "symmetric"))

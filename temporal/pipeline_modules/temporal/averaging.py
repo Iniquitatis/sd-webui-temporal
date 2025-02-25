@@ -1,14 +1,13 @@
 from typing import Optional
 
 import numpy as np
-from numpy.typing import NDArray
 
 from temporal.general_data import GeneralData
 from temporal.meta.configurable import FloatParam, IntParam
 from temporal.meta.serializable import SerializableField as Field
 from temporal.pipeline_modules.temporal import TemporalModule
 from temporal.utils.image import NumpyImage, ensure_image_dims, match_image
-from temporal.utils.numpy import average_array, make_eased_weight_array, saturate_array
+from temporal.utils.numpy import FloatArray, average_array, make_eased_weight_array, saturate_array
 
 
 class AveragingModule(TemporalModule):
@@ -19,7 +18,7 @@ class AveragingModule(TemporalModule):
     easing: float = FloatParam("Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0, ui_type = "slider")
     preference: float = FloatParam("Preference", minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0, ui_type = "slider")
 
-    buffer: Optional[NDArray[np.float64]] = Field(None, flags = {"private"})
+    buffer: Optional[FloatArray] = Field(None, flags = {"private"})
     last_index: int = Field(0, flags = {"private"})
 
     def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:

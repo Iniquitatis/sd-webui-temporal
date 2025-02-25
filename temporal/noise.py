@@ -3,9 +3,9 @@ from typing import Literal, Optional
 
 import numpy as np
 import skimage
-from numpy.typing import NDArray
 
 from temporal.meta.serializable import Serializable, SerializableField as Field
+from temporal.utils.numpy import FloatArray, FloatType
 
 
 class Noise(Serializable):
@@ -17,12 +17,12 @@ class Noise(Serializable):
     seed: int = Field(0)
     use_global_seed: bool = Field(False)
 
-    def generate(self, shape: tuple[int, ...], global_seed: Optional[int] = None, seed_offset: int = 0) -> NDArray[np.float64]:
+    def generate(self, shape: tuple[int, ...], global_seed: Optional[int] = None, seed_offset: int = 0) -> FloatArray:
         noise = np.random.default_rng(
             (global_seed if global_seed and self.use_global_seed else self.seed) + seed_offset
-        ).uniform(low = 0.0, high = 1.0 + np.finfo(np.float64).eps, size = shape)
+        ).uniform(low = 0.0, high = 1.0 + np.finfo(FloatType).eps, size = shape)
 
-        def scale_noise(scale: float) -> NDArray[np.float64]:
+        def scale_noise(scale: float) -> FloatArray:
             result = skimage.transform.warp(noise, skimage.transform.AffineTransform(scale = scale).inverse, order = 4, mode = "symmetric")
 
             if self.mode == "fbm":

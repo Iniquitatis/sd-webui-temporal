@@ -1,11 +1,11 @@
 from typing import Literal
 
 import numpy as np
-from numpy.typing import NDArray
 
 from temporal.color import Color
 from temporal.meta.serializable import Serializable, SerializableField as Field
 from temporal.utils.math import lerp
+from temporal.utils.numpy import FloatArray, IntType
 from temporal.vector import FloatVector
 
 
@@ -16,7 +16,7 @@ class Gradient(Serializable):
     start_color: Color = Field(factory = lambda: Color(1.0, 1.0, 1.0))
     end_color: Color = Field(factory = lambda: Color(0.0, 0.0, 0.0))
 
-    def generate(self, shape: tuple[int, ...], show_points: bool = False) -> NDArray[np.float64]:
+    def generate(self, shape: tuple[int, ...], show_points: bool = False) -> FloatArray:
         start = self.start.to_numpy()[[1, 0]] * shape[:2]
         end = self.end.to_numpy()[[1, 0]] * shape[:2]
 
@@ -42,8 +42,8 @@ class Gradient(Serializable):
         )
 
         if show_points:
-            start = start.astype(np.int32)
-            end = end.astype(np.int32)
+            start = start.astype(IntType)
+            end = end.astype(IntType)
 
             if all((start >= 0) & (start < shape[:2])):
                 result[*start] = [0.0, 1.0, 0.0, 1.0][:shape[-1]]

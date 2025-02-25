@@ -6,14 +6,13 @@ from typing import Callable, Literal, Optional
 import numpy as np
 import skimage
 from PIL import Image
-from numpy.typing import NDArray
 
 from temporal.utils.math import lerp
-from temporal.utils.numpy import saturate_array
+from temporal.utils.numpy import FloatArray, saturate_array
 
 
 PILImage = Image.Image
-NumpyImage = NDArray[np.float64]
+NumpyImage = FloatArray
 
 
 def alpha_blend(a: NumpyImage, b: NumpyImage) -> NumpyImage:
@@ -27,7 +26,7 @@ def apply_channelwise(npim: NumpyImage, func: Callable[[NumpyImage], NumpyImage]
     return np.stack([func(npim[..., i]) for i in range(npim.shape[-1])], axis = -1)
 
 
-def apply_color_matrix(npim: NumpyImage, matrix: NDArray[np.float64], clip: bool = True) -> NumpyImage:
+def apply_color_matrix(npim: NumpyImage, matrix: FloatArray, clip: bool = True) -> NumpyImage:
     result = npim.copy()
     result[..., :3] @= matrix.T
 

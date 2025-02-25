@@ -1,9 +1,9 @@
 from typing import Iterator
 
 import numpy as np
-from numpy.typing import NDArray
 
 from temporal.meta.serializable import Serializable, SerializableField as Field
+from temporal.utils.numpy import FloatArray, FloatType, IntArray, IntType
 
 
 class IntVector(Serializable):
@@ -14,11 +14,11 @@ class IntVector(Serializable):
         yield from self.__dict__.values()
 
     @classmethod
-    def from_numpy(cls, arr: NDArray[np.int32]) -> "IntVector":
+    def from_numpy(cls, arr: IntArray) -> "IntVector":
         return cls(*arr)
 
-    def to_numpy(self) -> NDArray[np.int32]:
-        return np.fromiter(self, np.int32)
+    def to_numpy(self) -> IntArray:
+        return np.fromiter(self, IntType)
 
 
 class FloatVector(Serializable):
@@ -29,8 +29,8 @@ class FloatVector(Serializable):
         yield from self.__dict__.values()
 
     @classmethod
-    def from_numpy(cls, arr: NDArray[np.float64]) -> "FloatVector":
+    def from_numpy(cls, arr: FloatArray) -> "FloatVector":
         return cls(*arr)
 
-    def to_numpy(self) -> NDArray[np.float64]:
-        return np.fromiter(self, np.float64)
+    def to_numpy(self) -> FloatArray:
+        return np.fromiter(self, FloatType)

@@ -167,12 +167,10 @@ _serializers: dict[tuple[str, str], Type[Serializer[Any]]] = {}
 from types import NoneType
 
 import numpy as np
-from PIL import Image
-from numpy.typing import NDArray
 
 from temporal.utils.bytes import base64_to_bytes, bytes_to_base64
-from temporal.utils.image import base64_to_image, image_to_base64, load_image, np_to_pil, pil_to_np, save_image
-from temporal.utils.numpy import array_to_base64, base64_to_array, load_array, save_array
+from temporal.utils.image import PILImage, base64_to_image, image_to_base64, load_image, np_to_pil, pil_to_np, save_image
+from temporal.utils.numpy import FloatArray, array_to_base64, base64_to_array, load_array, save_array
 
 
 class _(Serializer[NoneType]):
@@ -332,7 +330,6 @@ class _(Serializer[Path]):
         return obj.as_posix()
 
 
-
 class _(Serializer[bytes]):
     @classmethod
     def read(cls, obj, ar):
@@ -359,7 +356,7 @@ class _(Serializer[bytes]):
         return bytes_to_base64(obj)
 
 
-class _(Serializer[Image.Image]):
+class _(Serializer[PILImage]):
     @classmethod
     def read(cls, obj, ar):
         if ar.data_dir is not None:
@@ -387,7 +384,7 @@ class _(Serializer[Image.Image]):
         return image_to_base64(pil_to_np(obj), "fast")
 
 
-class _(Serializer[NDArray[np.float64]]):
+class _(Serializer[FloatArray]):
     @classmethod
     def create(cls, ar):
         return cls.read(np.ndarray((0,)), ar)
@@ -419,7 +416,7 @@ class _(Serializer[NDArray[np.float64]]):
         return array_to_base64(obj)
 
 
-class _(Serializer[NDArray[np.float64]], variant = "image"):
+class _(Serializer[FloatArray], variant = "image"):
     @classmethod
     def read_json(cls, obj):
         return base64_to_image(obj)

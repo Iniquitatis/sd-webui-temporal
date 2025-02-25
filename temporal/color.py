@@ -1,9 +1,9 @@
 from typing import Iterator
 
 import numpy as np
-from numpy.typing import NDArray
 
 from temporal.meta.serializable import Serializable, SerializableField as Field
+from temporal.utils.numpy import FloatArray, FloatType
 
 
 class Color(Serializable):
@@ -23,7 +23,7 @@ class Color(Serializable):
         ))
 
     @classmethod
-    def from_numpy(cls, arr: NDArray[np.float64]) -> "Color":
+    def from_numpy(cls, arr: FloatArray) -> "Color":
         return cls(*arr)
 
     def to_hex(self, channels: int = 4) -> str:
@@ -32,5 +32,5 @@ class Color(Serializable):
             for x in self
         ][:channels])
 
-    def to_numpy(self, channels: int = 4) -> NDArray[np.float64]:
-        return np.fromiter(self, np.float64)[:channels]
+    def to_numpy(self, channels: int = 4) -> FloatArray:
+        return np.fromiter(self, FloatType)[:channels]
