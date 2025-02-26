@@ -2,7 +2,7 @@ import numpy as np
 
 from temporal.color import Color
 from temporal.general_data import GeneralData
-from temporal.meta.configurable import ColorParam
+from temporal.meta.configurable import ConfigurableParam as Param
 from temporal.pipeline_modules.painting import PaintingModule
 from temporal.utils.image import NumpyImage
 
@@ -10,7 +10,7 @@ from temporal.utils.image import NumpyImage
 class ColorPaintingModule(PaintingModule):
     name = "Color"
 
-    color: Color = ColorParam("Color", channels = 4)
+    color: Color = Param("Color", channels = 4, factory = Color)
 
     def draw(self, size: tuple[int, int], parallel_index: int, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         return np.full((size[1], size[0], 4), self.color.to_numpy(4))

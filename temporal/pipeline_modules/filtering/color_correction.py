@@ -2,7 +2,7 @@ import skimage
 
 from temporal.general_data import GeneralData
 from temporal.image_source import ImageSource
-from temporal.meta.configurable import BoolParam, ImageSourceParam
+from temporal.meta.configurable import ConfigurableParam as Param
 from temporal.pipeline_modules.filtering import ImageFilter
 from temporal.utils.image import NumpyImage, match_image
 
@@ -10,9 +10,9 @@ from temporal.utils.image import NumpyImage, match_image
 class ColorCorrectionFilter(ImageFilter):
     name = "Color correction"
 
-    source: ImageSource = ImageSourceParam("Image source", channels = 3)
-    normalize_contrast: bool = BoolParam("Normalize contrast", value = False)
-    equalize_histogram: bool = BoolParam("Equalize histogram", value = False)
+    source: ImageSource = Param("Image source", channels = 3, factory = ImageSource)
+    normalize_contrast: bool = Param("Normalize contrast", value = False)
+    equalize_histogram: bool = Param("Equalize histogram", value = False)
 
     def process(self, npim: NumpyImage, parallel_index: int, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         if (image := self.source.get_image(general.image, frame_index - 1)) is not None:

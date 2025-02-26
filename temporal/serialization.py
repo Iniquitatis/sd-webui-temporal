@@ -1,105 +1,84 @@
-import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field as datafield
 from pathlib import Path
-from typing import Any, Generic, Iterator, Optional, Type, TypeVar, get_args
+from typing import Any, Generic, Literal, Optional, Type, TypeVar, get_args
 
-from temporal.utils.typing import safe_get_origin
+from temporal.utils.typing import get_full_type_name, get_optional_type, is_optional, safe_get_origin
 
 
 T = TypeVar("T")
 
 
-@dataclass(slots = True)
-class Archive:
-    key: str = "_"
-    type_name: str = ""
-    data: str = ""
+SerializationDataFlag = Literal["private", "runtime"]
+
+
+@dataclass
+class SerializationParams:
     data_dir: Optional[Path] = None
-    _children: list["Archive"] = datafield(default_factory = list, init = False)
+    flags: set[SerializationDataFlag] = datafield(default_factory = set)
 
-    def __getitem__(self, key: int | str) -> "Archive":
-        if (child := self._find_child(key)) is None:
-            child = self.make_child()
 
-            if isinstance(key, str):
-                child.key = key
+def deserialize(type: Type[Any], variant: str, obj: Any, params: SerializationParams) -> Any:
+    # FIXME: Temporary
+    print("DS", type, variant)
 
-        return child
+    if safe_get_origin(type) is list:
+        return [
+            deserialize(get_args(type)[0], "", value, params)
+            for value in obj
+        ]
 
-    def __iter__(self) -> Iterator["Archive"]:
-        yield from self._children
+    elif safe_get_origin(type) is dict:
+        return {
+            key: deserialize(get_args(type)[1], "", value, params)
+            for key, value in obj.items()
+        }
 
-    def make_child(self) -> "Archive":
-        child = Archive(data_dir = self.data_dir)
-        self._children.append(child)
-        return child
+    elif safe_get_origin(type) is Literal:
+        return deserialize(str, variant, obj, params)
 
-    def create(self) -> Any:
-        if (self.type_name, "") in _serializers:
-            return _serializers[(self.type_name, "")].create(self)
-        else:
-            raise NotImplementedError
+    elif is_optional(type):
+        return deserialize(get_optional_type(type) if obj is not None else NoneType, variant if obj is not None else "", obj, params)
 
-    def read(self, obj: T) -> T:
-        if self.type_name != find_alias_for_type(type(obj)):
-            return _serializers[(self.type_name, "")].create(self)
-        elif (self.type_name, "") in _serializers:
-            return _serializers[(self.type_name, "")].read(obj, self)
-        else:
-            raise NotImplementedError
+    elif serializer := _find_serializer(type, variant):
+        return serializer.read_json(obj, params)
 
-    def write(self, obj: Any) -> "Archive":
-        if (type_name := find_alias_for_type(type(obj))) is not None:
-            self.type_name = type_name
-            _serializers[(type_name, "")].write(obj, self)
-        else:
-            raise NotImplementedError
+    else:
+        raise Exception(f"Couldn't find a serializer for '{type}'")
 
-        return self
 
-    def parse_xml(self, elem: ET.Element) -> None:
-        self.key = elem.get("key", "_")
+def serialize(type: Type[Any], variant: str, obj: Any, params: SerializationParams) -> Any:
+    # FIXME: Temporary
+    print("SR", type, variant)
 
-        if (type := elem.get("type", None)) is not None:
-            self.type_name = type
+    if safe_get_origin(type) is list:
+        return [
+            serialize(get_args(type)[0], "", value, params)
+            for value in obj
+        ]
 
-        self.data = elem.text or ""
+    elif safe_get_origin(type) is dict:
+        return {
+            key: serialize(get_args(type)[1], "", value, params)
+            for key, value in obj.items()
+        }
 
-        for child_elem in elem:
-            self.make_child().parse_xml(child_elem)
+    elif safe_get_origin(type) is Literal:
+        return serialize(str, variant, obj, params)
 
-    def print_xml(self) -> ET.Element:
-        attrs = {}
+    elif is_optional(type):
+        return serialize(get_optional_type(type) if obj is not None else NoneType, variant if obj is not None else "", obj, params)
 
-        if self.key != "_":
-            attrs["key"] = self.key
+    elif serializer := _find_serializer(type, variant):
+        return serializer.write_json(obj, params)
 
-        attrs["type"] = self.type_name
-
-        elem = ET.Element("object", attrs)
-        elem.text = self.data
-
-        for child in self._children:
-            elem.append(child.print_xml())
-
-        return elem
-
-    def _find_child(self, key: int | str) -> Optional["Archive"]:
-        if isinstance(key, int):
-            return self._children[key]
-        else:
-            for child in self._children:
-                if child.key == key:
-                    return child
+    else:
+        raise Exception(f"Couldn't find a serializer for '{type}'")
 
 
 class Serializer(Generic[T]):
-    def __init_subclass__(cls, variant: str = "", abstract: bool = False) -> None:
-        if abstract:
-            return
-
+    def __init_subclass__(cls, variant: str = "") -> None:
         serialized_type = cls.get_type()
-        full_name = f"{serialized_type.__module__}.{serialized_type.__qualname__}" if serialized_type.__module__ != "builtins" else serialized_type.__name__
+        full_name = get_full_type_name(serialized_type)
 
         _type_aliases[serialized_type] = full_name
 
@@ -113,27 +92,15 @@ class Serializer(Generic[T]):
         return safe_get_origin(get_args(getattr(cls, "__orig_bases__")[0])[0])
 
     @classmethod
-    def create(cls, ar: Archive) -> T:
-        return cls.read(cls.get_type()(), ar)
-
-    @classmethod
-    def read(cls, obj: T, ar: Archive) -> T:
+    def read_json(cls, obj: Any, params: SerializationParams) -> T:
         raise NotImplementedError
 
     @classmethod
-    def write(cls, obj: T, ar: Archive) -> None:
-        raise NotImplementedError
-
-    @classmethod
-    def read_json(cls, obj: Any) -> T:
-        raise NotImplementedError
-
-    @classmethod
-    def write_json(cls, obj: T) -> Any:
+    def write_json(cls, obj: T, params: SerializationParams) -> Any:
         raise NotImplementedError
 
 
-def find_alias_for_type(type: Type[Any]) -> Optional[str]:
+def _find_type_alias(type: Type[Any]) -> Optional[str]:
     best_index = int(1e9)
     best_alias = None
 
@@ -152,8 +119,8 @@ def find_alias_for_type(type: Type[Any]) -> Optional[str]:
     return best_alias
 
 
-def find_serializer(type: Type[Any], variant: str = "") -> Optional[Type[Serializer[Any]]]:
-    if alias := find_alias_for_type(type):
+def _find_serializer(type: Type[Any], variant: str = "") -> Optional[Type[Serializer[Any]]]:
+    if alias := _find_type_alias(type):
         return _serializers[(alias, variant)]
 
 
@@ -166,8 +133,6 @@ _serializers: dict[tuple[str, str], Type[Serializer[Any]]] = {}
 
 from types import NoneType
 
-import numpy as np
-
 from temporal.utils.bytes import base64_to_bytes, bytes_to_base64
 from temporal.utils.image import PILImage, base64_to_image, image_to_base64, load_image, np_to_pil, pil_to_np, save_image
 from temporal.utils.numpy import FloatArray, array_to_base64, base64_to_array, load_array, save_array
@@ -175,252 +140,131 @@ from temporal.utils.numpy import FloatArray, array_to_base64, base64_to_array, l
 
 class _(Serializer[NoneType]):
     @classmethod
-    def read(cls, obj, ar):
-        return None
-
-    @classmethod
-    def write(cls, obj, ar):
-        ar.data = ""
-
-    @classmethod
-    def read_json(cls, obj):
+    def read_json(cls, obj, params):
         return obj
 
     @classmethod
-    def write_json(cls, obj):
+    def write_json(cls, obj, params):
         return obj
 
 
 class _(Serializer[bool]):
     @classmethod
-    def read(cls, obj, ar):
-        return ar.data.lower() == "true"
-
-    @classmethod
-    def write(cls, obj, ar):
-        ar.data = str(obj)
-
-    @classmethod
-    def read_json(cls, obj):
+    def read_json(cls, obj, params):
         return obj
 
     @classmethod
-    def write_json(cls, obj):
+    def write_json(cls, obj, params):
         return obj
 
 
 class _(Serializer[int]):
     @classmethod
-    def read(cls, obj, ar):
-        return int(ar.data)
-
-    @classmethod
-    def write(cls, obj, ar):
-        ar.data = str(obj)
-
-    @classmethod
-    def read_json(cls, obj):
+    def read_json(cls, obj, params):
         return obj
 
     @classmethod
-    def write_json(cls, obj):
+    def write_json(cls, obj, params):
         return obj
 
 
 class _(Serializer[float]):
     @classmethod
-    def read(cls, obj, ar):
-        return float(ar.data)
-
-    @classmethod
-    def write(cls, obj, ar):
-        ar.data = str(obj)
-
-    @classmethod
-    def read_json(cls, obj):
+    def read_json(cls, obj, params):
         return obj
 
     @classmethod
-    def write_json(cls, obj):
+    def write_json(cls, obj, params):
         return obj
 
 
 class _(Serializer[str]):
     @classmethod
-    def read(cls, obj, ar):
-        return ar.data
-
-    @classmethod
-    def write(cls, obj, ar):
-        ar.data = obj
-
-    @classmethod
-    def read_json(cls, obj):
+    def read_json(cls, obj, params):
         return obj
 
     @classmethod
-    def write_json(cls, obj):
+    def write_json(cls, obj, params):
         return obj
-
-
-class _(Serializer[tuple[Any, ...]]):
-    @classmethod
-    def read(cls, obj, ar):
-        return tuple(x.create() for x in ar)
-
-    @classmethod
-    def write(cls, obj, ar):
-        for value in obj:
-            ar.make_child().write(value)
-
-
-class _(Serializer[list[Any]]):
-    @classmethod
-    def read(cls, obj, ar):
-        obj[:] = [x.create() for x in ar]
-        return obj
-
-    @classmethod
-    def write(cls, obj, ar):
-        for value in obj:
-            ar.make_child().write(value)
-
-
-class _(Serializer[set[Any]]):
-    @classmethod
-    def read(cls, obj, ar):
-        obj.clear()
-        obj |= {x.create() for x in ar}
-        return obj
-
-    @classmethod
-    def write(cls, obj, ar):
-        for value in obj:
-            ar.make_child().write(value)
-
-
-class _(Serializer[dict[Any, Any]]):
-    @classmethod
-    def read(cls, obj, ar):
-        obj.clear()
-        obj |= {x.key: x.create() for x in ar}
-        return obj
-
-    @classmethod
-    def write(cls, obj, ar):
-        for key, value in obj.items():
-            ar[key].write(value)
 
 
 class _(Serializer[Path]):
     @classmethod
-    def read(cls, obj, ar):
-        return Path(ar.data)
-
-    @classmethod
-    def write(cls, obj, ar):
-        ar.data = obj.as_posix()
-
-    @classmethod
-    def read_json(cls, obj):
+    def read_json(cls, obj, params):
         return Path(obj)
 
     @classmethod
-    def write_json(cls, obj):
+    def write_json(cls, obj, params):
         return obj.as_posix()
 
 
 class _(Serializer[bytes]):
     @classmethod
-    def read(cls, obj, ar):
-        if ar.data_dir is not None:
-            return (ar.data_dir / ar.data).read_bytes()
+    def read_json(cls, obj, params):
+        if params.data_dir is not None:
+            return (params.data_dir / obj).read_bytes()
         else:
-            raise NotADirectoryError
+            return base64_to_bytes(obj)
 
     @classmethod
-    def write(cls, obj, ar):
-        if ar.data_dir is not None:
-            path = ar.data_dir / f"{id(obj)}.bin"
+    def write_json(cls, obj, params):
+        if params.data_dir is not None:
+            path = params.data_dir / f"{id(obj)}.bin"
             path.write_bytes(obj)
-            ar.data = path.name
+            return path.name
         else:
-            raise NotADirectoryError
-
-    @classmethod
-    def read_json(cls, obj):
-        return base64_to_bytes(obj)
-
-    @classmethod
-    def write_json(cls, obj):
-        return bytes_to_base64(obj)
+            return bytes_to_base64(obj)
 
 
 class _(Serializer[PILImage]):
     @classmethod
-    def read(cls, obj, ar):
-        if ar.data_dir is not None:
-            return load_image(ar.data_dir / ar.data)
-        elif isinstance(obj, str):
+    def read_json(cls, obj, params):
+        if params.data_dir is not None:
+            return load_image(params.data_dir / obj)
+        else:
             return np_to_pil(base64_to_image(obj))
-        else:
-            raise ValueError
 
     @classmethod
-    def write(cls, obj, ar):
-        if ar.data_dir is not None:
-            path = ar.data_dir / f"{id(obj)}.png"
+    def write_json(cls, obj, params):
+        if params.data_dir is not None:
+            path = params.data_dir / f"{id(obj)}.png"
             save_image(obj, path)
-            ar.data = path.name
+            return path.name
         else:
-            ar.data = image_to_base64(pil_to_np(obj))
-
-    @classmethod
-    def read_json(cls, obj):
-        return np_to_pil(base64_to_image(obj))
-
-    @classmethod
-    def write_json(cls, obj):
-        return image_to_base64(pil_to_np(obj), "fast")
+            return image_to_base64(pil_to_np(obj), "fast")
 
 
 class _(Serializer[FloatArray]):
     @classmethod
-    def create(cls, ar):
-        return cls.read(np.ndarray((0,)), ar)
-
-    @classmethod
-    def read(cls, obj, ar):
-        if ar.data_dir is not None:
-            return load_array(ar.data_dir / ar.data)
-        elif isinstance(obj, str):
+    def read_json(cls, obj, params):
+        if params.data_dir is not None:
+            return load_array(params.data_dir / obj)
+        else:
             return base64_to_array(obj)
-        else:
-            raise ValueError
 
     @classmethod
-    def write(cls, obj, ar):
-        if ar.data_dir is not None:
-            path = ar.data_dir / f"{id(obj)}.npz"
+    def write_json(cls, obj, params):
+        if params.data_dir is not None:
+            path = params.data_dir / f"{id(obj)}.npz"
             save_array(obj, path)
-            ar.data = path.name
+            return path.name
         else:
-            ar.data = array_to_base64(obj)
-
-    @classmethod
-    def read_json(cls, obj):
-        return base64_to_array(obj)
-
-    @classmethod
-    def write_json(cls, obj):
-        return array_to_base64(obj)
+            return array_to_base64(obj)
 
 
 class _(Serializer[FloatArray], variant = "image"):
     @classmethod
-    def read_json(cls, obj):
-        return base64_to_image(obj)
+    def read_json(cls, obj, params):
+        if params.data_dir is not None:
+            return load_array(params.data_dir / obj)
+        else:
+            return base64_to_image(obj)
 
     @classmethod
-    def write_json(cls, obj):
-        return image_to_base64(obj)
+    def write_json(cls, obj, params):
+        if params.data_dir is not None:
+            path = params.data_dir / f"{id(obj)}.npz"
+            save_array(obj, path)
+            return path.name
+        else:
+            return image_to_base64(obj)

@@ -15,9 +15,6 @@ class FSStore(Generic[T]):
         self.sorting_order = sorting_order
         self.entry_names: list[str] = []
 
-    def __create_entry__(self, name: str) -> T:
-        raise NotImplementedError
-
     @property
     def type(self) -> Type[T]:
         return get_args(getattr(self, "__orig_bases__")[0])[0]
@@ -28,12 +25,7 @@ class FSStore(Generic[T]):
         self._sort()
 
     def load_entry(self, name: str) -> T:
-        result = self.__create_entry__(name)
-
-        if (path := self.path / name).is_dir():
-            result.load(path)
-
-        return result
+        return self.type.load(self.path / name)
 
     def save_entry(self, name: str, entry: T) -> None:
         entry.save(self.path / name)
@@ -50,9 +42,6 @@ class FSStore(Generic[T]):
         rename_entry(self.path, old_name, new_name)
         self.entry_names[self.entry_names.index(old_name)] = new_name
         self._sort()
-
-    def find_entry_name(self, entry: T) -> str:
-        raise SystemError
 
     def _sort(self) -> None:
         if self.sorting_order == "alphabetical":

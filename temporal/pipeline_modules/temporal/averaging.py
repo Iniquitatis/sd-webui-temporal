@@ -3,7 +3,7 @@ from typing import Optional
 import numpy as np
 
 from temporal.general_data import GeneralData
-from temporal.meta.configurable import FloatParam, IntParam
+from temporal.meta.configurable import ConfigurableParam as Param
 from temporal.meta.serializable import SerializableField as Field
 from temporal.pipeline_modules.temporal import TemporalModule
 from temporal.utils.image import NumpyImage, ensure_image_dims, match_image
@@ -13,10 +13,10 @@ from temporal.utils.numpy import FloatArray, average_array, make_eased_weight_ar
 class AveragingModule(TemporalModule):
     name = "Averaging"
 
-    frames: int = IntParam("Frame count", minimum = 1, step = 1, value = 1, ui_type = "box")
-    trimming: float = FloatParam("Trimming", minimum = 0.0, maximum = 0.5, step = 0.01, value = 0.0, ui_type = "slider")
-    easing: float = FloatParam("Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0, ui_type = "slider")
-    preference: float = FloatParam("Preference", minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0, ui_type = "slider")
+    frames: int = Param("Frame count", minimum = 1, step = 1, value = 1, ui_type = "box")
+    trimming: float = Param("Trimming", minimum = 0.0, maximum = 0.5, step = 0.01, value = 0.0, ui_type = "slider")
+    easing: float = Param("Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0, ui_type = "slider")
+    preference: float = Param("Preference", minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0, ui_type = "slider")
 
     buffer: Optional[FloatArray] = Field(None, flags = {"private"})
     last_index: int = Field(0, flags = {"private"})

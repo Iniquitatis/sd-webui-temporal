@@ -2,11 +2,12 @@ from io import BytesIO
 from json import loads
 from pathlib import Path
 from subprocess import run
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 from PIL import Image
 
-from temporal.meta.serializable import Archive, Serializable, SerializableField as Field
+from temporal.meta.serializable import Serializable, SerializableField as Field
+from temporal.serialization import SerializationParams
 from temporal.utils.fs import ensure_directory_exists
 from temporal.utils.image import NumpyImage, pil_to_np
 
@@ -23,9 +24,9 @@ class Video(Serializable):
             data = path.read_bytes(),
         )
 
-    def write(self, ar: Archive) -> None:
+    def to_json(self, params: SerializationParams = SerializationParams()) -> dict[str, Any]:
         self.store_in_memory()
-        super().write(ar)
+        return super().to_json(params)
 
     def store_in_memory(self) -> Optional[bytes]:
         if self.path is None:

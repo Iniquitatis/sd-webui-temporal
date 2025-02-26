@@ -15,8 +15,7 @@ class SharedData:
         self.backend = backend
         self.options_path = options_path
         self.presets_path = presets_path
-        self.options = GlobalOptions()
-        self.options.load(options_path)
+        self.options = GlobalOptions.load(options_path)
         self.preset_store = PresetStore(presets_path, self.options.ui.preset_sorting_order)
         self.preset_store.refresh()
         self.project_store = ProjectStore(self.options.output.output_dir, self.options.ui.project_sorting_order)

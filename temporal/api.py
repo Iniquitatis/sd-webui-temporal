@@ -90,11 +90,13 @@ def register_api(app: FastAPI, engine: Engine) -> None:
         if generation_queue.busy:
             return
 
-        project = Project.from_json(request.project)
-        project.general.path = shared.options.output.output_dir / request.name
+        path = shared.options.output.output_dir / request.name
 
         if request.load_parameters:
-            project.load(project.general.path)
+            project = Project.load(path)
+        else:
+            project = Project.from_json(request.project)
+            project.general.path = path
 
         if not request.continue_from_last_frame:
             project.general.delete_all_frames()

@@ -5,7 +5,7 @@ import scipy
 import skimage
 
 from temporal.general_data import GeneralData
-from temporal.meta.configurable import StringParam
+from temporal.meta.configurable import ConfigurableParam as Param
 from temporal.pipeline_modules.filtering import ImageFilter
 from temporal.utils.image import NumpyImage
 
@@ -13,7 +13,7 @@ from temporal.utils.image import NumpyImage
 class CustomCodeFilter(ImageFilter):
     name = "Custom code"
 
-    code: str = StringParam("Code", value = "output = input", ui_type = "code", language = "python")
+    code: str = Param("Code", value = "output = input", ui_type = "code", language = "python")
 
     def process(self, npim: NumpyImage, parallel_index: int, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         code_globals: dict[str, Any] = dict(

@@ -15,9 +15,14 @@ class Project(Serializable):
     animation: Animation = Field(factory = Animation)
     iteration: IterationData = Field(factory = IterationData)
 
-    def load(self, dir: Path) -> None:
+    @classmethod
+    def load(cls, dir: Path) -> "Project":
         upgrade_project(dir)
-        super().load(dir / "project")
+
+        result = super().load(dir / "project")
+        result.general.path = dir
+
+        return result
 
     def save(self, dir: Path) -> None:
         super().save(dir / "project")

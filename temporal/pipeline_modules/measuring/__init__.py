@@ -9,7 +9,7 @@ from PIL import Image
 from matplotlib.ticker import MaxNLocator
 
 from temporal.general_data import GeneralData
-from temporal.meta.configurable import IntParam
+from temporal.meta.configurable import ConfigurableParam as Param
 from temporal.meta.serializable import SerializableField as Field
 from temporal.pipeline_module import PipelineModule
 from temporal.utils.fs import ensure_directory_exists
@@ -23,7 +23,7 @@ class MeasuringModule(PipelineModule, abstract = True):
     file_name: str = ""
     channels: list[tuple[str, str]] = []
 
-    plot_every_nth_frame: int = IntParam("Plot every N-th frame", minimum = 1, step = 1, value = 10, ui_type = "box")
+    plot_every_nth_frame: int = Param("Plot every N-th frame", minimum = 1, step = 1, value = 10, ui_type = "box")
 
     data: Optional[FloatArray] = Field(None, flags = {"private"})
     count: int = Field(0, flags = {"private"})

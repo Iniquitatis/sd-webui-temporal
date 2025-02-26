@@ -1,7 +1,7 @@
 from typing import Optional
 
 from temporal.general_data import GeneralData
-from temporal.meta.configurable import BoolParam, FloatParam, IntParam
+from temporal.meta.configurable import ConfigurableParam as Param
 from temporal.pipeline_modules.tool import ToolModule
 from temporal.shared import shared
 from temporal.utils.fs import ensure_directory_exists
@@ -13,10 +13,10 @@ from temporal.utils.time import wait_until
 class SavingModule(ToolModule):
     name = "Saving"
 
-    scale: float = FloatParam("Scale", minimum = 0.25, maximum = 4.0, step = 0.25, value = 1.0, ui_type = "slider")
-    save_every_nth_frame: int = IntParam("Save every N-th frame", minimum = 1, step = 1, value = 1, ui_type = "box")
-    save_final: bool = BoolParam("Save final", value = False)
-    archive_mode: bool = BoolParam("Archive mode", value = False)
+    scale: float = Param("Scale", minimum = 0.25, maximum = 4.0, step = 0.25, value = 1.0, ui_type = "slider")
+    save_every_nth_frame: int = Param("Save every N-th frame", minimum = 1, step = 1, value = 1, ui_type = "box")
+    save_final: bool = Param("Save final", value = False)
+    archive_mode: bool = Param("Archive mode", value = False)
 
     def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
         if frame_index % self.save_every_nth_frame != 0:

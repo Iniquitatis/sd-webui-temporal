@@ -1,7 +1,7 @@
 import numpy as np
 
 from temporal.general_data import GeneralData
-from temporal.meta.configurable import FloatParam
+from temporal.meta.configurable import ConfigurableParam as Param
 from temporal.pipeline_modules.filtering import ImageFilter
 from temporal.utils.image import NumpyImage
 from temporal.utils.math import lerp
@@ -10,7 +10,7 @@ from temporal.utils.math import lerp
 class TilingFilter(ImageFilter):
     name = "Tiling"
 
-    exponent: float = FloatParam("Exponent", minimum = 1.0, maximum = 16.0, step = 0.1, value = 1.0, ui_type = "slider")
+    exponent: float = Param("Exponent", minimum = 1.0, maximum = 16.0, step = 0.1, value = 1.0, ui_type = "slider")
 
     def process(self, npim: NumpyImage, parallel_index: int, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         h, w, _ = npim.shape

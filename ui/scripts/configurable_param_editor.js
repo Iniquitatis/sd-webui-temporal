@@ -48,26 +48,69 @@ export class ConfigurableParamEditor extends Widget {
                 });
             } break;
 
-            case "string": {
-                this._editor = this.createChild(definition.ui_type == "code" ? CodeArea : definition.ui_type == "area" ? TextArea : TextBox, (e) => {
-                    e.value = definition.default ?? "";
-                });
+            case "str": {
+                if (definition.ui_type == "menu" || definition.ui_type == "radio") {
+                    this._editor = this.createChild(definition.ui_type == "radio" ? Radio : Dropdown, (e) => {
+                        e.choices = definition.choices ?? {"": ""};
+                        e.value = definition.default ?? null;
+                    });
+                } else {
+                    this._editor = this.createChild(definition.ui_type == "code" ? CodeArea : definition.ui_type == "area" ? TextArea : TextBox, (e) => {
+                        e.value = definition.default ?? "";
+                    });
+
+                }
             } break;
 
-            case "path":{
+            case "pathlib.Path":{
                 this._editor = this.createChild(TextBox, (e) => {
                     e.value = definition.default ?? "";
                 });
             } break;
 
-            case "enum": {
-                this._editor = this.createChild(definition.ui_type == "radio" ? Radio : Dropdown, (e) => {
-                    e.choices = definition.choices ?? {"": ""};
-                    e.value = definition.default ?? null;
+            case "numpy.ndarray": {
+                this._editor = this.createChild(ImageBox, (e) => {
+                    e.channels = definition.channels ?? 3;
                 });
             } break;
 
-            case "int_vector": {
+            case "temporal.color.Color": {
+                this._editor = this.createChild(ColorPicker, (e) => {
+                    e.value = definition.default ?? {r: 0.0, g: 0.0, b: 0.0, a: 1.0};
+                }, definition.channels ?? 3);
+            } break;
+
+            case "temporal.gradient.Gradient": {
+                this._editor = this.createChild(GradientEditor, (e) => {
+                    e.value = definition.default ?? {};
+                });
+            } break;
+
+            case "temporal.image_source.ImageSource": {
+                this._editor = this.createChild(ImageSourceEditor, (e) => {
+                    e.channels = definition.channels ?? 3;
+                });
+            } break;
+
+            case "temporal.noise.Noise": {
+                this._editor = this.createChild(NoiseEditor, (e) => {
+                    e.value = definition.default ?? {};
+                });
+            } break;
+
+            case "temporal.pattern.Pattern": {
+                this._editor = this.createChild(PatternEditor, (e) => {
+                    e.value = definition.default ?? {};
+                });
+            } break;
+
+            case "temporal.processing_params.ProcessingParams": {
+                this._editor = this.createChild(ProcessingParamsEditor, (e) => {
+                    e.value = definition.default ?? {};
+                });
+            } break;
+
+            case "temporal.vector.IntVector": {
                 this._editor = this.createChild(VectorEditor, (e) => {
                     e.minimum = definition.minimum ?? undefined;
                     e.maximum = definition.maximum ?? undefined;
@@ -79,7 +122,7 @@ export class ConfigurableParamEditor extends Widget {
                 });
             } break;
 
-            case "float_vector": {
+            case "temporal.vector.FloatVector": {
                 this._editor = this.createChild(VectorEditor, (e) => {
                     e.minimum = definition.minimum ?? undefined;
                     e.maximum = definition.maximum ?? undefined;
@@ -88,48 +131,6 @@ export class ConfigurableParamEditor extends Widget {
                 }, definition.ui_type == "slider" ? Slider : NumberBox, {
                     x: definition.axes?.[0] ?? "X",
                     y: definition.axes?.[1] ?? "Y",
-                });
-            } break;
-
-            case "color": {
-                this._editor = this.createChild(ColorPicker, (e) => {
-                    e.value = definition.default ?? "#000000";
-                }, definition.channels ?? 3);
-            } break;
-
-            case "image": {
-                this._editor = this.createChild(ImageBox, (e) => {
-                    e.channels = definition.channels ?? 3;
-                });
-            } break;
-
-            case "image_source": {
-                this._editor = this.createChild(ImageSourceEditor, (e) => {
-                    e.channels = definition.channels ?? 3;
-                });
-            } break;
-
-            case "gradient": {
-                this._editor = this.createChild(GradientEditor, (e) => {
-                    e.value = definition.default ?? {};
-                });
-            } break;
-
-            case "noise": {
-                this._editor = this.createChild(NoiseEditor, (e) => {
-                    e.value = definition.default ?? {};
-                });
-            } break;
-
-            case "pattern": {
-                this._editor = this.createChild(PatternEditor, (e) => {
-                    e.value = definition.default ?? {};
-                });
-            } break;
-
-            case "processing_params": {
-                this._editor = this.createChild(ProcessingParamsEditor, (e) => {
-                    e.value = definition.default ?? {};
                 });
             } break;
 

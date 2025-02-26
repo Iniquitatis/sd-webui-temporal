@@ -1,5 +1,7 @@
 from typing import Any, Optional, Type
 
+from temporal.utils.typing import get_full_type_name
+
 
 class Registerable:
     store: Optional[list[Type[Any]]] = None
@@ -7,10 +9,10 @@ class Registerable:
     id: str = "__UNDEFINED__"
     name: str = "UNDEFINED"
 
-    def __init_subclass__(cls: Type["Registerable"], abstract: bool = False, **kwargs: Any) -> None:
+    def __init_subclass__(cls, abstract: bool = False, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
 
-        cls.id = f"{cls.__module__}.{cls.__name__}"
+        cls.id = get_full_type_name(cls)
 
         if abstract or cls.store is None:
             return

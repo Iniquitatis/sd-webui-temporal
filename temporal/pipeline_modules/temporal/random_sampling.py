@@ -3,7 +3,7 @@ from typing import Optional
 import numpy as np
 
 from temporal.general_data import GeneralData
-from temporal.meta.configurable import FloatParam
+from temporal.meta.configurable import ConfigurableParam as Param
 from temporal.meta.serializable import SerializableField as Field
 from temporal.pipeline_modules.temporal import TemporalModule
 from temporal.utils.image import NumpyImage, ensure_image_dims
@@ -14,8 +14,8 @@ from temporal.utils.numpy import FloatArray, FloatType
 class RandomSamplingModule(TemporalModule):
     name = "Random sampling"
 
-    chance: float = FloatParam("Chance", minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
-    opacity: float = FloatParam("Opacity", minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
+    chance: float = Param("Chance", minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
+    opacity: float = Param("Opacity", minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
 
     buffer: Optional[FloatArray] = Field(None, flags = {"private"})
 

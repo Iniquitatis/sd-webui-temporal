@@ -42,9 +42,9 @@ class Engine:
             self.state = "active"
             self.total_iterations = iter_count
 
-        if project.general.image.size == 0:
+        if project.general.image is None:
             noises = [
-                project.general.initial_noise.generate((project.general.image_size.x, project.general.image_size.y, 3), project.general.seed, i)
+                project.general.initial_noise.generate((project.general.image_size.y, project.general.image_size.x, 3), project.general.seed, i)
                 for i in range(project.general.parallel)
             ]
 

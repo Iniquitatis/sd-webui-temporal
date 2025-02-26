@@ -1,7 +1,5 @@
 from pathlib import Path
-from typing import Iterator
-
-import numpy as np
+from typing import Iterator, Optional
 
 from temporal.meta.serializable import Serializable, SerializableField as Field
 from temporal.noise import Noise
@@ -14,7 +12,7 @@ from temporal.video_renderer import VideoRenderer
 
 class GeneralData(Serializable):
     path: Path = Field(Path("outputs/temporal/untitled"), flags = {"runtime"})
-    image: NumpyImage = Field(factory = lambda: np.array([]), variant = "image")
+    image: Optional[NumpyImage] = Field(None, variant = "image")
     initial_noise: Noise = Field(factory = Noise)
     image_size: IntVector = Field(factory = lambda: IntVector(512, 512))
     parallel: int = Field(1)

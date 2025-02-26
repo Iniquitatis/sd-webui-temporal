@@ -2,7 +2,7 @@ from abc import abstractmethod
 from typing import Type
 
 from temporal.color import Color
-from temporal.meta.configurable import BoolParam, ColorParam, Configurable, EnumParam, FloatParam, FloatVectorParam, IntParam, IntVectorParam, StringParam
+from temporal.meta.configurable import Configurable, ConfigurableParam as Param
 from temporal.meta.serializable import SerializableField as Field
 from temporal.vector import FloatVector, IntVector
 
@@ -23,7 +23,7 @@ class VideoFilter(Configurable, abstract = True):
 class ChromaticAberrationFilter(VideoFilter):
     name = "Chromatic aberration"
 
-    distance: int = IntParam("Distance", minimum = 1, maximum = 512, step = 1, value = 1, ui_type = "slider")
+    distance: int = Param("Distance", minimum = 1, maximum = 512, step = 1, value = 1, ui_type = "slider")
 
     def print(self, fps: int) -> str:
         return f"rgbashift='rh=-{self.distance}:bh={self.distance}'"
@@ -32,9 +32,9 @@ class ChromaticAberrationFilter(VideoFilter):
 class ColorBalancingFilter(VideoFilter):
     name = "Color balancing"
 
-    brightness: float = FloatParam("Brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, ui_type = "slider")
-    contrast: float = FloatParam("Contrast", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, ui_type = "slider")
-    saturation: float = FloatParam("Saturation", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, ui_type = "slider")
+    brightness: float = Param("Brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, ui_type = "slider")
+    contrast: float = Param("Contrast", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, ui_type = "slider")
+    saturation: float = Param("Saturation", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, ui_type = "slider")
 
     def print(self, fps: int) -> str:
         return f"eq='contrast={self.contrast}:brightness={self.brightness - 1.0}:saturation={self.saturation}'"
@@ -43,7 +43,7 @@ class ColorBalancingFilter(VideoFilter):
 class DebandingFilter(VideoFilter):
     name = "Debanding"
 
-    radius: int = IntParam("Radius", minimum = 1, maximum = 64, step = 1, value = 16, ui_type = "slider")
+    radius: int = Param("Radius", minimum = 1, maximum = 64, step = 1, value = 16, ui_type = "slider")
 
     def print(self, fps: int) -> str:
         return f"deband='range={self.radius}'"
@@ -52,7 +52,7 @@ class DebandingFilter(VideoFilter):
 class DeflickeringFilter(VideoFilter):
     name = "Deflickering"
 
-    frames: int = IntParam("Frames", minimum = 2, maximum = 120, step = 1, value = 60, ui_type = "slider")
+    frames: int = Param("Frames", minimum = 2, maximum = 120, step = 1, value = 60, ui_type = "slider")
 
     def print(self, fps: int) -> str:
         return f"deflicker='size={self.frames}:mode=am'"
@@ -61,8 +61,8 @@ class DeflickeringFilter(VideoFilter):
 class InterpolationFilter(VideoFilter):
     name = "Interpolation"
 
-    fps: int = IntParam("Frames per second", minimum = 1, maximum = 60, step = 1, value = 60, ui_type = "slider")
-    mb_subframes: int = IntParam("Motion blur subframes", minimum = 0, maximum = 15, step = 1, value = 0, ui_type = "slider")
+    fps: int = Param("Frames per second", minimum = 1, maximum = 60, step = 1, value = 60, ui_type = "slider")
+    mb_subframes: int = Param("Motion blur subframes", minimum = 0, maximum = 15, step = 1, value = 0, ui_type = "slider")
 
     def print(self, fps: int) -> str:
         parts = []
@@ -78,12 +78,12 @@ class InterpolationFilter(VideoFilter):
 class ScalingFilter(VideoFilter):
     name = "Scaling"
 
-    size: IntVector = IntVectorParam("Size", axes = ["Width", "Height"], minimum = 16, maximum = 2560, step = 8, factory = lambda: IntVector(512, 512), ui_type = "slider")
-    padded: bool = BoolParam("Padded", value = False)
-    background_color: Color = ColorParam("Background color", channels = 3, factory = lambda: Color(0.0, 0.0, 0.0))
-    backdrop: bool = BoolParam("Backdrop", value = False)
-    backdrop_brightness: float = FloatParam("Backdrop brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 0.5, ui_type = "slider")
-    backdrop_blurring: float = FloatParam("Backdrop blurring", minimum = 0.0, maximum = 50.0, step = 1.0, value = 0.0, ui_type = "slider")
+    size: IntVector = Param("Size", axes = ["Width", "Height"], minimum = 16, maximum = 2560, step = 8, factory = lambda: IntVector(512, 512), ui_type = "slider")
+    padded: bool = Param("Padded", value = False)
+    background_color: Color = Param("Background color", channels = 3, factory = lambda: Color(0.0, 0.0, 0.0))
+    backdrop: bool = Param("Backdrop", value = False)
+    backdrop_brightness: float = Param("Backdrop brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 0.5, ui_type = "slider")
+    backdrop_blurring: float = Param("Backdrop blurring", minimum = 0.0, maximum = 50.0, step = 1.0, value = 0.0, ui_type = "slider")
 
     def print(self, fps: int) -> str:
         parts = []
@@ -123,8 +123,8 @@ class ScalingFilter(VideoFilter):
 class SharpeningFilter(VideoFilter):
     name = "Sharpening"
 
-    strength: float = FloatParam("Strength", minimum = 0.0, maximum = 1.0, step = 0.1, value = 0.0, ui_type = "slider")
-    radius: int = IntParam("Radius", minimum = 3, maximum = 13, step = 2, value = 3, ui_type = "slider")
+    strength: float = Param("Strength", minimum = 0.0, maximum = 1.0, step = 0.1, value = 0.0, ui_type = "slider")
+    radius: int = Param("Radius", minimum = 3, maximum = 13, step = 2, value = 3, ui_type = "slider")
 
     def print(self, fps: int) -> str:
         return f"unsharp='luma_msize_x={self.radius}:luma_msize_y={self.radius}:luma_amount={self.strength}:chroma_msize_x={self.radius}:chroma_msize_y={self.radius}:chroma_amount={self.strength}'"
@@ -133,9 +133,9 @@ class SharpeningFilter(VideoFilter):
 class TemporalAveragingFilter(VideoFilter):
     name = "Temporal averaging"
 
-    radius: int = IntParam("Radius", minimum = 1, maximum = 60, step = 1, value = 1, ui_type = "slider")
-    algorithm: str = EnumParam("Algorithm", choices = [("mean", "Mean"), ("median", "Median")], value = "mean", ui_type = "menu")
-    easing: float = FloatParam("Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0, ui_type = "slider")
+    radius: int = Param("Radius", minimum = 1, maximum = 60, step = 1, value = 1, ui_type = "slider")
+    algorithm: str = Param("Algorithm", choices = [("mean", "Mean"), ("median", "Median")], value = "mean", ui_type = "menu")
+    easing: float = Param("Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0, ui_type = "slider")
 
     def print(self, fps: int) -> str:
         if self.algorithm == "mean":
@@ -152,14 +152,14 @@ class TemporalAveragingFilter(VideoFilter):
 class TextOverlayFilter(VideoFilter):
     name = "Text overlay"
 
-    text: str = StringParam("Text", value = "{frame}", ui_type = "box")
-    anchor: FloatVector = FloatVectorParam("Anchor", axes = ["X", "Y"], minimum = 0.0, maximum = 1.0, step = 0.01, factory = lambda: FloatVector(0.0, 0.0), ui_type = "slider")
-    offset: IntVector = IntVectorParam("Offset", axes = ["X", "Y"], step = 1, factory = lambda: IntVector(0, 0), ui_type = "box")
-    font: str = StringParam("Font", value = "sans", ui_type = "box")
-    font_size: int = IntParam("Font size", minimum = 1, maximum = 144, step = 1, value = 16, ui_type = "slider")
-    text_color: Color = ColorParam("Text color", channels = 4, factory = lambda: Color(1.0, 1.0, 1.0, 1.0))
-    shadow_offset: IntVector = IntVectorParam("Shadow offset", axes = ["X", "Y"], step = 1, factory = lambda: IntVector(1, 1), ui_type = "box")
-    shadow_color: Color = ColorParam("Shadow color", channels = 4, factory = lambda: Color(0.0, 0.0, 0.0, 1.0))
+    text: str = Param("Text", value = "{frame}", ui_type = "box")
+    anchor: FloatVector = Param("Anchor", axes = ["X", "Y"], minimum = 0.0, maximum = 1.0, step = 0.01, factory = lambda: FloatVector(0.0, 0.0), ui_type = "slider")
+    offset: IntVector = Param("Offset", axes = ["X", "Y"], step = 1, factory = lambda: IntVector(0, 0), ui_type = "box")
+    font: str = Param("Font", value = "sans", ui_type = "box")
+    font_size: int = Param("Font size", minimum = 1, maximum = 144, step = 1, value = 16, ui_type = "slider")
+    text_color: Color = Param("Text color", channels = 4, factory = lambda: Color(1.0, 1.0, 1.0, 1.0))
+    shadow_offset: IntVector = Param("Shadow offset", axes = ["X", "Y"], step = 1, factory = lambda: IntVector(1, 1), ui_type = "box")
+    shadow_color: Color = Param("Shadow color", channels = 4, factory = lambda: Color(0.0, 0.0, 0.0, 1.0))
 
     def print(self, fps: int) -> str:
         text = (

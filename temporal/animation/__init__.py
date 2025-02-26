@@ -2,7 +2,8 @@ from itertools import pairwise
 from typing import Any, Literal
 
 from temporal.color import Color
-from temporal.meta.serializable import Serializable, SerializableField as Field, SerializableFieldFlag
+from temporal.meta.serializable import Serializable, SerializableField as Field
+from temporal.serialization import SerializationParams
 
 
 class Keyframe(Serializable):
@@ -74,12 +75,12 @@ class Animation(Serializable):
     tracks: dict[str, Track] = Field(factory = dict)
 
     @classmethod
-    def from_json(cls, data: dict[str, Any]) -> "Animation":
+    def from_json(cls, data: dict[str, Any], params: SerializationParams = SerializationParams()) -> "Animation":
         from temporal.animation.parsing import parse_animation
 
         return parse_animation(data["code"])
 
-    def to_json(self, include_flags: set[SerializableFieldFlag] = set()) -> dict[str, Any]:
+    def to_json(self, params: SerializationParams = SerializationParams()) -> dict[str, Any]:
         from temporal.animation.printing import print_animation
 
         return {"code": print_animation(self)}

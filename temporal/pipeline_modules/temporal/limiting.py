@@ -3,7 +3,7 @@ from typing import Optional
 import numpy as np
 
 from temporal.general_data import GeneralData
-from temporal.meta.configurable import EnumParam, FloatParam
+from temporal.meta.configurable import ConfigurableParam as Param
 from temporal.meta.serializable import SerializableField as Field
 from temporal.pipeline_modules.temporal import TemporalModule
 from temporal.utils.image import NumpyImage, ensure_image_dims, match_image
@@ -13,8 +13,8 @@ from temporal.utils.numpy import FloatArray, saturate_array
 class LimitingModule(TemporalModule):
     name = "Limiting"
 
-    mode: str = EnumParam("Mode", choices = [("clamp", "Clamp"), ("compress", "Compress")], value = "clamp", ui_type = "menu")
-    max_difference: float = FloatParam("Maximum difference", minimum = 0.001, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
+    mode: str = Param("Mode", choices = [("clamp", "Clamp"), ("compress", "Compress")], value = "clamp", ui_type = "menu")
+    max_difference: float = Param("Maximum difference", minimum = 0.001, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
 
     buffer: Optional[FloatArray] = Field(None, flags = {"private"})
 

@@ -4,7 +4,7 @@ import numpy as np
 import skimage
 
 from temporal.general_data import GeneralData
-from temporal.meta.configurable import FloatParam, IntParam
+from temporal.meta.configurable import ConfigurableParam as Param
 from temporal.meta.serializable import SerializableField as Field
 from temporal.pipeline_modules.temporal import TemporalModule
 from temporal.utils.image import NumpyImage, apply_channelwise, ensure_image_dims, match_image
@@ -15,9 +15,9 @@ from temporal.utils.numpy import FloatArray, FloatType
 class InterpolationModule(TemporalModule):
     name = "Interpolation"
 
-    blending: float = FloatParam("Blending", minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
-    movement: float = FloatParam("Movement", minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
-    radius: int = IntParam("Radius", minimum = 7, maximum = 31, step = 2, value = 15, ui_type = "slider")
+    blending: float = Param("Blending", minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
+    movement: float = Param("Movement", minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
+    radius: int = Param("Radius", minimum = 7, maximum = 31, step = 2, value = 15, ui_type = "slider")
 
     buffer: Optional[FloatArray] = Field(None, flags = {"private"})
 

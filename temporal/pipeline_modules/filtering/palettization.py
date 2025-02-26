@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 
 from temporal.general_data import GeneralData
-from temporal.meta.configurable import BoolParam, ImageParam
+from temporal.meta.configurable import ConfigurableParam as Param
 from temporal.pipeline_modules.filtering import ImageFilter
 from temporal.utils.image import NumpyImage, apply_channelwise, np_to_pil, pil_to_np
 from temporal.utils.numpy import FloatType, stretch_array
@@ -13,9 +13,9 @@ from temporal.utils.numpy import FloatType, stretch_array
 class PalettizationFilter(ImageFilter):
     name = "Palettization"
 
-    palette: Optional[NumpyImage] = ImageParam("Palette", channels = 3)
-    stretch: bool = BoolParam("Stretch", value = False)
-    dithering: bool = BoolParam("Dithering", value = False)
+    palette: Optional[NumpyImage] = Param("Palette", channels = 3, variant = "image", value = None)
+    stretch: bool = Param("Stretch", value = False)
+    dithering: bool = Param("Dithering", value = False)
 
     def process(self, npim: NumpyImage, parallel_index: int, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         if self.palette is None:

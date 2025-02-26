@@ -3,7 +3,7 @@ import skimage
 
 from temporal.general_data import GeneralData
 from temporal.image_source import ImageSource
-from temporal.meta.configurable import FloatVectorParam, ImageSourceParam
+from temporal.meta.configurable import ConfigurableParam as Param
 from temporal.pipeline_modules.filtering import ImageFilter
 from temporal.utils.image import NumpyImage, apply_channelwise, ensure_image_dims
 from temporal.utils.numpy import FloatType
@@ -13,8 +13,8 @@ from temporal.vector import FloatVector
 class DisplacementFilter(ImageFilter):
     name = "Displacement"
 
-    source: ImageSource = ImageSourceParam("Image source", channels = 3)
-    scale: FloatVector = FloatVectorParam("Scale", axes = ["X", "Y"], step = 0.1, factory = lambda: FloatVector(1.0, 1.0), ui_type = "box")
+    source: ImageSource = Param("Image source", channels = 3, factory = ImageSource)
+    scale: FloatVector = Param("Scale", axes = ["X", "Y"], step = 0.1, factory = lambda: FloatVector(1.0, 1.0), ui_type = "box")
 
     def process(self, npim: NumpyImage, parallel_index: int, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         if (image := self.source.get_image(general.image, frame_index - 1)) is None:

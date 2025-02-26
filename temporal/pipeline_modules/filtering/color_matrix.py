@@ -2,7 +2,7 @@ import numpy as np
 
 from temporal.color import Color
 from temporal.general_data import GeneralData
-from temporal.meta.configurable import BoolParam, ColorParam
+from temporal.meta.configurable import ConfigurableParam as Param
 from temporal.pipeline_modules.filtering import ImageFilter
 from temporal.utils.image import NumpyImage, apply_color_matrix
 
@@ -10,10 +10,10 @@ from temporal.utils.image import NumpyImage, apply_color_matrix
 class ColorMatrixFilter(ImageFilter):
     name = "Color matrix"
 
-    r: Color = ColorParam("R", channels = 3, factory = lambda: Color(1.0, 0.0, 0.0))
-    g: Color = ColorParam("G", channels = 3, factory = lambda: Color(0.0, 1.0, 0.0))
-    b: Color = ColorParam("B", channels = 3, factory = lambda: Color(0.0, 0.0, 1.0))
-    normalized: bool = BoolParam("Normalized", value = False)
+    r: Color = Param("R", channels = 3, factory = lambda: Color(1.0, 0.0, 0.0))
+    g: Color = Param("G", channels = 3, factory = lambda: Color(0.0, 1.0, 0.0))
+    b: Color = Param("B", channels = 3, factory = lambda: Color(0.0, 0.0, 1.0))
+    normalized: bool = Param("Normalized", value = False)
 
     def process(self, npim: NumpyImage, parallel_index: int, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         matrix = np.array([

@@ -20,7 +20,7 @@ class Pipeline(Serializable):
                 iteration.images,
                 general,
                 iteration.index,
-                general.seed + iteration.index,
+                general.seed + iteration.index * len(self.modules) + iteration.step,
             )):
                 return False
 
