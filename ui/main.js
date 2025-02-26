@@ -67,7 +67,7 @@ export class MainUI extends Column {
 
                         if (!preview) return;
 
-                        this._preview.value = `data:image/png;base64,${preview}`;
+                        this._preview.value = preview;
                     }, 1000);
 
                     await postRequest("/temporal/generate", generation);
@@ -98,7 +98,7 @@ export class MainUI extends Column {
                 e.saveCallback = () => preset;
                 e.onLoad.connect((value) => {
                     this._name.value = value.name;
-                    this._image.value = `data:image/png;base64,${value.project.general.image}`;
+                    this._image.value = value.project.general.image;
                     this._initialNoise.value = value.project.general.initial_noise;
                     this._imageSize.value = value.project.general.image_size;
                     this._parallel.value = value.project.general.parallel;
@@ -119,7 +119,7 @@ export class MainUI extends Column {
                     this._name.value = value;
                 });
                 e.onLoad.connect((value) => {
-                    this._image.value = `data:image/png;base64,${value.general.image}`;
+                    this._image.value = value.general.image;
                     this._initialNoise.value = value.general.initial_noise;
                     this._imageSize.value = value.general.image_size;
                     this._parallel.value = value.general.parallel;
@@ -285,7 +285,7 @@ export class MainUI extends Column {
 
                                 if (!data) return;
 
-                                this._videoPreview.value = `data:video/mp4;base64,${data}`;
+                                this._videoPreview.value = data;
 
                                 for (let button of this._videoRenderButtonRow.childNodes) {
                                     button.classList.remove("disabled");

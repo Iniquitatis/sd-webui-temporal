@@ -27,6 +27,11 @@ export class ImageWidget extends Block {
     }
 
     set value(value) {
+        // FIXME: Should receive the correct value in the first place
+        if (value && !value.startsWith("data:image/png;base64,")) {
+            value = `data:image/png;base64,${value}`;
+        }
+
         if (value) {
             this._img.src = value;
             this._img.style.display = null;

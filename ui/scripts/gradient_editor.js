@@ -30,7 +30,7 @@ export class GradientEditor extends Form {
 
                 if (!data) return;
 
-                e.value = `data:image/png;base64,${data}`;
+                e.value = data;
             });
         });
 
