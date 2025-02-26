@@ -1,6 +1,5 @@
 import {Button} from "./scripts/base/button.js";
 import {Checkbox} from "./scripts/base/checkbox.js";
-import {CodeArea} from "./scripts/base/code_area.js";
 import {Column} from "./scripts/base/column.js";
 import {Form} from "./scripts/base/form.js";
 import {ImageBox} from "./scripts/base/image_box.js";
@@ -11,16 +10,12 @@ import {Row} from "./scripts/base/row.js";
 import {Tabs} from "./scripts/base/tabs.js";
 import {TextArea} from "./scripts/base/text_area.js";
 import {TextBox} from "./scripts/base/text_box.js";
-import {VectorEditor} from "./scripts/base/vector_editor.js";
 import {VideoBox} from "./scripts/base/video_box.js";
-import {mapObject} from "../scripts/utils/object.js";
 import {getRequest, postRequest} from "./scripts/utils/requests.js";
 import {FSStoreBox} from "./scripts/fs_store_box.js";
-import {ModuleList} from "./scripts/module_list.js";
-import {NoiseEditor} from "./scripts/noise_editor.js";
+import {GeneralDataEditor} from "./scripts/general_data_editor.js";
 import {OptionsEditor} from "./scripts/options_editor.js";
-import {PipelineModuleEditor} from "./scripts/pipeline_module_editor.js";
-import {SeedBox} from "./scripts/seed_box.js";
+import {PipelineEditor} from "./scripts/pipeline_editor.js";
 import {blendModes, models, optionCategories, pipelineModules, presets, projects, samplers, schedulers, vaes, videoFilters} from "./scripts/shared_data.js";
 import {VideoRendererEditor} from "./scripts/video_renderer_editor.js";
 
@@ -98,16 +93,11 @@ export class MainUI extends Column {
                 e.saveCallback = () => preset;
                 e.onLoad.connect((value) => {
                     this._name.value = value.name;
-                    this._image.value = value.project.general.image;
-                    this._initialNoise.value = value.project.general.initial_noise;
-                    this._imageSize.value = value.project.general.image_size;
-                    this._parallel.value = value.project.general.parallel;
-                    this._seed.value = value.project.general.seed;
+                    this._general.value = value.project.general;
                     this._loadParameters.value = value.load_parameters;
                     this._continueFromLastFrame.value = value.continue_from_last_frame;
                     this._iterCount.value = value.iter_count;
-                    this._pipelineModules.value = value.project.pipeline.modules;
-                    this._animation.value = value.project.animation.code;
+                    this._pipeline.value = value.project.pipeline;
                     this._videoRenderer.value = value.video_renderer;
                     this._measuringParallelIndex.value = value.measuring_parallel_index;
                 });
@@ -119,12 +109,8 @@ export class MainUI extends Column {
                     this._name.value = value;
                 });
                 e.onLoad.connect((value) => {
-                    this._image.value = value.general.image;
-                    this._initialNoise.value = value.general.initial_noise;
-                    this._imageSize.value = value.general.image_size;
-                    this._parallel.value = value.general.parallel;
-                    this._seed.value = value.general.seed;
-                    this._pipelineModules.value = value.pipeline.modules;
+                    this._general.value = value.general;
+                    this._pipeline.value = value.pipeline;
                 });
             }, "projects", ["refresh", "load", "rename", "delete"]);
         });
@@ -140,51 +126,13 @@ export class MainUI extends Column {
 
                 e.createField("Description", TextArea);
 
-                e.createChild(Tabs, (e) => {
-                    this._image = e.createTab("Image", ImageBox, (e) => {
-                        e.onValueChange.connect((value) => {
-                            generation.project.general.image = value;
-                            preset.project.general.image = value;
-                        });
-                    });
-
-                    this._initialNoise = e.createTab("Initial noise", NoiseEditor, (e) => {
-                        e.onValueChange.connect((value) => {
-                            generation.project.general.initial_noise = value;
-                            preset.project.general.initial_noise = value;
-                        });
-                        // FIXME: Temporary
-                        e.onValueChange.connect((value) => console.log(value));
-                    });
-                });
-
-                this._imageSize = e.createField("Image size", VectorEditor, (e) => {
-                    e.minimum = 64;
-                    e.maximum = 2048;
-                    e.step = 8;
-                    e.value = {x: 512, y: 512};
+                this._general = e.createChild(GeneralDataEditor, (e) => {
                     e.onValueChange.connect((value) => {
-                        generation.project.general.image_size = value;
-                        preset.project.general.image_size = value;
+                        generation.project.general = value;
+                        preset.project.general = value;
                     });
-                }, NumberBox, {x: "X", y: "Y"});
-
-                this._parallel = e.createField("Parallel", NumberBox, (e) => {
-                    e.minimum = 1;
-                    e.step = 1;
-                    e.value = 1;
-                    e.onValueChange.connect((value) => {
-                        generation.project.general.parallel = value;
-                        preset.project.general.parallel = value;
-                    });
-                });
-
-                this._seed = e.createField("Seed", SeedBox, (e) => {
-                    e.value = -1;
-                    e.onValueChange.connect((value) => {
-                        generation.project.general.seed = value;
-                        preset.project.general.seed = value;
-                    });
+                    // FIXME: Temporary
+                    e.onValueChange.connect((value) => console.log(value));
                 });
 
                 this._loadParameters = e.createField("Load parameters", Checkbox, (e) => {
@@ -214,37 +162,13 @@ export class MainUI extends Column {
                 });
             });
 
-            e.createTab("Pipeline", Form, (e) => {
-                this._pipelineModules = e.createField("Add module", ModuleList, (e) => {
-                    e.onValueChange.connect((value) => {
-                        generation.project.pipeline.modules = value;
-                        preset.project.pipeline.modules = value;
-                    });
-                    // FIXME: Temporary
-                    e.onValueChange.connect((value) => console.log(value));
-                }, PipelineModuleEditor, mapObject(pipelineModules, (_, module) => {
-                    for (let [start, icon] of Object.entries({
-                        "temporal.pipeline_modules.filtering": "\u{e2ca}",
-                        "temporal.pipeline_modules.measuring": "\u{f201}",
-                        "temporal.pipeline_modules.neural": "\u{f471}",
-                        "temporal.pipeline_modules.painting": "\u{f1fc}",
-                        "temporal.pipeline_modules.temporal": "\u{f017}",
-                        "temporal.pipeline_modules.tool": "\u{f0ad}",
-                    })) {
-                        if (module.type.startsWith(start)) {
-                            return `${icon} ${module.name}`;
-                        }
-                    }
-
-                    return `"\u{f013}" ${module.name}`;
-                }), pipelineModules);
-
-                this._animation = e.createField("Animation", CodeArea, (e) => {
-                    e.onValueChange.connect((value) => {
-                        generation.project.animation = {code: value};
-                        preset.project.animation = {code: value};
-                    });
+            this._pipeline = e.createTab("Pipeline", PipelineEditor, (e) => {
+                e.onValueChange.connect((value) => {
+                    generation.project.pipeline = value;
+                    preset.project.pipeline = value;
                 });
+                // FIXME: Temporary
+                e.onValueChange.connect((value) => console.log(value));
             });
 
             e.createTab("Video Rendering", Form, (e) => {

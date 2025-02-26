@@ -1,17 +1,23 @@
 import skimage
 
+from temporal.animation import Animation
 from temporal.general_data import GeneralData
 from temporal.iteration_data import IterationData
 from temporal.meta.serializable import Serializable, SerializableField as Field
 from temporal.pipeline_module import PipelineModule
 from temporal.shared import shared
 from temporal.utils.math import clamp
+from temporal.utils.object import set_property_by_path
 
 
 class Pipeline(Serializable):
     modules: list[PipelineModule] = Field(factory = list)
+    animation: Animation = Field(factory = Animation)
 
     def run(self, general: GeneralData, iteration: IterationData) -> bool:
+        for path, value in self.animation.evaluate(iteration.index).items():
+            set_property_by_path(self, path, value)
+
         for i, module in enumerate(self.modules):
             if i < iteration.step or not module.enabled:
                 continue

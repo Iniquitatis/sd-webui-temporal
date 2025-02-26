@@ -1,6 +1,5 @@
 from pathlib import Path
 
-from temporal.animation import Animation
 from temporal.compat import get_latest_version, upgrade_project
 from temporal.general_data import GeneralData
 from temporal.iteration_data import IterationData
@@ -12,7 +11,6 @@ class Project(Serializable):
     version: int = Field(get_latest_version())
     general: GeneralData = Field(factory = GeneralData)
     pipeline: Pipeline = Field(factory = Pipeline)
-    animation: Animation = Field(factory = Animation)
     iteration: IterationData = Field(factory = IterationData)
 
     @classmethod
