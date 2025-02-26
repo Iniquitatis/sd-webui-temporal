@@ -84,14 +84,6 @@ input[type="checkbox"] {
     width: var(--checkbox-size);
 }
 
-input[type="file"] {
-    align-content: center;
-}
-
-input[type="file"]::file-selector-button {
-    display: none;
-}
-
 input[type="radio"] {
     height: var(--checkbox-size);
     width: var(--checkbox-size);
