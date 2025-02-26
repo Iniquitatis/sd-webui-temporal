@@ -18,8 +18,6 @@ from temporal.utils.numpy import FloatArray
 
 
 class MeasuringModule(PipelineModule, abstract = True):
-    icon = "\U0001f4d0\ufe0f"
-
     file_name: str = ""
     channels: list[tuple[str, str]] = []
 

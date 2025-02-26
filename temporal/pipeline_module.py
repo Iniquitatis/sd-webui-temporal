@@ -12,8 +12,6 @@ PIPELINE_MODULES: list[Type["PipelineModule"]] = []
 class PipelineModule(Configurable, abstract = True):
     store = PIPELINE_MODULES
 
-    icon: str = "\U00002699\ufe0f"
-
     enabled: bool = Field(True)
 
     @classmethod
@@ -21,7 +19,6 @@ class PipelineModule(Configurable, abstract = True):
         from temporal.pipeline_modules.filtering import ImageFilter
 
         return super().schema() | {
-            "icon": cls.icon,
             "is_filter": issubclass(cls, ImageFilter),
         }
 

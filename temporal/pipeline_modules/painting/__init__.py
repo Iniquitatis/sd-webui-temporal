@@ -6,8 +6,6 @@ from temporal.utils.image import NumpyImage, alpha_blend
 
 
 class PaintingModule(ImageFilter, abstract = True):
-    icon = "\U0001f58c\ufe0f"
-
     def process(self, npim: NumpyImage, parallel_index: int, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         return alpha_blend(npim, self.draw((npim.shape[1], npim.shape[0]), parallel_index, general, frame_index, seed))
 

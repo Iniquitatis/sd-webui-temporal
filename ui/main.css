@@ -23,6 +23,17 @@
     color-scheme: light dark;
 }
 
+@font-face {
+    font-family: "Main";
+    src: url("../fonts/roboto_variable_width.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "Main";
+    src: url("../fonts/font_awesome_solid.ttf") format("truetype");
+    unicode-range: U+e000-f8ff;
+}
+
 @media (max-width: 576px) {
     :root {
         --line-height: 1.6rem;
@@ -33,7 +44,7 @@
     accent-color: var(--accent-color);
     box-sizing: border-box;
     color: var(--text-color);
-    font: 14px "IBM Plex Sans";
+    font: 14px "Main";
     line-height: var(--line-height);
     margin: 0;
     padding: 0;

@@ -29,7 +29,7 @@ export class PipelineModuleEditor extends ReorderableAccordion {
         }), this._header.firstChild.nextSibling);
 
         this._header.insertBefore(createElement(null, MultiStateToggle, (e) => {
-            e.states = {on: "\u{1f441}\u{fe0e}", off: "\u{20e0}\u{fe0e}"};
+            e.states = {on: "\u{f06e}", off: "\u{f070}"};
             e.value = "on";
             this._manager.manage(e, "preview", (value) => value ? "on" : "off", (value) => value == "on");
         }), this._header.lastChild);
@@ -67,7 +67,7 @@ export class PipelineModuleEditor extends ReorderableAccordion {
             }
 
             e.createChild(Button, (e) => {
-                e.label = "\u{274c}\u{fe0e} Remove";
+                e.label = "\u{f2ed} Remove";
                 e.onClick.connect(() => {
                     this.parentElement.removeChild(this);
 

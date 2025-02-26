@@ -27,7 +27,7 @@ export class Accordion extends Widget {
             });
 
             this._openToggle = e.createChild(MultiStateToggle, (e) => {
-                e.states = {opened: "\u{25bc}", closed: "\u{25c0}"};
+                e.states = {opened: "\u{f0d7}", closed: "\u{f0d9}"};
                 e.value = "closed";
                 e.onValueChange.connect((value) => {
                     this._content.style.display = value == "opened" ? "block" : "none";

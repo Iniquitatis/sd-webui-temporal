@@ -30,7 +30,7 @@ export class VideoFilterEditor extends ReorderableAccordion {
             }
 
             e.createChild(Button, (e) => {
-                e.label = "\u{274c}\u{fe0e} Remove";
+                e.label = "\u{f2ed} Remove";
                 e.onClick.connect(() => {
                     this.parentElement.removeChild(this);
 

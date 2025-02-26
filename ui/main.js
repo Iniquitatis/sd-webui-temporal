@@ -222,7 +222,22 @@ export class MainUI extends Column {
                     });
                     // FIXME: Temporary
                     e.onValueChange.connect((value) => console.log(value));
-                }, PipelineModuleEditor, mapObject(pipelineModules, (_, module) => `${module.icon} ${module.name}`), pipelineModules);
+                }, PipelineModuleEditor, mapObject(pipelineModules, (_, module) => {
+                    for (let [start, icon] of Object.entries({
+                        "temporal.pipeline_modules.filtering": "\u{e2ca}",
+                        "temporal.pipeline_modules.measuring": "\u{f201}",
+                        "temporal.pipeline_modules.neural": "\u{f471}",
+                        "temporal.pipeline_modules.painting": "\u{f1fc}",
+                        "temporal.pipeline_modules.temporal": "\u{f017}",
+                        "temporal.pipeline_modules.tool": "\u{f0ad}",
+                    })) {
+                        if (module.type.startsWith(start)) {
+                            return `${icon} ${module.name}`;
+                        }
+                    }
+
+                    return `"\u{f013}" ${module.name}`;
+                }), pipelineModules);
 
                 this._animation = e.createField("Animation", CodeArea, (e) => {
                     e.onValueChange.connect((value) => {
