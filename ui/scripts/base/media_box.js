@@ -81,6 +81,15 @@ export class MediaBox extends Block {
 
         this._element = this.createChild(cls, (e) => {
             e.style.height = "100%";
+            e.onValueChange.connect((value) => {
+                this._buttonRow.style.display = value ? "flex" : "none";
+
+                if (this._viewer) {
+                    this._viewer.value = value;
+                }
+
+                this.onValueChange.fire(this.value);
+            });
         });
 
         this._buttonRow = this.createChild(Row, (e) => {
@@ -132,14 +141,6 @@ export class MediaBox extends Block {
 
     set value(value) {
         this._element.value = value;
-
-        this._buttonRow.style.display = value ? "flex" : "none";
-
-        if (this._viewer) {
-            this._viewer.value = value;
-        }
-
-        this.onValueChange.fire(this.value);
     }
 }
 customElements.define("media-box", MediaBox);

@@ -32,7 +32,7 @@ class FSOperationRequest(BaseModel):
 
 class GenerateRequest(BaseModel):
     name: str
-    project: dict[str, Any]
+    project: dict[str, Any] = {}
     load_parameters: bool = True
     continue_from_last_frame: bool = True
     iter_count: int = 10

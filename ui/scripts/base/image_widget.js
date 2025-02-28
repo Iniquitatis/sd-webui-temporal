@@ -28,7 +28,7 @@ export class ImageWidget extends Block {
 
     set value(value) {
         // FIXME: Should receive the correct value in the first place
-        if (value && !value.startsWith("data:image/png;base64,")) {
+        if (value && !value.startsWith("data:image/")) {
             value = `data:image/png;base64,${value}`;
         }
 

@@ -6,11 +6,11 @@ async function apiRequest(url, method, data = null, successCallback = null, erro
         headers: method == "POST" ? {"Content-Type": "application/json"} : undefined,
         body: method == "POST" ? JSON.stringify(data ?? {}) : undefined,
     })
-    .then((response) => {
+    .then(async (response) => {
         console.log("RESPONSE", response);
 
         if (!response.ok) {
-            throw new Error(`${response.status}: ${response.statusText}`);
+            throw new Error(`${response.status} (${response.statusText}): ${await response.text()}`);
         }
 
         return response.json();

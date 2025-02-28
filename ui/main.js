@@ -11,6 +11,8 @@ import {Tabs} from "./scripts/base/tabs.js";
 import {TextArea} from "./scripts/base/text_area.js";
 import {TextBox} from "./scripts/base/text_box.js";
 import {VideoBox} from "./scripts/base/video_box.js";
+import {FieldManager} from "./scripts/core/field_manager.js";
+import {Signal} from "./scripts/core/signal.js";
 import {getRequest, postRequest} from "./scripts/utils/requests.js";
 import {FSStoreBox} from "./scripts/fs_store_box.js";
 import {GeneralDataEditor} from "./scripts/general_data_editor.js";
@@ -23,18 +25,29 @@ export class MainUI extends Column {
     constructor() {
         super();
 
-        let generation = {
-            project: {
-                general: {},
-                pipeline: {},
-            },
-        };
-        let preset = {
-            project: {
-                general: {},
-                pipeline: {},
-            },
-        };
+        this.onGenerationChange = new Signal();
+        this.onPresetChange = new Signal();
+        this.onProjectChange = new Signal();
+
+        this._generationManager = new FieldManager(this.onGenerationChange);
+        this._presetManager = new FieldManager(this.onPresetChange);
+        this._projectManager = new FieldManager(this.onProjectChange);
+
+        this.onProjectChange.connect((value) => {
+            {
+                let newValue = this._generationManager.value;
+                newValue.project = value;
+
+                this._generationManager.value = newValue;
+            }
+
+            {
+                let newValue = this._presetManager.value;
+                newValue.project = value;
+
+                this._presetManager.value = newValue;
+            }
+        });
 
         this.createChild(MultiStateButton, (e) => {
             e.states = {stopped: "Generate", active: "Stop"};
@@ -65,7 +78,7 @@ export class MainUI extends Column {
                         this._preview.value = preview;
                     }, 1000);
 
-                    await postRequest("/temporal/generate", generation);
+                    await postRequest("/temporal/generate", this._generationManager.value);
                 } else if (state == "stopped") {
                     this._progressBar.style.display = "none";
 
@@ -84,22 +97,16 @@ export class MainUI extends Column {
         this._progressInterval = null;
 
         this._preview = this.createChild(ImageBox, (e) => {
-            e.height = "30rem";
+            e.height = "75vh";
         });
 
         this.createChild(Form, (e) => {
             e.createField("Preset", FSStoreBox, (e) => {
                 e.entries = Object.keys(presets);
-                e.saveCallback = () => preset;
+                e.saveCallback = () => this._presetManager.value;
                 e.onLoad.connect((value) => {
-                    this._name.value = value.name;
-                    this._general.value = value.project.general;
-                    this._loadParameters.value = value.load_parameters;
-                    this._continueFromLastFrame.value = value.continue_from_last_frame;
-                    this._iterCount.value = value.iter_count;
-                    this._pipeline.value = value.project.pipeline;
-                    this._videoRenderer.value = value.video_renderer;
-                    this._measuringParallelIndex.value = value.measuring_parallel_index;
+                    this._presetManager.value = value;
+                    this._projectManager.value = value.project;
                 });
             }, "presets", ["refresh", "load", "save", "rename", "delete"]);
 
@@ -109,8 +116,7 @@ export class MainUI extends Column {
                     this._name.value = value;
                 });
                 e.onLoad.connect((value) => {
-                    this._general.value = value.general;
-                    this._pipeline.value = value.pipeline;
+                    this._projectManager.value = value;
                 });
             }, "projects", ["refresh", "load", "rename", "delete"]);
         });
@@ -118,77 +124,51 @@ export class MainUI extends Column {
         this.createChild(Tabs, (e) => {
             e.createTab("General", Form, (e) => {
                 this._name = e.createField("Name", TextBox, (e) => {
-                    e.onValueChange.connect((value) => {
-                        generation.name = value;
-                        preset.name = value;
-                    });
+                    this._generationManager.manage(e, "name");
+                    this._presetManager.manage(e, "name");
                 });
 
                 e.createField("Description", TextArea);
 
-                this._general = e.createChild(GeneralDataEditor, (e) => {
-                    e.onValueChange.connect((value) => {
-                        generation.project.general = value;
-                        preset.project.general = value;
-                    });
-                    // FIXME: Temporary
-                    e.onValueChange.connect((value) => console.log(value));
+                e.createChild(GeneralDataEditor, (e) => {
+                    this._projectManager.manage(e, "general");
                 });
 
-                this._loadParameters = e.createField("Load parameters", Checkbox, (e) => {
+                e.createField("Load parameters", Checkbox, (e) => {
                     e.value = true;
-                    e.onValueChange.connect((value) => {
-                        generation.load_parameters = value;
-                        preset.load_parameters = value;
-                    });
+                    this._generationManager.manage(e, "load_parameters");
+                    this._presetManager.manage(e, "load_parameters");
                 });
 
-                this._continueFromLastFrame = e.createField("Continue from last frame", Checkbox, (e) => {
+                e.createField("Continue from last frame", Checkbox, (e) => {
                     e.value = true;
-                    e.onValueChange.connect((value) => {
-                        generation.continue_from_last_frame = value;
-                        preset.continue_from_last_frame = value;
-                    });
+                    this._generationManager.manage(e, "continue_from_last_frame");
+                    this._presetManager.manage(e, "continue_from_last_frame");
                 });
 
-                this._iterCount = e.createField("Iteration count", NumberBox, (e) => {
+                e.createField("Iteration count", NumberBox, (e) => {
                     e.minimum = 1;
                     e.step = 1;
                     e.value = 10;
-                    e.onValueChange.connect((value) => {
-                        generation.iter_count = value;
-                        preset.iter_count = value;
-                    });
+                    this._generationManager.manage(e, "iter_count");
+                    this._presetManager.manage(e, "iter_count");
                 });
             });
 
-            this._pipeline = e.createTab("Pipeline", PipelineEditor, (e) => {
-                e.onValueChange.connect((value) => {
-                    generation.project.pipeline = value;
-                    preset.project.pipeline = value;
-                });
-                // FIXME: Temporary
-                e.onValueChange.connect((value) => console.log(value));
+            e.createTab("Pipeline", PipelineEditor, (e) => {
+                this._projectManager.manage(e, "pipeline");
             });
 
             e.createTab("Video Rendering", Form, (e) => {
                 this._videoRenderer = e.createChild(VideoRendererEditor, (e) => {
-                    e.onValueChange.connect((value) => {
-                        preset.video_renderer = value;
-                    });
-                    // FIXME: Temporary
-                    e.onValueChange.connect((value) => console.log(value));
+                    this._presetManager.manage(e, "video_renderer");
                 });
 
                 this._videoParallelIndex = e.createField("Parallel index", NumberBox, (e) => {
                     e.minimum = 1;
                     e.step = 1;
                     e.value = 1;
-                    e.onValueChange.connect((value) => {
-                        preset.video_parallel_index = value;
-                    });
-                    // FIXME: Temporary
-                    e.onValueChange.connect((value) => console.log(value));
+                    this._presetManager.manage(e, "video_parallel_index");
                 });
 
                 this._videoRenderButtonRow = e.createChild(Row, (e) => {
@@ -223,13 +203,11 @@ export class MainUI extends Column {
             });
 
             e.createTab("Measuring", Form, (e) => {
-                this._measuringParallelIndex = e.createField("Parallel index", NumberBox, (e) => {
+                e.createField("Parallel index", NumberBox, (e) => {
                     e.minimum = 1;
                     e.step = 1;
                     e.value = 1;
-                    e.onValueChange.connect((value) => {
-                        preset.measuring_parallel_index = value;
-                    });
+                    this._presetManager.manage(e, "measuring_parallel_index");
                 });
 
                 e.createChild(Button, (e) => {
@@ -253,15 +231,17 @@ export class MainUI extends Column {
                         "data": value,
                     });
                 });
-
-                // FIXME: Temporary
-                e.onValueChange.connect((value) => console.log(value));
             });
 
             e.createTab("Help", Column, (e) => {
                 e.innerText = "Blah";
             });
         });
+
+        // FIXME: Temporary
+        this.onGenerationChange.connect((value) => console.log("GEN", value));
+        this.onPresetChange.connect((value) => console.log("PST", value));
+        this.onProjectChange.connect((value) => console.log("PRJ", value));
     }
 }
 customElements.define("main-ui", MainUI);

@@ -1,5 +1,5 @@
+import {CanvasBox} from "../scripts/base/canvas_box.js";
 import {Form} from "../scripts/base/form.js";
-import {ImageBox} from "../scripts/base/image_box.js";
 import {NumberBox} from "../scripts/base/number_box.js";
 import {Tabs} from "../scripts/base/tabs.js";
 import {VectorEditor} from "../scripts/base/vector_editor.js";
@@ -17,7 +17,10 @@ export class GeneralDataEditor extends Form {
         this._manager = new FieldManager(this.onValueChange);
 
         this.createChild(Tabs, (e) => {
-            e.createTab("Image", ImageBox, (e) => {
+            this._image = e.createTab("Image", CanvasBox, (e) => {
+                e.height = "60vh";
+                e._element.width = 512;
+                e._element.height = 512;
                 this._manager.manage(e, "image");
             });
 
@@ -31,6 +34,10 @@ export class GeneralDataEditor extends Form {
             e.maximum = 2048;
             e.step = 8;
             e.value = {x: 512, y: 512};
+            e.onValueChange.connect((value) => {
+                this._image._element.width = value.x;
+                this._image._element.height = value.y;
+            });
             this._manager.manage(e, "image_size");
         }, NumberBox, {x: "X", y: "Y"});
 
