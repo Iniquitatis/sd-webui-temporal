@@ -15,7 +15,8 @@ from temporal.project import Project
 from temporal.shared import shared
 from temporal.thread_queue import ThreadQueue
 from temporal.utils.bytes import bytes_to_base64
-from temporal.utils.image import image_to_base64
+from temporal.utils.image import base64_to_image, image_to_base64
+from temporal.vector import IntVector
 from temporal.video_filters import VIDEO_FILTERS
 from temporal.video_renderer import VideoRenderer
 
@@ -32,6 +33,8 @@ class FSOperationRequest(BaseModel):
 
 class GenerateRequest(BaseModel):
     name: str
+    image: Optional[str] = None
+    image_size: dict[str, Any] = {"x": 512, "y": 512}
     project: dict[str, Any] = {}
     load_parameters: bool = True
     continue_from_last_frame: bool = True
@@ -97,6 +100,8 @@ def register_api(app: FastAPI, engine: Engine) -> None:
         else:
             project = Project.from_json(request.project)
             project.general.path = path
+            project.general.image = base64_to_image(request.image) if request.image else None
+            project.general.image_size = IntVector.from_json(request.image_size)
 
         if not request.continue_from_last_frame:
             project.general.delete_all_frames()

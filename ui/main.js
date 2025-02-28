@@ -1,8 +1,8 @@
 import {Button} from "./scripts/base/button.js";
+import {CanvasBox} from "./scripts/base/canvas_box.js";
 import {Checkbox} from "./scripts/base/checkbox.js";
 import {Column} from "./scripts/base/column.js";
 import {Form} from "./scripts/base/form.js";
-import {ImageBox} from "./scripts/base/image_box.js";
 import {MultiStateButton} from "./scripts/base/multi_state_button.js";
 import {NumberBox} from "./scripts/base/number_box.js";
 import {ProgressBar} from "./scripts/base/progress_bar.js";
@@ -19,9 +19,10 @@ import {GeneralDataEditor} from "./scripts/general_data_editor.js";
 import {OptionsEditor} from "./scripts/options_editor.js";
 import {PipelineEditor} from "./scripts/pipeline_editor.js";
 import {blendModes, models, optionCategories, pipelineModules, presets, projects, samplers, schedulers, vaes, videoFilters} from "./scripts/shared_data.js";
+import {VectorEditor} from "./scripts/base/vector_editor.js";
 import {VideoRendererEditor} from "./scripts/video_renderer_editor.js";
 
-export class MainUI extends Column {
+export class MainUI extends Form {
     constructor() {
         super();
 
@@ -96,30 +97,51 @@ export class MainUI extends Column {
 
         this._progressInterval = null;
 
-        this._preview = this.createChild(ImageBox, (e) => {
+        this._preview = this.createChild(CanvasBox, (e) => {
             e.height = "75vh";
+            e._element.width = 512;
+            e._element.height = 512;
+            this._generationManager.manage(e, "image");
+            this._presetManager.manage(e, "image");
         });
 
-        this.createChild(Form, (e) => {
-            e.createField("Preset", FSStoreBox, (e) => {
-                e.entries = Object.keys(presets);
-                e.saveCallback = () => this._presetManager.value;
-                e.onLoad.connect((value) => {
-                    this._presetManager.value = value;
-                    this._projectManager.value = value.project;
-                });
-            }, "presets", ["refresh", "load", "save", "rename", "delete"]);
+        this._imageSize = this.createField("Image size", VectorEditor, (e) => {
+            e.minimum = 64;
+            e.maximum = 2048;
+            e.step = 8;
+            e.value = {x: 512, y: 512};
+            e.onValueChange.connect((value) => {
+                this._preview._element.width = value.x;
+                this._preview._element.height = value.y;
+            });
+            this._generationManager.manage(e, "image_size");
+            this._presetManager.manage(e, "image_size");
+        }, NumberBox, {x: "X", y: "Y"});
 
-            e.createField("Project", FSStoreBox, (e) => {
-                e.entries = Object.keys(projects);
-                e.onValueChange.connect((value) => {
-                    this._name.value = value;
-                });
-                e.onLoad.connect((value) => {
-                    this._projectManager.value = value;
-                });
-            }, "projects", ["refresh", "load", "rename", "delete"]);
-        });
+        this.createField("Preset", FSStoreBox, (e) => {
+            e.entries = Object.keys(presets);
+            e.saveCallback = () => this._presetManager.value;
+            e.onLoad.connect((value) => {
+                this._presetManager.value = value;
+                this._projectManager.value = value.project;
+
+                this._preview.value = value.project.general.image;
+                this._imageSize.value = value.project.general.image_size;
+            });
+        }, "presets", ["refresh", "load", "save", "rename", "delete"]);
+
+        this.createField("Project", FSStoreBox, (e) => {
+            e.entries = Object.keys(projects);
+            e.onValueChange.connect((value) => {
+                this._name.value = value;
+            });
+            e.onLoad.connect((value) => {
+                this._projectManager.value = value;
+
+                this._preview.value = value.general.image;
+                this._imageSize.value = value.general.image_size;
+            });
+        }, "projects", ["refresh", "load", "rename", "delete"]);
 
         this.createChild(Tabs, (e) => {
             e.createTab("General", Form, (e) => {
