@@ -1,3 +1,4 @@
+import {Accordion} from "../scripts/base/accordion.js";
 import {Form} from "../scripts/base/form.js";
 import {NumberBox} from "../scripts/base/number_box.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
@@ -13,8 +14,12 @@ export class GeneralDataEditor extends Form {
 
         this._manager = new FieldManager(this.onValueChange);
 
-        this.createField("Initial noise", NoiseEditor, (e) => {
-            this._manager.manage(e, "initial_noise");
+        this.createChild(Accordion, (e) => {
+            e.label = "Initial noise";
+
+            e.createChild(NoiseEditor, (e) => {
+                this._manager.manage(e, "initial_noise");
+            });
         });
 
         this.createField("Parallel", NumberBox, (e) => {

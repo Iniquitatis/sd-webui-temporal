@@ -52,7 +52,6 @@
 
 body {
     background-color: var(--background-color);
-    padding: var(--layout-padding);
 }
 
 button {
