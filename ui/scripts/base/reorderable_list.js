@@ -63,12 +63,13 @@ export class ReorderableAccordion extends Accordion {
         super();
 
         this._header.insertBefore(createElement(null, Block, (e) => {
-            e.innerText = ":::";
+            e.innerText = "\u{e410}";
             e.style.alignContent = "center";
             e.style.color = "var(--hint-color)";
             e.style.cursor = "move";
             e.style.height = "var(--widget-height)";
-            e.style.padding = "0 var(--horizontal-padding)";
+            e.style.maxWidth = "var(--widget-height)";
+            e.style.minWidth = "var(--widget-height)";
             e.style.textAlign = "center";
             e.style.userSelect = "none";
             e.addEventListener("pointerdown", (event) => {
