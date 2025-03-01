@@ -30,7 +30,7 @@
 
 @font-face {
     font-family: "Main";
-    src: url("../fonts/font_awesome_solid.ttf") format("truetype");
+    src: url("../fonts/icons.ttf") format("truetype");
     unicode-range: U+e000-f8ff;
 }
 

@@ -25,7 +25,7 @@ export class Dock extends Column {
             });
 
             e.createChild(ToolButton, (e) => {
-                e.label = "\u{f00d}";
+                e.label = "\u{f323}";
                 e.onClick.connect(() => {
                     this.style.display = "none";
                 });

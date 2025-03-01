@@ -24,7 +24,7 @@ export class ModuleList extends Column {
             });
 
             e.createChild(ToolButton, (e) => {
-                e.label = "+";
+                e.label = "\u{e59e}";
                 e.onClick.connect(() => {
                     let module = this._createModule(selectedModule.value);
                     this._value.push(module.value);

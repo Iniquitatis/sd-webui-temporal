@@ -21,7 +21,7 @@ export class SeedBox extends Row {
         });
 
         this.createChild(ToolButton, (e) => {
-            e.label = "\u{f522}";
+            e.label = "\u{f523}";
             e.onClick.connect(() => {
                 this.value = Math.floor(Math.random() * (2 ** 32));
             });

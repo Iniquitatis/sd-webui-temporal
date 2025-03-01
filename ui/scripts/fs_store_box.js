@@ -80,7 +80,7 @@ export class FSStoreBox extends Row {
             });
 
             e.createChild(ToolButton, (e) => {
-                e.label = "\u{f31c}";
+                e.label = "\u{f303}";
                 e.style.display = features.includes("rename") ? null : "none";
                 e.onClick.connect(async () => {
                     let oldName = this._dropdown.value;

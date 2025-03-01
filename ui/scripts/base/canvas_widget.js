@@ -93,7 +93,7 @@ export class CanvasWidget extends Block {
                     });
 
                     e.createChild(ToolButton, (e) => {
-                        e.label = "\u{f021}";
+                        e.label = "\u{e099}";
                         e.style.pointerEvents = "auto";
                         e.onClick.connect(() => {
                             this._overlayCtx.drawImage(this._mainCanvas, 0, 0);

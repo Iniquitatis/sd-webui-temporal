@@ -272,7 +272,7 @@ export class MainUI extends Widget {
                 });
             });
 
-            e.createDock("\u{f4fe}", "System", Tabs, (e) => {
+            e.createDock("\u{f013}", "System", Tabs, (e) => {
                 e.createTab("Settings", OptionsEditor, (e) => {
                     e.onApply.connect(async (value) => {
                         await postRequest("/temporal/apply_settings", {

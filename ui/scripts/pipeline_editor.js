@@ -19,9 +19,9 @@ export class PipelineEditor extends Form {
             this._manager.manage(e, "modules");
         }, PipelineModuleEditor, mapObject(pipelineModules, (_, module) => {
             for (let [start, icon] of Object.entries({
-                "temporal.pipeline_modules.filtering": "\u{e2ca}",
+                "temporal.pipeline_modules.filtering": "\u{f890}",
                 "temporal.pipeline_modules.measuring": "\u{f201}",
-                "temporal.pipeline_modules.neural": "\u{f471}",
+                "temporal.pipeline_modules.neural": "\u{e0c6}",
                 "temporal.pipeline_modules.painting": "\u{f1fc}",
                 "temporal.pipeline_modules.temporal": "\u{f017}",
                 "temporal.pipeline_modules.tool": "\u{f0ad}",
