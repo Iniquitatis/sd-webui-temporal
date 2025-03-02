@@ -14,6 +14,7 @@ import {TextBox} from "./scripts/base/text_box.js";
 import {VideoBox} from "./scripts/base/video_box.js";
 import {FieldManager} from "./scripts/core/field_manager.js";
 import {Signal} from "./scripts/core/signal.js";
+import {Timer} from "./scripts/core/timer.js";
 import {Widget} from "./scripts/core/widget.js";
 import {getRequest, postRequest} from "./scripts/utils/requests.js";
 import {FSStoreBox} from "./scripts/fs_store_box.js";
@@ -31,30 +32,44 @@ export class MainUI extends Widget {
         this.onGenerationChange = new Signal();
         this.onPresetChange = new Signal();
         this.onProjectChange = new Signal();
+        this.onGenerationStart = new Signal();
+        this.onGenerationStop = new Signal();
+        this.onStateCheck = new Signal();
+        this.onNewPreview = new Signal();
 
         this._generationManager = new FieldManager(this.onGenerationChange);
+        this.onProjectChange.connect((value) => {
+            let newValue = this._generationManager.value;
+            newValue.project = value;
+
+            this._generationManager.value = newValue;
+        });
+
         this._presetManager = new FieldManager(this.onPresetChange);
+        this.onProjectChange.connect((value) => {
+            let newValue = this._presetManager.value;
+            newValue.project = value;
+
+            this._presetManager.value = newValue;
+        });
+
         this._projectManager = new FieldManager(this.onProjectChange);
+
+        this._stateTimer = new Timer(async () => {
+            this.onStateCheck.fire(await getRequest("/temporal/state"));
+
+            let preview = await getRequest("/temporal/preview");
+
+            if (preview) {
+                this.onNewPreview.fire(preview);
+            }
+        }, 1.0);
+        this.onGenerationStart.connect(() => this._stateTimer.start());
+        this.onGenerationStop.connect(() => this._stateTimer.stop());
 
         this.style.height = "100%";
         this.style.position = "fixed";
         this.style.width = "100%";
-
-        this.onProjectChange.connect((value) => {
-            {
-                let newValue = this._generationManager.value;
-                newValue.project = value;
-
-                this._generationManager.value = newValue;
-            }
-
-            {
-                let newValue = this._presetManager.value;
-                newValue.project = value;
-
-                this._presetManager.value = newValue;
-            }
-        });
 
         this.createChild(Column, (e) => {
             e.style.inset = "0";
@@ -67,52 +82,48 @@ export class MainUI extends Widget {
                 e.style.minHeight = "calc(var(--widget-height) * 2)";
                 e.onStateChange.connect(async (state) => {
                     if (state == "active") {
-                        this._progressBar.value = 0;
-                        this._progressBar.total = 0;
-                        this._progressBar.text = "(Indeterminate)";
-                        this._progressBar.style.display = null;
-
-                        this._progressInterval = window.setInterval(async () => {
-                            let state = await getRequest("/temporal/state");
-
-                            if (state.state == "active") {
-                                this._progressBar.value = state.current_iteration;
-                                this._progressBar.total = state.total_iterations;
-                                this._progressBar.text = `${this._progressBar.value} / ${this._progressBar.total}`;
-                            } else if (state.state == "stopped") {
-                                e.state = "stopped";
-                            }
-
-                            let preview = await getRequest("/temporal/preview");
-
-                            if (!preview) return;
-
-                            this._image.value = preview;
-                        }, 1000);
+                        this.onGenerationStart.fire();
 
                         await postRequest("/temporal/generate", this._generationManager.value);
                     } else if (state == "stopped") {
-                        this._progressBar.style.display = "none";
-
-                        window.clearInterval(this._progressInterval);
-                        this._progressInterval = null;
+                        this.onGenerationStop.fire();
 
                         await postRequest("/temporal/interrupt");
                     }
                 });
+                this.onStateCheck.connect((state) => {
+                    if (state.state == "stopped") {
+                        e.state = "stopped";
+                    }
+                });
             });
 
-            this._progressBar = e.createChild(ProgressBar, (e) => {
+            e.createChild(ProgressBar, (e) => {
                 e.style.display = "none";
+                this.onGenerationStart.connect(() => {
+                    e.value = 0;
+                    e.total = 0;
+                    e.text = "(Indeterminate)";
+                    e.style.display = null;
+                });
+                this.onGenerationStop.connect(() => {
+                    e.style.display = "none";
+                });
+                this.onStateCheck.connect((state) => {
+                    e.value = state.current_iteration;
+                    e.total = state.total_iterations;
+                    e.text = `${e.value} / ${e.total}`;
+                });
             });
-
-            this._progressInterval = null;
 
             this._image = e.createChild(CanvasBox, (e) => {
                 e._element.width = 512;
                 e._element.height = 512;
                 this._generationManager.manage(e, "image");
                 this._presetManager.manage(e, "image");
+                this.onNewPreview.connect((preview) => {
+                    e.value = preview;
+                });
             });
 
             e.createChild(MultiStateButton, (e) => {

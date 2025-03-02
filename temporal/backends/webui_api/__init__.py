@@ -23,9 +23,13 @@ class WebUIAPIBackend(Backend):
         return f"{self.host}:{self.port}"
 
     def list_models(self) -> list[str]:
+        _safe_request("POST", f"{self.url}/sdapi/v1/refresh-checkpoints")
+
         return [x["model_name"] for x in _safe_request("GET", f"{self.url}/sdapi/v1/sd-models").json()]
 
     def list_vaes(self) -> list[str]:
+        _safe_request("POST", f"{self.url}/sdapi/v1/refresh-vae")
+
         return ["Automatic", "None"] + [x["model_name"] for x in _safe_request("GET", f"{self.url}/sdapi/v1/sd-vae").json()]
 
     def list_upscalers(self) -> list[str]:
