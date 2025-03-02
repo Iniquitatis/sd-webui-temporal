@@ -1,7 +1,7 @@
 from asyncio import get_event_loop
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Type, get_type_hints
 
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from pydantic import BaseModel
 
 from temporal.blend_modes import BLEND_MODES
@@ -20,49 +20,61 @@ from temporal.video_filters import VIDEO_FILTERS
 from temporal.video_renderer import VideoRenderer
 
 
-class ApplySettingsRequest(BaseModel):
-    data: dict[str, Any] = {}
+ENDPOINTS: list[Type["Endpoint"]] = []
 
 
-class FSOperationRequest(BaseModel):
-    store: Literal["presets", "projects"]
-    operation: Literal["refresh", "load", "save", "rename", "delete"]
-    args: dict[str, Any] = {}
+class Endpoint:
+    method: Literal["GET", "POST"]
+    path: str
+
+    def __init_subclass__(cls) -> None:
+        ENDPOINTS.append(cls)
+
+    def __init__(self, engine: Engine) -> None:
+        self.engine = engine
+        self.router = APIRouter()
+        self.router.add_api_route(
+            self.path,
+            self.do,
+            name = "",
+            methods = [self.method],
+            response_model = get_type_hints(self.do)["return"],
+        )
+
+    async def do(self, *args: Any, **kwargs: Any) -> Any:
+        raise NotImplementedError
 
 
-class GenerateRequest(BaseModel):
-    image: Optional[str] = None
-    project: dict[str, Any] = {}
-    load_parameters: bool = True
-    continue_from_last_frame: bool = True
-    iter_count: int = 10
+class _(Endpoint):
+    method = "POST"
+    path = "/temporal/apply_settings"
 
+    class Request(BaseModel):
+        data: dict[str, Any] = {}
 
-class RenderTextureRequest(BaseModel):
-    type: Literal["gradient", "noise", "pattern"]
-    data: dict[str, Any] = {}
-    size: tuple[int, int] = (256, 256)
-    channels: int = 3
-
-
-class RenderVideoRequest(BaseModel):
-    type: Literal["draft", "final"]
-    data: dict[str, Any] = {}
-    parallel_index: int = 1
-
-
-def register_api(app: FastAPI, engine: Engine) -> None:
-    @app.post("/temporal/apply_settings")
-    async def _(request: ApplySettingsRequest) -> Any:
+    async def do(self, request: Request) -> None:
         shared.options = GlobalOptions.from_json(request.data)
         shared.options.save(shared.options_path)
 
-    @app.get("/temporal/blend_modes")
-    async def _() -> Any:
+
+class _(Endpoint):
+    method = "GET"
+    path = "/temporal/blend_modes"
+
+    async def do(self) -> dict[str, str]:
         return {x.id: x.name for x in BLEND_MODES}
 
-    @app.post("/temporal/fs_operation")
-    async def _(request: FSOperationRequest) -> Any:
+
+class _(Endpoint):
+    method = "POST"
+    path = "/temporal/fs_operation"
+
+    class Request(BaseModel):
+        store: Literal["presets", "projects"]
+        operation: Literal["refresh", "load", "save", "rename", "delete"]
+        args: dict[str, Any] = {}
+
+    async def do(self, request: Request) -> Optional[dict[str, Any]]:
         if request.store == "presets":
             store = shared.preset_store
         elif request.store == "projects":
@@ -83,11 +95,24 @@ def register_api(app: FastAPI, engine: Engine) -> None:
         else:
             raise ValueError
 
-    generation_queue = ThreadQueue()
 
-    @app.post("/temporal/generate")
-    async def _(request: GenerateRequest) -> Any:
-        if generation_queue.busy:
+class _(Endpoint):
+    method = "POST"
+    path = "/temporal/generate"
+
+    class Request(BaseModel):
+        image: Optional[str] = None
+        project: dict[str, Any] = {}
+        load_parameters: bool = True
+        continue_from_last_frame: bool = True
+        iter_count: int = 10
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.queue = ThreadQueue()
+
+    async def do(self, request: Request) -> None:
+        if self.queue.busy:
             return
 
         path = shared.options.output.output_dir / request.project.get("general", {}).get("name", "untitled")
@@ -103,44 +128,83 @@ def register_api(app: FastAPI, engine: Engine) -> None:
             project.general.delete_all_frames()
             project.delete_session_data()
 
-        generation_queue.enqueue(engine.start, project, request.iter_count)
+        self.queue.enqueue(self.engine.start, project, request.iter_count)
 
-    @app.post("/temporal/interrupt")
-    async def _() -> Any:
-        engine.stop()
 
-    @app.get("/temporal/models")
-    async def _() -> Any:
+class _(Endpoint):
+    method = "POST"
+    path = "/temporal/interrupt"
+
+    async def do(self) -> None:
+        self.engine.stop()
+
+
+class _(Endpoint):
+    method = "GET"
+    path = "/temporal/models"
+
+    async def do(self) -> list[str]:
         return [x for x in shared.backend.list_models()]
 
-    @app.get("/temporal/option_categories")
-    async def _() -> Any:
+
+class _(Endpoint):
+    method = "GET"
+    path = "/temporal/option_categories"
+
+    async def do(self) -> dict[str, dict[str, Any]]:
         return {key: field.type.schema() for key, field in shared.options.__fields__.items()}
 
-    @app.get("/temporal/pipeline_modules")
-    async def _() -> Any:
+
+class _(Endpoint):
+    method = "GET"
+    path = "/temporal/pipeline_modules"
+
+    async def do(self) -> dict[str, dict[str, Any]]:
         return {module.id: module.schema() for module in PIPELINE_MODULES}
 
-    @app.get("/temporal/presets")
-    async def _() -> Any:
+
+class _(Endpoint):
+    method = "GET"
+    path = "/temporal/presets"
+
+    async def do(self) -> list[str]:
         return shared.preset_store.entry_names
 
-    last_preview = None
 
-    @app.get("/temporal/preview")
-    async def _() -> Any:
-        nonlocal last_preview
+class _(Endpoint):
+    method = "GET"
+    path = "/temporal/preview"
 
-        if (image := shared.backend.get_preview()) is not None and image is not last_preview:
-            last_preview = image
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.last_preview = None
+
+    async def do(self) -> Optional[str]:
+        if (image := shared.backend.get_preview()) is not None and image is not self.last_preview:
+            self.last_preview = image
+
             return image_to_base64(image, "fast")
 
-    @app.get("/temporal/projects")
-    async def _() -> Any:
+
+class _(Endpoint):
+    method = "GET"
+    path = "/temporal/projects"
+
+    async def do(self) -> list[str]:
         return shared.project_store.entry_names
 
-    @app.post("/temporal/render_texture")
-    async def _(request: RenderTextureRequest) -> Any:
+
+class _(Endpoint):
+    method = "POST"
+    path = "/temporal/render_texture"
+
+    class Request(BaseModel):
+        type: Literal["gradient", "noise", "pattern"]
+        data: dict[str, Any] = {}
+        size: tuple[int, int] = (256, 256)
+        channels: int = 3
+
+    async def do(self, request: Request) -> str:
         if request.type == "gradient":
             cls = Gradient
         elif request.type == "noise":
@@ -155,13 +219,22 @@ def register_api(app: FastAPI, engine: Engine) -> None:
 
         return await get_event_loop().run_in_executor(None, render)
 
-    @app.post("/temporal/render_video")
-    async def _(request: RenderVideoRequest) -> Any:
+
+class _(Endpoint):
+    method = "POST"
+    path = "/temporal/render_video"
+
+    class Request(BaseModel):
+        type: Literal["draft", "final"]
+        data: dict[str, Any] = {}
+        parallel_index: int = 1
+
+    async def do(self, request: Request) -> Optional[str]:
         def render() -> Optional[str]:
             shared.video_renderer = VideoRenderer.from_json(request.data)
 
-            with engine._state_lock:
-                project = engine.active_project
+            with self.engine._state_lock:
+                project = self.engine.active_project
 
             if not project:
                 return
@@ -170,31 +243,69 @@ def register_api(app: FastAPI, engine: Engine) -> None:
 
         return await get_event_loop().run_in_executor(None, render)
 
-    @app.get("/temporal/samplers")
-    async def _() -> Any:
+
+class _(Endpoint):
+    method = "GET"
+    path = "/temporal/samplers"
+
+    async def do(self) -> list[str]:
         return [x for x in shared.backend.list_samplers()]
 
-    @app.get("/temporal/schedulers")
-    async def _() -> Any:
+
+class _(Endpoint):
+    method = "GET"
+    path = "/temporal/schedulers"
+
+    async def do(self) -> list[str]:
         return [x for x in shared.backend.list_schedulers()]
 
-    @app.get("/temporal/state")
-    async def _() -> Any:
-        with engine._state_lock:
-            return {
-                "state": engine.state,
-                "current_iteration": engine.current_iteration,
-                "total_iterations": engine.total_iterations,
-            }
 
-    @app.get("/temporal/upscalers")
-    async def _() -> Any:
+class _(Endpoint):
+    method = "GET"
+    path = "/temporal/state"
+
+    class Response(BaseModel):
+        state: str
+        current_iteration: int
+        total_iterations: int
+
+    async def do(self) -> Response:
+        with self.engine._state_lock:
+            return self.Response(
+                state = self.engine.state,
+                current_iteration = self.engine.current_iteration,
+                total_iterations = self.engine.total_iterations,
+            )
+
+
+class _(Endpoint):
+    method = "GET"
+    path = "/temporal/upscalers"
+
+    async def do(self) -> list[str]:
         return [x for x in shared.backend.list_upscalers()]
 
-    @app.get("/temporal/vaes")
-    async def _() -> Any:
+
+class _(Endpoint):
+    method = "GET"
+    path = "/temporal/vaes"
+
+    async def do(self) -> list[str]:
         return [x for x in shared.backend.list_vaes()]
 
-    @app.get("/temporal/video_filters")
-    async def _() -> Any:
+
+class _(Endpoint):
+    method = "GET"
+    path = "/temporal/video_filters"
+
+    async def do(self) -> dict[str, dict[str, Any]]:
         return {filter.id: filter.schema() for filter in VIDEO_FILTERS}
+
+
+def register_api(app: FastAPI, engine: Engine) -> None:
+    endpoints: list[Endpoint] = []
+
+    for cls in ENDPOINTS:
+        endpoint = cls(engine)
+        app.include_router(endpoint.router)
+        endpoints.append(endpoint)
