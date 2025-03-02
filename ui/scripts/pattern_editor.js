@@ -3,14 +3,13 @@ import {Form} from "../scripts/base/form.js";
 import {ImageBox} from "../scripts/base/image_box.js";
 import {NumberBox} from "../scripts/base/number_box.js";
 import {Radio} from "../scripts/base/radio.js";
-import {Row} from "../scripts/base/row.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
 import {postRequest} from "../scripts/utils/requests.js";
 
 export class PatternEditor extends Form {
     constructor() {
-        super(Row);
+        super(true);
 
         this.onValueChange = new Signal();
 

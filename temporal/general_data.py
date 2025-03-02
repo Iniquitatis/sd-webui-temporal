@@ -5,7 +5,7 @@ from temporal.meta.serializable import Serializable, SerializableField as Field
 from temporal.noise import Noise
 from temporal.utils import logging
 from temporal.utils.fs import clear_directory, ensure_directory_exists, remove_entry
-from temporal.utils.image import NumpyImage
+from temporal.utils.image import NumpyImage, load_image, pil_to_np
 from temporal.vector import IntVector
 from temporal.video_renderer import VideoRenderer
 
@@ -33,6 +33,10 @@ class GeneralData(Serializable):
 
     def list_all_frame_paths(self, parallel_index: int = 1) -> list[Path]:
         return sorted((x for x in self._iterate_frame_paths() if _parse_frame_index(x)[1] == parallel_index), key = lambda x: x.name)
+
+    def get_last_frame(self) -> Optional[NumpyImage]:
+        if index := self.get_last_frame_index():
+            return pil_to_np(load_image(self.path / f"{index:05d}.png"))
 
     def delete_all_frames(self) -> None:
         clear_directory(self.path, "*.png")

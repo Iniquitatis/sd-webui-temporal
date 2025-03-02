@@ -101,11 +101,14 @@ class _(Endpoint):
     path = "/temporal/generate"
 
     class Request(BaseModel):
+        class Session(BaseModel):
+            load_parameters: bool = True
+            continue_from_last_frame: bool = True
+            iter_count: int = 10
+
         image: Optional[str] = None
         project: dict[str, Any] = {}
-        load_parameters: bool = True
-        continue_from_last_frame: bool = True
-        iter_count: int = 10
+        session: Session = Session()
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -117,18 +120,18 @@ class _(Endpoint):
 
         path = shared.options.output.output_dir / request.project.get("general", {}).get("name", "untitled")
 
-        if request.load_parameters:
+        if request.session.load_parameters:
             project = Project.load(path)
         else:
             project = Project.from_json(request.project)
             project.general.path = path
             project.general.initial_image = base64_to_image(request.image) if request.image else None
 
-        if not request.continue_from_last_frame:
+        if not request.session.continue_from_last_frame:
             project.general.delete_all_frames()
             project.delete_session_data()
 
-        self.queue.enqueue(self.engine.start, project, request.iter_count)
+        self.queue.enqueue(self.engine.start, project, request.session.iter_count)
 
 
 class _(Endpoint):
@@ -184,6 +187,33 @@ class _(Endpoint):
             self.last_preview = image
 
             return image_to_base64(image, "fast")
+
+
+class _(Endpoint):
+    method = "POST"
+    path = "/temporal/project_metadata"
+
+    class Request(BaseModel):
+        name: str
+        include_last_image: bool = False
+
+    class Response(BaseModel):
+        frame_count: int
+        first_frame_index: int
+        last_frame_index: int
+        last_image: Optional[str]
+
+    async def do(self, request: Request) -> Response:
+        project = shared.project_store.load_entry(request.name)
+
+        return self.Response(
+            frame_count = project.general.get_actual_frame_count(),
+            first_frame_index = project.general.get_first_frame_index(),
+            last_frame_index = project.general.get_last_frame_index(),
+            last_image = image_to_base64(image)
+                if request.include_last_image and (image := project.general.get_last_frame()) is not None
+                else None,
+        )
 
 
 class _(Endpoint):

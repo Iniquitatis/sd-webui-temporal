@@ -3,7 +3,6 @@ import {Form} from "../scripts/base/form.js";
 import {ImageBox} from "../scripts/base/image_box.js";
 import {Radio} from "../scripts/base/radio.js";
 import {Slider} from "../scripts/base/slider.js";
-import {Row} from "../scripts/base/row.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
 import {postRequest} from "../scripts/utils/requests.js";
@@ -11,7 +10,7 @@ import {SeedBox} from "../scripts/seed_box.js";
 
 export class NoiseEditor extends Form {
     constructor() {
-        super(Row);
+        super(true);
 
         this.onValueChange = new Signal();
 

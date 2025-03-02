@@ -1,6 +1,5 @@
 import {Button} from "./scripts/base/button.js";
 import {CanvasBox} from "./scripts/base/canvas_box.js";
-import {Checkbox} from "./scripts/base/checkbox.js";
 import {Column} from "./scripts/base/column.js";
 import {DockGroup} from "./scripts/base/dock_group.js";
 import {Form} from "./scripts/base/form.js";
@@ -18,6 +17,7 @@ import {getRequest, postRequest} from "./scripts/utils/requests.js";
 import {FSStoreBox} from "./scripts/fs_store_box.js";
 import {OptionsEditor} from "./scripts/options_editor.js";
 import {ProjectEditor} from "./scripts/project_editor.js";
+import {SessionEditor} from "./scripts/session_editor.js";
 import {initializeData, presets, projects} from "./scripts/shared_data.js";
 import {VideoRendererEditor} from "./scripts/video_renderer_editor.js";
 
@@ -138,35 +138,23 @@ export class MainUI extends Widget {
 
                 e.createField("Project", FSStoreBox, (e) => {
                     e.entries = projects;
-                    e.onLoad.connect((value) => {
+                    e.onLoad.connect(async (value) => {
+                        let metadata = await postRequest("/temporal/project_metadata", {
+                            "name": value.general.name,
+                            "include_last_image": true,
+                        });
+
                         let newValue = this._generationManager.value;
-                        // FIXME: Load the most recent image here instead
-                        newValue.image = value.general.initial_image;
+                        newValue.image = metadata.last_image;
                         newValue.project = value;
 
                         this._generationManager.value = newValue;
                     });
                 }, "projects", ["refresh", "load", "rename", "delete"]);
 
-                // FIXME: Next three fields belong to the "Session" tab
-                e.createField("Load parameters", Checkbox, (e) => {
-                    e.value = true;
-                    this._generationManager.manage(e, "load_parameters");
-                    this._presetManager.manage(e, "load_parameters");
-                });
-
-                e.createField("Continue from last frame", Checkbox, (e) => {
-                    e.value = true;
-                    this._generationManager.manage(e, "continue_from_last_frame");
-                    this._presetManager.manage(e, "continue_from_last_frame");
-                });
-
-                e.createField("Iteration count", NumberBox, (e) => {
-                    e.minimum = 1;
-                    e.step = 1;
-                    e.value = 10;
-                    this._generationManager.manage(e, "iter_count");
-                    this._presetManager.manage(e, "iter_count");
+                e.createChild(SessionEditor, (e) => {
+                    this._generationManager.manage(e, "session");
+                    this._presetManager.manage(e, "session");
                 });
 
                 e.createChild(ProjectEditor, (e) => {

@@ -1,6 +1,5 @@
 import {Button} from "../scripts/base/button.js";
 import {Column} from "../scripts/base/column.js";
-import {Form} from "../scripts/base/form.js";
 import {Tabs} from "../scripts/base/tabs.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
@@ -16,13 +15,11 @@ export class ProjectEditor extends Tabs {
 
         this._manager = new FieldManager(this.onValueChange);
 
-        this.createTab("General", Form, (e) => {
-            e.createChild(GeneralDataEditor, (e) => {
-                e.onImageSizeChange.connect((value) => {
-                    this.onImageSizeChange.fire(value);
-                });
-                this._manager.manage(e, "general");
+        this.createTab("General", GeneralDataEditor, (e) => {
+            e.onImageSizeChange.connect((value) => {
+                this.onImageSizeChange.fire(value);
             });
+            this._manager.manage(e, "general");
         });
 
         this.createTab("Pipeline", PipelineEditor, (e) => {
