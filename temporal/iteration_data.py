@@ -1,8 +1,10 @@
+from typing import Optional
+
 from temporal.meta.serializable import Serializable, SerializableField as Field
 from temporal.utils.image import NumpyImage
 
 
 class IterationData(Serializable):
-    images: list[NumpyImage] = Field(factory = list)
+    image: Optional[NumpyImage] = Field(None, variant = "image")
     index: int = Field(1)
     step: int = Field(0)

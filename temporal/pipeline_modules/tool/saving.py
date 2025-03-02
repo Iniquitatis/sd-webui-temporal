@@ -18,41 +18,34 @@ class SavingModule(ToolModule):
     save_final: bool = Param("Save final", value = False)
     archive_mode: bool = Param("Archive mode", value = False)
 
-    def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
+    def forward(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> Optional[NumpyImage]:
         if frame_index % self.save_every_nth_frame != 0:
-            return images
+            return image
 
-        for i, image in enumerate(self._get_scaled_images(images, general)):
-            file_name = f"{frame_index:05d}"
+        shared.backend.save_image(
+            image = self._get_scaled_image(image, general),
+            general = general,
+            output_dir = ensure_directory_exists(general.path),
+            file_name = f"{frame_index:05d}",
+            archive_mode = self.archive_mode,
+        )
 
-            if len(images) > 1:
-                file_name += f"-{i + 1:02d}"
+        return image
 
+    def finalize(self, image: NumpyImage, general: GeneralData) -> None:
+        if self.save_final:
             shared.backend.save_image(
-                image = image,
+                image = self._get_scaled_image(image, general),
                 general = general,
-                output_dir = ensure_directory_exists(general.path),
-                file_name = file_name,
+                output_dir = ensure_directory_exists(shared.options.output.output_dir),
+                file_name = None,
                 archive_mode = self.archive_mode,
             )
 
-        return images
-
-    def finalize(self, images: list[NumpyImage], general: GeneralData) -> None:
-        if self.save_final:
-            for image in self._get_scaled_images(images, general):
-                shared.backend.save_image(
-                    image = image,
-                    general = general,
-                    output_dir = ensure_directory_exists(shared.options.output.output_dir),
-                    file_name = None,
-                    archive_mode = self.archive_mode,
-                )
-
         wait_until(shared.backend.are_images_saved)
 
-    def _get_scaled_images(self, images: list[NumpyImage], general: GeneralData) -> list[NumpyImage]:
-        return [ensure_image_dims(x, size = (
+    def _get_scaled_image(self, image: NumpyImage, general: GeneralData) -> NumpyImage:
+        return ensure_image_dims(image, size = (
             int(quantize(general.image_size.x * self.scale, 8)),
             int(quantize(general.image_size.y * self.scale, 8)),
-        )) for x in images] if self.scale != 1.0 else images
+        )) if self.scale != 1.0 else image

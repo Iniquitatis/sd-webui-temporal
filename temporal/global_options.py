@@ -19,13 +19,6 @@ class LivePreviewCategory(OptionCategory):
     name = "Live preview"
 
     show_only_finished_images: bool = Param("Show only finished images", value = False)
-    preview_parallel_index: int = Param("Parallel index for preview", minimum = 0, step = 1, value = 1, ui_type = "box")
-
-
-class ProcessingCategory(OptionCategory):
-    name = "Processing"
-
-    pixels_per_batch: int = Param("Pixels per batch", minimum = 4096, step = 4096, value = 1048576, ui_type = "box")
 
 
 class UICategory(OptionCategory):
@@ -40,5 +33,4 @@ class UICategory(OptionCategory):
 class GlobalOptions(Serializable):
     output: OutputCategory = Field(factory = OutputCategory)
     live_preview: LivePreviewCategory = Field(factory = LivePreviewCategory)
-    processing: ProcessingCategory = Field(factory = ProcessingCategory)
     ui: UICategory = Field(factory = UICategory)

@@ -18,9 +18,9 @@ class ProcessingModule(NeuralModule):
     parameters: ProcessingParams = Param("Processing parameters", factory = ProcessingParams)
     scale: float = Param("Scale", minimum = 0.25, maximum = 4.0, step = 0.25, value = 1.0, ui_type = "slider")
 
-    def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
-        if processed_images := shared.backend.image_to_image_batched(
-            images,
+    def forward(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> Optional[NumpyImage]:
+        if (result := shared.backend.image_to_image(
+            image,
             copy_with_overrides(self.parameters,
                 positive_prompt = evaluate_prompt(self.parameters.positive_prompt, frame_index - 1, seed),
                 negative_prompt = evaluate_prompt(self.parameters.negative_prompt, frame_index - 1, seed),
@@ -28,7 +28,6 @@ class ProcessingModule(NeuralModule):
             ),
             int(quantize(floor(general.image_size.x * self.scale), 8)),
             int(quantize(floor(general.image_size.y * self.scale), 8)),
-            shared.options.processing.pixels_per_batch,
             shared.previewed_modules[self.id] and not shared.options.live_preview.show_only_finished_images,
-        ):
-            return [self._blend(a, b) for a, b in zip(images, processed_images)]
+        )) is not None:
+            return self._blend(image, result)

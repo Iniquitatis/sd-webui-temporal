@@ -17,22 +17,20 @@ class VideoRenderingModule(ToolModule):
     render_draft_on_finish: bool = Param("Render draft on finish", value = False)
     render_final_on_finish: bool = Param("Render final on finish", value = False)
 
-    def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
-        for i, _ in enumerate(images, 1):
-            if frame_index % self.render_draft_every_nth_frame == 0:
-                general.render_video(shared.video_renderer, False, i)
+    def forward(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> Optional[NumpyImage]:
+        if frame_index % self.render_draft_every_nth_frame == 0:
+            general.render_video(shared.video_renderer, False)
 
-            if frame_index % self.render_final_every_nth_frame == 0:
-                general.render_video(shared.video_renderer, True, i)
+        if frame_index % self.render_final_every_nth_frame == 0:
+            general.render_video(shared.video_renderer, True)
 
-        return images
+        return image
 
-    def finalize(self, images: list[NumpyImage], general: GeneralData) -> None:
-        for i, _ in enumerate(images, 1):
-            if self.render_draft_on_finish:
-                general.render_video(shared.video_renderer, False, i)
+    def finalize(self, image: NumpyImage, general: GeneralData) -> None:
+        if self.render_draft_on_finish:
+            general.render_video(shared.video_renderer, False)
 
-            if self.render_final_on_finish:
-                general.render_video(shared.video_renderer, True, i)
+        if self.render_final_on_finish:
+            general.render_video(shared.video_renderer, True)
 
         wait_until(lambda: not video_render_queue.busy)

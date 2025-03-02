@@ -19,20 +19,19 @@ class GeneralData(Serializable):
     initial_image: Optional[NumpyImage] = Field(None, variant = "image")
     initial_noise: Noise = Field(factory = Noise)
     image_size: IntVector = Field(factory = lambda: IntVector(512, 512))
-    parallel: int = Field(1)
     seed: int = Field(-1)
 
     def get_first_frame_index(self) -> int:
-        return min((_parse_frame_index(x)[0] for x in self._iterate_frame_paths()), default = 0)
+        return min((_parse_frame_index(x) for x in self._iterate_frame_paths()), default = 0)
 
     def get_last_frame_index(self) -> int:
-        return max((_parse_frame_index(x)[0] for x in self._iterate_frame_paths()), default = 0)
+        return max((_parse_frame_index(x) for x in self._iterate_frame_paths()), default = 0)
 
-    def get_actual_frame_count(self, parallel_index: int = 1) -> int:
-        return sum(_parse_frame_index(x)[1] == parallel_index for x in self._iterate_frame_paths())
+    def get_actual_frame_count(self) -> int:
+        return sum(1 for _ in self._iterate_frame_paths())
 
-    def list_all_frame_paths(self, parallel_index: int = 1) -> list[Path]:
-        return sorted((x for x in self._iterate_frame_paths() if _parse_frame_index(x)[1] == parallel_index), key = lambda x: x.name)
+    def list_all_frame_paths(self) -> list[Path]:
+        return sorted((x for x in self._iterate_frame_paths()), key = lambda x: x.name)
 
     def get_last_frame(self) -> Optional[NumpyImage]:
         if index := self.get_last_frame_index():
@@ -45,21 +44,19 @@ class GeneralData(Serializable):
         kept_indices = self.get_first_frame_index(), self.get_last_frame_index()
 
         for image_path in self._iterate_frame_paths():
-            frame_index, _ = _parse_frame_index(image_path)
-
-            if frame_index not in kept_indices:
+            if _parse_frame_index(image_path) not in kept_indices:
                 remove_entry(image_path)
 
-    def render_video(self, renderer: VideoRenderer, is_final: bool, parallel_index: int = 1, enqueue: bool = True) -> Path:
+    def render_video(self, renderer: VideoRenderer, is_final: bool, enqueue: bool = True) -> Path:
         # FIXME
-        video_path = ensure_directory_exists(self.path / "videos") / f"{parallel_index:02d}-{'final' if is_final else 'draft'}.mp4"
+        video_path = ensure_directory_exists(self.path / "videos") / f"{'final' if is_final else 'draft'}.mp4"
 
         if enqueue:
             method = renderer.enqueue_video_render
         else:
             method = renderer._render_video
 
-        method(video_path, self.list_all_frame_paths(parallel_index), is_final)
+        method(video_path, self.list_all_frame_paths(), is_final)
 
         return video_path
 
@@ -67,19 +64,11 @@ class GeneralData(Serializable):
         return self.path.glob("*.png")
 
 
-def _parse_frame_index(image_path: Path) -> tuple[int, int]:
+def _parse_frame_index(image_path: Path) -> int:
     if image_path.is_file():
         try:
-            return int(image_path.stem), 1
+            return int(image_path.stem)
         except:
-            pass
+            logging.warning(f"{image_path.stem} doesn't match the frame name format")
 
-        try:
-            frame_index, parallel_index = image_path.stem.split("-")
-            return int(frame_index), int(parallel_index)
-        except:
-            pass
-
-        logging.warning(f"{image_path.stem} doesn't match the frame name format")
-
-    return 0, 0
+    return 0

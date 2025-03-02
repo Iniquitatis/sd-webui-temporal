@@ -177,13 +177,6 @@ export class MainUI extends Widget {
                             this._presetManager.manage(e, "video_renderer");
                         });
 
-                        this._videoParallelIndex = e.createField("Parallel index", NumberBox, (e) => {
-                            e.minimum = 1;
-                            e.step = 1;
-                            e.value = 1;
-                            this._presetManager.manage(e, "video_parallel_index");
-                        });
-
                         e.createChild(Row, (e) => {
                             this.onVideoRenderStart.connect(() => {
                                 for (let button of e.childNodes) {
@@ -205,7 +198,6 @@ export class MainUI extends Widget {
                                         this.onVideoRender.fire(await postRequest("/temporal/render_video", {
                                             "type": type,
                                             "data": this._videoRenderer.value,
-                                            "parallel_index": this._videoParallelIndex.value,
                                         }));
                                     });
                                 });
@@ -220,13 +212,6 @@ export class MainUI extends Widget {
                     });
 
                     e.createTab("Measuring", Form, (e) => {
-                        e.createField("Parallel index", NumberBox, (e) => {
-                            e.minimum = 1;
-                            e.step = 1;
-                            e.value = 1;
-                            this._presetManager.manage(e, "measuring_parallel_index");
-                        });
-
                         e.createChild(Button, (e) => {
                             e.label = "Render graphs";
                         });

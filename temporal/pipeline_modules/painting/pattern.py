@@ -10,5 +10,5 @@ class PatternPaintingModule(PaintingModule):
 
     pattern: Pattern = Param("Pattern", factory = Pattern)
 
-    def draw(self, size: tuple[int, int], parallel_index: int, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+    def draw(self, size: tuple[int, int], general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         return self.pattern.generate((size[1], size[0], 4))

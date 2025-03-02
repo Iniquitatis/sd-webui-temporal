@@ -21,28 +21,27 @@ class AveragingModule(TemporalModule):
     buffer: Optional[FloatArray] = Field(None, flags = {"private"})
     last_index: int = Field(0, flags = {"private"})
 
-    def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
+    def forward(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> Optional[NumpyImage]:
         if self.buffer is None:
-            self.buffer = np.stack([np.repeat(
+            self.buffer = np.repeat(
                 ensure_image_dims(image, (general.image_size.x, general.image_size.y), 3)[np.newaxis, ...],
                 self.frames,
                 axis = 0,
-            ) for image in images], 0)
+            )
             self.last_index = 0
 
-        for sub, image in zip(self.buffer, images):
-            sub[self.last_index] = match_image(image, sub[0])
+        self.buffer[self.last_index] = match_image(image, self.buffer[0])
 
         self.last_index += 1
         self.last_index %= self.frames
 
-        return [sub[0] if self.frames == 1 else saturate_array(average_array(
-            sub,
+        return self.buffer[0].copy() if self.frames == 1 else saturate_array(average_array(
+            self.buffer,
             axis = 0,
             trim = self.trimming,
             power = self.preference + 1.0,
             weights = np.roll(make_eased_weight_array(self.frames, self.easing), self.last_index),
-        )) for sub in self.buffer]
+        ))
 
     def reset(self) -> None:
         self.buffer = None

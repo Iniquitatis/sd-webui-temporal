@@ -12,7 +12,7 @@ class SymmetryFilter(ImageFilter):
     horizontal: bool = Param("Horizontal", value = False)
     vertical: bool = Param("Vertical", value = False)
 
-    def process(self, npim: NumpyImage, parallel_index: int, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+    def process(self, npim: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         height, width = npim.shape[:2]
         npim = npim.copy()
 

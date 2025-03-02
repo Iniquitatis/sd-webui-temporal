@@ -22,10 +22,10 @@ class PipelineModule(Configurable, abstract = True):
             "is_filter": issubclass(cls, ImageFilter),
         }
 
-    def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
-        return images
+    def forward(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> Optional[NumpyImage]:
+        return image
 
-    def finalize(self, images: list[NumpyImage], general: GeneralData) -> None:
+    def finalize(self, image: NumpyImage, general: GeneralData) -> None:
         pass
 
     def reset(self) -> None:

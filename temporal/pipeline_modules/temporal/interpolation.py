@@ -21,23 +21,19 @@ class InterpolationModule(TemporalModule):
 
     buffer: Optional[FloatArray] = Field(None, flags = {"private"})
 
-    def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
+    def forward(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> Optional[NumpyImage]:
         if self.buffer is None:
-            self.buffer = np.stack([
-                ensure_image_dims(image, (general.image_size.x, general.image_size.y), 3)
-                for image in images
-            ], 0)
+            self.buffer = ensure_image_dims(image.copy(), (general.image_size.x, general.image_size.y), 3)
 
-        for sub, image in zip(self.buffer, images):
-            a = sub
-            b = match_image(image, sub)
+        a = self.buffer
+        b = match_image(image, self.buffer)
 
-            if self.movement > 0.0:
-                a, b = self._motion_warp(a, b)
+        if self.movement > 0.0:
+            a, b = self._motion_warp(a, b)
 
-            sub[:] = lerp(a, b, self.blending)
+        self.buffer[:] = lerp(a, b, self.blending)
 
-        return [sub for sub in self.buffer]
+        return self.buffer.copy()
 
     def reset(self) -> None:
         self.buffer = None

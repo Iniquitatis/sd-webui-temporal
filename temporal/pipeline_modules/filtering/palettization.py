@@ -17,7 +17,7 @@ class PalettizationFilter(ImageFilter):
     stretch: bool = Param("Stretch", value = False)
     dithering: bool = Param("Dithering", value = False)
 
-    def process(self, npim: NumpyImage, parallel_index: int, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+    def process(self, npim: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         if self.palette is None:
             return npim
 

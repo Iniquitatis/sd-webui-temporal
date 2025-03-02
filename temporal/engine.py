@@ -34,28 +34,23 @@ class Engine:
     def on_end(self) -> None:
         pass
 
-    def start(self, project: Project, iter_count: int) -> list[NumpyImage]:
+    def start(self, project: Project, iter_count: int) -> NumpyImage:
         with self._state_lock:
             self.active_project = project
             self.running = True
             self.state = "active"
+            self.current_iteration = 0
             self.total_iterations = iter_count
 
         if project.general.initial_image is None:
-            noises = [
-                project.general.initial_noise.generate((project.general.image_size.y, project.general.image_size.x, 3), project.general.seed, i)
-                for i in range(project.general.parallel)
-            ]
+            project.general.initial_image = project.general.initial_noise.generate((project.general.image_size.y, project.general.image_size.x, 3), project.general.seed)
 
-            project.general.initial_image = noises[0]
-            project.iteration.images[:] = noises
+        if project.iteration.image is None:
+            project.iteration.image = project.general.initial_image.copy()
 
-        project.general.initial_image = ensure_image_dims(project.general.initial_image, (project.general.image_size.x, project.general.image_size.y), 3)
+        project.iteration.image = ensure_image_dims(project.iteration.image, (project.general.image_size.x, project.general.image_size.y), 3)
 
-        if not project.iteration.images:
-            project.iteration.images[:] = [project.general.initial_image] * project.general.parallel
-
-        last_images = project.iteration.images.copy()
+        last_image = project.iteration.image.copy()
 
         self.on_start()
 
@@ -76,7 +71,7 @@ class Engine:
             if not project.pipeline.run(project.general, project.iteration):
                 break
 
-            last_images = project.iteration.images.copy()
+            last_image = project.iteration.image.copy()
 
             if i % shared.options.output.autosave_every_n_iterations == 0:
                 project.save(project.general.path)
@@ -98,7 +93,7 @@ class Engine:
             self.current_iteration = 0
             self.total_iterations = 0
 
-        return last_images
+        return last_image
 
     def stop(self) -> None:
         shared.backend.interrupt()

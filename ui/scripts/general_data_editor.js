@@ -45,13 +45,6 @@ export class GeneralDataEditor extends Form {
             });
         });
 
-        this.createField("Parallel", NumberBox, (e) => {
-            e.minimum = 1;
-            e.step = 1;
-            e.value = 1;
-            this._manager.manage(e, "parallel");
-        });
-
         this.createField("Seed", SeedBox, (e) => {
             this._manager.manage(e, "seed");
         });

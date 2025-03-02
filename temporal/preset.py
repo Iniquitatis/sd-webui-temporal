@@ -16,5 +16,3 @@ class Preset(Serializable):
     # iter_count: int = Field(10)
     project: Project = Field(factory = Project)
     video_renderer: VideoRenderer = Field(factory = VideoRenderer)
-    video_parallel_index: int = Field(1)
-    measuring_parallel_index: int = Field(1)

@@ -15,7 +15,7 @@ class CustomCodeFilter(ImageFilter):
 
     code: str = Param("Code", value = "output = input", ui_type = "code", language = "python")
 
-    def process(self, npim: NumpyImage, parallel_index: int, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+    def process(self, npim: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         code_globals: dict[str, Any] = dict(
             np = np,
             scipy = scipy,

@@ -18,30 +18,26 @@ class LimitingModule(TemporalModule):
 
     buffer: Optional[FloatArray] = Field(None, flags = {"private"})
 
-    def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
+    def forward(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> Optional[NumpyImage]:
         if self.buffer is None:
-            self.buffer = np.stack([
-                ensure_image_dims(image, (general.image_size.x, general.image_size.y), 3)
-                for image in images
-            ], 0)
+            self.buffer = ensure_image_dims(image.copy(), (general.image_size.x, general.image_size.y), 3)
 
-        for sub, image in zip(self.buffer, images):
-            a = sub
-            b = match_image(image, sub)
-            diff = b - a
+        a = self.buffer
+        b = match_image(image, self.buffer)
+        diff = b - a
 
-            if self.mode == "clamp":
-                np.clip(diff, -self.max_difference, self.max_difference, out = diff)
-            elif self.mode == "compress":
-                diff_range = np.abs(diff.max() - diff.min())
-                max_diff_range = self.max_difference * 2.0
+        if self.mode == "clamp":
+            np.clip(diff, -self.max_difference, self.max_difference, out = diff)
+        elif self.mode == "compress":
+            diff_range = np.abs(diff.max() - diff.min())
+            max_diff_range = self.max_difference * 2.0
 
-                if diff_range > max_diff_range:
-                    diff *= max_diff_range / diff_range
+            if diff_range > max_diff_range:
+                diff *= max_diff_range / diff_range
 
-            sub[:] = saturate_array(a + diff)
+        self.buffer[:] = saturate_array(a + diff)
 
-        return [sub for sub in self.buffer]
+        return self.buffer.copy()
 
     def reset(self) -> None:
         self.buffer = None

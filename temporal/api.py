@@ -257,7 +257,6 @@ class _(Endpoint):
     class Request(BaseModel):
         type: Literal["draft", "final"]
         data: dict[str, Any] = {}
-        parallel_index: int = 1
 
     async def do(self, request: Request) -> Optional[str]:
         def render() -> Optional[str]:
@@ -269,7 +268,7 @@ class _(Endpoint):
             if not project:
                 return
 
-            return bytes_to_base64(project.general.render_video(shared.video_renderer, request.type == "final", request.parallel_index, False).read_bytes())
+            return bytes_to_base64(project.general.render_video(shared.video_renderer, request.type == "final", False).read_bytes())
 
         return await get_event_loop().run_in_executor(None, render)
 

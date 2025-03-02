@@ -26,42 +26,40 @@ class MeasuringModule(PipelineModule, abstract = True):
     data: Optional[FloatArray] = Field(None, flags = {"private"})
     count: int = Field(0, flags = {"private"})
 
-    def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
+    def forward(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> Optional[NumpyImage]:
         if frame_index % self.plot_every_nth_frame != 0:
-            return images
+            return image
 
         if self.data is None:
-            self.data = np.zeros((len(images), 1, 1 + len(self.channels)))
+            self.data = np.zeros((1, 1 + len(self.channels)))
             self.count = 0
 
-        if self.data.shape[1] <= self.count:
-            self.data = np.concatenate([self.data, np.zeros_like(self.data)], axis = 1)
+        if self.data.shape[0] <= self.count:
+            self.data = np.concatenate([self.data, np.zeros_like(self.data)], axis = 0)
 
-        for parallel_index, image in enumerate(images):
-            frame_data = self.data[parallel_index, self.count]
-            frame_data[0] = frame_index
-            frame_data[1:] = self.measure(image, parallel_index)
+        frame_data = self.data[self.count]
+        frame_data[0] = frame_index
+        frame_data[1:] = self.measure(image)
 
         self.count += 1
 
-        for parallel_index in range(len(images)):
-            save_image(self.plot(parallel_index), ensure_directory_exists(general.path / "metrics") / f"{self.file_name}-{parallel_index + 1:02d}.png")
+        save_image(self.plot(), ensure_directory_exists(general.path / "metrics") / f"{self.file_name}.png")
 
-        return images
+        return image
 
     def reset(self) -> None:
         self.data = None
         self.count = 0
 
     @abstractmethod
-    def measure(self, npim: NumpyImage, parallel_index: int) -> list[float]:
+    def measure(self, npim: NumpyImage) -> list[float]:
         raise NotImplementedError
 
-    def plot(self, parallel_index: int) -> PILImage:
-        if self.data is None or parallel_index >= self.data.shape[0]:
+    def plot(self) -> PILImage:
+        if self.data is None:
             raise ValueError
 
-        indices = self.data[parallel_index, :self.count, 0]
+        indices = self.data[:self.count, 0]
 
         plt.title(self.name)
         plt.xlabel("Frame")
@@ -72,7 +70,7 @@ class MeasuringModule(PipelineModule, abstract = True):
         plt.grid()
 
         for channel, (label, color) in enumerate(self.channels, 1):
-            values = self.data[parallel_index, :self.count, channel]
+            values = self.data[:self.count, channel]
 
             plt.axhline(values[0], color = color, linestyle = ":", linewidth = 0.5)
             plt.axhline(float(np.mean(values)), color = color, linestyle = "--", linewidth = 1.0)

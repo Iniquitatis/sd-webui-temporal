@@ -14,7 +14,7 @@ class ImagePaintingModule(PaintingModule):
     source: ImageSource = Param("Image source", channels = 4, factory = ImageSource)
     blurring: float = Param("Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, ui_type = "slider")
 
-    def draw(self, size: tuple[int, int], parallel_index: int, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+    def draw(self, size: tuple[int, int], general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         if (image := self.source.get_image(general.initial_image, frame_index - 1)) is None:
             return np.zeros((size[1], size[0], 4))
 

@@ -19,26 +19,22 @@ class RandomSamplingModule(TemporalModule):
 
     buffer: Optional[FloatArray] = Field(None, flags = {"private"})
 
-    def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
+    def forward(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> Optional[NumpyImage]:
         if self.buffer is None:
-            self.buffer = np.stack([
-                ensure_image_dims(image, (general.image_size.x, general.image_size.y), 3)
-                for image in images
-            ], 0)
+            self.buffer = ensure_image_dims(image.copy(), (general.image_size.x, general.image_size.y), 3)
 
-        for i, (sub, image) in enumerate(zip(self.buffer, images)):
-            size = sub.shape[:2]
+        size = self.buffer.shape[:2]
 
-            chance_mask = np.random.default_rng(seed + i).random(size) <= self.chance
-            opacity_mask = np.random.default_rng(seed + 1 + i).uniform(
-                low = clamp(self.opacity * 2.0 - 1.0, 0.0, 1.0),
-                high = clamp(self.opacity * 2.0, 0.0, 1.0) + np.finfo(FloatType).eps,
-                size = size,
-            )
+        chance_mask = np.random.default_rng(seed).random(size) <= self.chance
+        opacity_mask = np.random.default_rng(seed + 1).uniform(
+            low = clamp(self.opacity * 2.0 - 1.0, 0.0, 1.0),
+            high = clamp(self.opacity * 2.0, 0.0, 1.0) + np.finfo(FloatType).eps,
+            size = size,
+        )
 
-            sub[:] = lerp(sub, np.where(chance_mask[..., np.newaxis], image, sub), opacity_mask[..., np.newaxis])
+        self.buffer[:] = lerp(self.buffer, np.where(chance_mask[..., np.newaxis], image, self.buffer), opacity_mask[..., np.newaxis])
 
-        return [sub for sub in self.buffer]
+        return self.buffer.copy()
 
     def reset(self) -> None:
         self.buffer = None

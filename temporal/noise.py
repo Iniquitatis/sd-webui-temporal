@@ -17,9 +17,9 @@ class Noise(Serializable):
     seed: int = Field(0)
     use_global_seed: bool = Field(False)
 
-    def generate(self, shape: tuple[int, ...], global_seed: Optional[int] = None, seed_offset: int = 0) -> FloatArray:
+    def generate(self, shape: tuple[int, ...], global_seed: Optional[int] = None) -> FloatArray:
         noise = np.random.default_rng(
-            (global_seed if global_seed and self.use_global_seed else self.seed) + seed_offset
+            global_seed if global_seed and self.use_global_seed else self.seed
         ).uniform(low = 0.0, high = 1.0 + np.finfo(FloatType).eps, size = shape)
 
         def scale_noise(scale: float) -> FloatArray:

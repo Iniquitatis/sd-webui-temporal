@@ -16,11 +16,11 @@ class ImageFilter(PipelineModule, abstract = True):
     blend_mode: BlendMode = Field(factory = NormalBlendMode)
     mask: ImageMask = Field(factory = ImageMask)
 
-    def forward(self, images: list[NumpyImage], general: GeneralData, frame_index: int, seed: int) -> Optional[list[NumpyImage]]:
-        return [saturate_array(self._blend(x, self.process(x, i, general, frame_index, seed + i))) for i, x in enumerate(images)]
+    def forward(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> Optional[NumpyImage]:
+        return self._blend(image, self.process(image, general, frame_index, seed))
 
     @abstractmethod
-    def process(self, npim: NumpyImage, parallel_index: int, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+    def process(self, npim: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         raise NotImplementedError
 
     def _blend(self, npim: NumpyImage, processed: NumpyImage) -> NumpyImage:
@@ -30,4 +30,4 @@ class ImageFilter(PipelineModule, abstract = True):
         processed = self.blend_mode.blend(npim, processed)
         processed = self.mask.mask(npim, processed)
 
-        return lerp(npim, processed, self.amount)
+        return saturate_array(lerp(npim, processed, self.amount))

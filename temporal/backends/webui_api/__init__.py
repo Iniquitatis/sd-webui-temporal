@@ -41,7 +41,7 @@ class WebUIAPIBackend(Backend):
     def list_schedulers(self) -> list[str]:
         return [x["label"] for x in _safe_request("GET", f"{self.url}/sdapi/v1/schedulers").json()]
 
-    def image_to_image(self, images: list[NumpyImage], params: ProcessingParams, width: int, height: int, preview: bool = False) -> Optional[list[NumpyImage]]:
+    def image_to_image(self, image: NumpyImage, params: ProcessingParams, width: int, height: int, preview: bool = False) -> Optional[NumpyImage]:
         settings: dict[str, Any] = {
             "samples_format": "png",
             "save_to_dirs": False,
@@ -55,8 +55,8 @@ class WebUIAPIBackend(Backend):
         if not preview:
             settings["show_progress_every_n_steps"] = -1
 
-        return [base64_to_image(x) for x in _safe_request("POST", f"{self.url}/sdapi/v1/img2img", json = {
-            "init_images": [image_to_base64(x, "fast") for x in images],
+        return base64_to_image(_safe_request("POST", f"{self.url}/sdapi/v1/img2img", json = {
+            "init_images": [image_to_base64(image, "fast")],
             "prompt": params.positive_prompt,
             "negative_prompt": params.negative_prompt,
             "width": width,
@@ -68,12 +68,12 @@ class WebUIAPIBackend(Backend):
             "denoising_strength": params.strength,
             "seed": params.seed,
             "n_iter": 1,
-            "batch_size": len(images),
+            "batch_size": 1,
             "do_not_save_samples": True,
             "do_not_save_grid": True,
             "override_settings": settings,
             "override_settings_restore_afterwards": False,
-        }).json()["images"][:len(images)]]
+        }).json()["images"][0])
 
     def upscale_image(self, image: NumpyImage, upscaler: str, scale: float) -> Optional[NumpyImage]:
         return base64_to_image(_safe_request("POST", f"{self.url}/sdapi/v1/extra-single-image", json = {

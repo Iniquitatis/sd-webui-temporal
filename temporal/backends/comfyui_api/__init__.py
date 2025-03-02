@@ -41,12 +41,10 @@ class ComfyUIAPIBackend(Backend):
     def list_schedulers(self) -> list[str]:
         return _safe_request("GET", f"{self.url}/object_info").json()["KSampler"]["input"]["required"]["scheduler"][0]
 
-    def image_to_image(self, images: list[NumpyImage], params: ProcessingParams, width: int, height: int, preview: bool = False) -> Optional[list[NumpyImage]]:
+    def image_to_image(self, image: NumpyImage, params: ProcessingParams, width: int, height: int, preview: bool = False) -> Optional[NumpyImage]:
         self._interrupted = False
 
         self._clear_queue()
-
-        result = []
 
         is_vae_defined = params.vae and params.vae != "Automatic"
 
@@ -59,85 +57,77 @@ class ComfyUIAPIBackend(Backend):
             },
         } if is_vae_defined else {}
 
-        for i, image in enumerate(images):
-            processed = self._get_image(self._prompt(vae_loader | {
-                "checkpoint_loader": {
-                    "class_type": "CheckpointLoaderSimple",
-                    "inputs": {
-                        "ckpt_name": params.model,
-                    },
+        return self._get_image(self._prompt(vae_loader | {
+            "checkpoint_loader": {
+                "class_type": "CheckpointLoaderSimple",
+                "inputs": {
+                    "ckpt_name": params.model,
                 },
-                "sampler": {
-                    "class_type": "KSampler",
-                    "inputs": {
-                        "model": ["checkpoint_loader", 0],
-                        "positive": ["positive_encoder", 0],
-                        "negative": ["negative_encoder", 0],
-                        "latent_image": ["latent_image", 0],
-                        "seed": params.seed,
-                        "steps": params.steps,
-                        "cfg": params.cfg,
-                        "sampler_name": params.sampler,
-                        "scheduler": params.scheduler,
-                        "denoise": params.strength,
-                    },
+            },
+            "sampler": {
+                "class_type": "KSampler",
+                "inputs": {
+                    "model": ["checkpoint_loader", 0],
+                    "positive": ["positive_encoder", 0],
+                    "negative": ["negative_encoder", 0],
+                    "latent_image": ["latent_image", 0],
+                    "seed": params.seed,
+                    "steps": params.steps,
+                    "cfg": params.cfg,
+                    "sampler_name": params.sampler,
+                    "scheduler": params.scheduler,
+                    "denoise": params.strength,
                 },
-                "image": {
-                    "class_type": "LoadImage",
-                    "inputs": {
-                        "image": self._upload_image(f"_temporal_{i}.png", image),
-                    },
+            },
+            "image": {
+                "class_type": "LoadImage",
+                "inputs": {
+                    "image": self._upload_image("_temporal_image_to_image.png", image),
                 },
-                "latent_image": {
-                    "class_type": "VAEEncode",
-                    "inputs": {
-                        "pixels": ["image", 0],
-                        "vae": ["vae_loader", 0] if is_vae_defined else ["checkpoint_loader", 2],
-                    },
+            },
+            "latent_image": {
+                "class_type": "VAEEncode",
+                "inputs": {
+                    "pixels": ["image", 0],
+                    "vae": ["vae_loader", 0] if is_vae_defined else ["checkpoint_loader", 2],
                 },
-                "clip_skipper": {
-                    "class_type": "CLIPSetLastLayer",
-                    "inputs": {
-                        "clip": ["checkpoint_loader", 1],
-                        "stop_at_clip_layer": -params.clip_skip,
-                    },
+            },
+            "clip_skipper": {
+                "class_type": "CLIPSetLastLayer",
+                "inputs": {
+                    "clip": ["checkpoint_loader", 1],
+                    "stop_at_clip_layer": -params.clip_skip,
                 },
-                "positive_encoder": {
-                    "class_type": "CLIPTextEncode",
-                    "inputs": {
-                        "clip": ["clip_skipper", 0] if params.clip_skip > 1 else ["checkpoint_loader", 1],
-                        "text": params.positive_prompt,
-                    },
+            },
+            "positive_encoder": {
+                "class_type": "CLIPTextEncode",
+                "inputs": {
+                    "clip": ["clip_skipper", 0] if params.clip_skip > 1 else ["checkpoint_loader", 1],
+                    "text": params.positive_prompt,
                 },
-                "negative_encoder": {
-                    "class_type": "CLIPTextEncode",
-                    "inputs": {
-                        "clip": ["clip_skipper", 0] if params.clip_skip > 1 else ["checkpoint_loader", 1],
-                        "text": params.negative_prompt,
-                    },
+            },
+            "negative_encoder": {
+                "class_type": "CLIPTextEncode",
+                "inputs": {
+                    "clip": ["clip_skipper", 0] if params.clip_skip > 1 else ["checkpoint_loader", 1],
+                    "text": params.negative_prompt,
                 },
-                "vae_decoder": {
-                    "class_type": "VAEDecode",
-                    "inputs": {
-                        "samples": ["sampler", 0],
-                        "vae": ["vae_loader", 0] if is_vae_defined else ["checkpoint_loader", 2],
-                    },
+            },
+            "vae_decoder": {
+                "class_type": "VAEDecode",
+                "inputs": {
+                    "samples": ["sampler", 0],
+                    "vae": ["vae_loader", 0] if is_vae_defined else ["checkpoint_loader", 2],
                 },
-                "image_saver": {
-                    "class_type": "PreviewImage",
-                    "inputs": {
-                        "filename_prefix": "_temporal",
-                        "images": ["vae_decoder", 0],
-                    },
+            },
+            "image_saver": {
+                "class_type": "PreviewImage",
+                "inputs": {
+                    "filename_prefix": "_temporal",
+                    "images": ["vae_decoder", 0],
                 },
-            }))
-
-            if processed is None:
-                return
-
-            result.append(processed)
-
-        return result
+            },
+        }))
 
     def upscale_image(self, image: NumpyImage, upscaler: str, scale: float) -> Optional[NumpyImage]:
         self._interrupted = False
