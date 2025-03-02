@@ -11,8 +11,12 @@ from temporal.video_renderer import VideoRenderer
 
 
 class GeneralData(Serializable):
+    # FIXME: Path should be constructed dynamically by getting the global
+    # project directory and the name (sanitized, of course)
     path: Path = Field(Path("outputs/temporal/untitled"), flags = {"runtime"})
-    image: Optional[NumpyImage] = Field(None, variant = "image")
+    name: str = Field("untitled")
+    description: str = Field("")
+    initial_image: Optional[NumpyImage] = Field(None, variant = "image")
     initial_noise: Noise = Field(factory = Noise)
     image_size: IntVector = Field(factory = lambda: IntVector(512, 512))
     parallel: int = Field(1)

@@ -41,19 +41,19 @@ class Engine:
             self.state = "active"
             self.total_iterations = iter_count
 
-        if project.general.image is None:
+        if project.general.initial_image is None:
             noises = [
                 project.general.initial_noise.generate((project.general.image_size.y, project.general.image_size.x, 3), project.general.seed, i)
                 for i in range(project.general.parallel)
             ]
 
-            project.general.image = noises[0]
+            project.general.initial_image = noises[0]
             project.iteration.images[:] = noises
 
-        project.general.image = ensure_image_dims(project.general.image, (project.general.image_size.x, project.general.image_size.y), 3)
+        project.general.initial_image = ensure_image_dims(project.general.initial_image, (project.general.image_size.x, project.general.image_size.y), 3)
 
         if not project.iteration.images:
-            project.iteration.images[:] = [project.general.image] * project.general.parallel
+            project.iteration.images[:] = [project.general.initial_image] * project.general.parallel
 
         last_images = project.iteration.images.copy()
 

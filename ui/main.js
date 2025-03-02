@@ -9,8 +9,6 @@ import {NumberBox} from "./scripts/base/number_box.js";
 import {ProgressBar} from "./scripts/base/progress_bar.js";
 import {Row} from "./scripts/base/row.js";
 import {Tabs} from "./scripts/base/tabs.js";
-import {TextArea} from "./scripts/base/text_area.js";
-import {TextBox} from "./scripts/base/text_box.js";
 import {VideoBox} from "./scripts/base/video_box.js";
 import {FieldManager} from "./scripts/core/field_manager.js";
 import {Signal} from "./scripts/core/signal.js";
@@ -18,11 +16,9 @@ import {Timer} from "./scripts/core/timer.js";
 import {Widget} from "./scripts/core/widget.js";
 import {getRequest, postRequest} from "./scripts/utils/requests.js";
 import {FSStoreBox} from "./scripts/fs_store_box.js";
-import {GeneralDataEditor} from "./scripts/general_data_editor.js";
 import {OptionsEditor} from "./scripts/options_editor.js";
-import {PipelineEditor} from "./scripts/pipeline_editor.js";
-import {blendModes, models, optionCategories, pipelineModules, presets, projects, samplers, schedulers, vaes, videoFilters} from "./scripts/shared_data.js";
-import {VectorEditor} from "./scripts/base/vector_editor.js";
+import {ProjectEditor} from "./scripts/project_editor.js";
+import {initializeData, presets, projects} from "./scripts/shared_data.js";
 import {VideoRendererEditor} from "./scripts/video_renderer_editor.js";
 
 export class MainUI extends Widget {
@@ -31,29 +27,15 @@ export class MainUI extends Widget {
 
         this.onGenerationChange = new Signal();
         this.onPresetChange = new Signal();
-        this.onProjectChange = new Signal();
         this.onGenerationStart = new Signal();
         this.onGenerationStop = new Signal();
         this.onStateCheck = new Signal();
         this.onNewPreview = new Signal();
+        this.onVideoRenderStart = new Signal();
+        this.onVideoRender = new Signal();
 
         this._generationManager = new FieldManager(this.onGenerationChange);
-        this.onProjectChange.connect((value) => {
-            let newValue = this._generationManager.value;
-            newValue.project = value;
-
-            this._generationManager.value = newValue;
-        });
-
         this._presetManager = new FieldManager(this.onPresetChange);
-        this.onProjectChange.connect((value) => {
-            let newValue = this._presetManager.value;
-            newValue.project = value;
-
-            this._presetManager.value = newValue;
-        });
-
-        this._projectManager = new FieldManager(this.onProjectChange);
 
         this._stateTimer = new Timer(async () => {
             this.onStateCheck.fire(await getRequest("/temporal/state"));
@@ -142,89 +124,66 @@ export class MainUI extends Widget {
         this.createChild(DockGroup, (e) => {
             e.createDock("\u{f53f}", "Project", Form, (e) => {
                 e.createField("Preset", FSStoreBox, (e) => {
-                    e.entries = Object.keys(presets);
+                    e.entries = presets;
                     e.saveCallback = () => this._presetManager.value;
                     e.onLoad.connect((value) => {
-                        this._presetManager.value = value;
-                        this._projectManager.value = value.project;
+                        let newValue = this._generationManager.value;
+                        newValue.image = value.project.general.initial_image;
+                        newValue.project = value;
 
-                        this._image.value = value.project.general.image;
-                        this._imageSize.value = value.project.general.image_size;
+                        this._generationManager.value = newValue;
+                        this._presetManager.value = value;
                     });
                 }, "presets", ["refresh", "load", "save", "rename", "delete"]);
 
                 e.createField("Project", FSStoreBox, (e) => {
-                    e.entries = Object.keys(projects);
-                    e.onValueChange.connect((value) => {
-                        this._name.value = value;
-                    });
+                    e.entries = projects;
                     e.onLoad.connect((value) => {
-                        this._projectManager.value = value;
+                        let newValue = this._generationManager.value;
+                        // FIXME: Load the most recent image here instead
+                        newValue.image = value.general.initial_image;
+                        newValue.project = value;
 
-                        this._image.value = value.general.image;
-                        this._imageSize.value = value.general.image_size;
+                        this._generationManager.value = newValue;
                     });
                 }, "projects", ["refresh", "load", "rename", "delete"]);
 
+                // FIXME: Next three fields belong to the "Session" tab
+                e.createField("Load parameters", Checkbox, (e) => {
+                    e.value = true;
+                    this._generationManager.manage(e, "load_parameters");
+                    this._presetManager.manage(e, "load_parameters");
+                });
+
+                e.createField("Continue from last frame", Checkbox, (e) => {
+                    e.value = true;
+                    this._generationManager.manage(e, "continue_from_last_frame");
+                    this._presetManager.manage(e, "continue_from_last_frame");
+                });
+
+                e.createField("Iteration count", NumberBox, (e) => {
+                    e.minimum = 1;
+                    e.step = 1;
+                    e.value = 10;
+                    this._generationManager.manage(e, "iter_count");
+                    this._presetManager.manage(e, "iter_count");
+                });
+
+                e.createChild(ProjectEditor, (e) => {
+                    e.onImageSizeChange.connect((value) => {
+                        // FIXME: Accesses private stuff
+                        this._image._element.width = value.x;
+                        this._image._element.height = value.y;
+                    });
+                    this._generationManager.manage(e, "project");
+                    this._presetManager.manage(e, "project");
+                });
+
+                // FIXME: Everything below has to be reworked, but it depends on
+                // the preset system currently
+                e.createChild("hr");
+
                 e.createChild(Tabs, (e) => {
-                    e.createTab("General", Form, (e) => {
-                        this._name = e.createField("Name", TextBox, (e) => {
-                            this._generationManager.manage(e, "name");
-                            this._presetManager.manage(e, "name");
-                        });
-
-                        e.createField("Description", TextArea);
-
-                        this._imageSize = e.createField("Image size", VectorEditor, (e) => {
-                            e.minimum = 64;
-                            e.maximum = 2048;
-                            e.step = 8;
-                            e.value = {x: 512, y: 512};
-                            e.onValueChange.connect((value) => {
-                                this._image._element.width = value.x;
-                                this._image._element.height = value.y;
-                            });
-                            this._generationManager.manage(e, "image_size");
-                            this._presetManager.manage(e, "image_size");
-                        }, NumberBox, {x: "X", y: "Y"});
-
-                        e.createChild(GeneralDataEditor, (e) => {
-                            this._projectManager.manage(e, "general");
-                        });
-
-                        e.createField("Load parameters", Checkbox, (e) => {
-                            e.value = true;
-                            this._generationManager.manage(e, "load_parameters");
-                            this._presetManager.manage(e, "load_parameters");
-                        });
-
-                        e.createField("Continue from last frame", Checkbox, (e) => {
-                            e.value = true;
-                            this._generationManager.manage(e, "continue_from_last_frame");
-                            this._presetManager.manage(e, "continue_from_last_frame");
-                        });
-
-                        e.createField("Iteration count", NumberBox, (e) => {
-                            e.minimum = 1;
-                            e.step = 1;
-                            e.value = 10;
-                            this._generationManager.manage(e, "iter_count");
-                            this._presetManager.manage(e, "iter_count");
-                        });
-
-                        e.createChild(Button, (e) => {
-                            e.label = "Delete intermediate frames";
-                        });
-
-                        e.createChild(Button, (e) => {
-                            e.label = "Delete session data";
-                        });
-                    });
-
-                    e.createTab("Pipeline", PipelineEditor, (e) => {
-                        this._projectManager.manage(e, "pipeline");
-                    });
-
                     e.createTab("Video Rendering", Form, (e) => {
                         this._videoRenderer = e.createChild(VideoRendererEditor, (e) => {
                             this._presetManager.manage(e, "video_renderer");
@@ -237,35 +196,39 @@ export class MainUI extends Widget {
                             this._presetManager.manage(e, "video_parallel_index");
                         });
 
-                        this._videoRenderButtonRow = e.createChild(Row, (e) => {
+                        e.createChild(Row, (e) => {
+                            this.onVideoRenderStart.connect(() => {
+                                for (let button of e.childNodes) {
+                                    button.classList.add("disabled");
+                                }
+                            });
+                            this.onVideoRender.connect((data) => {
+                                for (let button of e.childNodes) {
+                                    button.classList.remove("disabled");
+                                }
+                            });
+
                             for (let type of ["draft", "final"]) {
                                 e.createChild(Button, (e) => {
                                     e.label = `Render ${type}`;
                                     e.style.width = "100%";
                                     e.onClick.connect(async () => {
-                                        for (let button of this._videoRenderButtonRow.childNodes) {
-                                            button.classList.add("disabled");
-                                        }
-
-                                        let data = await postRequest("/temporal/render_video", {
+                                        this.onVideoRenderStart.fire();
+                                        this.onVideoRender.fire(await postRequest("/temporal/render_video", {
                                             "type": type,
                                             "data": this._videoRenderer.value,
                                             "parallel_index": this._videoParallelIndex.value,
-                                        });
-
-                                        if (!data) return;
-
-                                        this._videoPreview.value = data;
-
-                                        for (let button of this._videoRenderButtonRow.childNodes) {
-                                            button.classList.remove("disabled");
-                                        }
+                                        }));
                                     });
                                 });
                             }
                         });
 
-                        this._videoPreview = e.createChild(VideoBox);
+                        e.createChild(VideoBox, (e) => {
+                            this.onVideoRender.connect((data) => {
+                                e.value = data;
+                            });
+                        });
                     });
 
                     e.createTab("Measuring", Form, (e) => {
@@ -301,34 +264,12 @@ export class MainUI extends Widget {
         // FIXME: Temporary
         this.onGenerationChange.connect((value) => console.log("GEN", value));
         this.onPresetChange.connect((value) => console.log("PST", value));
-        this.onProjectChange.connect((value) => console.log("PRJ", value));
     }
 }
 customElements.define("main-ui", MainUI);
 
-// FIXME: Just a temporary crutch, as those collections should be both objects
-// and arrays, not just objects
-function createMappingFromArray(array) {
-    let result = {};
-
-    for (let value of array) {
-        result[value] = value;
-    }
-
-    return result;
-}
-
 window.onload = async () => {
-    Object.assign(blendModes, await getRequest("/temporal/blend_modes"));
-    Object.assign(models, createMappingFromArray(await getRequest("/temporal/models")));
-    Object.assign(optionCategories, await getRequest("/temporal/option_categories"));
-    Object.assign(pipelineModules, await getRequest("/temporal/pipeline_modules"));
-    Object.assign(presets, createMappingFromArray(await getRequest("/temporal/presets")));
-    Object.assign(projects, createMappingFromArray(await getRequest("/temporal/projects")));
-    Object.assign(samplers, createMappingFromArray(await getRequest("/temporal/samplers")));
-    Object.assign(schedulers, createMappingFromArray(await getRequest("/temporal/schedulers")));
-    Object.assign(vaes, createMappingFromArray(await getRequest("/temporal/vaes")));
-    Object.assign(videoFilters, await getRequest("/temporal/video_filters"));
+    await initializeData();
 
     document.body.appendChild(new MainUI());
 };

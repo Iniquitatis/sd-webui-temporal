@@ -44,6 +44,16 @@ export class Dropdown extends Widget {
     }
 
     set choices(value) {
+        if (Array.isArray(value)) {
+            let objectValue = {};
+
+            for (let item of value) {
+                objectValue[item] = item;
+            }
+
+            value = objectValue;
+        }
+
         this._stateManager.states = value;
     }
 

@@ -16,7 +16,6 @@ from temporal.shared import shared
 from temporal.thread_queue import ThreadQueue
 from temporal.utils.bytes import bytes_to_base64
 from temporal.utils.image import base64_to_image, image_to_base64
-from temporal.vector import IntVector
 from temporal.video_filters import VIDEO_FILTERS
 from temporal.video_renderer import VideoRenderer
 
@@ -32,9 +31,7 @@ class FSOperationRequest(BaseModel):
 
 
 class GenerateRequest(BaseModel):
-    name: str
     image: Optional[str] = None
-    image_size: dict[str, Any] = {"x": 512, "y": 512}
     project: dict[str, Any] = {}
     load_parameters: bool = True
     continue_from_last_frame: bool = True
@@ -93,15 +90,14 @@ def register_api(app: FastAPI, engine: Engine) -> None:
         if generation_queue.busy:
             return
 
-        path = shared.options.output.output_dir / request.name
+        path = shared.options.output.output_dir / request.project.get("general", {}).get("name", "untitled")
 
         if request.load_parameters:
             project = Project.load(path)
         else:
             project = Project.from_json(request.project)
             project.general.path = path
-            project.general.image = base64_to_image(request.image) if request.image else None
-            project.general.image_size = IntVector.from_json(request.image_size)
+            project.general.initial_image = base64_to_image(request.image) if request.image else None
 
         if not request.continue_from_last_frame:
             project.general.delete_all_frames()
@@ -127,7 +123,7 @@ def register_api(app: FastAPI, engine: Engine) -> None:
 
     @app.get("/temporal/presets")
     async def _() -> Any:
-        return [x for x in shared.preset_store.entry_names]
+        return shared.preset_store.entry_names
 
     last_preview = None
 
@@ -141,7 +137,7 @@ def register_api(app: FastAPI, engine: Engine) -> None:
 
     @app.get("/temporal/projects")
     async def _() -> Any:
-        return [x for x in shared.project_store.entry_names]
+        return shared.project_store.entry_names
 
     @app.post("/temporal/render_texture")
     async def _(request: RenderTextureRequest) -> Any:

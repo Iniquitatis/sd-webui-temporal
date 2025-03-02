@@ -63,12 +63,14 @@ export class FSStoreBox extends Row {
                 e.onClick.connect(async () => {
                     if (!this.saveCallback) return;
 
+                    let name = window.prompt("Enter name:", this._dropdown.value);
+                    if (!name) return;
+
                     await postRequest("/temporal/fs_operation", {
                         "store": store,
                         "operation": "save",
                         "args": {
-                            // FIXME
-                            "name": "DEFAULT",
+                            "name": name,
                             "data": this.saveCallback(),
                         },
                     });
@@ -135,13 +137,7 @@ export class FSStoreBox extends Row {
     }
 
     set entries(value) {
-        let choices = {};
-
-        for (let entry of value) {
-            choices[entry] = entry;
-        }
-
-        this._dropdown.choices = choices;
+        this._dropdown.choices = value;
     }
 
     set value(value) {
