@@ -23,11 +23,15 @@ export class PipelineModuleEditor extends ReorderableAccordion {
         this.onRemove = new Signal();
 
         this._manager = new FieldManager(this.onValueChange);
-        this._manager.value = {
-            __type__: definition.type,
-            uuid: (async () => getRequest("/temporal/uuid"))(),
-            enabled: true,
-        };
+        this._manager.value = {__type__: definition.type, enabled: true};
+
+        this.classList.add("disabled");
+
+        getRequest("/temporal/uuid", (value) => {
+            this._manager.value.uuid = value;
+
+            this.classList.remove("disabled");
+        });
 
         this._header.insertBefore(createElement(null, Checkbox, (e) => {
             e.value = true;
@@ -86,13 +90,9 @@ export class PipelineModuleEditor extends ReorderableAccordion {
                     e.onClick.connect(async () => {
                         e.classList.add("disabled");
 
-                        let graph = await postRequest("/temporal/render_graph", {
+                        this._graph.value = await postRequest("/temporal/render_graph", {
                             "uuid": this._manager.value.uuid,
                         });
-
-                        if (graph) {
-                            this._graph.value = graph;
-                        }
 
                         e.classList.remove("disabled");
                     });

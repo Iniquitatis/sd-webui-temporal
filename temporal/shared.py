@@ -4,7 +4,6 @@ from pathlib import Path
 
 from temporal.backend import Backend
 from temporal.global_options import GlobalOptions
-from temporal.video_renderer import VideoRenderer
 
 
 class SharedData:
@@ -21,7 +20,6 @@ class SharedData:
         self.preset_store.refresh()
         self.project_store = ProjectStore(self.options.output.output_dir, self.options.ui.project_sorting_order)
         self.project_store.refresh()
-        self.video_renderer = VideoRenderer()
         self.previewed_modules: defaultdict[str, bool] = defaultdict(lambda: True)
 
         for path in Path("temporal/pipeline_modules").rglob("*.py"):

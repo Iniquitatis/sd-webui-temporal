@@ -12,10 +12,10 @@ from temporal.gradient import Gradient
 from temporal.noise import Noise
 from temporal.pattern import Pattern
 from temporal.pipeline_module import PIPELINE_MODULES
+from temporal.pipeline_modules.measuring import MeasuringModule
 from temporal.project import Project
 from temporal.shared import shared
 from temporal.thread_queue import ThreadQueue
-from temporal.pipeline_modules.measuring import MeasuringModule
 from temporal.utils.bytes import bytes_to_base64
 from temporal.utils.collection import find_by_predicate
 from temporal.utils.image import base64_to_image, image_to_base64, pil_to_np
@@ -295,15 +295,13 @@ class _(Endpoint):
 
     async def do(self, request: Request) -> Optional[str]:
         def render() -> Optional[str]:
-            shared.video_renderer = VideoRenderer.from_json(request.data)
-
             with self.engine._state_lock:
                 project = self.engine.state.active_project
 
             if not project:
                 return
 
-            return bytes_to_base64(project.general.render_video(shared.video_renderer, request.type == "final", False).read_bytes())
+            return bytes_to_base64(project.general.render_video(VideoRenderer.from_json(request.data), request.type == "final", False).read_bytes())
 
         return await get_event_loop().run_in_executor(None, render)
 

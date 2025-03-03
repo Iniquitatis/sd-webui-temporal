@@ -1,14 +1,10 @@
-import {Button} from "./scripts/base/button.js";
 import {CanvasBox} from "./scripts/base/canvas_box.js";
 import {Column} from "./scripts/base/column.js";
 import {DockGroup} from "./scripts/base/dock_group.js";
 import {Form} from "./scripts/base/form.js";
 import {MultiStateButton} from "./scripts/base/multi_state_button.js";
-import {NumberBox} from "./scripts/base/number_box.js";
 import {ProgressBar} from "./scripts/base/progress_bar.js";
-import {Row} from "./scripts/base/row.js";
 import {Tabs} from "./scripts/base/tabs.js";
-import {VideoBox} from "./scripts/base/video_box.js";
 import {FieldManager} from "./scripts/core/field_manager.js";
 import {Signal} from "./scripts/core/signal.js";
 import {Timer} from "./scripts/core/timer.js";
@@ -19,7 +15,6 @@ import {OptionsEditor} from "./scripts/options_editor.js";
 import {ProjectEditor} from "./scripts/project_editor.js";
 import {SessionEditor} from "./scripts/session_editor.js";
 import {initializeData, presets, projects} from "./scripts/shared_data.js";
-import {VideoRendererEditor} from "./scripts/video_renderer_editor.js";
 
 export class MainUI extends Widget {
     constructor() {
@@ -31,8 +26,6 @@ export class MainUI extends Widget {
         this.onGenerationStop = new Signal();
         this.onStateCheck = new Signal();
         this.onNewPreview = new Signal();
-        this.onVideoRenderStart = new Signal();
-        this.onVideoRender = new Signal();
 
         this._generationManager = new FieldManager(this.onGenerationChange);
         this._presetManager = new FieldManager(this.onPresetChange);
@@ -165,45 +158,6 @@ export class MainUI extends Widget {
                     });
                     this._generationManager.manage(e, "project");
                     this._presetManager.manage(e, "project");
-                });
-            });
-
-            e.createDock("\u{f03d}", "Video Rendering", Form, (e) => {
-                this._videoRenderer = e.createChild(VideoRendererEditor, (e) => {
-                    this._presetManager.manage(e, "video_renderer");
-                });
-
-                e.createChild(Row, (e) => {
-                    this.onVideoRenderStart.connect(() => {
-                        for (let button of e.childNodes) {
-                            button.classList.add("disabled");
-                        }
-                    });
-                    this.onVideoRender.connect((data) => {
-                        for (let button of e.childNodes) {
-                            button.classList.remove("disabled");
-                        }
-                    });
-
-                    for (let type of ["draft", "final"]) {
-                        e.createChild(Button, (e) => {
-                            e.label = `Render ${type}`;
-                            e.style.width = "100%";
-                            e.onClick.connect(async () => {
-                                this.onVideoRenderStart.fire();
-                                this.onVideoRender.fire(await postRequest("/temporal/render_video", {
-                                    "type": type,
-                                    "data": this._videoRenderer.value,
-                                }));
-                            });
-                        });
-                    }
-                });
-
-                e.createChild(VideoBox, (e) => {
-                    this.onVideoRender.connect((data) => {
-                        e.value = data;
-                    });
                 });
             });
 

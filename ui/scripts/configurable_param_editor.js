@@ -16,6 +16,7 @@ import {ImageSourceEditor} from "../scripts/image_source_editor.js";
 import {NoiseEditor} from "../scripts/noise_editor.js";
 import {PatternEditor} from "../scripts/pattern_editor.js";
 import {ProcessingParamsEditor} from "../scripts/processing_params_editor.js";
+import {VideoRendererEditor} from "../scripts/video_renderer_editor.js";
 
 export class ConfigurableParamEditor extends Widget {
     constructor(definition) {
@@ -131,6 +132,12 @@ export class ConfigurableParamEditor extends Widget {
                 }, definition.ui_type == "slider" ? Slider : NumberBox, {
                     x: definition.axes?.[0] ?? "X",
                     y: definition.axes?.[1] ?? "Y",
+                });
+            } break;
+
+            case "temporal.video_renderer.VideoRenderer": {
+                this._editor = this.createChild(VideoRendererEditor, (e) => {
+                    e.value = definition.default ?? {};
                 });
             } break;
 
