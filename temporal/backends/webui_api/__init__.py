@@ -42,19 +42,6 @@ class WebUIAPIBackend(Backend):
         return [x["label"] for x in _safe_request("GET", f"{self.url}/sdapi/v1/schedulers").json()]
 
     def image_to_image(self, image: NumpyImage, params: ProcessingParams, width: int, height: int, preview: bool = False) -> Optional[NumpyImage]:
-        settings: dict[str, Any] = {
-            "samples_format": "png",
-            "save_to_dirs": False,
-            "sd_model_checkpoint": params.model,
-            "CLIP_stop_at_last_layers": params.clip_skip,
-        }
-
-        if params.vae:
-            settings["sd_vae"] = params.vae
-
-        if not preview:
-            settings["show_progress_every_n_steps"] = -1
-
         return base64_to_image(_safe_request("POST", f"{self.url}/sdapi/v1/img2img", json = {
             "init_images": [image_to_base64(image, "fast")],
             "prompt": params.positive_prompt,
@@ -71,7 +58,14 @@ class WebUIAPIBackend(Backend):
             "batch_size": 1,
             "do_not_save_samples": True,
             "do_not_save_grid": True,
-            "override_settings": settings,
+            "override_settings": {
+                "samples_format": "png",
+                "save_to_dirs": False,
+                "sd_model_checkpoint": params.model,
+                **({"sd_vae": params.vae} if params.vae else {}),
+                "CLIP_stop_at_last_layers": params.clip_skip,
+                "show_progress_every_n_steps": -1,
+            },
             "override_settings_restore_afterwards": False,
         }).json()["images"][0])
 

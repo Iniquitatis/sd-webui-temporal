@@ -9,6 +9,7 @@ import {Slider} from "../scripts/base/slider.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
 import {createElement} from "../scripts/utils/dom.js";
+import {getRequest, postRequest} from "../scripts/utils/requests.js";
 import {ConfigurableParamEditor} from "../scripts/configurable_param_editor.js";
 import {ImageMaskEditor} from "../scripts/image_mask_editor.js";
 import {blendModes} from "../scripts/shared_data.js";
@@ -21,7 +22,11 @@ export class PipelineModuleEditor extends ReorderableAccordion {
         this.onRemove = new Signal();
 
         this._manager = new FieldManager(this.onValueChange);
-        this._manager.value = {__type__: definition.type, enabled: true};
+        this._manager.value = {
+            __type__: definition.type,
+            uuid: (async () => getRequest("/temporal/uuid"))(),
+            enabled: true,
+        };
 
         this._header.insertBefore(createElement(null, Checkbox, (e) => {
             e.value = true;
@@ -31,6 +36,14 @@ export class PipelineModuleEditor extends ReorderableAccordion {
         this._header.insertBefore(createElement(null, MultiStateToggle, (e) => {
             e.states = {on: "\u{f06e}", off: "\u{f070}"};
             e.value = "on";
+            e.onValueChange.connect(async (value) => {
+                await postRequest("/temporal/preview_state", {
+                    "uuid": this._manager.value.uuid,
+                    "state": value == "on",
+                });
+            });
+            // FIXME: Needed here only for the preset system, and it will get
+            // broken after loading a project from the UI
             this._manager.manage(e, "preview", (value) => value ? "on" : "off", (value) => value == "on");
         }), this._header.lastChild);
 
@@ -50,9 +63,9 @@ export class PipelineModuleEditor extends ReorderableAccordion {
                 });
             }
 
-            for (let [id, param] of Object.entries(definition.parameters)) {
+            for (let [key, param] of Object.entries(definition.parameters)) {
                 e.createField(param.name, ConfigurableParamEditor, (e) => {
-                    this._manager.manage(e, id);
+                    this._manager.manage(e, key);
                 }, param);
             }
 

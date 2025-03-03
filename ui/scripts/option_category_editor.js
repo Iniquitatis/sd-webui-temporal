@@ -12,9 +12,9 @@ export class OptionCategoryEditor extends Form {
         this._manager = new FieldManager(this.onValueChange);
         this._manager.value = {__type__: definition.type};
 
-        for (let [id, param] of Object.entries(definition.parameters)) {
+        for (let [key, param] of Object.entries(definition.parameters)) {
             this.createField(param.name, ConfigurableParamEditor, (e) => {
-                this._manager.manage(e, id);
+                this._manager.manage(e, key);
             }, param);
         }
     }

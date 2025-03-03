@@ -48,22 +48,19 @@ class ComfyUIAPIBackend(Backend):
 
         is_vae_defined = params.vae and params.vae != "Automatic"
 
-        vae_loader = {
-            "vae_loader": {
-                "class_type": "VAELoader",
-                "inputs": {
-                    "vae_name": params.vae,
-                },
-            },
-        } if is_vae_defined else {}
-
-        return self._get_image(self._prompt(vae_loader | {
+        return self._get_image(self._prompt({
             "checkpoint_loader": {
                 "class_type": "CheckpointLoaderSimple",
                 "inputs": {
                     "ckpt_name": params.model,
                 },
             },
+            **({"vae_loader": {
+                "class_type": "VAELoader",
+                "inputs": {
+                    "vae_name": params.vae,
+                },
+            }} if is_vae_defined else {}),
             "sampler": {
                 "class_type": "KSampler",
                 "inputs": {

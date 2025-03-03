@@ -1,5 +1,6 @@
 from asyncio import get_event_loop
 from typing import Any, Literal, Optional, Type, get_type_hints
+from uuid import uuid4
 
 from fastapi import APIRouter, FastAPI
 from pydantic import BaseModel
@@ -62,7 +63,7 @@ class _(Endpoint):
     path = "/temporal/blend_modes"
 
     async def do(self) -> dict[str, str]:
-        return {x.id: x.name for x in BLEND_MODES}
+        return {x.__type_name__: x.name for x in BLEND_MODES}
 
 
 class _(Endpoint):
@@ -163,7 +164,7 @@ class _(Endpoint):
     path = "/temporal/pipeline_modules"
 
     async def do(self) -> dict[str, dict[str, Any]]:
-        return {module.id: module.schema() for module in PIPELINE_MODULES}
+        return {module.__type_name__: module.schema() for module in PIPELINE_MODULES}
 
 
 class _(Endpoint):
@@ -187,6 +188,18 @@ class _(Endpoint):
             self.last_preview = image
 
             return image_to_base64(image, "fast")
+
+
+class _(Endpoint):
+    method = "POST"
+    path = "/temporal/preview_state"
+
+    class Request(BaseModel):
+        uuid: str
+        state: bool
+
+    async def do(self, request: Request) -> None:
+        shared.previewed_modules[request.uuid] = request.state
 
 
 class _(Endpoint):
@@ -309,6 +322,14 @@ class _(Endpoint):
 
 class _(Endpoint):
     method = "GET"
+    path = "/temporal/uuid"
+
+    async def do(self) -> str:
+        return str(uuid4())
+
+
+class _(Endpoint):
+    method = "GET"
     path = "/temporal/upscalers"
 
     async def do(self) -> list[str]:
@@ -328,7 +349,7 @@ class _(Endpoint):
     path = "/temporal/video_filters"
 
     async def do(self) -> dict[str, dict[str, Any]]:
-        return {filter.id: filter.schema() for filter in VIDEO_FILTERS}
+        return {filter.__type_name__: filter.schema() for filter in VIDEO_FILTERS}
 
 
 def register_api(app: FastAPI, engine: Engine) -> None:

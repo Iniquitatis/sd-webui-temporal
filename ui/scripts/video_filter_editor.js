@@ -23,9 +23,9 @@ export class VideoFilterEditor extends ReorderableAccordion {
         }), this._header.firstChild.nextSibling);
 
         this.createChild(Form, (e) => {
-            for (let [id, param] of Object.entries(definition.parameters)) {
+            for (let [key, param] of Object.entries(definition.parameters)) {
                 e.createField(param.name, ConfigurableParamEditor, (e) => {
-                    this._manager.manage(e, id);
+                    this._manager.manage(e, key);
                 }, param);
             }
 
