@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 
 from temporal.api import register_api
 from temporal.engine import Engine
+from temporal.shared import shared
 
 
 parser = ArgumentParser()
@@ -36,8 +37,10 @@ elif args.backend == "sdwebui":
 else:
     raise ValueError(f"Unknown backend {args.backend}")
 
+shared.init(backend, Path("settings"), Path("presets"))
+
 app = FastAPI(title = "Temporal API")
-register_api(app, Engine(backend, Path("settings"), Path("presets")))
+register_api(app, Engine())
 app.mount("/", StaticFiles(directory = "ui", html = True), name = "static")
 
 uvicorn.run(app, host = args.host, port = args.port)

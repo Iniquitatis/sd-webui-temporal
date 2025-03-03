@@ -276,7 +276,7 @@ class _(Endpoint):
             shared.video_renderer = VideoRenderer.from_json(request.data)
 
             with self.engine._state_lock:
-                project = self.engine.active_project
+                project = self.engine.state.active_project
 
             if not project:
                 return
@@ -314,9 +314,9 @@ class _(Endpoint):
     async def do(self) -> Response:
         with self.engine._state_lock:
             return self.Response(
-                state = self.engine.state,
-                current_iteration = self.engine.current_iteration,
-                total_iterations = self.engine.total_iterations,
+                state = self.engine.state.state,
+                current_iteration = self.engine.state.current_iteration,
+                total_iterations = self.engine.state.total_iterations,
             )
 
 

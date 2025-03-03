@@ -1,4 +1,5 @@
 from collections import defaultdict
+from importlib import import_module
 from pathlib import Path
 
 from temporal.backend import Backend
@@ -22,6 +23,10 @@ class SharedData:
         self.project_store.refresh()
         self.video_renderer = VideoRenderer()
         self.previewed_modules: defaultdict[str, bool] = defaultdict(lambda: True)
+
+        for path in Path("temporal/pipeline_modules").rglob("*.py"):
+            if path.name != "__init__":
+                import_module(f"temporal.pipeline_modules.{path.parent.stem}.{path.stem}")
 
 
 shared = SharedData()

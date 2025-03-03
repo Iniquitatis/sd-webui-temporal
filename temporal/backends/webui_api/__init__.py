@@ -42,7 +42,7 @@ class WebUIAPIBackend(Backend):
         return [x["label"] for x in _safe_request("GET", f"{self.url}/sdapi/v1/schedulers").json()]
 
     def image_to_image(self, image: NumpyImage, params: ProcessingParams, width: int, height: int, preview: bool = False) -> Optional[NumpyImage]:
-        return base64_to_image(_safe_request("POST", f"{self.url}/sdapi/v1/img2img", json = {
+        if result := _safe_request("POST", f"{self.url}/sdapi/v1/img2img", json = {
             "init_images": [image_to_base64(image, "fast")],
             "prompt": params.positive_prompt,
             "negative_prompt": params.negative_prompt,
@@ -67,7 +67,8 @@ class WebUIAPIBackend(Backend):
                 "show_progress_every_n_steps": -1,
             },
             "override_settings_restore_afterwards": False,
-        }).json()["images"][0])
+        }).json()["images"]:
+            return base64_to_image(result[0])
 
     def upscale_image(self, image: NumpyImage, upscaler: str, scale: float) -> Optional[NumpyImage]:
         return base64_to_image(_safe_request("POST", f"{self.url}/sdapi/v1/extra-single-image", json = {
