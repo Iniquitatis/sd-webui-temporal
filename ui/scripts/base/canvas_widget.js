@@ -62,13 +62,22 @@ export class CanvasWidget extends Block {
 
                 e.createChild(Row, (e) => {
                     e.createChild(ToolButton, (e) => {
+                        e.label = "\u{f1fc}";
+                        e.style.pointerEvents = "auto";
+                        e.onClick.connect(() => {
+                            this._paintingColumn.style.display = this._paintingColumn.style.display == "flex" ? "none" : "flex";
+                        });
+                    });
+
+                    e.createChild(ToolButton, (e) => {
                         e.label = "\u{f575}";
                         e.style.pointerEvents = "auto";
                         e.onClick.connect(() => {
-                            this._mainCtx.clearRect(0, 0, this.width, this.height);
+                            this._mainCtx.fillStyle = this._brushColor.value;
+                            this._mainCtx.fillRect(0, 0, this.width, this.height);
 
-                            this._value = null;
-                            this.onValueChange.fire(null);
+                            this._value = this._mainCanvas.toDataURL("image/png");
+                            this.onValueChange.fire(this._value);
                         });
                     });
 
@@ -109,14 +118,6 @@ export class CanvasWidget extends Block {
 
                             this._value = this._mainCanvas.toDataURL("image/png");
                             this.onValueChange.fire(this._value);
-                        });
-                    });
-
-                    e.createChild(ToolButton, (e) => {
-                        e.label = "\u{f1fc}";
-                        e.style.pointerEvents = "auto";
-                        e.onClick.connect(() => {
-                            this._paintingColumn.style.display = this._paintingColumn.style.display == "flex" ? "none" : "flex";
                         });
                     });
                 });

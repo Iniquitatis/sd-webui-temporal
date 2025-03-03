@@ -122,6 +122,27 @@ export class MediaBox extends Block {
                     this._filePicker.open();
                 });
             });
+
+            e.createChild(ToolButton, (e) => {
+                e.label = "\u{f019}";
+                e.onClick.connect(async () => {
+                    let value = this.value;
+                    if (!value) return;
+
+                    await fetch(value)
+                    .then((response) => response.blob())
+                    .then((blob) => {
+                        let mimeType = value.substring(value.indexOf(":") + 1, value.indexOf(";"));
+                        let format = mimeType.substring(mimeType.indexOf("/") + 1);
+
+                        let link = document.createElement("a");
+                        link.download = `temporal_${new Date(Date.now()).toISOString()}.${format}`;
+                        link.href = URL.createObjectURL(blob);
+                        link.dataset.downloadurl = [mimeType, link.download, link.href];
+                        link.click();
+                    });
+                });
+            });
         });
 
         this._viewer = null;

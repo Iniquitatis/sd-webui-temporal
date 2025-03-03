@@ -3,6 +3,7 @@ import {Button} from "../scripts/base/button.js";
 import {Checkbox} from "../scripts/base/checkbox.js";
 import {Dropdown} from "../scripts/base/dropdown.js";
 import {Form} from "../scripts/base/form.js";
+import {ImageBox} from "../scripts/base/image_box.js";
 import {MultiStateToggle} from "../scripts/base/multi_state_toggle.js";
 import {ReorderableAccordion} from "../scripts/base/reorderable_list.js";
 import {Slider} from "../scripts/base/slider.js";
@@ -77,6 +78,27 @@ export class PipelineModuleEditor extends ReorderableAccordion {
                         this._manager.manage(e, "mask");
                     });
                 });
+            }
+
+            if (definition.type.startsWith("temporal.pipeline_modules.measuring")) {
+                e.createChild(Button, (e) => {
+                    e.label = "Plot";
+                    e.onClick.connect(async () => {
+                        e.classList.add("disabled");
+
+                        let graph = await postRequest("/temporal/render_graph", {
+                            "uuid": this._manager.value.uuid,
+                        });
+
+                        if (graph) {
+                            this._graph.value = graph;
+                        }
+
+                        e.classList.remove("disabled");
+                    });
+                });
+
+                this._graph = e.createChild(ImageBox);
             }
 
             e.createChild(Button, (e) => {

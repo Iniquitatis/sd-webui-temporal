@@ -166,55 +166,43 @@ export class MainUI extends Widget {
                     this._generationManager.manage(e, "project");
                     this._presetManager.manage(e, "project");
                 });
+            });
 
-                // FIXME: Everything below has to be reworked, but it depends on
-                // the preset system currently
-                e.createChild("hr");
+            e.createDock("\u{f03d}", "Video Rendering", Form, (e) => {
+                this._videoRenderer = e.createChild(VideoRendererEditor, (e) => {
+                    this._presetManager.manage(e, "video_renderer");
+                });
 
-                e.createChild(Tabs, (e) => {
-                    e.createTab("Video Rendering", Form, (e) => {
-                        this._videoRenderer = e.createChild(VideoRendererEditor, (e) => {
-                            this._presetManager.manage(e, "video_renderer");
-                        });
-
-                        e.createChild(Row, (e) => {
-                            this.onVideoRenderStart.connect(() => {
-                                for (let button of e.childNodes) {
-                                    button.classList.add("disabled");
-                                }
-                            });
-                            this.onVideoRender.connect((data) => {
-                                for (let button of e.childNodes) {
-                                    button.classList.remove("disabled");
-                                }
-                            });
-
-                            for (let type of ["draft", "final"]) {
-                                e.createChild(Button, (e) => {
-                                    e.label = `Render ${type}`;
-                                    e.style.width = "100%";
-                                    e.onClick.connect(async () => {
-                                        this.onVideoRenderStart.fire();
-                                        this.onVideoRender.fire(await postRequest("/temporal/render_video", {
-                                            "type": type,
-                                            "data": this._videoRenderer.value,
-                                        }));
-                                    });
-                                });
-                            }
-                        });
-
-                        e.createChild(VideoBox, (e) => {
-                            this.onVideoRender.connect((data) => {
-                                e.value = data;
-                            });
-                        });
+                e.createChild(Row, (e) => {
+                    this.onVideoRenderStart.connect(() => {
+                        for (let button of e.childNodes) {
+                            button.classList.add("disabled");
+                        }
+                    });
+                    this.onVideoRender.connect((data) => {
+                        for (let button of e.childNodes) {
+                            button.classList.remove("disabled");
+                        }
                     });
 
-                    e.createTab("Measuring", Form, (e) => {
+                    for (let type of ["draft", "final"]) {
                         e.createChild(Button, (e) => {
-                            e.label = "Render graphs";
+                            e.label = `Render ${type}`;
+                            e.style.width = "100%";
+                            e.onClick.connect(async () => {
+                                this.onVideoRenderStart.fire();
+                                this.onVideoRender.fire(await postRequest("/temporal/render_video", {
+                                    "type": type,
+                                    "data": this._videoRenderer.value,
+                                }));
+                            });
                         });
+                    }
+                });
+
+                e.createChild(VideoBox, (e) => {
+                    this.onVideoRender.connect((data) => {
+                        e.value = data;
                     });
                 });
             });

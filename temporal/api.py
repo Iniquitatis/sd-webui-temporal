@@ -15,8 +15,10 @@ from temporal.pipeline_module import PIPELINE_MODULES
 from temporal.project import Project
 from temporal.shared import shared
 from temporal.thread_queue import ThreadQueue
+from temporal.pipeline_modules.measuring import MeasuringModule
 from temporal.utils.bytes import bytes_to_base64
-from temporal.utils.image import base64_to_image, image_to_base64
+from temporal.utils.collection import find_by_predicate
+from temporal.utils.image import base64_to_image, image_to_base64, pil_to_np
 from temporal.video_filters import VIDEO_FILTERS
 from temporal.video_renderer import VideoRenderer
 
@@ -235,6 +237,26 @@ class _(Endpoint):
 
     async def do(self) -> list[str]:
         return shared.project_store.entry_names
+
+
+class _(Endpoint):
+    method = "POST"
+    path = "/temporal/render_graph"
+
+    class Request(BaseModel):
+        uuid: str
+
+    async def do(self, request: Request) -> Optional[str]:
+        def render() -> Optional[str]:
+            with self.engine._state_lock:
+                project = self.engine.state.active_project
+
+            if (project is not None and
+                (module := find_by_predicate(project.pipeline.modules, lambda x: x.uuid == request.uuid)) is not None and
+                isinstance(module, MeasuringModule)):
+                return image_to_base64(pil_to_np(module.plot()))
+
+        return await get_event_loop().run_in_executor(None, render)
 
 
 class _(Endpoint):
