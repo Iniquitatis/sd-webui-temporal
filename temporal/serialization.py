@@ -33,6 +33,9 @@ def deserialize(type: Type[Any], variant: str, obj: Any, params: SerializationPa
             for key, value in obj.items()
         }
 
+    elif safe_get_origin(type) is Any:
+        return obj
+
     elif safe_get_origin(type) is Literal:
         return deserialize(str, variant, obj, params)
 
@@ -61,6 +64,9 @@ def serialize(type: Type[Any], variant: str, obj: Any, params: SerializationPara
             key: serialize(get_args(type)[1], "", value, params)
             for key, value in obj.items()
         }
+
+    elif safe_get_origin(type) is Any:
+        return obj
 
     elif safe_get_origin(type) is Literal:
         return serialize(str, variant, obj, params)

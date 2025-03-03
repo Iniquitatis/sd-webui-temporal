@@ -20,15 +20,13 @@ export class MainUI extends Widget {
     constructor() {
         super();
 
-        this.onGenerationChange = new Signal();
-        this.onPresetChange = new Signal();
+        this.onValueChange = new Signal();
         this.onGenerationStart = new Signal();
         this.onGenerationStop = new Signal();
         this.onStateCheck = new Signal();
         this.onNewPreview = new Signal();
 
-        this._generationManager = new FieldManager(this.onGenerationChange);
-        this._presetManager = new FieldManager(this.onPresetChange);
+        this._manager = new FieldManager(this.onValueChange);
 
         this._stateTimer = new Timer(async () => {
             this.onStateCheck.fire(await getRequest("/temporal/state"));
@@ -59,7 +57,7 @@ export class MainUI extends Widget {
                     if (state == "active") {
                         this.onGenerationStart.fire();
 
-                        await postRequest("/temporal/generate", this._generationManager.value);
+                        await postRequest("/temporal/generate", this._manager.value);
                     } else if (state == "stopped") {
                         this.onGenerationStop.fire();
 
@@ -94,8 +92,7 @@ export class MainUI extends Widget {
             this._image = e.createChild(CanvasBox, (e) => {
                 e._element.width = 512;
                 e._element.height = 512;
-                this._generationManager.manage(e, "image");
-                this._presetManager.manage(e, "image");
+                this._manager.manage(e, "image");
                 this.onNewPreview.connect((preview) => {
                     e.value = preview;
                 });
@@ -118,14 +115,13 @@ export class MainUI extends Widget {
             e.createDock("\u{f53f}", "Project", Form, (e) => {
                 e.createField("Preset", FSStoreBox, (e) => {
                     e.entries = presets;
-                    e.saveCallback = () => this._presetManager.value;
+                    e.saveCallback = () => ({"data": this._manager.value});
                     e.onLoad.connect((value) => {
-                        let newValue = this._generationManager.value;
-                        newValue.image = value.project.general.initial_image;
-                        newValue.project = value;
+                        let newValue = this._manager.value;
+                        newValue.image = value.data.project.general.initial_image;
+                        newValue.project = value.data.project;
 
-                        this._generationManager.value = newValue;
-                        this._presetManager.value = value;
+                        this._manager.value = newValue;
                     });
                 }, "presets", ["refresh", "load", "save", "rename", "delete"]);
 
@@ -137,17 +133,16 @@ export class MainUI extends Widget {
                             "include_last_image": true,
                         });
 
-                        let newValue = this._generationManager.value;
+                        let newValue = this._manager.value;
                         newValue.image = metadata.last_image;
                         newValue.project = value;
 
-                        this._generationManager.value = newValue;
+                        this._manager.value = newValue;
                     });
                 }, "projects", ["refresh", "load", "rename", "delete"]);
 
                 e.createChild(SessionEditor, (e) => {
-                    this._generationManager.manage(e, "session");
-                    this._presetManager.manage(e, "session");
+                    this._manager.manage(e, "session");
                 });
 
                 e.createChild(ProjectEditor, (e) => {
@@ -156,8 +151,7 @@ export class MainUI extends Widget {
                         this._image._element.width = value.x;
                         this._image._element.height = value.y;
                     });
-                    this._generationManager.manage(e, "project");
-                    this._presetManager.manage(e, "project");
+                    this._manager.manage(e, "project");
                 });
             });
 
@@ -177,8 +171,7 @@ export class MainUI extends Widget {
         });
 
         // FIXME: Temporary
-        this.onGenerationChange.connect((value) => console.log("GEN", value));
-        this.onPresetChange.connect((value) => console.log("PST", value));
+        this.onValueChange.connect((value) => console.log("GEN", value));
     }
 }
 customElements.define("main-ui", MainUI);
