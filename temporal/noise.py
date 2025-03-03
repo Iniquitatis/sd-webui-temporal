@@ -1,5 +1,6 @@
 from math import ceil
-from typing import Literal, Optional
+from random import randint
+from typing import Any, Literal, Optional
 
 import numpy as np
 import skimage
@@ -14,8 +15,14 @@ class Noise(Serializable):
     detail: float = Field(1.0)
     lacunarity: float = Field(2.0)
     persistence: float = Field(0.5)
-    seed: int = Field(0)
+    seed: int = Field(-1)
     use_global_seed: bool = Field(False)
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+
+        if self.seed == -1:
+            self.seed = randint(0, 0x7fffffff)
 
     def generate(self, shape: tuple[int, ...], global_seed: Optional[int] = None) -> FloatArray:
         noise = np.random.default_rng(

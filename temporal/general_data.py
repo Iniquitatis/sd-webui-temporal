@@ -1,5 +1,6 @@
 from pathlib import Path
-from typing import Iterator, Optional
+from random import randint
+from typing import Any, Iterator, Optional
 
 from temporal.meta.serializable import Serializable, SerializableField as Field
 from temporal.noise import Noise
@@ -20,6 +21,12 @@ class GeneralData(Serializable):
     initial_noise: Noise = Field(factory = Noise)
     image_size: IntVector = Field(factory = lambda: IntVector(512, 512))
     seed: int = Field(-1)
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+
+        if self.seed == -1:
+            self.seed = randint(0, 0x7fffffff)
 
     def get_first_frame_index(self) -> int:
         return min((_parse_frame_index(x) for x in self._iterate_frame_paths()), default = 0)
