@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Generic, Type, TypeVar, get_args
+from typing import Generic, Type, TypeVar
 
 from temporal.meta.serializable import Serializable
 from temporal.utils.collection import natural_sort
@@ -10,14 +10,11 @@ T = TypeVar("T", bound = Serializable)
 
 
 class FSStore(Generic[T]):
-    def __init__(self, path: Path, sorting_order: str) -> None:
+    def __init__(self, type: Type[T], path: Path, sorting_order: str) -> None:
+        self.type = type
         self.path = path
         self.sorting_order = sorting_order
         self.entry_names: list[str] = []
-
-    @property
-    def type(self) -> Type[T]:
-        return get_args(getattr(self, "__orig_bases__")[0])[0]
 
     def refresh(self) -> None:
         self.entry_names.clear()
