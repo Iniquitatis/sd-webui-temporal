@@ -36,14 +36,11 @@ class Pipeline(Serializable):
             # if shared.backend.is_interrupted():
             #     return False
 
-            if not shared.options.live_preview.show_only_finished_images and shared.previewed_modules[module.uuid]:
+            if shared.previewed_modules[module.uuid]:
                 shared.backend.set_preview(iteration.image)
 
         iteration.index += 1
         iteration.step = 0
-
-        if shared.options.live_preview.show_only_finished_images:
-            shared.backend.set_preview(iteration.image)
 
         return True
 

@@ -15,12 +15,6 @@ class OutputCategory(OptionCategory):
     autosave_every_n_iterations: int = Param("Autosave every N iterations", minimum = 1, step = 1, value = 10, ui_type = "box")
 
 
-class LivePreviewCategory(OptionCategory):
-    name = "Live preview"
-
-    show_only_finished_images: bool = Param("Show only finished images", value = False)
-
-
 class UICategory(OptionCategory):
     name = "UI"
 
@@ -32,5 +26,4 @@ class UICategory(OptionCategory):
 # TODO: Rename to Settings
 class GlobalOptions(Serializable):
     output: OutputCategory = Field(factory = OutputCategory)
-    live_preview: LivePreviewCategory = Field(factory = LivePreviewCategory)
     ui: UICategory = Field(factory = UICategory)
