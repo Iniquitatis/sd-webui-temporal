@@ -7,10 +7,10 @@ from pydantic import BaseModel
 
 from temporal.blend_modes import BLEND_MODES
 from temporal.engine import Engine
-from temporal.global_options import GlobalOptions
 from temporal.pipeline_module import PIPELINE_MODULES, PipelineModule
 from temporal.pipeline_modules.measuring import MeasuringModule
 from temporal.project import Project
+from temporal.settings import Settings
 from temporal.shared import shared
 from temporal.thread_queue import ThreadQueue
 from temporal.utils.bytes import bytes_to_base64
@@ -53,8 +53,8 @@ class _(Endpoint):
         data: dict[str, Any] = {}
 
     async def do(self, request: Request) -> None:
-        shared.options = GlobalOptions.from_json(request.data)
-        shared.options.save(shared.options_path)
+        shared.settings = Settings.from_json(request.data)
+        shared.settings.save(shared.settings_path)
 
 
 class _(Endpoint):
@@ -118,7 +118,7 @@ class _(Endpoint):
         if self.queue.busy:
             return
 
-        path = shared.options.output.output_dir / request.project.get("general", {}).get("name", "untitled")
+        path = shared.settings.output.output_dir / request.project.get("general", {}).get("name", "untitled")
 
         if request.session.load_parameters:
             project = Project.load(path)
@@ -155,7 +155,7 @@ class _(Endpoint):
     path = "/temporal/option_categories"
 
     async def do(self) -> dict[str, dict[str, Any]]:
-        return {key: field.type.schema() for key, field in shared.options.__fields__.items()}
+        return {key: field.type.schema() for key, field in shared.settings.__fields__.items()}
 
 
 class _(Endpoint):

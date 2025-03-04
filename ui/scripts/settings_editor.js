@@ -6,7 +6,7 @@ import {Signal} from "../scripts/core/signal.js";
 import {OptionCategoryEditor} from "../scripts/option_category_editor.js";
 import {optionCategories} from "../scripts/shared_data.js";
 
-export class OptionsEditor extends Column {
+export class SettingsEditor extends Column {
     constructor() {
         super();
 
@@ -41,4 +41,4 @@ export class OptionsEditor extends Column {
         this._manager.value = value;
     }
 }
-customElements.define("options-editor", OptionsEditor);
+customElements.define("settings-editor", SettingsEditor);

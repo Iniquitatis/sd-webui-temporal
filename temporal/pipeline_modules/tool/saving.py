@@ -37,7 +37,7 @@ class SavingModule(ToolModule):
             shared.backend.save_image(
                 image = self._get_scaled_image(image, general),
                 general = general,
-                output_dir = ensure_directory_exists(shared.options.output.output_dir),
+                output_dir = ensure_directory_exists(shared.settings.output.output_dir),
                 file_name = None,
                 archive_mode = self.archive_mode,
             )

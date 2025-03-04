@@ -11,9 +11,9 @@ import {Timer} from "./scripts/core/timer.js";
 import {Widget} from "./scripts/core/widget.js";
 import {getRequest, postRequest} from "./scripts/utils/requests.js";
 import {FSStoreBox} from "./scripts/fs_store_box.js";
-import {OptionsEditor} from "./scripts/options_editor.js";
 import {ProjectEditor} from "./scripts/project_editor.js";
 import {SessionEditor} from "./scripts/session_editor.js";
+import {SettingsEditor} from "./scripts/settings_editor.js";
 import {initializeData, presets, projects} from "./scripts/shared_data.js";
 
 export class MainUI extends Widget {
@@ -156,7 +156,7 @@ export class MainUI extends Widget {
             });
 
             e.createDock("\u{f013}", "System", Tabs, (e) => {
-                e.createTab("Settings", OptionsEditor, (e) => {
+                e.createTab("Settings", SettingsEditor, (e) => {
                     e.onApply.connect(async (value) => {
                         await postRequest("/temporal/apply_settings", {
                             "data": value,
