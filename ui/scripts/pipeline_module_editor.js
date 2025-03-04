@@ -1,12 +1,14 @@
 import {Accordion} from "../scripts/base/accordion.js";
 import {Button} from "../scripts/base/button.js";
 import {Checkbox} from "../scripts/base/checkbox.js";
+import {Column} from "../scripts/base/column.js";
 import {Dropdown} from "../scripts/base/dropdown.js";
 import {Form} from "../scripts/base/form.js";
 import {ImageBox} from "../scripts/base/image_box.js";
 import {MultiStateToggle} from "../scripts/base/multi_state_toggle.js";
 import {ReorderableAccordion} from "../scripts/base/reorderable_list.js";
 import {Slider} from "../scripts/base/slider.js";
+import {Tabs} from "../scripts/base/tabs.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
 import {createElement} from "../scripts/utils/dom.js";
@@ -52,54 +54,67 @@ export class PipelineModuleEditor extends ReorderableAccordion {
             this._manager.manage(e, "preview", (value) => value ? "on" : "off", (value) => value == "on");
         }), this._header.lastChild);
 
-        this.createChild(Form, (e) => {
-            if (definition.is_filter) {
-                e.createField("Amount", Slider, (e) => {
-                    e.minimum = 0.0;
-                    e.maximum = 1.0;
-                    e.step = 0.01;
-                    e.value = 1.0;
-                    this._manager.manage(e, "amount");
-                });
-
-                e.createField("Blend mode", Dropdown, (e) => {
-                    e.choices = blendModes;
-                    this._manager.manage(e, "blend_mode", (value) => value.__type__, (value) => ({__type__: value}));
+        this.createChild(Column, (e) => {
+            if (definition.is_sampleable) {
+                this._sampleBox = e.createChild(ImageBox, (e) => {
+                    e.style.height = "12rem";
+                    this.onValueChange.connect(() => this._updateSample());
                 });
             }
 
-            for (let [key, param] of Object.entries(definition.parameters)) {
-                e.createField(param.name, ConfigurableParamEditor, (e) => {
-                    this._manager.manage(e, key);
-                }, param);
-            }
+            e.createChild(Tabs, (e) => {
+                if (Object.keys(definition.parameters).length > 0) {
+                    e.createTab("Parameters", Form, (e) => {
+                        for (let [key, param] of Object.entries(definition.parameters)) {
+                            e.createField(param.name, ConfigurableParamEditor, (e) => {
+                                this._manager.manage(e, key);
+                            }, param);
+                        }
 
-            if (definition.is_filter) {
-                e.createChild(Accordion, (e) => {
-                    e.label = "Mask";
+                        if (definition.type.startsWith("temporal.pipeline_modules.measuring")) {
+                            e.createChild(Button, (e) => {
+                                e.label = "Plot";
+                                e.onClick.connect(async () => {
+                                    e.classList.add("disabled");
 
-                    e.createChild(ImageMaskEditor, (e) => {
-                        this._manager.manage(e, "mask");
+                                    this._graph.value = await postRequest("/temporal/render_graph", {
+                                        "uuid": this._manager.value.uuid,
+                                    });
+
+                                    e.classList.remove("disabled");
+                                });
+                            });
+
+                            this._graph = e.createChild(ImageBox);
+                        }
                     });
-                });
-            }
+                }
 
-            if (definition.type.startsWith("temporal.pipeline_modules.measuring")) {
-                e.createChild(Button, (e) => {
-                    e.label = "Plot";
-                    e.onClick.connect(async () => {
-                        e.classList.add("disabled");
-
-                        this._graph.value = await postRequest("/temporal/render_graph", {
-                            "uuid": this._manager.value.uuid,
+                if (definition.is_filter) {
+                    e.createTab("Blending", Form, (e) => {
+                        e.createField("Amount", Slider, (e) => {
+                            e.minimum = 0.0;
+                            e.maximum = 1.0;
+                            e.step = 0.01;
+                            e.value = 1.0;
+                            this._manager.manage(e, "amount");
                         });
 
-                        e.classList.remove("disabled");
-                    });
-                });
+                        e.createField("Blend mode", Dropdown, (e) => {
+                            e.choices = blendModes;
+                            this._manager.manage(e, "blend_mode", (value) => value.__type__, (value) => ({__type__: value}));
+                        });
 
-                this._graph = e.createChild(ImageBox);
-            }
+                        e.createChild(Accordion, (e) => {
+                            e.label = "Mask";
+
+                            e.createChild(ImageMaskEditor, (e) => {
+                                this._manager.manage(e, "mask");
+                            });
+                        });
+                    });
+                }
+            });
 
             e.createChild(Button, (e) => {
                 e.label = "\u{f2ed} Remove";
@@ -110,6 +125,8 @@ export class PipelineModuleEditor extends ReorderableAccordion {
                 });
             });
         });
+
+        this._updateSample();
     }
 
     get value() {
@@ -118,6 +135,14 @@ export class PipelineModuleEditor extends ReorderableAccordion {
 
     set value(value) {
         this._manager.value = value;
+    }
+
+    _updateSample() {
+        postRequest("/temporal/render_sample", {
+            "data": this._manager.value,
+        }, (value) => {
+            this._sampleBox.value = value;
+        });
     }
 }
 customElements.define("pipeline-module-editor", PipelineModuleEditor);

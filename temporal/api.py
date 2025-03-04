@@ -8,10 +8,7 @@ from pydantic import BaseModel
 from temporal.blend_modes import BLEND_MODES
 from temporal.engine import Engine
 from temporal.global_options import GlobalOptions
-from temporal.gradient import Gradient
-from temporal.noise import Noise
-from temporal.pattern import Pattern
-from temporal.pipeline_module import PIPELINE_MODULES
+from temporal.pipeline_module import PIPELINE_MODULES, PipelineModule
 from temporal.pipeline_modules.measuring import MeasuringModule
 from temporal.project import Project
 from temporal.shared import shared
@@ -261,26 +258,15 @@ class _(Endpoint):
 
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/render_texture"
+    path = "/temporal/render_sample"
 
     class Request(BaseModel):
-        type: Literal["gradient", "noise", "pattern"]
-        data: dict[str, Any] = {}
+        data: dict[str, Any]
         size: tuple[int, int] = (256, 256)
-        channels: int = 3
 
-    async def do(self, request: Request) -> str:
-        if request.type == "gradient":
-            cls = Gradient
-        elif request.type == "noise":
-            cls = Noise
-        elif request.type == "pattern":
-            cls = Pattern
-        else:
-            raise ValueError
-
-        def render() -> str:
-            return image_to_base64(cls.from_json(request.data).generate((request.size[1], request.size[0], request.channels)), "fast")
+    async def do(self, request: Request) -> Optional[str]:
+        def render() -> Optional[str]:
+            return image_to_base64(PipelineModule.from_json(request.data).sample(request.size), "fast")
 
         return await get_event_loop().run_in_executor(None, render)
 

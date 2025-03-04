@@ -12,6 +12,8 @@ from temporal.utils.numpy import saturate_array
 
 
 class ImageFilter(PipelineModule, abstract = True):
+    is_sampleable = True
+
     amount: float = Field(1.0)
     blend_mode: BlendMode = Field(factory = NormalBlendMode)
     mask: ImageMask = Field(factory = ImageMask)

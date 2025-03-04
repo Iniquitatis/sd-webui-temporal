@@ -16,7 +16,8 @@ export class Slider extends Widget {
                     if (this._numberInput) {
                         this._numberInput.valueAsNumber = e.valueAsNumber;
                     }
-
+                });
+                e.addEventListener("change", () => {
                     this.onValueChange.fire(e.valueAsNumber);
                 });
             });
@@ -28,7 +29,8 @@ export class Slider extends Widget {
                     e.style.width = "var(--small-input-width)";
                     e.addEventListener("input", () => {
                         this._input.valueAsNumber = e.valueAsNumber;
-
+                    });
+                    e.addEventListener("change", () => {
                         this.onValueChange.fire(e.valueAsNumber);
                     });
                 });

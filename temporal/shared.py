@@ -4,6 +4,7 @@ from pathlib import Path
 
 from temporal.backend import Backend
 from temporal.global_options import GlobalOptions
+from temporal.utils.image import load_image, pil_to_np
 
 
 class SharedData:
@@ -21,6 +22,7 @@ class SharedData:
         self.project_store = ProjectStore(self.options.output.output_dir, self.options.ui.project_sorting_order)
         self.project_store.refresh()
         self.previewed_modules: defaultdict[str, bool] = defaultdict(lambda: True)
+        self.sample_image = pil_to_np(load_image("data/sample_image.png"))
 
         for path in Path("temporal/pipeline_modules").rglob("*.py"):
             if path.name != "__init__":
