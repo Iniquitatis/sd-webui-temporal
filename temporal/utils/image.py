@@ -55,15 +55,15 @@ def ensure_image_dims(image: NumpyImage, size: Optional[tuple[int, int]] = None,
     if image_width == target_width and image_height == target_height and image_channels == target_channels:
         return image
 
-    im = np_to_pil(image)
+    pil_image = np_to_pil(image)
 
     if image_channels != target_channels:
-        im = im.convert("RGBA" if target_channels == 4 else "RGB")
+        pil_image = pil_image.convert("RGBA" if target_channels == 4 else "RGB")
 
     if image_width != target_width or image_height != target_height:
-        im = im.resize((target_width, target_height), Image.Resampling.LANCZOS)
+        pil_image = pil_image.resize((target_width, target_height), Image.Resampling.LANCZOS)
 
-    return pil_to_np(im)
+    return pil_to_np(pil_image)
 
 
 def image_to_base64(image: NumpyImage, mode: Literal["default", "fast", "archive"] = "default") -> str:
@@ -83,9 +83,9 @@ def join_hsv_to_rgb(h: NumpyImage, s: NumpyImage, v: NumpyImage) -> NumpyImage:
 
 
 def load_image(path: str | Path) -> PILImage:
-    im = Image.open(path)
-    im.load()
-    return im
+    image = Image.open(path)
+    image.load()
+    return image
 
 
 def match_image(image: NumpyImage, reference: NumpyImage, size: bool = True, channels: bool = True) -> NumpyImage:
@@ -100,11 +100,11 @@ def np_to_pil(image: NumpyImage) -> PILImage:
     return Image.fromarray(skimage.util.img_as_ubyte(image))
 
 
-def pil_to_np(im: PILImage) -> NumpyImage:
-    return skimage.util.img_as_float(im)
+def pil_to_np(image: PILImage) -> NumpyImage:
+    return skimage.util.img_as_float(image)
 
 
-def save_image(im: PILImage, path: Path, archive_mode: bool = False) -> None:
+def save_image(image: PILImage, path: Path, archive_mode: bool = False) -> None:
     tmp_path = path.with_suffix(".tmp")
 
     if path.is_file():
@@ -113,7 +113,7 @@ def save_image(im: PILImage, path: Path, archive_mode: bool = False) -> None:
     if tmp_path.is_file():
         tmp_path.unlink()
 
-    im.save(tmp_path, "PNG", **(dict(
+    image.save(tmp_path, "PNG", **(dict(
         optimize = True,
         compress_level = 9,
     ) if archive_mode else {}))

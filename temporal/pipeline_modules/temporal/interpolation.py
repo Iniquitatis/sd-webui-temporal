@@ -38,13 +38,13 @@ class InterpolationModule(TemporalModule):
     def reset(self, general: GeneralData) -> None:
         self.buffer = None
 
-    def _motion_warp(self, base_im: NumpyImage, target_im: NumpyImage) -> tuple[NumpyImage, NumpyImage]:
-        def warp(im: NumpyImage, coords: FloatArray) -> NumpyImage:
-            return apply_channelwise(im, lambda x: skimage.transform.warp(x, coords, mode = "symmetric"))
+    def _motion_warp(self, base: NumpyImage, target: NumpyImage) -> tuple[NumpyImage, NumpyImage]:
+        def warp(image: NumpyImage, coords: FloatArray) -> NumpyImage:
+            return apply_channelwise(image, lambda x: skimage.transform.warp(x, coords, mode = "symmetric"))
 
-        height, width = base_im.shape[:2]
+        height, width = base.shape[:2]
 
         coords = np.indices((height, width)).astype(FloatType)
-        offsets = skimage.registration.optical_flow_ilk(skimage.color.rgb2gray(base_im), skimage.color.rgb2gray(target_im), radius = self.radius)
+        offsets = skimage.registration.optical_flow_ilk(skimage.color.rgb2gray(base), skimage.color.rgb2gray(target), radius = self.radius)
 
-        return warp(base_im, coords + offsets * -self.movement), warp(target_im, coords + -offsets * (-1.0 + self.movement))
+        return warp(base, coords + offsets * -self.movement), warp(target, coords + -offsets * (-1.0 + self.movement))

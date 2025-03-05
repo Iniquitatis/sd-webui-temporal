@@ -1,11 +1,9 @@
 from abc import abstractmethod
-from io import BytesIO
 from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
-from PIL import Image
 from matplotlib.ticker import MaxNLocator
 
 from temporal.general_data import GeneralData
@@ -14,6 +12,7 @@ from temporal.meta.serializable import SerializableField as Field
 from temporal.pipeline_module import PipelineModule
 from temporal.utils.fs import ensure_directory_exists
 from temporal.utils.image import NumpyImage, PILImage, save_image
+from temporal.utils.matplotlib import get_figure_as_image
 from temporal.utils.numpy import FloatArray
 
 
@@ -81,13 +80,8 @@ class MeasuringModule(PipelineModule, abstract = True):
 
         plt.legend()
 
-        buffer = BytesIO()
-        plt.savefig(buffer, format = "png")
-        buffer.seek(0)
-
-        im = Image.open(buffer)
-        im.load()
+        image = get_figure_as_image()
 
         plt.close()
 
-        return im
+        return image

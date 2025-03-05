@@ -1,12 +1,10 @@
-from io import BytesIO
-
 import matplotlib.pyplot as plt
-from PIL import Image
 from matplotlib.ticker import MaxNLocator
 
 from temporal.animation import Animation, Track
 from temporal.color import Color
 from temporal.utils.image import PILImage
+from temporal.utils.matplotlib import get_figure_as_image
 
 
 def plot_animation(animation: Animation) -> list[PILImage]:
@@ -68,16 +66,11 @@ def _plot_track(property_name: str, track: Track, first_frame: int = 1, last_fra
 
     plt.legend(loc = "upper right")
 
-    buffer = BytesIO()
-    plt.savefig(buffer, format = "png")
-    buffer.seek(0)
-
-    im = Image.open(buffer)
-    im.load()
+    image = get_figure_as_image()
 
     plt.close()
 
-    return im
+    return image
 
 
 def _extract_text_indices(texts: list[str]) -> dict[str, int]:
