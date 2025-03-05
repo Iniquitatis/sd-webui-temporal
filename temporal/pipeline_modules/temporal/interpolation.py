@@ -35,7 +35,7 @@ class InterpolationModule(TemporalModule):
 
         return self.buffer.copy()
 
-    def reset(self) -> None:
+    def reset(self, general: GeneralData) -> None:
         self.buffer = None
 
     def _motion_warp(self, base_im: NumpyImage, target_im: NumpyImage) -> tuple[NumpyImage, NumpyImage]:

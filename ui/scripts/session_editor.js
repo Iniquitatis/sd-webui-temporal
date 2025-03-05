@@ -14,10 +14,17 @@ export class SessionEditor extends Form {
 
         this.createField("Load parameters", Checkbox, (e) => {
             e.value = true;
+            e.onValueChange.connect((value) => {
+                if (value) {
+                    this._continue.classList.remove("disabled");
+                } else {
+                    this._continue.classList.add("disabled");
+                }
+            });
             this._manager.manage(e, "load_parameters");
         });
 
-        this.createField("Continue from last frame", Checkbox, (e) => {
+        this._continue = this.createField("Continue from last frame", Checkbox, (e) => {
             e.value = true;
             this._manager.manage(e, "continue_from_last_frame");
         });

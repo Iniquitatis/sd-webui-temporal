@@ -1,14 +1,10 @@
-import {Button} from "../scripts/base/button.js";
 import {Checkbox} from "../scripts/base/checkbox.js";
 import {Form} from "../scripts/base/form.js";
 import {NumberBox} from "../scripts/base/number_box.js";
-import {Row} from "../scripts/base/row.js";
 import {Slider} from "../scripts/base/slider.js";
-import {VideoBox} from "../scripts/base/video_box.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
 import {mapObject} from "../scripts/utils/object.js";
-import {postRequest} from "../scripts/utils/requests.js";
 import {ModuleList} from "../scripts/module_list.js";
 import {videoFilters} from "../scripts/shared_data.js";
 import {VideoFilterEditor} from "../scripts/video_filter_editor.js";
@@ -61,26 +57,10 @@ export class VideoRendererEditor extends Form {
             this._manager.manage(e, "filters");
         }, VideoFilterEditor, mapObject(videoFilters, (_, filter) => filter.name), videoFilters);
 
-        this._buttons = this.createChild(Row, (e) => {
-            for (let type of ["draft", "final"]) {
-                e.createChild(Button, (e) => {
-                    e.label = `Render ${type}`;
-                    e.style.width = "100%";
-                    e.onClick.connect(async () => {
-                        this._buttons.classList.add("disabled");
-
-                        this._video.value = await postRequest("/temporal/render_video", {
-                            "type": type,
-                            "data": this._manager.value,
-                        });
-
-                        this._buttons.classList.remove("disabled");
-                    });
-                });
-            }
+        this.createField("Archive mode", Checkbox, (e) => {
+            e.value = false;
+            this._manager.manage(e, "archive_mode");
         });
-
-        this._video = this.createChild(VideoBox);
     }
 
     get value() {

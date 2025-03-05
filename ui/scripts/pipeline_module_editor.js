@@ -9,6 +9,7 @@ import {MultiStateToggle} from "../scripts/base/multi_state_toggle.js";
 import {ReorderableAccordion} from "../scripts/base/reorderable_list.js";
 import {Slider} from "../scripts/base/slider.js";
 import {Tabs} from "../scripts/base/tabs.js";
+import {VideoBox} from "../scripts/base/video_box.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
 import {createElement} from "../scripts/utils/dom.js";
@@ -86,6 +87,23 @@ export class PipelineModuleEditor extends ReorderableAccordion {
                             });
 
                             this._graph = e.createChild(ImageBox);
+                        }
+
+                        if (definition.type.startsWith("temporal.pipeline_modules.tool.video_rendering")) {
+                            e.createChild(Button, (e) => {
+                                e.label = "Render";
+                                e.onClick.connect(async () => {
+                                    e.classList.add("disabled");
+
+                                    this._video.value = await postRequest("/temporal/render_video", {
+                                        "uuid": this._manager.value.uuid,
+                                    });
+
+                                    e.classList.remove("disabled");
+                                });
+                            });
+
+                            this._video = e.createChild(VideoBox);
                         }
                     });
                 }

@@ -8,10 +8,10 @@ from temporal.pipeline import Pipeline
 
 
 class Project(Serializable):
-    version: int = Field(get_latest_version())
+    version: int = Field(get_latest_version(), flags = {"private"})
     general: GeneralData = Field(factory = GeneralData)
     pipeline: Pipeline = Field(factory = Pipeline)
-    iteration: IterationData = Field(factory = IterationData)
+    iteration: IterationData = Field(factory = IterationData, flags = {"private"})
 
     @classmethod
     def load(cls, dir: Path) -> "Project":
@@ -27,6 +27,6 @@ class Project(Serializable):
 
     def delete_session_data(self) -> None:
         for module in self.pipeline.modules:
-            module.reset()
+            module.reset(self.general)
 
         self.iteration = IterationData()

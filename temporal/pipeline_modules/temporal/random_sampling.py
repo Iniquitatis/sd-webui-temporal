@@ -36,5 +36,5 @@ class RandomSamplingModule(TemporalModule):
 
         return self.buffer.copy()
 
-    def reset(self) -> None:
+    def reset(self, general: GeneralData) -> None:
         self.buffer = None

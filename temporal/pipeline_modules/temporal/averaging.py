@@ -43,6 +43,6 @@ class AveragingModule(TemporalModule):
             weights = np.roll(make_eased_weight_array(self.frames, self.easing), self.last_index),
         ))
 
-    def reset(self) -> None:
+    def reset(self, general: GeneralData) -> None:
         self.buffer = None
         self.last_index = 0

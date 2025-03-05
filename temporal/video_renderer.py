@@ -19,11 +19,15 @@ class VideoRenderer(Serializable):
     frame_stride: int = Field(1)
     looping: bool = Field(False)
     filters: list[VideoFilter] = Field(factory = list)
+    archive_mode: bool = Field(False)
 
-    def enqueue_video_render(self, path: Path, frame_paths: Sequence[Path], is_final: bool) -> None:
-        video_render_queue.enqueue(self._render_video, path, frame_paths, is_final)
+    def render(self, path: Path, frame_paths: Sequence[Path], enqueue: bool = True) -> None:
+        if enqueue:
+            video_render_queue.enqueue(self._inner, path, frame_paths)
+        else:
+            self._inner(path, frame_paths)
 
-    def _render_video(self, path: Path, frame_paths: Sequence[Path], is_final: bool) -> None:
+    def _inner(self, path: Path, frame_paths: Sequence[Path]) -> None:
         frame_paths = frame_paths[self.first_frame - 1:self.last_frame or int(1e9):self.frame_stride]
 
         if self.looping:
@@ -41,19 +45,16 @@ class VideoRenderer(Serializable):
             "-safe", "0",
             "-i", frame_list_path,
             "-framerate", str(self.fps),
-            "-vf", self._build_filter() if is_final else "null",
+            "-vf", ",".join([
+                filter.print(self.fps)
+                for filter in self.filters
+                if filter.enabled
+            ] or ["null"]),
             "-c:v", "libx264",
             "-crf", "14",
-            "-preset", "slow" if is_final else "veryfast",
+            "-preset", "slow" if self.archive_mode else "veryfast",
             "-tune", "film",
             "-pix_fmt", "yuv420p",
             path,
         ])
         frame_list_path.unlink()
-
-    def _build_filter(self):
-        return ",".join([
-            filter.print(self.fps)
-            for filter in self.filters
-            if filter.enabled
-        ] or ["null"])

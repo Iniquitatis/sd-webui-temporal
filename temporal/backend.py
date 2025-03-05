@@ -3,7 +3,6 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Optional
 
-from temporal.general_data import GeneralData
 from temporal.processing_params import ProcessingParams
 from temporal.utils.image import NumpyImage
 
@@ -46,7 +45,7 @@ class Backend(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def save_image(self, image: NumpyImage, general: GeneralData, output_dir: Path, file_name: Optional[str] = None, archive_mode: bool = False) -> None:
+    def save_image(self, image: NumpyImage, path: Path, archive_mode: bool = False) -> None:
         raise NotImplementedError
 
     @abstractmethod

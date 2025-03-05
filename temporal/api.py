@@ -14,10 +14,8 @@ from temporal.settings import Settings
 from temporal.shared import shared
 from temporal.thread_queue import ThreadQueue
 from temporal.utils.bytes import bytes_to_base64
-from temporal.utils.collection import find_by_predicate
 from temporal.utils.image import base64_to_image, image_to_base64, pil_to_np
 from temporal.video_filters import VIDEO_FILTERS
-from temporal.video_renderer import VideoRenderer
 
 
 ENDPOINTS: list[Type["Endpoint"]] = []
@@ -122,14 +120,18 @@ class _(Endpoint):
 
         if request.session.load_parameters:
             project = Project.load(path)
+
+            if not request.session.continue_from_last_frame:
+                project.delete_session_data()
+
         else:
+            if path.is_dir():
+                existing = Project.load(path)
+                existing.delete_session_data()
+
             project = Project.from_json(request.project)
             project.general.path = path
             project.general.initial_image = base64_to_image(request.image) if request.image else None
-
-        if not request.session.continue_from_last_frame:
-            project.general.delete_all_frames()
-            project.delete_session_data()
 
         self.queue.enqueue(self.engine.start, project, request.session.iter_count)
 
@@ -210,20 +212,14 @@ class _(Endpoint):
         include_last_image: bool = False
 
     class Response(BaseModel):
-        frame_count: int
-        first_frame_index: int
-        last_frame_index: int
         last_image: Optional[str]
 
     async def do(self, request: Request) -> Response:
         project = shared.project_store.load_entry(request.name)
 
         return self.Response(
-            frame_count = project.general.get_actual_frame_count(),
-            first_frame_index = project.general.get_first_frame_index(),
-            last_frame_index = project.general.get_last_frame_index(),
             last_image = image_to_base64(image)
-                if request.include_last_image and (image := project.general.get_last_frame()) is not None
+                if request.include_last_image and (image := project.iteration.image) is not None
                 else None,
         )
 
@@ -249,8 +245,7 @@ class _(Endpoint):
                 project = self.engine.state.active_project
 
             if (project is not None and
-                (module := find_by_predicate(project.pipeline.modules, lambda x: x.uuid == request.uuid)) is not None and
-                isinstance(module, MeasuringModule)):
+                (module := project.pipeline.find_module(request.uuid, MeasuringModule)) is not None):
                 return image_to_base64(pil_to_np(module.plot()))
 
         return await get_event_loop().run_in_executor(None, render)
@@ -276,18 +271,20 @@ class _(Endpoint):
     path = "/temporal/render_video"
 
     class Request(BaseModel):
-        type: Literal["draft", "final"]
-        data: dict[str, Any] = {}
+        uuid: str
 
     async def do(self, request: Request) -> Optional[str]:
+        # NOTE/FIXME: Not a big deal, including it on top just messes up
+        # registration ordering a little
+        from temporal.pipeline_modules.tool.video_rendering import VideoRenderingModule
+
         def render() -> Optional[str]:
             with self.engine._state_lock:
                 project = self.engine.state.active_project
 
-            if not project:
-                return
-
-            return bytes_to_base64(project.general.render_video(VideoRenderer.from_json(request.data), request.type == "final", False).read_bytes())
+            if (project is not None and
+                (module := project.pipeline.find_module(request.uuid, VideoRenderingModule)) is not None):
+                return bytes_to_base64(module.render(project.general, False).read_bytes())
 
         return await get_event_loop().run_in_executor(None, render)
 

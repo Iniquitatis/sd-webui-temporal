@@ -2,6 +2,7 @@ from typing import Optional
 
 import numpy as np
 
+from temporal.general_data import GeneralData
 from temporal.meta.serializable import SerializableField as Field
 from temporal.pipeline_modules.measuring import MeasuringModule
 from temporal.utils.image import NumpyImage
@@ -18,8 +19,8 @@ class DifferenceMeasuringModule(MeasuringModule):
 
     last_image: Optional[NumpyImage] = Field(None, variant = "image", flags = {"private"})
 
-    def reset(self) -> None:
-        super().reset()
+    def reset(self, general: GeneralData) -> None:
+        super().reset(general)
         self.last_image = None
 
     def measure(self, npim: NumpyImage) -> list[float]:

@@ -1,15 +1,26 @@
+from typing import Optional, Type, TypeVar
+
 from temporal.animation import Animation
 from temporal.general_data import GeneralData
 from temporal.iteration_data import IterationData
 from temporal.meta.serializable import Serializable, SerializableField as Field
 from temporal.pipeline_module import PipelineModule
 from temporal.shared import shared
+from temporal.utils.collection import find_by_predicate
 from temporal.utils.object import set_property_by_path
+
+
+T = TypeVar("T", bound = PipelineModule)
 
 
 class Pipeline(Serializable):
     modules: list[PipelineModule] = Field(factory = list)
     animation: Animation = Field(factory = Animation)
+
+    def find_module(self, uuid: str, type: Type[T] = PipelineModule) -> Optional[T]:
+        if ((result := find_by_predicate(self.modules, lambda x: x.uuid == uuid)) is not None and
+            isinstance(result, type)):
+            return result
 
     def run(self, general: GeneralData, iteration: IterationData) -> bool:
         for path, value in self.animation.evaluate(iteration.index).items():

@@ -44,7 +44,7 @@ class PipelineModule(Configurable, abstract = True):
     def finalize(self, image: NumpyImage, general: GeneralData) -> None:
         pass
 
-    def reset(self) -> None:
+    def reset(self, general: GeneralData) -> None:
         pass
 
     def sample(self, size: tuple[int, int]) -> NumpyImage:

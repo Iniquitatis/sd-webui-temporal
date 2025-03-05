@@ -8,7 +8,6 @@ import requests
 from PIL import Image
 
 from temporal.backend import Backend
-from temporal.general_data import GeneralData
 from temporal.processing_params import ProcessingParams
 from temporal.thread_queue import ThreadQueue
 from temporal.utils.image import NumpyImage, np_to_pil, pil_to_np, save_image
@@ -176,16 +175,8 @@ class ComfyUIAPIBackend(Backend):
     def set_preview(self, image: Optional[NumpyImage] = None) -> None:
         self._preview_image = image
 
-    def save_image(self, image: NumpyImage, general: GeneralData, output_dir: Path, file_name: Optional[str] = None, archive_mode: bool = False) -> None:
-        if not file_name:
-            return
-
-        self.image_save_queue.enqueue(
-            save_image,
-            np_to_pil(image),
-            (output_dir / file_name).with_suffix(".png"),
-            archive_mode = archive_mode,
-        )
+    def save_image(self, image: NumpyImage, path: Path, archive_mode: bool = False) -> None:
+        self.image_save_queue.enqueue(save_image, np_to_pil(image), path, archive_mode)
 
     def are_images_saved(self) -> bool:
         return not self.image_save_queue.busy

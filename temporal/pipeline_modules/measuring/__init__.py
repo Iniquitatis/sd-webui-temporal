@@ -47,7 +47,7 @@ class MeasuringModule(PipelineModule, abstract = True):
 
         return image
 
-    def reset(self) -> None:
+    def reset(self, general: GeneralData) -> None:
         self.data = None
         self.count = 0
 
