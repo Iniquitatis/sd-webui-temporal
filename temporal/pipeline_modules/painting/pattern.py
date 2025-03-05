@@ -8,7 +8,7 @@ from temporal.utils.image import NumpyImage
 class PatternPaintingModule(PaintingModule):
     name = "Pattern"
 
-    pattern: Pattern = Param("Pattern", factory = Pattern)
+    pattern: Pattern = Param("Pattern", value = Pattern)
 
     def draw(self, size: tuple[int, int], general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         return self.pattern.generate((size[1], size[0], 4))

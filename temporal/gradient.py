@@ -11,10 +11,10 @@ from temporal.vector import FloatVector
 
 class Gradient(Serializable):
     type: Literal["linear", "radial"] = Field("linear")
-    start: FloatVector = Field(factory = lambda: FloatVector(0.0, 0.0))
-    end: FloatVector = Field(factory = lambda: FloatVector(1.0, 1.0))
-    start_color: Color = Field(factory = lambda: Color(1.0, 1.0, 1.0))
-    end_color: Color = Field(factory = lambda: Color(0.0, 0.0, 0.0))
+    start: FloatVector = Field(lambda: FloatVector(0.0, 0.0))
+    end: FloatVector = Field(lambda: FloatVector(1.0, 1.0))
+    start_color: Color = Field(lambda: Color(1.0, 1.0, 1.0))
+    end_color: Color = Field(lambda: Color(0.0, 0.0, 0.0))
 
     def generate(self, shape: tuple[int, ...], show_points: bool = False) -> FloatArray:
         start = self.start.to_numpy()[[1, 0]] * shape[:2]

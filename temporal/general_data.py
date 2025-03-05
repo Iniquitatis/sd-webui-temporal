@@ -14,9 +14,9 @@ class GeneralData(Serializable):
     path: Path = Field(Path("outputs/temporal/untitled"), flags = {"runtime"})
     name: str = Field("untitled")
     description: str = Field("")
-    initial_image: Optional[NumpyImage] = Field(None, variant = "image")
-    initial_noise: Noise = Field(factory = Noise)
-    image_size: IntVector = Field(factory = lambda: IntVector(512, 512))
+    initial_image: Optional[NumpyImage] = Field(None)
+    initial_noise: Noise = Field(Noise)
+    image_size: IntVector = Field(lambda: IntVector(512, 512))
     seed: int = Field(-1)
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

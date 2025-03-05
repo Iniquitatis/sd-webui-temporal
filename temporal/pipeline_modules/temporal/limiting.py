@@ -13,7 +13,7 @@ from temporal.utils.numpy import FloatArray, saturate_array
 class LimitingModule(TemporalModule):
     name = "Limiting"
 
-    mode: str = Param("Mode", choices = [("clamp", "Clamp"), ("compress", "Compress")], value = "clamp", ui_type = "menu")
+    mode: str = Param("Mode", choices = {"clamp": "Clamp", "compress": "Compress"}, value = "clamp", ui_type = "menu")
     max_difference: float = Param("Maximum difference", minimum = 0.001, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
 
     buffer: Optional[FloatArray] = Field(None, flags = {"private"})

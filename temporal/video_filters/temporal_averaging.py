@@ -8,7 +8,7 @@ class TemporalAveragingFilter(VideoFilter):
     name = "Temporal averaging"
 
     radius: int = Param("Radius", minimum = 1, maximum = 60, step = 1, value = 1, ui_type = "slider")
-    algorithm: str = Param("Algorithm", choices = [("mean", "Mean"), ("median", "Median")], value = "mean", ui_type = "menu")
+    algorithm: str = Param("Algorithm", choices = {"mean": "Mean", "median": "Median"}, value = "mean", ui_type = "menu")
     easing: float = Param("Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0, ui_type = "slider")
 
     def generate(self, fps: int) -> Iterator[str]:

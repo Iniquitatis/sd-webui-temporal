@@ -13,7 +13,7 @@ from temporal.utils.numpy import FloatType, stretch_array
 class PalettizationFilter(ImageFilter):
     name = "Palettization"
 
-    palette: Optional[NumpyImage] = Param("Palette", channels = 3, variant = "image", value = None)
+    palette: Optional[NumpyImage] = Param("Palette", channels = 3, value = None)
     stretch: bool = Param("Stretch", value = False)
     dithering: bool = Param("Dithering", value = False)
 

@@ -13,8 +13,8 @@ from temporal.vector import FloatVector
 class DisplacementFilter(ImageFilter):
     name = "Displacement"
 
-    source: ImageSource = Param("Image source", channels = 3, factory = ImageSource)
-    scale: FloatVector = Param("Scale", axes = ["X", "Y"], step = 0.1, factory = lambda: FloatVector(1.0, 1.0), ui_type = "box")
+    source: ImageSource = Param("Image source", channels = 3, value = ImageSource)
+    scale: FloatVector = Param("Scale", axes = ["X", "Y"], step = 0.1, value = lambda: FloatVector(1.0, 1.0), ui_type = "box")
 
     def process(self, npim: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         if (image := self.source.get_image(general.initial_image, frame_index - 1)) is None:

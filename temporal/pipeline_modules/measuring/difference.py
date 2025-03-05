@@ -17,7 +17,7 @@ class DifferenceMeasuringModule(MeasuringModule):
         ("Maximum", "darkblue"),
     ]
 
-    last_image: Optional[NumpyImage] = Field(None, variant = "image", flags = {"private"})
+    last_image: Optional[NumpyImage] = Field(None, flags = {"private"})
 
     def reset(self, general: GeneralData) -> None:
         super().reset(general)

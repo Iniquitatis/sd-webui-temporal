@@ -2,6 +2,7 @@ from math import floor
 
 from temporal.general_data import GeneralData
 from temporal.meta.configurable import ConfigurableParam as Param
+from temporal.meta.serializable import UndefinedValue
 from temporal.pipeline_modules.neural import NeuralModule
 from temporal.shared import shared
 from temporal.utils.collection import get_first_element
@@ -12,7 +13,7 @@ from temporal.utils.logging import warning
 class ResamplingModule(NeuralModule):
     name = "Resampling"
 
-    upscaler: str = Param("Upscaler", choices = shared.backend.list_upscalers(), value = get_first_element(shared.backend.list_upscalers()), ui_type = "menu")
+    upscaler: str = Param("Upscaler", choices = list(shared.backend.list_upscalers()), value = get_first_element(shared.backend.list_upscalers(), UndefinedValue), ui_type = "menu")
     scale: float = Param("Scale", minimum = 0.25, maximum = 4.0, step = 0.25, value = 1.0, ui_type = "slider")
 
     def process(self, npim: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:

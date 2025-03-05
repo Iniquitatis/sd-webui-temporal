@@ -10,7 +10,7 @@ from temporal.utils.image import NumpyImage, match_image
 class ColorCorrectionFilter(ImageFilter):
     name = "Color correction"
 
-    source: ImageSource = Param("Image source", channels = 3, factory = ImageSource)
+    source: ImageSource = Param("Image source", channels = 3, value = ImageSource)
     normalize_contrast: bool = Param("Normalize contrast", value = False)
     equalize_histogram: bool = Param("Equalize histogram", value = False)
 

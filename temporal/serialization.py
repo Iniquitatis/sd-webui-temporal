@@ -2,7 +2,7 @@ from dataclasses import dataclass, field as datafield
 from pathlib import Path
 from typing import Any, Generic, Literal, Optional, Type, TypeVar, get_args
 
-from temporal.utils.typing import get_full_type_name, get_optional_type, is_optional, safe_get_origin
+from temporal.utils.typing import get_optional_type, is_optional, safe_get_origin
 
 
 T = TypeVar("T")
@@ -17,19 +17,16 @@ class SerializationParams:
     flags: set[SerializationDataFlag] = datafield(default_factory = set)
 
 
-def deserialize(type: Type[Any], variant: str, obj: Any, params: SerializationParams) -> Any:
-    # FIXME: Temporary
-    print("DS", type, variant)
-
+def deserialize(type: Type[Any], obj: Any, params: SerializationParams) -> Any:
     if safe_get_origin(type) is list:
         return [
-            deserialize(get_args(type)[0], "", value, params)
+            deserialize(get_args(type)[0], value, params)
             for value in obj
         ]
 
     elif safe_get_origin(type) is dict:
         return {
-            key: deserialize(get_args(type)[1], "", value, params)
+            key: deserialize(get_args(type)[1], value, params)
             for key, value in obj.items()
         }
 
@@ -37,31 +34,28 @@ def deserialize(type: Type[Any], variant: str, obj: Any, params: SerializationPa
         return obj
 
     elif safe_get_origin(type) is Literal:
-        return deserialize(str, variant, obj, params)
+        return deserialize(str, obj, params)
 
     elif is_optional(type):
-        return deserialize(get_optional_type(type) if obj is not None else NoneType, variant if obj is not None else "", obj, params)
+        return deserialize(get_optional_type(type) if obj is not None else NoneType, obj, params)
 
-    elif serializer := _find_serializer(type, variant):
+    elif serializer := _find_serializer(type):
         return serializer.read_json(obj, params)
 
     else:
         raise Exception(f"Couldn't find a serializer for '{type}'")
 
 
-def serialize(type: Type[Any], variant: str, obj: Any, params: SerializationParams) -> Any:
-    # FIXME: Temporary
-    print("SR", type, variant)
-
+def serialize(type: Type[Any], obj: Any, params: SerializationParams) -> Any:
     if safe_get_origin(type) is list:
         return [
-            serialize(get_args(type)[0], "", value, params)
+            serialize(get_args(type)[0], value, params)
             for value in obj
         ]
 
     elif safe_get_origin(type) is dict:
         return {
-            key: serialize(get_args(type)[1], "", value, params)
+            key: serialize(get_args(type)[1], value, params)
             for key, value in obj.items()
         }
 
@@ -69,12 +63,12 @@ def serialize(type: Type[Any], variant: str, obj: Any, params: SerializationPara
         return obj
 
     elif safe_get_origin(type) is Literal:
-        return serialize(str, variant, obj, params)
+        return serialize(str, obj, params)
 
     elif is_optional(type):
-        return serialize(get_optional_type(type) if obj is not None else NoneType, variant if obj is not None else "", obj, params)
+        return serialize(get_optional_type(type) if obj is not None else NoneType, obj, params)
 
-    elif serializer := _find_serializer(type, variant):
+    elif serializer := _find_serializer(type):
         return serializer.write_json(obj, params)
 
     else:
@@ -82,20 +76,17 @@ def serialize(type: Type[Any], variant: str, obj: Any, params: SerializationPara
 
 
 class Serializer(Generic[T]):
-    def __init_subclass__(cls, variant: str = "") -> None:
+    def __init_subclass__(cls) -> None:
         serialized_type = cls.get_type()
-        full_name = get_full_type_name(serialized_type)
 
-        _type_aliases[serialized_type] = full_name
+        if serialized_type in _serializers:
+            raise Exception(f"{serialized_type} is already registered")
 
-        if (full_name, variant) in _serializers:
-            raise Exception(f"{full_name} is already registered")
-
-        _serializers[(full_name, variant)] = cls
+        _serializers[serialized_type] = cls
 
     @classmethod
     def get_type(cls) -> Type[T]:
-        return safe_get_origin(get_args(getattr(cls, "__orig_bases__")[0])[0])
+        return get_args(getattr(cls, "__orig_bases__")[0])[0]
 
     @classmethod
     def read_json(cls, obj: Any, params: SerializationParams) -> T:
@@ -106,13 +97,16 @@ class Serializer(Generic[T]):
         raise NotImplementedError
 
 
-def _find_type_alias(type: Type[Any]) -> Optional[str]:
+def _find_serializer(type: Type[Any]) -> Optional[Type[Serializer[Any]]]:
+    if (best_type := _serializers.get(type, None)) is not None:
+        return best_type
+
     best_index = int(1e9)
-    best_alias = None
+    best_type = None
 
     mro = type.mro()
 
-    for key, alias in _type_aliases.items():
+    for key, alias in _serializers.items():
         try:
             mro_index = mro.index(key)
         except ValueError:
@@ -120,18 +114,12 @@ def _find_type_alias(type: Type[Any]) -> Optional[str]:
 
         if mro_index < best_index:
             best_index = mro_index
-            best_alias = alias
+            best_type = alias
 
-    return best_alias
-
-
-def _find_serializer(type: Type[Any], variant: str = "") -> Optional[Type[Serializer[Any]]]:
-    if alias := _find_type_alias(type):
-        return _serializers[(alias, variant)]
+    return best_type
 
 
-_type_aliases: dict[Type[Any], str] = {}
-_serializers: dict[tuple[str, str], Type[Serializer[Any]]] = {}
+_serializers: dict[Type[Any], Type[Serializer[Any]]] = {}
 
 
 #===============================================================================
@@ -140,7 +128,7 @@ _serializers: dict[tuple[str, str], Type[Serializer[Any]]] = {}
 from types import NoneType
 
 from temporal.utils.bytes import base64_to_bytes, bytes_to_base64
-from temporal.utils.image import PILImage, base64_to_image, image_to_base64, load_image, np_to_pil, pil_to_np, save_image
+from temporal.utils.image import NumpyImage, PILImage, base64_to_image, image_to_base64, load_image, np_to_pil, pil_to_np, save_image
 from temporal.utils.numpy import FloatArray, array_to_base64, base64_to_array, load_array, save_array
 
 
@@ -258,7 +246,7 @@ class _(Serializer[FloatArray]):
             return array_to_base64(obj)
 
 
-class _(Serializer[FloatArray], variant = "image"):
+class _(Serializer[NumpyImage]):
     @classmethod
     def read_json(cls, obj, params):
         if params.data_dir is not None:

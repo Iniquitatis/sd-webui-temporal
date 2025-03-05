@@ -18,7 +18,7 @@ class VideoRenderer(Serializable):
     last_frame: int = Field(0)
     frame_stride: int = Field(1)
     looping: bool = Field(False)
-    filters: list[VideoFilter] = Field(factory = list)
+    filters: list[VideoFilter] = Field(list)
     archive_mode: bool = Field(False)
 
     def render(self, path: Path, frame_paths: Sequence[Path], enqueue: bool = True) -> None:

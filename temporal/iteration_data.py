@@ -5,6 +5,6 @@ from temporal.utils.image import NumpyImage
 
 
 class IterationData(Serializable):
-    image: Optional[NumpyImage] = Field(None, variant = "image")
+    image: Optional[NumpyImage] = Field(None)
     index: int = Field(1)
     step: int = Field(0)

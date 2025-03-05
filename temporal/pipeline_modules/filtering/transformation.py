@@ -11,7 +11,7 @@ from temporal.vector import FloatVector
 class TransformationFilter(ImageFilter):
     name = "Transformation"
 
-    translation: FloatVector = Param("Translation", axes = ["X", "Y"], minimum = -1.0, maximum = 1.0, step = 0.001, factory = lambda: FloatVector(0.0, 0.0), ui_type = "slider")
+    translation: FloatVector = Param("Translation", axes = ["X", "Y"], minimum = -1.0, maximum = 1.0, step = 0.001, value = lambda: FloatVector(0.0, 0.0), ui_type = "slider")
     rotation: float = Param("Rotation", minimum = -90.0, maximum = 90.0, step = 0.1, value = 0.0, ui_type = "slider")
     scaling: float = Param("Scaling", minimum = 0.0, maximum = 2.0, step = 0.001, value = 1.0, ui_type = "slider")
 

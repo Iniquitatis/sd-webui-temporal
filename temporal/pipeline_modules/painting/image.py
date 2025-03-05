@@ -11,7 +11,7 @@ from temporal.utils.image import NumpyImage, ensure_image_dims
 class ImagePaintingModule(PaintingModule):
     name = "Image"
 
-    source: ImageSource = Param("Image source", channels = 4, factory = ImageSource)
+    source: ImageSource = Param("Image source", channels = 4, value = ImageSource)
     blurring: float = Param("Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, ui_type = "slider")
 
     def draw(self, size: tuple[int, int], general: GeneralData, frame_index: int, seed: int) -> NumpyImage:

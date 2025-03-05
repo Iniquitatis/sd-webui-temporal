@@ -9,9 +9,9 @@ from temporal.video_filter import VideoFilter, make_filter as mf
 class ScalingFilter(VideoFilter):
     name = "Scaling"
 
-    size: IntVector = Param("Size", axes = ["Width", "Height"], minimum = 16, maximum = 2560, step = 8, factory = lambda: IntVector(512, 512), ui_type = "slider")
+    size: IntVector = Param("Size", axes = ["Width", "Height"], minimum = 16, maximum = 2560, step = 8, value = lambda: IntVector(512, 512), ui_type = "slider")
     padded: bool = Param("Padded", value = False)
-    background_color: Color = Param("Background color", channels = 3, factory = lambda: Color(0.0, 0.0, 0.0))
+    background_color: Color = Param("Background color", channels = 3, value = lambda: Color(0.0, 0.0, 0.0))
     backdrop: bool = Param("Backdrop", value = False)
     backdrop_brightness: float = Param("Backdrop brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 0.5, ui_type = "slider")
     backdrop_blurring: float = Param("Backdrop blurring", minimum = 0.0, maximum = 50.0, step = 1.0, value = 0.0, ui_type = "slider")

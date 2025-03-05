@@ -8,7 +8,7 @@ from temporal.utils.image import NumpyImage
 class NoisePaintingModule(PaintingModule):
     name = "Noise"
 
-    noise: Noise = Param("Noise", factory = Noise)
+    noise: Noise = Param("Noise", value = Noise)
 
     def draw(self, size: tuple[int, int], general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         return self.noise.generate((size[1], size[0], 3), seed)

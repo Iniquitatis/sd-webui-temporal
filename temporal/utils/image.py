@@ -1,7 +1,7 @@
 from io import BytesIO
 from pathlib import Path
 from pybase64 import b64decode, b64encode
-from typing import Callable, Literal, Optional
+from typing import Annotated, Callable, Literal, Optional
 
 import numpy as np
 import skimage
@@ -12,7 +12,7 @@ from temporal.utils.numpy import FloatArray, saturate_array
 
 
 PILImage = Image.Image
-NumpyImage = FloatArray
+NumpyImage = Annotated[FloatArray, "image"]
 
 
 def alpha_blend(a: NumpyImage, b: NumpyImage) -> NumpyImage:

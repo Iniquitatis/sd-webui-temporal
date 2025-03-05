@@ -15,7 +15,7 @@ class VideoRenderingModule(ToolModule):
     file_name: str = Param("File name", value = "video", ui_type = "box")
     image_name_prefix: str = Param("Image name prefix", value = "", ui_type = "box")
     render_every_nth_frame: int = Param("Render every N-th frame", minimum = 1, step = 1, value = 100, ui_type = "box")
-    renderer: VideoRenderer = Param("Rendering parameters", factory = VideoRenderer)
+    renderer: VideoRenderer = Param("Rendering parameters", value = VideoRenderer)
 
     def process(self, npim: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> None:
         if frame_index % self.render_every_nth_frame == 0:

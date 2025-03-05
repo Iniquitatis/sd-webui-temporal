@@ -1,7 +1,8 @@
+from inspect import isclass, isfunction
 from itertools import chain
 from json import dumps, loads
 from pathlib import Path
-from typing import Any, Callable, Generic, Optional, Type, TypeVar, cast, get_type_hints
+from typing import Any, Callable, Generic, Type, TypeVar, cast, get_type_hints
 
 from temporal.serialization import SerializationDataFlag, SerializationParams, Serializer, deserialize, serialize
 from temporal.utils import logging
@@ -13,18 +14,30 @@ T = TypeVar("T")
 U = TypeVar("U", bound = "Serializable")
 
 
+class UndefinedValue:
+    pass
+
+
 class SerializableField(Generic[T]):
-    def __new__(cls, value: Optional[T] = None, *, factory: Optional[Callable[[], T]] = None, variant: str = "", flags: set[SerializationDataFlag] = set()) -> T:
+    def __new__(
+        cls,
+        value: T | Callable[[], T] | Type[UndefinedValue] = UndefinedValue,
+        *,
+        flags: set[SerializationDataFlag] = set(),
+    ) -> T:
         instance = object.__new__(cls)
-        instance.__init__(value, factory = factory, flags = flags, variant = variant)
+        instance.__init__(value, flags = flags)
         return cast(T, instance)
 
-    def __init__(self, value: Optional[T] = None, *, factory: Optional[Callable[[], T]] = None, variant: str = "", flags: set[SerializationDataFlag] = set()) -> None:
+    def __init__(
+        self,
+        value: T | Callable[[], T] | Type[UndefinedValue] = UndefinedValue,
+        *,
+        flags: set[SerializationDataFlag] = set(),
+    ) -> None:
         self.key = ""
         self.type: Type[Any]
         self.value = value
-        self.factory = factory
-        self.variant = variant
         self.flags = flags
 
     def __set_name__(self, owner: Any, name: str) -> None:
@@ -33,7 +46,16 @@ class SerializableField(Generic[T]):
 
     @property
     def default(self) -> T:
-        return cast(T, self.factory() if self.factory is not None else self.value)
+        value = self.value
+
+        if value is UndefinedValue:
+            raise ValueError("No default value is provided")
+        elif isfunction(value):
+            return value()
+        elif isclass(value):
+            return cast(T, value())
+        else:
+            return cast(T, value)
 
 
 class Serializable:
@@ -75,7 +97,7 @@ class Serializable:
                 setattr(self, key, field.default)
 
     def __repr__(self) -> str:
-        args = ", ".join(f"{key} = {getattr(self, key)}" for key in self.__fields__.keys())
+        args = ", ".join(f"{key} = {repr(getattr(self, key))}" for key in self.__fields__.keys())
         return f"{self.__class__.__name__}({args})"
 
     @classmethod
@@ -84,14 +106,14 @@ class Serializable:
             cls = cast(Type[U], _serializables[data["__type__"]])
 
         return cls(**{
-            key: deserialize(field.type, field.variant, data[key], params)
+            key: deserialize(field.type, data[key], params)
             for key, field in cls.__fields__.items()
             if key in data and field.flags.issubset(params.flags)
         })
 
     def to_json(self, params: SerializationParams = SerializationParams()) -> dict[str, Any]:
         return {"__type__": self.__type_name__} | {
-            key: serialize(field.type, field.variant, self.__dict__[key], params)
+            key: serialize(field.type, getattr(self, key), params)
             for key, field in self.__fields__.items()
             if field.flags.issubset(params.flags)
         }

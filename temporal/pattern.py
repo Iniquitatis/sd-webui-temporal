@@ -10,8 +10,8 @@ from temporal.utils.numpy import FloatArray
 class Pattern(Serializable):
     type: Literal["horizontal_lines", "vertical_lines", "diagonal_lines_nw", "diagonal_lines_ne", "checkerboard"] = Field("horizontal_lines")
     size: int = Field(8)
-    color_a: Color = Field(factory = lambda: Color(1.0, 1.0, 1.0))
-    color_b: Color = Field(factory = lambda: Color(0.0, 0.0, 0.0))
+    color_a: Color = Field(lambda: Color(1.0, 1.0, 1.0))
+    color_b: Color = Field(lambda: Color(0.0, 0.0, 0.0))
 
     def generate(self, shape: tuple[int, ...]) -> FloatArray:
         y, x = np.indices(shape[:2])

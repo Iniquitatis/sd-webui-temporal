@@ -15,7 +15,7 @@ from temporal.utils.prompt import evaluate_prompt
 class ProcessingModule(NeuralModule):
     name = "Processing"
 
-    parameters: ProcessingParams = Param("Processing parameters", factory = ProcessingParams)
+    parameters: ProcessingParams = Param("Processing parameters", value = ProcessingParams)
     scale: float = Param("Scale", minimum = 0.25, maximum = 4.0, step = 0.25, value = 1.0, ui_type = "slider")
 
     def process(self, npim: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:

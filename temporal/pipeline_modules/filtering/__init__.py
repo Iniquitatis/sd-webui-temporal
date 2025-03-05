@@ -15,8 +15,8 @@ class ImageFilter(PipelineModule, abstract = True):
     is_sampleable = True
 
     amount: float = Field(1.0)
-    blend_mode: BlendMode = Field(factory = NormalBlendMode)
-    mask: ImageMask = Field(factory = ImageMask)
+    blend_mode: BlendMode = Field(NormalBlendMode)
+    mask: ImageMask = Field(ImageMask)
 
     def forward(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> Optional[NumpyImage]:
         return self._blend(image, self.process(image, general, frame_index, seed))

@@ -18,11 +18,11 @@ class OutputCategory(OptionCategory):
 class UICategory(OptionCategory):
     name = "UI"
 
-    preset_sorting_order: str = Param("Preset sorting order", choices = [("alphabetical", "Alphabetical"), ("date", "Date")], value = "alphabetical", ui_type = "radio")
-    project_sorting_order: str = Param("Project sorting order", choices = [("alphabetical", "Alphabetical"), ("date", "Date")], value = "alphabetical", ui_type = "radio")
+    preset_sorting_order: str = Param("Preset sorting order", choices = {"alphabetical": "Alphabetical", "date": "Date"}, value = "alphabetical", ui_type = "radio")
+    project_sorting_order: str = Param("Project sorting order", choices = {"alphabetical": "Alphabetical", "date": "Date"}, value = "alphabetical", ui_type = "radio")
     gallery_size: int = Param("Gallery size", minimum = 1, maximum = 1000, step = 1, value = 10, ui_type = "box")
 
 
 class Settings(Serializable):
-    output: OutputCategory = Field(factory = OutputCategory)
-    ui: UICategory = Field(factory = UICategory)
+    output: OutputCategory = Field(OutputCategory)
+    ui: UICategory = Field(UICategory)

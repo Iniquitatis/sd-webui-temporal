@@ -14,8 +14,8 @@ T = TypeVar("T", bound = PipelineModule)
 
 
 class Pipeline(Serializable):
-    modules: list[PipelineModule] = Field(factory = list)
-    animation: Animation = Field(factory = Animation)
+    modules: list[PipelineModule] = Field(list)
+    animation: Animation = Field(Animation)
 
     def find_module(self, uuid: str, type: Type[T] = PipelineModule) -> Optional[T]:
         if ((result := find_by_predicate(self.modules, lambda x: x.uuid == uuid)) is not None and

@@ -8,7 +8,7 @@ from temporal.utils.image import NumpyImage
 class GradientPaintingModule(PaintingModule):
     name = "Gradient"
 
-    gradient: Gradient = Param("Gradient", factory = Gradient)
+    gradient: Gradient = Param("Gradient", value = Gradient)
 
     def draw(self, size: tuple[int, int], general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         return self.gradient.generate((size[1], size[0], 4))

@@ -9,9 +9,9 @@ from temporal.pipeline import Pipeline
 
 class Project(Serializable):
     version: int = Field(get_latest_version(), flags = {"private"})
-    general: GeneralData = Field(factory = GeneralData)
-    pipeline: Pipeline = Field(factory = Pipeline)
-    iteration: IterationData = Field(factory = IterationData, flags = {"private"})
+    general: GeneralData = Field(GeneralData)
+    pipeline: Pipeline = Field(Pipeline)
+    iteration: IterationData = Field(IterationData, flags = {"private"})
 
     @classmethod
     def load(cls, dir: Path) -> "Project":

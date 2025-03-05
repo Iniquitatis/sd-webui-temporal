@@ -14,7 +14,7 @@ class Keyframe(Serializable):
 class Track(Serializable):
     interpolation: Literal["linear", "smoothstep", "smootherstep", "step", "step_start", "step_end"] = Field("linear")
     bounds: Literal["clamp", "repeat", "mirror"] = Field("clamp")
-    keyframes: list[Keyframe] = Field(factory = list)
+    keyframes: list[Keyframe] = Field(list)
 
     @property
     def first_frame(self) -> int:
@@ -72,7 +72,7 @@ class Track(Serializable):
 
 
 class Animation(Serializable):
-    tracks: dict[str, Track] = Field(factory = dict)
+    tracks: dict[str, Track] = Field(dict)
 
     @classmethod
     def from_json(cls, data: dict[str, Any], params: SerializationParams = SerializationParams()) -> "Animation":

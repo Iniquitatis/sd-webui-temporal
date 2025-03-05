@@ -9,12 +9,12 @@ from temporal.utils.image import NumpyImage, apply_channelwise
 class MorphologyFilter(ImageFilter):
     name = "Morphology"
 
-    mode: str = Param("Mode", choices = [
-        ("erosion", "Erosion"),
-        ("dilation", "Dilation"),
-        ("opening", "Opening"),
-        ("closing", "Closing"),
-    ], value = "erosion", ui_type = "menu")
+    mode: str = Param("Mode", choices = {
+        "erosion": "Erosion",
+        "dilation": "Dilation",
+        "opening": "Opening",
+        "closing": "Closing",
+    }, value = "erosion", ui_type = "menu")
     radius: int = Param("Radius", minimum = 0, maximum = 50, step = 1, value = 0, ui_type = "slider")
 
     def process(self, npim: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
