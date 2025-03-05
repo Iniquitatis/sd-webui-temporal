@@ -144,7 +144,9 @@ export class PipelineModuleEditor extends ReorderableAccordion {
             });
         });
 
-        this._updateSample();
+        if (definition.is_sampleable) {
+            this._updateSample();
+        }
     }
 
     get value() {

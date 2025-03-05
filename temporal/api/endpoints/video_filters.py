@@ -1,7 +1,7 @@
 from typing import Any
 
 from temporal.api.endpoint import Endpoint
-from temporal.video_filters import VIDEO_FILTERS
+from temporal.video_filter import VIDEO_FILTERS
 
 
 class _(Endpoint):

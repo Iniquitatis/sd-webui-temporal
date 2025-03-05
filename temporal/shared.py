@@ -26,6 +26,7 @@ class SharedData:
         self.sample_image = pil_to_np(load_image("data/sample_image.png"))
 
         import_modules(list_modules_in_directory("temporal/pipeline_modules", True, 4))
+        import_modules(list_modules_in_directory("temporal/video_filters"))
 
 
 shared = SharedData()

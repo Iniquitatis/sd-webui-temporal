@@ -6,7 +6,7 @@ from subprocess import run
 from temporal.meta.serializable import Serializable, SerializableField as Field
 from temporal.thread_queue import ThreadQueue
 from temporal.utils.fs import save_text
-from temporal.video_filters import VideoFilter
+from temporal.video_filter import VideoFilter
 
 
 video_render_queue = ThreadQueue()
