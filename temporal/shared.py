@@ -1,11 +1,11 @@
 from collections import defaultdict
-from importlib import import_module
 from pathlib import Path
 
 from temporal.backend import Backend
 from temporal.fs_store import FSStore
 from temporal.settings import Settings
 from temporal.utils.image import load_image, pil_to_np
+from temporal.utils.modules import import_modules, list_modules_in_directory
 
 
 class SharedData:
@@ -25,9 +25,7 @@ class SharedData:
         self.previewed_modules: defaultdict[str, bool] = defaultdict(lambda: True)
         self.sample_image = pil_to_np(load_image("data/sample_image.png"))
 
-        for path in Path("temporal/pipeline_modules").rglob("*.py"):
-            if path.name != "__init__":
-                import_module(f"temporal.pipeline_modules.{path.parent.stem}.{path.stem}")
+        import_modules(list_modules_in_directory("temporal/pipeline_modules", True, 4))
 
 
 shared = SharedData()
