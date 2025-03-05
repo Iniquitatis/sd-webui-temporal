@@ -13,11 +13,11 @@ class ImageMask(Serializable):
     inverted: bool = Field(False)
     blurring: float = Field(0.0)
 
-    def mask(self, npim: NumpyImage, processed: NumpyImage) -> NumpyImage:
-        if self.image is None or npim is processed:
-            return processed
+    def mask(self, image: NumpyImage, other: NumpyImage) -> NumpyImage:
+        if self.image is None or image is other:
+            return other
 
-        factor = match_image(self.image, npim, channels = False)
+        factor = match_image(self.image, image, channels = False)
 
         if self.normalized:
             factor = normalize(factor, factor.min(), factor.max())
@@ -28,4 +28,4 @@ class ImageMask(Serializable):
         if self.blurring > 0.0:
             factor = skimage.filters.gaussian(factor, round(self.blurring), channel_axis = -1)
 
-        return lerp(npim, processed, factor)
+        return lerp(image, other, factor)

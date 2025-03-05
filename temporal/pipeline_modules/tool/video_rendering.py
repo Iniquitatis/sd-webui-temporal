@@ -17,7 +17,7 @@ class VideoRenderingModule(ToolModule):
     render_every_nth_frame: int = Param("Render every N-th frame", minimum = 1, step = 1, value = 100, ui_type = "box")
     renderer: VideoRenderer = Param("Rendering parameters", value = VideoRenderer)
 
-    def process(self, npim: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> None:
+    def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> None:
         if frame_index % self.render_every_nth_frame == 0:
             self.render(general, True)
 

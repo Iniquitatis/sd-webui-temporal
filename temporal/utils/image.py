@@ -22,12 +22,12 @@ def alpha_blend(a: NumpyImage, b: NumpyImage) -> NumpyImage:
     return lerp(a[..., :3], b[..., :3], b[..., [3]])
 
 
-def apply_channelwise(npim: NumpyImage, func: Callable[[NumpyImage], NumpyImage]) -> NumpyImage:
-    return np.stack([func(npim[..., i]) for i in range(npim.shape[-1])], axis = -1)
+def apply_channelwise(image: NumpyImage, func: Callable[[NumpyImage], NumpyImage]) -> NumpyImage:
+    return np.stack([func(image[..., i]) for i in range(image.shape[-1])], axis = -1)
 
 
-def apply_color_matrix(npim: NumpyImage, matrix: FloatArray, clip: bool = True) -> NumpyImage:
-    result = npim.copy()
+def apply_color_matrix(image: NumpyImage, matrix: FloatArray, clip: bool = True) -> NumpyImage:
+    result = image.copy()
     result[..., :3] @= matrix.T
 
     if clip:
@@ -45,22 +45,22 @@ def base64_to_image(data: str) -> NumpyImage:
     return pil_to_np(Image.open(BytesIO(b64decode(data, validate = True))))
 
 
-def ensure_image_dims(npim: NumpyImage, size: Optional[tuple[int, int]] = None, channels: Optional[int] = None) -> NumpyImage:
-    npim_height, npim_width, npim_channels = npim.shape
+def ensure_image_dims(image: NumpyImage, size: Optional[tuple[int, int]] = None, channels: Optional[int] = None) -> NumpyImage:
+    image_height, image_width, image_channels = image.shape
 
-    target_width = size[0] if size is not None else npim_width
-    target_height = size[1] if size is not None else npim_height
-    target_channels = channels if channels is not None else npim_channels
+    target_width = size[0] if size is not None else image_width
+    target_height = size[1] if size is not None else image_height
+    target_channels = channels if channels is not None else image_channels
 
-    if npim_width == target_width and npim_height == target_height and npim_channels == target_channels:
-        return npim
+    if image_width == target_width and image_height == target_height and image_channels == target_channels:
+        return image
 
-    im = np_to_pil(npim)
+    im = np_to_pil(image)
 
-    if npim_channels != target_channels:
+    if image_channels != target_channels:
         im = im.convert("RGBA" if target_channels == 4 else "RGB")
 
-    if npim_width != target_width or npim_height != target_height:
+    if image_width != target_width or image_height != target_height:
         im = im.resize((target_width, target_height), Image.Resampling.LANCZOS)
 
     return pil_to_np(im)
@@ -88,16 +88,16 @@ def load_image(path: str | Path) -> PILImage:
     return im
 
 
-def match_image(npim: NumpyImage, reference: NumpyImage, size: bool = True, channels: bool = True) -> NumpyImage:
+def match_image(image: NumpyImage, reference: NumpyImage, size: bool = True, channels: bool = True) -> NumpyImage:
     return ensure_image_dims(
-        npim,
+        image,
         (reference.shape[1], reference.shape[0]) if size else None,
         reference.shape[2] if channels else None,
     )
 
 
-def np_to_pil(npim: NumpyImage) -> PILImage:
-    return Image.fromarray(skimage.util.img_as_ubyte(npim))
+def np_to_pil(image: NumpyImage) -> PILImage:
+    return Image.fromarray(skimage.util.img_as_ubyte(image))
 
 
 def pil_to_np(im: PILImage) -> NumpyImage:
@@ -120,6 +120,6 @@ def save_image(im: PILImage, path: Path, archive_mode: bool = False) -> None:
     tmp_path.rename(path)
 
 
-def split_hsv(npim: NumpyImage) -> tuple[NumpyImage, NumpyImage, NumpyImage]:
-    hsv = skimage.color.rgb2hsv(npim, channel_axis = -1)
+def split_hsv(image: NumpyImage) -> tuple[NumpyImage, NumpyImage, NumpyImage]:
+    hsv = skimage.color.rgb2hsv(image, channel_axis = -1)
     return hsv[..., 0], hsv[..., 1], hsv[..., 2]

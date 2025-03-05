@@ -14,14 +14,14 @@ class ColorCorrectionFilter(ImageFilter):
     normalize_contrast: bool = Param("Normalize contrast", value = False)
     equalize_histogram: bool = Param("Equalize histogram", value = False)
 
-    def process(self, npim: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
-        if (image := self.source.get_image(general.initial_image, frame_index - 1)) is not None:
-            npim = skimage.exposure.match_histograms(npim, match_image(image, npim, size = False), channel_axis = -1)
+    def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+        if (source := self.source.get_image(general.initial_image, frame_index - 1)) is not None:
+            image = skimage.exposure.match_histograms(image, match_image(source, image, size = False), channel_axis = -1)
 
         if self.normalize_contrast:
-            npim = skimage.exposure.rescale_intensity(npim)
+            image = skimage.exposure.rescale_intensity(image)
 
         if self.equalize_histogram:
-            npim = skimage.exposure.equalize_hist(npim)
+            image = skimage.exposure.equalize_hist(image)
 
-        return npim
+        return image

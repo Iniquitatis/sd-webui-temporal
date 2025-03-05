@@ -11,5 +11,5 @@ class NoiseSigmaMeasuringModule(MeasuringModule):
         ("Noise sigma", "royalblue"),
     ]
 
-    def measure(self, npim: NumpyImage) -> list[float]:
-        return [float(skimage.restoration.estimate_sigma(npim, average_sigmas = True, channel_axis = -1))]
+    def measure(self, image: NumpyImage) -> list[float]:
+        return [float(skimage.restoration.estimate_sigma(image, average_sigmas = True, channel_axis = -1))]

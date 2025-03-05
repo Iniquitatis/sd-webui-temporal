@@ -12,5 +12,5 @@ class ToolModule(PipelineModule, abstract = True):
         return image
 
     @abstractmethod
-    def process(self, npim: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> None:
+    def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> None:
         raise NotImplementedError

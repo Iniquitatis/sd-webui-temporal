@@ -23,11 +23,11 @@ class DifferenceMeasuringModule(MeasuringModule):
         super().reset(general)
         self.last_image = None
 
-    def measure(self, npim: NumpyImage) -> list[float]:
+    def measure(self, image: NumpyImage) -> list[float]:
         if self.last_image is None:
-            self.last_image = npim.copy()
+            self.last_image = image.copy()
 
-        diff = np.abs(npim - self.last_image)
-        self.last_image = npim.copy()
+        diff = np.abs(image - self.last_image)
+        self.last_image = image.copy()
 
         return [diff.min(), diff.mean(), diff.max()]

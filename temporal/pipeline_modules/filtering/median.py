@@ -13,7 +13,7 @@ class MedianFilter(ImageFilter):
     radius: int = Param("Radius", minimum = 0, maximum = 50, step = 1, value = 0, ui_type = "slider")
     percentile: float = Param("Percentile", minimum = 0.0, maximum = 100.0, step = 0.1, value = 50.0, ui_type = "slider")
 
-    def process(self, npim: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+    def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         footprint = skimage.morphology.disk(self.radius)
 
         if self.percentile == 50.0:
@@ -21,4 +21,4 @@ class MedianFilter(ImageFilter):
         else:
             filter = lambda x: scipy.ndimage.percentile_filter(x, self.percentile, footprint = footprint, mode = "nearest")
 
-        return apply_channelwise(npim, filter)
+        return apply_channelwise(image, filter)

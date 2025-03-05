@@ -16,13 +16,13 @@ class SavingModule(ToolModule):
     save_every_nth_frame: int = Param("Save every N-th frame", minimum = 1, step = 1, value = 1, ui_type = "box")
     archive_mode: bool = Param("Archive mode", value = False)
 
-    def process(self, npim: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> None:
+    def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> None:
         if frame_index % self.save_every_nth_frame == 0:
             shared.backend.save_image(
-                ensure_image_dims(npim, size = (
+                ensure_image_dims(image, size = (
                     int(quantize(general.image_size.x * self.scale, 8)),
                     int(quantize(general.image_size.y * self.scale, 8)),
-                )) if self.scale != 1.0 else npim,
+                )) if self.scale != 1.0 else image,
                 ensure_directory_exists(general.path) / f"{self.file_name_prefix}{frame_index:05d}.png",
                 self.archive_mode,
             )

@@ -22,14 +22,14 @@ class ImageFilter(PipelineModule, abstract = True):
         return self._blend(image, self.process(image, general, frame_index, seed))
 
     @abstractmethod
-    def process(self, npim: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+    def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         raise NotImplementedError
 
-    def _blend(self, npim: NumpyImage, processed: NumpyImage) -> NumpyImage:
+    def _blend(self, image: NumpyImage, processed: NumpyImage) -> NumpyImage:
         if self.amount == 0.0:
-            return npim
+            return image
 
-        processed = self.blend_mode.blend(npim, processed)
-        processed = self.mask.mask(npim, processed)
+        processed = self.blend_mode.blend(image, processed)
+        processed = self.mask.mask(image, processed)
 
-        return saturate_array(lerp(npim, processed, self.amount))
+        return saturate_array(lerp(image, processed, self.amount))

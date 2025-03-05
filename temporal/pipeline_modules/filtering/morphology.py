@@ -17,7 +17,7 @@ class MorphologyFilter(ImageFilter):
     }, value = "erosion", ui_type = "menu")
     radius: int = Param("Radius", minimum = 0, maximum = 50, step = 1, value = 0, ui_type = "slider")
 
-    def process(self, npim: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+    def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         func = (
             skimage.morphology.erosion  if self.mode == "erosion"  else
             skimage.morphology.dilation if self.mode == "dilation" else
@@ -26,4 +26,4 @@ class MorphologyFilter(ImageFilter):
             lambda image, footprint: image
         )
         footprint = skimage.morphology.disk(self.radius)
-        return apply_channelwise(npim, lambda x: func(x, footprint))
+        return apply_channelwise(image, lambda x: func(x, footprint))

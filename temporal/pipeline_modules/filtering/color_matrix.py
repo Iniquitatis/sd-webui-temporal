@@ -15,7 +15,7 @@ class ColorMatrixFilter(ImageFilter):
     b: Color = Param("B", channels = 3, value = lambda: Color(0.0, 0.0, 1.0))
     normalized: bool = Param("Normalized", value = False)
 
-    def process(self, npim: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+    def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         matrix = np.array([
             self.r.to_numpy(3),
             self.g.to_numpy(3),
@@ -26,4 +26,4 @@ class ColorMatrixFilter(ImageFilter):
             lengths = matrix.sum(axis = 1)[..., np.newaxis]
             matrix /= np.where(lengths > 0.0, lengths, 1.0)
 
-        return apply_color_matrix(npim, matrix)
+        return apply_color_matrix(image, matrix)

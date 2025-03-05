@@ -12,14 +12,14 @@ class SymmetryFilter(ImageFilter):
     horizontal: bool = Param("Horizontal", value = False)
     vertical: bool = Param("Vertical", value = False)
 
-    def process(self, npim: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
-        height, width = npim.shape[:2]
-        npim = npim.copy()
+    def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+        height, width = image.shape[:2]
+        image = image.copy()
 
         if self.horizontal:
-            npim[:, width // 2:] = np.flip(npim[:, :width // 2], axis = 1)
+            image[:, width // 2:] = np.flip(image[:, :width // 2], axis = 1)
 
         if self.vertical:
-            npim[height // 2:, :] = np.flip(npim[:height // 2, :], axis = 0)
+            image[height // 2:, :] = np.flip(image[:height // 2, :], axis = 0)
 
-        return npim
+        return image

@@ -52,7 +52,7 @@ class MeasuringModule(PipelineModule, abstract = True):
         self.count = 0
 
     @abstractmethod
-    def measure(self, npim: NumpyImage) -> list[float]:
+    def measure(self, image: NumpyImage) -> list[float]:
         raise NotImplementedError
 
     def plot(self) -> PILImage:

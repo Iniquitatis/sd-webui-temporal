@@ -15,12 +15,12 @@ class TransformationFilter(ImageFilter):
     rotation: float = Param("Rotation", minimum = -90.0, maximum = 90.0, step = 0.1, value = 0.0, ui_type = "slider")
     scaling: float = Param("Scaling", minimum = 0.0, maximum = 2.0, step = 0.001, value = 1.0, ui_type = "slider")
 
-    def process(self, npim: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
-        height, width = npim.shape[:2]
+    def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+        height, width = image.shape[:2]
 
         o_transform = skimage.transform.AffineTransform(translation = (-width / 2, -height / 2))
         t_transform = skimage.transform.AffineTransform(translation = (-self.translation.x * width, -self.translation.y * height))
         r_transform = skimage.transform.AffineTransform(rotation = np.deg2rad(self.rotation))
         s_transform = skimage.transform.AffineTransform(scale = self.scaling)
 
-        return skimage.transform.warp(npim, skimage.transform.AffineTransform(t_transform.params @ np.linalg.inv(o_transform.params) @ s_transform.params @ r_transform.params @ o_transform.params).inverse, mode = "symmetric")
+        return skimage.transform.warp(image, skimage.transform.AffineTransform(t_transform.params @ np.linalg.inv(o_transform.params) @ s_transform.params @ r_transform.params @ o_transform.params).inverse, mode = "symmetric")

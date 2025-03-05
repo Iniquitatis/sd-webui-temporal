@@ -17,9 +17,9 @@ class PalettizationFilter(ImageFilter):
     stretch: bool = Param("Stretch", value = False)
     dithering: bool = Param("Dithering", value = False)
 
-    def process(self, npim: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+    def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         if self.palette is None:
-            return npim
+            return image
 
         palette_arr = np.array(self.palette, dtype = FloatType).reshape((self.palette.shape[1] * self.palette.shape[0], 3))
 
@@ -29,7 +29,7 @@ class PalettizationFilter(ImageFilter):
         palette = Image.new("P", (1, 1))
         palette.putpalette(list(palette_arr.ravel().astype(np.ubyte)), "RGB")
 
-        return pil_to_np(np_to_pil(npim).quantize(
+        return pil_to_np(np_to_pil(image).quantize(
             palette = palette,
             colors = palette_arr.size,
             dither = Image.Dither.FLOYDSTEINBERG if self.dithering else Image.Dither.NONE,

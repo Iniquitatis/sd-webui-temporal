@@ -11,13 +11,13 @@ class PixelizationFilter(ImageFilter):
 
     pixel_size: int = Param("Pixel size", minimum = 1, step = 1, value = 1, ui_type = "box")
 
-    def process(self, npim: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
-        height, width = npim.shape[:2]
+    def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+        height, width = image.shape[:2]
 
         y, x = np.indices((height, width))
 
         return np.mean([
-            npim[
+            image[
                 np.clip(y // self.pixel_size * self.pixel_size + j, 0, height - 1),
                 np.clip(x // self.pixel_size * self.pixel_size + i, 0, width  - 1),
             ]

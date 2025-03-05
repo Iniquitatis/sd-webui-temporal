@@ -18,9 +18,9 @@ class ProcessingModule(NeuralModule):
     parameters: ProcessingParams = Param("Processing parameters", value = ProcessingParams)
     scale: float = Param("Scale", minimum = 0.25, maximum = 4.0, step = 0.25, value = 1.0, ui_type = "slider")
 
-    def process(self, npim: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+    def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         if (result := shared.backend.image_to_image(
-            npim,
+            image,
             copy_with_overrides(self.parameters,
                 positive_prompt = evaluate_prompt(self.parameters.positive_prompt, frame_index - 1, seed),
                 negative_prompt = evaluate_prompt(self.parameters.negative_prompt, frame_index - 1, seed),
@@ -33,4 +33,4 @@ class ProcessingModule(NeuralModule):
             return result
         else:
             warning("Couldn't process an image for some reason")
-            return npim
+            return image

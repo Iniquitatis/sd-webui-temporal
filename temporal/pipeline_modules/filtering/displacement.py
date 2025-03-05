@@ -16,15 +16,15 @@ class DisplacementFilter(ImageFilter):
     source: ImageSource = Param("Image source", channels = 3, value = ImageSource)
     scale: FloatVector = Param("Scale", axes = ["X", "Y"], step = 0.1, value = lambda: FloatVector(1.0, 1.0), ui_type = "box")
 
-    def process(self, npim: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
-        if (image := self.source.get_image(general.initial_image, frame_index - 1)) is None:
-            return npim
+    def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+        if (source := self.source.get_image(general.initial_image, frame_index - 1)) is None:
+            return image
 
-        image = ensure_image_dims(image, size = (general.image_size.x, general.image_size.y))
+        source = ensure_image_dims(source, size = (general.image_size.x, general.image_size.y))
 
-        gradient = image[..., :2] * 2.0 - 1.0
+        gradient = source[..., :2] * 2.0 - 1.0
 
-        coords = np.indices(npim.shape[:2]).astype(FloatType)
+        coords = np.indices(image.shape[:2]).astype(FloatType)
         coords[[1, 0], ...] += (gradient * self.scale.to_numpy()).transpose(2, 0, 1)
 
-        return apply_channelwise(npim, lambda x: skimage.transform.warp(x, coords, mode = "symmetric"))
+        return apply_channelwise(image, lambda x: skimage.transform.warp(x, coords, mode = "symmetric"))
