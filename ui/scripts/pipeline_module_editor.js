@@ -14,7 +14,7 @@ import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
 import {createElement} from "../scripts/utils/dom.js";
 import {getRequest, postRequest} from "../scripts/utils/requests.js";
-import {ConfigurableParamEditor} from "../scripts/configurable_param_editor.js";
+import {ConfigurableParamForm} from "../scripts/configurable_param_form.js";
 import {ImageMaskEditor} from "../scripts/image_mask_editor.js";
 import {blendModes} from "../scripts/shared_data.js";
 
@@ -65,12 +65,8 @@ export class PipelineModuleEditor extends ReorderableAccordion {
 
             e.createChild(Tabs, (e) => {
                 if (Object.keys(definition.parameters).length > 0) {
-                    e.createTab("Parameters", Form, (e) => {
-                        for (let [key, param] of Object.entries(definition.parameters)) {
-                            e.createField(param.name, ConfigurableParamEditor, (e) => {
-                                this._manager.manage(e, key);
-                            }, param);
-                        }
+                    e.createTab("Parameters", Column, (e) => {
+                        e.createChild(ConfigurableParamForm, null, definition.parameters, this._manager);
 
                         if (definition.type.startsWith("temporal.pipeline_modules.measuring")) {
                             e.createChild(Button, (e) => {

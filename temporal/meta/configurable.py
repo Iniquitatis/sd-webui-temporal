@@ -1,16 +1,16 @@
-from typing import Any, Callable, Literal, Optional, Type, TypeVar, cast
+from typing import Annotated, Any, Callable, Literal, Optional, Type, TypeVar, cast, get_args
 
 from temporal.meta.registerable import Registerable
 from temporal.meta.serializable import Serializable, SerializableField, UndefinedValue
 from temporal.serialization import SerializationParams, serialize
-from temporal.utils.typing import get_full_type_name
+from temporal.utils.typing import get_full_type_name, get_optional_type, is_optional, safe_get_origin
 
 
 T = TypeVar("T")
 
 
 Choices = list[T] | dict[T, str]
-UIType = Literal["area", "box", "code", "menu", "radio", "slider"]
+UIType = Literal["area", "box", "code", "menu", "radio", "seed", "slider"]
 
 
 class ConfigurableParam(SerializableField[T]):
@@ -26,6 +26,7 @@ class ConfigurableParam(SerializableField[T]):
         channels: Optional[int] = None,
         choices: Optional[Choices[T]] | Callable[[], Choices[T]] = None,
         language: Optional[str] = None,
+        dependencies: Optional[dict[str, Any]] = None,
         ui_type: Optional[UIType] = None,
     ) -> T:
         instance = object.__new__(cls)
@@ -39,6 +40,7 @@ class ConfigurableParam(SerializableField[T]):
             channels = channels,
             choices = choices,
             language = language,
+            dependencies = dependencies,
             ui_type = ui_type,
         )
         return cast(T, instance)
@@ -55,6 +57,7 @@ class ConfigurableParam(SerializableField[T]):
         channels: Optional[int] = None,
         choices: Optional[Choices[T]] | Callable[[], Choices[T]] = None,
         language: Optional[str] = None,
+        dependencies: Optional[dict[str, Any]] = None,
         ui_type: Optional[UIType] = None,
     ) -> None:
         super().__init__(value = value)
@@ -66,6 +69,7 @@ class ConfigurableParam(SerializableField[T]):
         self.channels = channels
         self.choices = choices
         self.language = language
+        self.dependencies = dependencies
         self.ui_type = ui_type
 
     @property
@@ -78,8 +82,20 @@ class ConfigurableParam(SerializableField[T]):
             if isinstance(choices, list):
                 choices = {x: x for x in choices}
 
+        type = self.type
+
+        if is_optional(type):
+            type = get_optional_type(type)
+
+        if safe_get_origin(type) is Annotated:
+            type = get_args(type)[0]
+
+        if safe_get_origin(type) is Literal:
+            type = str
+
         return {
-            "type": get_full_type_name(self.type),
+            "type": get_full_type_name(type),
+            "optional": is_optional(self.type),
             "name": self.name,
             **({"minimum": self.minimum} if self.minimum is not None else {}),
             **({"maximum": self.maximum} if self.maximum is not None else {}),
@@ -88,6 +104,7 @@ class ConfigurableParam(SerializableField[T]):
             **({"channels": self.channels} if self.channels is not None else {}),
             **({"choices": choices} if choices is not None else {}),
             **({"language": self.language} if self.language is not None else {}),
+            **({"dependencies": {k: serialize(v.__class__, v, SerializationParams()) for k, v in self.dependencies.items()}} if self.dependencies else {}),
             **({"ui_type": self.ui_type} if self.ui_type is not None else {}),
             **({"default": serialize(self.type, self.default, SerializationParams())} if self.default is not None else {}),
         }

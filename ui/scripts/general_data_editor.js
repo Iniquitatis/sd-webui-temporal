@@ -1,4 +1,3 @@
-import {Accordion} from "../scripts/base/accordion.js";
 import {Form} from "../scripts/base/form.js";
 import {NumberBox} from "../scripts/base/number_box.js";
 import {TextArea} from "../scripts/base/text_area.js";
@@ -6,7 +5,6 @@ import {TextBox} from "../scripts/base/text_box.js";
 import {VectorEditor} from "../scripts/base/vector_editor.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
-import {NoiseEditor} from "../scripts/noise_editor.js";
 import {SeedBox} from "../scripts/seed_box.js";
 
 export class GeneralDataEditor extends Form {
@@ -36,14 +34,6 @@ export class GeneralDataEditor extends Form {
             });
             this._manager.manage(e, "image_size");
         }, NumberBox, {x: "X", y: "Y"});
-
-        this.createChild(Accordion, (e) => {
-            e.label = "Initial noise";
-
-            e.createChild(NoiseEditor, (e) => {
-                this._manager.manage(e, "initial_noise");
-            });
-        });
 
         this.createField("Seed", SeedBox, (e) => {
             this._manager.manage(e, "seed");

@@ -11,11 +11,9 @@ import {TextBox} from "../scripts/base/text_box.js";
 import {VectorEditor} from "../scripts/base/vector_editor.js";
 import {Signal} from "../scripts/core/signal.js";
 import {Widget} from "../scripts/core/widget.js";
-import {GradientEditor} from "../scripts/gradient_editor.js";
 import {ImageSourceEditor} from "../scripts/image_source_editor.js";
-import {NoiseEditor} from "../scripts/noise_editor.js";
-import {PatternEditor} from "../scripts/pattern_editor.js";
 import {ProcessingParamsEditor} from "../scripts/processing_params_editor.js";
+import {SeedBox} from "../scripts/seed_box.js";
 import {VideoRendererEditor} from "../scripts/video_renderer_editor.js";
 
 export class ConfigurableParamEditor extends Widget {
@@ -78,6 +76,10 @@ const EDITORS = {
         e.value = definition.default ?? e.minimum;
     }),
 
+    "int|seed": (parent, definition) => parent.createChild(SeedBox, (e) => {
+        e.value = definition.default ?? -1;
+    }),
+
     "int|slider": (parent, definition) => parent.createChild(Slider, (e) => {
         e.minimum = definition.minimum ?? undefined;
         e.maximum = definition.maximum ?? undefined;
@@ -133,20 +135,8 @@ const EDITORS = {
         e.value = definition.default ?? {r: 0.0, g: 0.0, b: 0.0, a: 1.0};
     }, definition.channels ?? 3),
 
-    "temporal.gradient.Gradient": (parent, definition) => parent.createChild(GradientEditor, (e) => {
-        e.value = definition.default ?? {};
-    }),
-
     "temporal.image_source.ImageSource": (parent, definition) => parent.createChild(ImageSourceEditor, (e) => {
         e.channels = definition.channels ?? 3;
-    }),
-
-    "temporal.noise.Noise": (parent, definition) => parent.createChild(NoiseEditor, (e) => {
-        e.value = definition.default ?? {};
-    }),
-
-    "temporal.pattern.Pattern": (parent, definition) => parent.createChild(PatternEditor, (e) => {
-        e.value = definition.default ?? {};
     }),
 
     "temporal.processing_params.ProcessingParams": (parent, definition) => parent.createChild(ProcessingParamsEditor, (e) => {

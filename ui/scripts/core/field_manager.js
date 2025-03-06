@@ -23,6 +23,8 @@ export class FieldManager {
     }
 
     manage(widget, field, reader = null, writer = null) {
+        this._value[field] = writer ? writer(widget.value) : widget.value;
+
         this._onValueReceive.connect((value) => {
             if (value.hasOwnProperty(field)) {
                 widget.value = reader ? reader(value[field]) : value[field];

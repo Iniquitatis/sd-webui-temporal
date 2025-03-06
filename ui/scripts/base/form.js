@@ -24,11 +24,13 @@ export class Form extends Widget {
 
         if (result.canAttachTitle && result.canAttachTitle()) {
             result.attachTitle(name);
+            result.formItem = result;
             this.appendChild(result);
         } else if (result.isComplexWidget && result.isComplexWidget()) {
             this.createChild(GroupBox, (e) => {
                 e.label = name;
                 // FIXME: Accesses private stuff
+                result.formItem = e;
                 e._fieldset.appendChild(result);
             });
         } else {
@@ -44,6 +46,7 @@ export class Form extends Widget {
                     e.style.marginBottom = "calc(var(--layout-gap) / 2)";
                 });
 
+                result.formItem = e;
                 e.appendChild(result);
             });
         }

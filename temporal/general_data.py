@@ -3,7 +3,6 @@ from random import randint
 from typing import Any, Optional
 
 from temporal.meta.serializable import Serializable, SerializableField as Field
-from temporal.noise import Noise
 from temporal.utils.image import NumpyImage
 from temporal.vector import IntVector
 
@@ -15,7 +14,6 @@ class GeneralData(Serializable):
     name: str = Field("untitled")
     description: str = Field("")
     initial_image: Optional[NumpyImage] = Field(None)
-    initial_noise: Noise = Field(Noise)
     image_size: IntVector = Field(lambda: IntVector(512, 512))
     seed: int = Field(-1)
 
