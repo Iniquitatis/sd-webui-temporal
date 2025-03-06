@@ -5,6 +5,7 @@ from typing import Annotated, Callable, Literal, Optional
 import numpy as np
 import skimage
 from PIL import Image
+from skimage.transform import AffineTransform as Transform
 
 from temporal.utils.base64 import decode, decode_with_mime_type, encode, encode_with_mime_type
 from temporal.utils.math import lerp
@@ -93,6 +94,26 @@ def load_image(path: str | Path) -> PILImage:
     image = Image.open(path)
     image.load()
     return image
+
+
+def make_trs_transform(
+    image_size: tuple[int, int],
+    translation: tuple[float, float] = (0.0, 0.0),
+    rotation: float = 0.0,
+    scale: float = 1.0,
+    origin: tuple[float, float] = (0.5, 0.5),
+) -> Transform:
+    abs_translation = (-translation[0] * image_size[0], -translation[1] * image_size[1])
+    abs_origin = (-origin[0] * image_size[0], -origin[1] * image_size[1])
+
+    result = Transform()
+    result.params @= Transform(translation = abs_translation).params
+    result.params @= Transform(translation = abs_origin).inverse.params
+    result.params @= Transform(scale = scale).params
+    result.params @= Transform(rotation = np.deg2rad(rotation)).params
+    result.params @= Transform(translation = abs_origin).params
+
+    return result.inverse
 
 
 def match_image(image: NumpyImage, reference: NumpyImage, size: bool = True, channels: bool = True) -> NumpyImage:

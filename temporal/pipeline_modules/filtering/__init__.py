@@ -8,6 +8,7 @@ from temporal.meta.serializable import SerializableField as Field
 from temporal.pipeline_module import PipelineModule
 from temporal.utils.image import NumpyImage
 from temporal.utils.math import lerp
+from temporal.utils.numpy import saturate_array
 
 
 class ImageFilter(PipelineModule, abstract = True):
@@ -28,7 +29,7 @@ class ImageFilter(PipelineModule, abstract = True):
         if self.amount == 0.0:
             return image
 
-        processed = self.blend_mode.blend(image, processed)
+        processed = saturate_array(self.blend_mode.blend(image, processed))
         processed = self.mask.mask(image, processed)
 
         return lerp(image, processed, self.amount)

@@ -8,7 +8,7 @@ from temporal.meta.serializable import SerializableField as Field
 from temporal.pipeline_modules.temporal import TemporalModule
 from temporal.utils.image import NumpyImage, ensure_image_dims
 from temporal.utils.math import clamp, lerp
-from temporal.utils.numpy import FloatArray, FloatType
+from temporal.utils.numpy import FloatArray, random_array
 
 
 class RandomSamplingModule(TemporalModule):
@@ -25,11 +25,12 @@ class RandomSamplingModule(TemporalModule):
 
         size = self.buffer.shape[:2]
 
-        chance_mask = np.random.default_rng(seed).random(size) <= self.chance
-        opacity_mask = np.random.default_rng(seed + 1).uniform(
+        chance_mask = random_array(size, seed = seed) <= self.chance
+        opacity_mask = random_array(
+            size,
             low = clamp(self.opacity * 2.0 - 1.0, 0.0, 1.0),
-            high = clamp(self.opacity * 2.0, 0.0, 1.0) + np.finfo(FloatType).eps,
-            size = size,
+            high = clamp(self.opacity * 2.0, 0.0, 1.0),
+            seed = seed + 1,
         )
 
         self.buffer[:] = lerp(self.buffer, np.where(chance_mask[..., np.newaxis], image, self.buffer), opacity_mask[..., np.newaxis])

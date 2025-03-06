@@ -6,7 +6,8 @@ import numpy as np
 import skimage
 
 from temporal.meta.serializable import Serializable, SerializableField as Field
-from temporal.utils.numpy import FloatArray, FloatType
+from temporal.utils.image import make_trs_transform
+from temporal.utils.numpy import FloatArray, random_array
 
 
 class Noise(Serializable):
@@ -25,12 +26,15 @@ class Noise(Serializable):
             self.seed = randint(0, 0x7fffffff)
 
     def generate(self, shape: tuple[int, ...], global_seed: Optional[int] = None) -> FloatArray:
-        noise = np.random.default_rng(
-            global_seed if global_seed and self.use_global_seed else self.seed
-        ).uniform(low = 0.0, high = 1.0 + np.finfo(FloatType).eps, size = shape)
+        noises = random_array(
+            (ceil(self.detail),) + shape,
+            low = 0.0,
+            high = 1.0,
+            seed = global_seed if global_seed and self.use_global_seed else self.seed,
+        )
 
-        def scale_noise(scale: float) -> FloatArray:
-            result = skimage.transform.warp(noise, skimage.transform.AffineTransform(scale = scale).inverse, order = 4, mode = "symmetric")
+        def scale_noise(i: int, scale: float) -> FloatArray:
+            result = skimage.transform.warp(noises[i], make_trs_transform(image_size = (shape[1], shape[0]), scale = scale), order = 4, mode = "symmetric")
 
             if self.mode == "fbm":
                 return result
@@ -48,7 +52,7 @@ class Noise(Serializable):
 
         for i in range(ceil(self.detail)):
             octave_scale = min(self.detail - i, 1.0)
-            result += scale_noise(scale) * (amplitude * octave_scale)
+            result += scale_noise(i, scale) * (amplitude * octave_scale)
             total_amplitude += (amplitude * octave_scale)
             scale /= self.lacunarity
             amplitude *= self.persistence

@@ -8,6 +8,7 @@ from temporal.general_data import GeneralData
 from temporal.meta.configurable import ConfigurableParam as Param
 from temporal.pipeline_modules.filtering import ImageFilter
 from temporal.utils.image import NumpyImage
+from temporal.utils.numpy import saturate_array
 
 
 class CustomCodeFilter(ImageFilter):
@@ -23,4 +24,4 @@ class CustomCodeFilter(ImageFilter):
             input = image,
         )
         exec(self.code, code_globals)
-        return code_globals.get("output", image)
+        return saturate_array(code_globals.get("output", image))

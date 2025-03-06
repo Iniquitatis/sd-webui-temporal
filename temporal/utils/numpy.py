@@ -82,6 +82,16 @@ def load_array(path: str | Path) -> FloatArray:
     return np.load(path)["arr_0"]
 
 
+def random_array(shape: tuple[int, ...], low: float = 0.0, high: float = 1.0, seed: int = -1) -> FloatArray:
+    return np.divide(np.random.default_rng(seed).integers(
+        low = round(low * 1e9),
+        high = round(high * 1e9),
+        size = shape,
+        dtype = IntType,
+        endpoint = True,
+    ), 1e9, dtype = FloatType)
+
+
 def saturate_array(arr: FloatArray) -> FloatArray:
     return np.clip(arr, 0.0, 1.0)
 

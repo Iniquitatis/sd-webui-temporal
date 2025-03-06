@@ -1,8 +1,9 @@
 from temporal.general_data import GeneralData
 from temporal.meta.configurable import ConfigurableParam as Param
 from temporal.pipeline_modules.filtering import ImageFilter
-from temporal.utils.image import NumpyImage, split_hsv, join_hsv_to_rgb
+from temporal.utils.image import NumpyImage, join_hsv_to_rgb, split_hsv
 from temporal.utils.math import remap_range
+from temporal.utils.numpy import saturate_array
 
 
 class ColorBalancingFilter(ImageFilter):
@@ -12,6 +13,7 @@ class ColorBalancingFilter(ImageFilter):
     contrast: float = Param("Contrast", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, ui_type = "slider")
     saturation: float = Param("Saturation", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, ui_type = "slider")
 
+    # TODO: Make non-idempotent
     def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         image = remap_range(image, image.min(), image.max(), 0.0, self.brightness)
 
@@ -20,4 +22,4 @@ class ColorBalancingFilter(ImageFilter):
         h, s, v = split_hsv(image)
         s[:] = remap_range(s, s.min(), s.max(), s.min(), self.saturation)
 
-        return join_hsv_to_rgb(h, s, v)
+        return saturate_array(join_hsv_to_rgb(h, s, v))
