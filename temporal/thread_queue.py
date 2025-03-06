@@ -1,5 +1,8 @@
 from threading import Lock, Thread
+from traceback import format_exc
 from typing import Any, Callable, ParamSpec
+
+from temporal.utils.logging import error
 
 
 P = ParamSpec("P")
@@ -19,7 +22,10 @@ class ThreadQueue:
     def enqueue(self, target: Callable[P, Any], *args: P.args, **kwargs: P.kwargs) -> None:
         def callback() -> None:
             with self._execution_lock:
-                target(*args, **kwargs)
+                try:
+                    target(*args, **kwargs)
+                except:
+                    error(f"Exception from queued thread:\n{format_exc()}")
 
             with self._queue_lock:
                 self._queue.pop(0)
