@@ -22,137 +22,26 @@ export class ConfigurableParamEditor extends Widget {
     constructor(definition) {
         super();
 
+        this.onValueChange = new Signal();
+
         this._editor = null;
 
-        switch (definition.type) {
-            case "bool": {
-                this._editor = this.createChild(Checkbox, (e) => {
-                    e.value = definition.value;
-                });
-            } break;
+        let typeParts = [definition.type];
 
-            case "int": {
-                this._editor = this.createChild(definition.ui_type == "slider" ? Slider : NumberBox, (e) => {
-                    e.minimum = definition.minimum ?? undefined;
-                    e.maximum = definition.maximum ?? undefined;
-                    e.step = definition.step ?? 1;
-                    e.value = definition.default ?? e.minimum;
-                });
-            } break;
-
-            case "float": {
-                this._editor = this.createChild(definition.ui_type == "slider" ? Slider : NumberBox, (e) => {
-                    e.minimum = definition.minimum ?? undefined;
-                    e.maximum = definition.maximum ?? undefined;
-                    e.step = definition.step ?? 0.1;
-                    e.value = definition.default ?? e.minimum;
-                });
-            } break;
-
-            case "str": {
-                if (definition.ui_type == "menu" || definition.ui_type == "radio") {
-                    this._editor = this.createChild(definition.ui_type == "radio" ? Radio : Dropdown, (e) => {
-                        e.choices = definition.choices ?? {"": ""};
-                        e.value = definition.default ?? null;
-                    });
-                } else {
-                    this._editor = this.createChild(definition.ui_type == "code" ? CodeArea : definition.ui_type == "area" ? TextArea : TextBox, (e) => {
-                        e.value = definition.default ?? "";
-                    });
-
-                }
-            } break;
-
-            case "pathlib.Path":{
-                this._editor = this.createChild(TextBox, (e) => {
-                    e.value = definition.default ?? "";
-                });
-            } break;
-
-            case "numpy.ndarray": {
-                this._editor = this.createChild(ImageBox, (e) => {
-                    e.channels = definition.channels ?? 3;
-                });
-            } break;
-
-            case "temporal.color.Color": {
-                this._editor = this.createChild(ColorPicker, (e) => {
-                    e.value = definition.default ?? {r: 0.0, g: 0.0, b: 0.0, a: 1.0};
-                }, definition.channels ?? 3);
-            } break;
-
-            case "temporal.gradient.Gradient": {
-                this._editor = this.createChild(GradientEditor, (e) => {
-                    e.value = definition.default ?? {};
-                });
-            } break;
-
-            case "temporal.image_source.ImageSource": {
-                this._editor = this.createChild(ImageSourceEditor, (e) => {
-                    e.channels = definition.channels ?? 3;
-                });
-            } break;
-
-            case "temporal.noise.Noise": {
-                this._editor = this.createChild(NoiseEditor, (e) => {
-                    e.value = definition.default ?? {};
-                });
-            } break;
-
-            case "temporal.pattern.Pattern": {
-                this._editor = this.createChild(PatternEditor, (e) => {
-                    e.value = definition.default ?? {};
-                });
-            } break;
-
-            case "temporal.processing_params.ProcessingParams": {
-                this._editor = this.createChild(ProcessingParamsEditor, (e) => {
-                    e.value = definition.default ?? {};
-                });
-            } break;
-
-            case "temporal.vector.IntVector": {
-                this._editor = this.createChild(VectorEditor, (e) => {
-                    e.minimum = definition.minimum ?? undefined;
-                    e.maximum = definition.maximum ?? undefined;
-                    e.step = definition.step ?? 1;
-                    e.value = definition.default ?? {x: e.minimum, y: e.minimum};
-                }, definition.ui_type == "slider" ? Slider : NumberBox, {
-                    x: definition.axes?.[0] ?? "X",
-                    y: definition.axes?.[1] ?? "Y",
-                });
-            } break;
-
-            case "temporal.vector.FloatVector": {
-                this._editor = this.createChild(VectorEditor, (e) => {
-                    e.minimum = definition.minimum ?? undefined;
-                    e.maximum = definition.maximum ?? undefined;
-                    e.step = definition.step ?? 0.1;
-                    e.value = definition.default ?? {x: e.minimum, y: e.minimum};
-                }, definition.ui_type == "slider" ? Slider : NumberBox, {
-                    x: definition.axes?.[0] ?? "X",
-                    y: definition.axes?.[1] ?? "Y",
-                });
-            } break;
-
-            case "temporal.video_renderer.VideoRenderer": {
-                this._editor = this.createChild(VideoRendererEditor, (e) => {
-                    e.value = definition.default ?? {};
-                });
-            } break;
-
-            default: {
-                console.log(`WARNING: Unhandled type ${definition.type}`);
-            } break;
+        if (definition.ui_type) {
+            typeParts.push(definition.ui_type);
         }
 
-        if (this._editor) {
+        let fullType = typeParts.join("|");
+
+        if (EDITORS.hasOwnProperty(fullType)) {
+            this._editor = EDITORS[fullType](this, definition);
             this._editor.onValueChange.connect((value) => {
                 this.onValueChange.fire(value);
             });
+        } else {
+            console.log(`WARNING: Unhandled type ${fullType}`);
         }
-
-        this.onValueChange = new Signal();
     }
 
     get value() {
@@ -164,3 +53,135 @@ export class ConfigurableParamEditor extends Widget {
     }
 }
 customElements.define("configurable-param-editor", ConfigurableParamEditor);
+
+const EDITORS = {
+    "bool": (parent, definition) => parent.createChild(Checkbox, (e) => {
+        e.value = definition.default ?? false;
+    }),
+
+    "int|box": (parent, definition) => parent.createChild(NumberBox, (e) => {
+        e.minimum = definition.minimum ?? undefined;
+        e.maximum = definition.maximum ?? undefined;
+        e.step = definition.step ?? 1;
+        e.value = definition.default ?? e.minimum;
+    }),
+
+    "int|slider": (parent, definition) => parent.createChild(Slider, (e) => {
+        e.minimum = definition.minimum ?? undefined;
+        e.maximum = definition.maximum ?? undefined;
+        e.step = definition.step ?? 1;
+        e.value = definition.default ?? e.minimum;
+    }),
+
+    "float|box": (parent, definition) => parent.createChild(NumberBox, (e) => {
+        e.minimum = definition.minimum ?? undefined;
+        e.maximum = definition.maximum ?? undefined;
+        e.step = definition.step ?? 0.1;
+        e.value = definition.default ?? e.minimum;
+    }),
+
+    "float|slider": (parent, definition) => parent.createChild(Slider, (e) => {
+        e.minimum = definition.minimum ?? undefined;
+        e.maximum = definition.maximum ?? undefined;
+        e.step = definition.step ?? 0.1;
+        e.value = definition.default ?? e.minimum;
+    }),
+
+    "str|area": (parent, definition) => parent.createChild(TextArea, (e) => {
+        e.value = definition.default ?? "";
+    }),
+
+    "str|box": (parent, definition) => parent.createChild(TextBox, (e) => {
+        e.value = definition.default ?? "";
+    }),
+
+    "str|code": (parent, definition) => parent.createChild(CodeArea, (e) => {
+        e.value = definition.default ?? "";
+    }),
+
+    "str|menu": (parent, definition) => parent.createChild(Dropdown, (e) => {
+        e.choices = definition.choices ?? {"": ""};
+        e.value = definition.default ?? null;
+    }),
+
+    "str|radio": (parent, definition) => parent.createChild(Radio, (e) => {
+        e.choices = definition.choices ?? {"": ""};
+        e.value = definition.default ?? null;
+    }),
+
+    "pathlib.Path": (parent, definition) => parent.createChild(TextBox, (e) => {
+        e.value = definition.default ?? "";
+    }),
+
+    "numpy.ndarray": (parent, definition) => parent.createChild(ImageBox, (e) => {
+        e.channels = definition.channels ?? 3;
+    }),
+
+    "temporal.color.Color": (parent, definition) => parent.createChild(ColorPicker, (e) => {
+        e.value = definition.default ?? {r: 0.0, g: 0.0, b: 0.0, a: 1.0};
+    }, definition.channels ?? 3),
+
+    "temporal.gradient.Gradient": (parent, definition) => parent.createChild(GradientEditor, (e) => {
+        e.value = definition.default ?? {};
+    }),
+
+    "temporal.image_source.ImageSource": (parent, definition) => parent.createChild(ImageSourceEditor, (e) => {
+        e.channels = definition.channels ?? 3;
+    }),
+
+    "temporal.noise.Noise": (parent, definition) => parent.createChild(NoiseEditor, (e) => {
+        e.value = definition.default ?? {};
+    }),
+
+    "temporal.pattern.Pattern": (parent, definition) => parent.createChild(PatternEditor, (e) => {
+        e.value = definition.default ?? {};
+    }),
+
+    "temporal.processing_params.ProcessingParams": (parent, definition) => parent.createChild(ProcessingParamsEditor, (e) => {
+        e.value = definition.default ?? {};
+    }),
+
+    "temporal.vector.IntVector|box": (parent, definition) => parent.createChild(VectorEditor, (e) => {
+        e.minimum = definition.minimum ?? undefined;
+        e.maximum = definition.maximum ?? undefined;
+        e.step = definition.step ?? 1;
+        e.value = definition.default ?? {x: e.minimum, y: e.minimum};
+    }, NumberBox, {
+        x: definition.axes?.[0] ?? "X",
+        y: definition.axes?.[1] ?? "Y",
+    }),
+
+    "temporal.vector.IntVector|slider": (parent, definition) => parent.createChild(VectorEditor, (e) => {
+        e.minimum = definition.minimum ?? undefined;
+        e.maximum = definition.maximum ?? undefined;
+        e.step = definition.step ?? 1;
+        e.value = definition.default ?? {x: e.minimum, y: e.minimum};
+    }, Slider, {
+        x: definition.axes?.[0] ?? "X",
+        y: definition.axes?.[1] ?? "Y",
+    }),
+
+    "temporal.vector.FloatVector|box": (parent, definition) => parent.createChild(VectorEditor, (e) => {
+        e.minimum = definition.minimum ?? undefined;
+        e.maximum = definition.maximum ?? undefined;
+        e.step = definition.step ?? 0.1;
+        e.value = definition.default ?? {x: e.minimum, y: e.minimum};
+    }, NumberBox, {
+        x: definition.axes?.[0] ?? "X",
+        y: definition.axes?.[1] ?? "Y",
+    }),
+
+    "temporal.vector.FloatVector|slider": (parent, definition) => parent.createChild(VectorEditor, (e) => {
+        e.minimum = definition.minimum ?? undefined;
+        e.maximum = definition.maximum ?? undefined;
+        e.step = definition.step ?? 0.1;
+        e.value = definition.default ?? {x: e.minimum, y: e.minimum};
+    }, Slider, {
+        x: definition.axes?.[0] ?? "X",
+        y: definition.axes?.[1] ?? "Y",
+    }),
+
+    "temporal.video_renderer.VideoRenderer": (parent, definition) => parent.createChild(VideoRendererEditor, (e) => {
+        e.value = definition.default ?? {};
+    }),
+};

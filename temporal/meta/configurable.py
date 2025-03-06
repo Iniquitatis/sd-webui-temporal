@@ -9,7 +9,8 @@ from temporal.utils.typing import get_full_type_name
 T = TypeVar("T")
 
 
-Choices = list[str] | dict[T, str]
+Choices = list[T] | dict[T, str]
+UIType = Literal["area", "box", "code", "menu", "radio", "slider"]
 
 
 class ConfigurableParam(SerializableField[T]):
@@ -25,7 +26,7 @@ class ConfigurableParam(SerializableField[T]):
         channels: Optional[int] = None,
         choices: Optional[Choices[T]] | Callable[[], Choices[T]] = None,
         language: Optional[str] = None,
-        ui_type: Optional[Literal["area", "box", "code", "menu", "radio", "slider"]] = None,
+        ui_type: Optional[UIType] = None,
     ) -> T:
         instance = object.__new__(cls)
         instance.__init__(
@@ -54,7 +55,7 @@ class ConfigurableParam(SerializableField[T]):
         channels: Optional[int] = None,
         choices: Optional[Choices[T]] | Callable[[], Choices[T]] = None,
         language: Optional[str] = None,
-        ui_type: Optional[Literal["area", "box", "code", "menu", "radio", "slider"]] = None,
+        ui_type: Optional[UIType] = None,
     ) -> None:
         super().__init__(value = value)
         self.name = name
