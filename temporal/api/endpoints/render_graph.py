@@ -22,6 +22,6 @@ class _(Endpoint):
 
             if (project is not None and
                 (module := project.pipeline.find_module(request.uuid, MeasuringModule)) is not None):
-                return image_to_base64(pil_to_np(module.plot()))
+                return image_to_base64(pil_to_np(module.plot()), True, "fast")
 
         return await get_event_loop().run_in_executor(None, render)

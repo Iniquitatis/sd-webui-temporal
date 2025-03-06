@@ -42,7 +42,7 @@ class WebUIAPIBackend(Backend):
 
     def image_to_image(self, image: NumpyImage, params: ProcessingParams, width: int, height: int, preview: bool = False) -> Optional[NumpyImage]:
         if result := _safe_request("POST", f"{self.url}/sdapi/v1/img2img", json = {
-            "init_images": [image_to_base64(image, "fast")],
+            "init_images": [image_to_base64(image, False, "fast")],
             "prompt": params.positive_prompt,
             "negative_prompt": params.negative_prompt,
             "width": width,
@@ -67,16 +67,16 @@ class WebUIAPIBackend(Backend):
             },
             "override_settings_restore_afterwards": False,
         }).json()["images"]:
-            return base64_to_image(result[0])
+            return base64_to_image(result[0], False)
 
     def upscale_image(self, image: NumpyImage, upscaler: str, scale: float) -> Optional[NumpyImage]:
         return base64_to_image(_safe_request("POST", f"{self.url}/sdapi/v1/extra-single-image", json = {
-            "image": image_to_base64(image, "fast"),
+            "image": image_to_base64(image, False, "fast"),
             "resize_mode": 0,
             "upscaling_resize_w": floor(image.shape[1] * scale),
             "upscaling_resize_h": floor(image.shape[0] * scale),
             "upscaler_1": upscaler,
-        }).json()["image"])
+        }).json()["image"], False)
 
     def get_preview(self) -> Optional[NumpyImage]:
         return self._preview_image

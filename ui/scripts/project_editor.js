@@ -28,10 +28,6 @@ export class ProjectEditor extends Tabs {
 
         this.createTab("Tools", Column, (e) => {
             e.createChild(Button, (e) => {
-                e.label = "Delete intermediate frames";
-            });
-
-            e.createChild(Button, (e) => {
                 e.label = "Delete session data";
             });
         });

@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 from temporal.api.endpoint import Endpoint
-from temporal.utils.bytes import bytes_to_base64
+from temporal.utils.base64 import encode_with_mime_type
 
 
 class _(Endpoint):
@@ -25,6 +25,6 @@ class _(Endpoint):
 
             if (project is not None and
                 (module := project.pipeline.find_module(request.uuid, VideoRenderingModule)) is not None):
-                return bytes_to_base64(module.render(project.general, False).read_bytes())
+                return encode_with_mime_type("video", "mp4", module.render(project.general, False).read_bytes())
 
         return await get_event_loop().run_in_executor(None, render)

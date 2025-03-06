@@ -1,12 +1,12 @@
 from io import BytesIO
 from pathlib import Path
-from pybase64 import b64decode, b64encode
 from typing import Annotated, Callable, Literal, Optional
 
 import numpy as np
 import skimage
 from PIL import Image
 
+from temporal.utils.base64 import decode, decode_with_mime_type, encode, encode_with_mime_type
 from temporal.utils.math import lerp
 from temporal.utils.numpy import FloatArray, saturate_array
 
@@ -36,13 +36,16 @@ def apply_color_matrix(image: NumpyImage, matrix: FloatArray, clip: bool = True)
     return result
 
 
-def base64_to_image(data: str) -> NumpyImage:
-    png_prefix = "data:image/png;base64,"
+def base64_to_image(text: str, with_mime_type: bool = True) -> NumpyImage:
+    if with_mime_type:
+        type, subtype, data = decode_with_mime_type(text)
+    else:
+        type, subtype, data = "image", "png", decode(text)
 
-    if data.startswith(png_prefix):
-        data = data[len(png_prefix):]
+    if type != "image":
+        raise ValueError
 
-    return pil_to_np(Image.open(BytesIO(b64decode(data, validate = True))))
+    return pil_to_np(Image.open(BytesIO(data), formats = [subtype]))
 
 
 def ensure_image_dims(image: NumpyImage, size: Optional[tuple[int, int]] = None, channels: Optional[int] = None) -> NumpyImage:
@@ -66,7 +69,7 @@ def ensure_image_dims(image: NumpyImage, size: Optional[tuple[int, int]] = None,
     return pil_to_np(pil_image)
 
 
-def image_to_base64(image: NumpyImage, mode: Literal["default", "fast", "archive"] = "default") -> str:
+def image_to_base64(image: NumpyImage, with_mime_type: bool = True, mode: Literal["default", "fast", "archive"] = "default") -> str:
     kwargs = {
         "default": dict(),
         "fast": dict(optimize = False, compress_level = 0),
@@ -75,7 +78,11 @@ def image_to_base64(image: NumpyImage, mode: Literal["default", "fast", "archive
 
     with BytesIO() as stream:
         np_to_pil(image).save(stream, "PNG", **kwargs[mode])
-        return b64encode(stream.getvalue()).decode()
+
+        if with_mime_type:
+            return encode_with_mime_type("image", "png", stream.getvalue())
+        else:
+            return encode(stream.getvalue())
 
 
 def join_hsv_to_rgb(h: NumpyImage, s: NumpyImage, v: NumpyImage) -> NumpyImage:

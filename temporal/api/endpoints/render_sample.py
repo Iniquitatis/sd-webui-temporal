@@ -18,6 +18,6 @@ class _(Endpoint):
 
     async def do(self, request: Request) -> Optional[str]:
         def render() -> Optional[str]:
-            return image_to_base64(PipelineModule.from_json(request.data).sample(request.size), "fast")
+            return image_to_base64(PipelineModule.from_json(request.data).sample(request.size), True, "fast")
 
         return await get_event_loop().run_in_executor(None, render)

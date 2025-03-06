@@ -22,7 +22,7 @@ class _(Endpoint):
         project = shared.project_store.load_entry(request.name)
 
         return self.Response(
-            last_image = image_to_base64(image)
+            last_image = image_to_base64(image, True, "fast")
                 if request.include_last_image and (image := project.iteration.image) is not None
                 else None,
         )

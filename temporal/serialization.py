@@ -198,7 +198,7 @@ class _(Serializer[bytes]):
         if params.data_dir is not None:
             return (params.data_dir / obj).read_bytes()
         else:
-            return base64_to_bytes(obj)
+            return base64_to_bytes(obj, True)
 
     @classmethod
     def write_json(cls, obj, params):
@@ -207,7 +207,7 @@ class _(Serializer[bytes]):
             path.write_bytes(obj)
             return path.name
         else:
-            return bytes_to_base64(obj)
+            return bytes_to_base64(obj, True)
 
 
 class _(Serializer[PILImage]):
@@ -216,7 +216,7 @@ class _(Serializer[PILImage]):
         if params.data_dir is not None:
             return load_image(params.data_dir / obj)
         else:
-            return np_to_pil(base64_to_image(obj))
+            return np_to_pil(base64_to_image(obj, True))
 
     @classmethod
     def write_json(cls, obj, params):
@@ -225,7 +225,7 @@ class _(Serializer[PILImage]):
             save_image(obj, path)
             return path.name
         else:
-            return image_to_base64(pil_to_np(obj), "fast")
+            return image_to_base64(pil_to_np(obj), True, "fast")
 
 
 class _(Serializer[FloatArray]):
@@ -234,7 +234,7 @@ class _(Serializer[FloatArray]):
         if params.data_dir is not None:
             return load_array(params.data_dir / obj)
         else:
-            return base64_to_array(obj)
+            return base64_to_array(obj, True)
 
     @classmethod
     def write_json(cls, obj, params):
@@ -243,7 +243,7 @@ class _(Serializer[FloatArray]):
             save_array(obj, path)
             return path.name
         else:
-            return array_to_base64(obj)
+            return array_to_base64(obj, True)
 
 
 class _(Serializer[NumpyImage]):
@@ -252,7 +252,7 @@ class _(Serializer[NumpyImage]):
         if params.data_dir is not None:
             return load_array(params.data_dir / obj)
         else:
-            return base64_to_image(obj)
+            return base64_to_image(obj, True)
 
     @classmethod
     def write_json(cls, obj, params):
@@ -261,4 +261,4 @@ class _(Serializer[NumpyImage]):
             save_array(obj, path)
             return path.name
         else:
-            return image_to_base64(obj)
+            return image_to_base64(obj, True, "fast")

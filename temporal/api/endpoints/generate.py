@@ -46,6 +46,6 @@ class _(Endpoint):
 
             project = Project.from_json(request.project)
             project.general.path = path
-            project.general.initial_image = base64_to_image(request.image) if request.image else None
+            project.general.initial_image = base64_to_image(request.image, True) if request.image else None
 
         self.queue.enqueue(self.engine.start, project, request.session.iter_count)

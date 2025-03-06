@@ -1,11 +1,12 @@
 from io import BytesIO
 from pathlib import Path
-from pybase64 import b64decode, b64encode
 from typing import Optional
 
 import numpy as np
 from numpy.typing import NDArray
 from scipy import stats
+
+from temporal.utils.base64 import decode, decode_with_mime_type, encode, encode_with_mime_type
 
 
 IntType = np.int32
@@ -14,10 +15,14 @@ FloatType = np.float64
 FloatArray = NDArray[FloatType]
 
 
-def array_to_base64(arr: FloatArray) -> str:
+def array_to_base64(arr: FloatArray, with_mime_type: bool = True) -> str:
     with BytesIO() as stream:
         np.savez_compressed(stream, arr)
-        return b64encode(stream.getvalue()).decode()
+
+        if with_mime_type:
+            return encode_with_mime_type("application", "octet-stream", stream.getvalue())
+        else:
+            return encode(stream.getvalue())
 
 
 def average_array(arr: FloatArray, axis: int, trim: float = 0.0, power: float = 1.0, weights: Optional[FloatArray] = None) -> FloatArray:
@@ -53,8 +58,16 @@ def average_array(arr: FloatArray, axis: int, trim: float = 0.0, power: float = 
     return result
 
 
-def base64_to_array(data: str) -> FloatArray:
-    return np.load(BytesIO(b64decode(data, validate = True)))["arr_0"]
+def base64_to_array(text: str, with_mime_type: bool = True) -> FloatArray:
+    if with_mime_type:
+        type, subtype, data = decode_with_mime_type(text)
+    else:
+        type, subtype, data = "application", "octet-stream", decode(text)
+
+    if type != "application" or subtype != "octet-stream":
+        raise ValueError
+
+    return np.load(BytesIO(data))["arr_0"]
 
 
 def make_eased_weight_array(count: int, easing: float) -> FloatArray:

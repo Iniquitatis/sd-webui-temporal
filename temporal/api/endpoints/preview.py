@@ -17,4 +17,4 @@ class _(Endpoint):
         if (image := shared.backend.get_preview()) is not None and image is not self.last_preview:
             self.last_preview = image
 
-            return image_to_base64(image, "fast")
+            return image_to_base64(image, True, "fast")

@@ -28,11 +28,6 @@ export class VideoWidget extends Block {
     }
 
     set value(value) {
-        // FIXME: Should receive the correct value in the first place
-        if (value && !value.startsWith("data:video/")) {
-            value = `data:video/mp4;base64,${value}`;
-        }
-
         if (value) {
             this._video.src = value;
             this._video.style.display = null;

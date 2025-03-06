@@ -170,11 +170,6 @@ export class CanvasWidget extends Block {
     }
 
     set value(value) {
-        // FIXME: Should receive the correct value in the first place
-        if (value && !value.startsWith("data:image/")) {
-            value = `data:image/png;base64,${value}`;
-        }
-
         if (value) {
             let image = new Image();
             image.addEventListener("load", () => {
