@@ -5,6 +5,7 @@ import skimage
 from temporal.meta.serializable import Serializable, SerializableField as Field
 from temporal.utils.image import NumpyImage, match_image
 from temporal.utils.math import lerp, normalize
+from temporal.utils.numpy import saturate_array
 
 
 class ImageMask(Serializable):
@@ -26,6 +27,6 @@ class ImageMask(Serializable):
             factor = 1.0 - factor
 
         if self.blurring > 0.0:
-            factor = skimage.filters.gaussian(factor, round(self.blurring), channel_axis = -1)
+            factor = saturate_array(skimage.filters.gaussian(factor, round(self.blurring), channel_axis = -1))
 
         return lerp(image, other, factor)

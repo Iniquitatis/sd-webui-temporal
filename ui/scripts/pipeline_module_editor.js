@@ -86,7 +86,7 @@ export class PipelineModuleEditor extends ReorderableAccordion {
                                 });
                             });
 
-                            this._graph = e.createChild(ImageBox);
+                            this._graph = e.createChild(ImageBox, null, ["fullscreen"]);
                         }
 
                         if (definition.type.startsWith("temporal.pipeline_modules.tool.video_rendering")) {

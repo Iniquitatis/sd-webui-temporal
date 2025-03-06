@@ -15,7 +15,7 @@ export class ImageMaskEditor extends Form {
 
         this.createField("Image", ImageBox, (e) => {
             this._manager.manage(e, "image");
-        });
+        }, ["clear", "download", "fullscreen", "upload"]);
 
         this.createField("Normalized", Checkbox, (e) => {
             e.value = false;

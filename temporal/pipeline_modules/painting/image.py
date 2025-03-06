@@ -6,6 +6,7 @@ from temporal.image_source import ImageSource
 from temporal.meta.configurable import ConfigurableParam as Param
 from temporal.pipeline_modules.painting import PaintingModule
 from temporal.utils.image import NumpyImage, ensure_image_dims
+from temporal.utils.numpy import saturate_array
 
 
 class ImagePaintingModule(PaintingModule):
@@ -18,4 +19,4 @@ class ImagePaintingModule(PaintingModule):
         if (image := self.source.get_image(general.initial_image, frame_index - 1)) is None:
             return np.zeros((size[1], size[0], 4))
 
-        return ensure_image_dims(skimage.filters.gaussian(image, round(self.blurring), channel_axis = -1), size = size)
+        return ensure_image_dims(saturate_array(skimage.filters.gaussian(image, round(self.blurring), channel_axis = -1)), size = size)

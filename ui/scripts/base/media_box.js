@@ -80,8 +80,9 @@ export class MediaBox extends Block {
                 e.style.alignContent = "center";
                 e.style.color = "var(--hint-color)";
                 e.style.fontSize = "96px";
-                e.style.height = "100%";
+                e.style.inset = "0";
                 e.style.opacity = "0.25";
+                e.style.position = "absolute";
                 e.addEventListener("click", () => {
                     if (!this.value) {
                         this._filePicker.open();
