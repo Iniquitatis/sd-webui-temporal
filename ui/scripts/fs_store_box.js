@@ -30,7 +30,7 @@ export class FSStoreBox extends Row {
 
             e.createChild(ToolButton, (e) => {
                 e.label = "\u{f021}";
-                e.style.display = features.includes("refresh") ? null : "none";
+                e.visible = features.includes("refresh");
                 e.onClick.connect(async () => {
                     await postRequest("/temporal/fs_operation", {
                         "store": store,
@@ -45,7 +45,7 @@ export class FSStoreBox extends Row {
 
             e.createChild(ToolButton, (e) => {
                 e.label = "\u{f07c}";
-                e.style.display = features.includes("load") ? null : "none";
+                e.visible = features.includes("load");
                 e.onClick.connect(async () => {
                     this.onLoad.fire(await postRequest("/temporal/fs_operation", {
                         "store": store,
@@ -59,7 +59,7 @@ export class FSStoreBox extends Row {
 
             e.createChild(ToolButton, (e) => {
                 e.label = "\u{f0c7}";
-                e.style.display = features.includes("save") ? null : "none";
+                e.visible = features.includes("save");
                 e.onClick.connect(async () => {
                     if (!this.saveCallback) return;
 
@@ -83,7 +83,7 @@ export class FSStoreBox extends Row {
 
             e.createChild(ToolButton, (e) => {
                 e.label = "\u{f303}";
-                e.style.display = features.includes("rename") ? null : "none";
+                e.visible = features.includes("rename");
                 e.onClick.connect(async () => {
                     let oldName = this._dropdown.value;
                     let newName = window.prompt("Enter new name:", oldName);
@@ -106,7 +106,7 @@ export class FSStoreBox extends Row {
 
             e.createChild(ToolButton, (e) => {
                 e.label = "\u{f2ed}";
-                e.style.display = features.includes("delete") ? null : "none";
+                e.visible = features.includes("delete");
                 e.onClick.connect(async () => {
                     let name = this._dropdown.value;
 

@@ -21,16 +21,16 @@ export class ImageSourceEditor extends Form {
             };
             e.value = "image";
             e.onValueChange.connect((value) => {
-                this._imageBox.style.display = value == "image" ? null : "none";
-                this._videoBox.style.display = value == "video" ? null : "none";
+                this._imageBox.visible = value == "image";
+                this._videoBox.visible = value == "video";
 
-                if (this._imageBox.style.display == "none") {
+                if (!this._imageBox.visible) {
                     this.onValueChange.withDisabled(() => {
                         this._imageBox.value = null;
                     });
                 }
 
-                if (this._videoBox.style.display == "none") {
+                if (!this._videoBox.visible) {
                     this.onValueChange.withDisabled(() => {
                         this._videoBox.value = null;
                     });
@@ -40,11 +40,12 @@ export class ImageSourceEditor extends Form {
         });
 
         this._imageBox = this.createChild(ImageBox, (e) => {
+            e.visible = true;
             this._manager.manage(e, "value");
         }, ["clear", "download", "fullscreen", "upload"]);
 
         this._videoBox = this.createChild(VideoBox, (e) => {
-            e.style.display = "none";
+            e.visible = false;
             this._manager.manage(e, "value");
         }, ["clear", "download", "fullscreen", "upload"]);
     }

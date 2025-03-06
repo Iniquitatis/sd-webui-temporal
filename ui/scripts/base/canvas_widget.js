@@ -65,7 +65,7 @@ export class CanvasWidget extends Block {
                         e.label = "\u{f1fc}";
                         e.style.pointerEvents = "auto";
                         e.onClick.connect(() => {
-                            this._paintingColumn.style.display = this._paintingColumn.style.display == "flex" ? "none" : "flex";
+                            this._paintingColumn.visible = !this._paintingColumn.visible;
                         });
                     });
 
@@ -123,7 +123,7 @@ export class CanvasWidget extends Block {
                 });
 
                 this._paintingColumn = e.createChild(Form, (e) => {
-                    e.style.display = "none";
+                    e.visible = false;
                     e.style.maxWidth = "15rem";
 
                     this._brushColor = e.createField("Color", "input", (e) => {

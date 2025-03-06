@@ -72,15 +72,15 @@ export class MainUI extends Widget {
             });
 
             e.createChild(ProgressBar, (e) => {
-                e.style.display = "none";
+                e.visible = false;
                 this.onGenerationStart.connect(() => {
                     e.value = 0;
                     e.total = 0;
                     e.text = "(Indeterminate)";
-                    e.style.display = null;
+                    e.visible = true;
                 });
                 this.onGenerationStop.connect(() => {
-                    e.style.display = "none";
+                    e.visible = false;
                 });
                 this.onStateCheck.connect((state) => {
                     e.value = state.current_iteration;

@@ -89,7 +89,7 @@ export class MediaBox extends Block {
                     }
                 });
                 this.onValueChange.connect((value) => {
-                    e.style.display = value ? "none" : "block";
+                    e.visible = !value;
                 });
             });
         }
@@ -97,7 +97,7 @@ export class MediaBox extends Block {
         this._element = this.createChild(cls, (e) => {
             e.style.height = "100%";
             e.onValueChange.connect((value) => {
-                this._buttonRow.style.display = value ? "flex" : "none";
+                this._buttonRow.visible = value;
 
                 if (this._viewer) {
                     this._viewer.value = value;
@@ -108,7 +108,7 @@ export class MediaBox extends Block {
         });
 
         this._buttonRow = this.createChild(Row, (e) => {
-            e.style.display = "none";
+            e.visible = false;
             e.style.flexDirection = "row-reverse";
             e.style.position = "absolute";
             e.style.right = "var(--layout-padding)";

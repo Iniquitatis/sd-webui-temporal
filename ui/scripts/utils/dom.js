@@ -19,3 +19,11 @@ export function createElement(parent, tagOrClass, initializer, ...args) {
 
     return result;
 }
+
+export function toggleClass(element, className, enabled) {
+    if (enabled) {
+        element.classList.add(className);
+    } else {
+        element.classList.remove(className);
+    }
+}

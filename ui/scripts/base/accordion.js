@@ -30,13 +30,13 @@ export class Accordion extends Widget {
                 e.states = {opened: "\u{f0d7}", closed: "\u{f0d9}"};
                 e.value = "closed";
                 e.onValueChange.connect((value) => {
-                    this._content.style.display = value == "opened" ? "block" : "none";
+                    this._content.visible = value == "opened";
                 });
             });
         });
 
         this._content = super.createChild(Block, (e) => {
-            e.style.display = "none";
+            e.visible = false;
             e.style.padding = "var(--layout-padding)";
             e.style.paddingTop = "0";
         });

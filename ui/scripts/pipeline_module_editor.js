@@ -28,12 +28,12 @@ export class PipelineModuleEditor extends ReorderableAccordion {
         this._manager = new FieldManager(this.onValueChange);
         this._manager.value = {__type__: definition.type, enabled: true};
 
-        this.classList.add("disabled");
+        this.enabled = false;
 
         getRequest("/temporal/uuid", (value) => {
             this._manager.value.uuid = value;
 
-            this.classList.remove("disabled");
+            this.enabled = true;
         });
 
         this._header.insertBefore(createElement(null, Checkbox, (e) => {
@@ -72,13 +72,13 @@ export class PipelineModuleEditor extends ReorderableAccordion {
                             e.createChild(Button, (e) => {
                                 e.label = "Plot";
                                 e.onClick.connect(async () => {
-                                    e.classList.add("disabled");
+                                    e.enabled = false;
 
                                     this._graph.value = await postRequest("/temporal/render_graph", {
                                         "uuid": this._manager.value.uuid,
                                     });
 
-                                    e.classList.remove("disabled");
+                                    e.enabled = true;
                                 });
                             });
 
@@ -89,13 +89,13 @@ export class PipelineModuleEditor extends ReorderableAccordion {
                             e.createChild(Button, (e) => {
                                 e.label = "Render";
                                 e.onClick.connect(async () => {
-                                    e.classList.add("disabled");
+                                    e.enabled = false;
 
                                     this._video.value = await postRequest("/temporal/render_video", {
                                         "uuid": this._manager.value.uuid,
                                     });
 
-                                    e.classList.remove("disabled");
+                                    e.enabled = true;
                                 });
                             });
 

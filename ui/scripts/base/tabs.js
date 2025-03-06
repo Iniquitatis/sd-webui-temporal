@@ -1,5 +1,6 @@
 import {Block} from "../../scripts/base/block.js";
 import {Widget} from "../../scripts/core/widget.js";
+import {toggleClass} from "../../scripts/utils/dom.js";
 
 class Tab extends Widget {
     constructor() {
@@ -43,7 +44,7 @@ export class Tabs extends Widget {
 
         let tab = this._content.createChild(Tab, (e) => {
             e.name = name;
-            e.style.display = "none";
+            e.visible = false;
         });
 
         if (this._bar.childElementCount == 1) {
@@ -55,18 +56,11 @@ export class Tabs extends Widget {
 
     setActiveTab(name) {
         for (let child of this._bar.childNodes) {
-            if (child.innerText == name) {
-                child.classList.add("active");
-            }
-            else {
-                child.classList.remove("active");
-            }
+            toggleClass(child, "active", child.innerText == name);
         }
 
         for (let child of this._content.childNodes) {
-            if (!(child instanceof Tab)) continue;
-
-            child.style.display = child.name == name ? null : "none";
+            child.visible = child.name == name;
         }
     }
 }

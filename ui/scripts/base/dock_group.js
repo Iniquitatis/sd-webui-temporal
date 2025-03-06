@@ -26,7 +26,7 @@ class Dock extends Column {
             e.createChild(ToolButton, (e) => {
                 e.label = "\u{f323}";
                 e.onClick.connect(() => {
-                    this.style.display = "none";
+                    this.visible = false;
                 });
             });
         });
@@ -75,7 +75,7 @@ export class DockGroup extends Widget {
     createDock(icon, label, tagOrClass, initializer, ...args) {
         let dock = this._content.createChild(Dock, (e) => {
             e.label = label;
-            e.style.display = "none";
+            e.visible = false;
             e.style.pointerEvents = "auto";
         });
 
@@ -96,7 +96,7 @@ export class DockGroup extends Widget {
 
     setActiveDock(label) {
         for (let child of this._content.childNodes) {
-            child.style.display = child.label == label ? "flex" : "none";
+            child.visible = child.label == label;
         }
     }
 }

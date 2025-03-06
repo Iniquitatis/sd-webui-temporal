@@ -1,16 +1,20 @@
-import {createElement} from "../../scripts/utils/dom.js";
+import {createElement, toggleClass} from "../../scripts/utils/dom.js";
 
 export class Widget extends HTMLElement {
+    get enabled() {
+        return !this.classList.contains("disabled");
+    }
+
     get visible() {
-        return this.classList.contains("hidden");
+        return !this.classList.contains("hidden");
+    }
+
+    set enabled(value) {
+        this.toggleClass("disabled", !value);
     }
 
     set visible(value) {
-        if (value) {
-            this.classList.add("hidden");
-        } else {
-            this.classList.remove("hidden");
-        }
+        this.toggleClass("hidden", !value);
     }
 
     attachTitle(title) {}
@@ -25,5 +29,9 @@ export class Widget extends HTMLElement {
 
     isComplexWidget() {
         return false;
+    }
+
+    toggleClass(className, enabled) {
+        toggleClass(this, className, enabled);
     }
 }

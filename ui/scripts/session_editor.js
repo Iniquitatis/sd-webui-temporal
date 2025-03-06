@@ -15,11 +15,7 @@ export class SessionEditor extends Form {
         this.createField("Load parameters", Checkbox, (e) => {
             e.value = true;
             e.onValueChange.connect((value) => {
-                if (value) {
-                    this._continue.classList.remove("disabled");
-                } else {
-                    this._continue.classList.add("disabled");
-                }
+                this._continue.visible = value;
             });
             this._manager.manage(e, "load_parameters");
         });
