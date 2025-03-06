@@ -47,6 +47,7 @@ export class Checkbox extends Widget {
             e.style.color = "var(--hint-color)";
             e.style.fontSize = "0.9rem";
             e.style.height = "var(--widget-height)";
+            e.style.userSelect = "none";
         });
     }
 
