@@ -3,6 +3,8 @@ from threading import Lock
 from time import perf_counter
 from typing import Literal, Optional
 
+import numpy as np
+
 from temporal.project import Project
 from temporal.shared import shared
 from temporal.utils import logging
@@ -28,7 +30,7 @@ class Engine:
             self.state = ExecutionState(project, True, "active", 0, iter_count)
 
         if project.general.initial_image is None:
-            project.general.initial_image = project.general.initial_noise.generate((project.general.image_size.y, project.general.image_size.x, 3), project.general.seed)
+            project.general.initial_image = np.full((project.general.image_size.y, project.general.image_size.x, 3), 0.5)
 
         if project.iteration.image is None:
             project.iteration.image = project.general.initial_image.copy()
