@@ -68,6 +68,7 @@ export class DockGroup extends Widget {
 
         this._buttons = this.createChild(Column, (e) => {
             e.style.gap = "calc(var(--layout-gap) / 2)";
+            e.style.margin = "calc(var(--layout-gap) / 2) 0";
         });
     }
 

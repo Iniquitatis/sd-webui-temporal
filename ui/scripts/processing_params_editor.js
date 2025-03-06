@@ -91,5 +91,9 @@ export class ProcessingParamsEditor extends Form {
     set value(value) {
         this._manager.value = value;
     }
+
+    isComplexWidget() {
+        return true;
+    }
 }
 customElements.define("processing-params-editor", ProcessingParamsEditor);

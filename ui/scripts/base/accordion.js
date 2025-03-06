@@ -38,6 +38,7 @@ export class Accordion extends Widget {
         this._content = super.createChild(Block, (e) => {
             e.style.display = "none";
             e.style.padding = "var(--layout-padding)";
+            e.style.paddingTop = "0";
         });
     }
 

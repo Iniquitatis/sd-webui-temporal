@@ -96,7 +96,7 @@ export class MainUI extends Widget {
                 this.onNewPreview.connect((preview) => {
                     e.value = preview;
                 });
-            });
+            }, ["clear", "download", "fullscreen", "upload"]);
 
             e.createChild(MultiStateButton, (e) => {
                 e.states = {normal: "Fullscreen", fullscreen: "Back to normal"};

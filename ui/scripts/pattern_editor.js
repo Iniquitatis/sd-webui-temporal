@@ -50,5 +50,9 @@ export class PatternEditor extends Form {
     set value(value) {
         this._manager.value = value;
     }
+
+    isComplexWidget() {
+        return true;
+    }
 }
 customElements.define("pattern-editor", PatternEditor);

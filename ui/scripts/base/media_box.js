@@ -52,7 +52,7 @@ class MediaViewer extends Widget {
 customElements.define("media-viewer", MediaViewer);
 
 export class MediaBox extends Block {
-    constructor(cls, mimeType = "*/*") {
+    constructor(cls, mimeType = "*/*", features = []) {
         super();
 
         this.onValueChange = new Signal();
@@ -73,11 +73,25 @@ export class MediaBox extends Block {
         this.style.position = "relative";
         this.style.textAlign = "center";
         this.style.userSelect = "none";
-        this.addEventListener("click", () => {
-            if (!this.value) {
-                this._filePicker.open();
-            }
-        });
+
+        if (features.includes("upload")) {
+            this.createChild(Block, (e) => {
+                e.innerText = "\u{f093}";
+                e.style.alignContent = "center";
+                e.style.color = "var(--hint-color)";
+                e.style.fontSize = "96px";
+                e.style.height = "100%";
+                e.style.opacity = "0.25";
+                e.addEventListener("click", () => {
+                    if (!this.value) {
+                        this._filePicker.open();
+                    }
+                });
+                this.onValueChange.connect((value) => {
+                    e.style.display = value ? "none" : "block";
+                });
+            });
+        }
 
         this._element = this.createChild(cls, (e) => {
             e.style.height = "100%";
@@ -100,49 +114,57 @@ export class MediaBox extends Block {
             e.style.top = "var(--layout-padding)";
             e.style.width = "auto";
 
-            e.createChild(ToolButton, (e) => {
-                e.label = "\u{f00d}";
-                e.onClick.connect(() => {
-                    this.value = null;
-                });
-            });
-
-            e.createChild(ToolButton, (e) => {
-                e.label = "\u{f065}";
-                e.onClick.connect(() => {
-                    this._viewer = createElement(document.body, MediaViewer, (e) => {
-                        e.value = this.value;
-                    }, this, this._element);
-                });
-            });
-
-            e.createChild(ToolButton, (e) => {
-                e.label = "\u{f093}";
-                e.onClick.connect(() => {
-                    this._filePicker.open();
-                });
-            });
-
-            e.createChild(ToolButton, (e) => {
-                e.label = "\u{f019}";
-                e.onClick.connect(async () => {
-                    let value = this.value;
-                    if (!value) return;
-
-                    await fetch(value)
-                    .then((response) => response.blob())
-                    .then((blob) => {
-                        let mimeType = value.substring(value.indexOf(":") + 1, value.indexOf(";"));
-                        let format = mimeType.substring(mimeType.indexOf("/") + 1);
-
-                        let link = document.createElement("a");
-                        link.download = `temporal_${new Date(Date.now()).toISOString()}.${format}`;
-                        link.href = URL.createObjectURL(blob);
-                        link.dataset.downloadurl = [mimeType, link.download, link.href];
-                        link.click();
+            if (features.includes("clear")) {
+                e.createChild(ToolButton, (e) => {
+                    e.label = "\u{f00d}";
+                    e.onClick.connect(() => {
+                        this.value = null;
                     });
                 });
-            });
+            }
+
+            if (features.includes("fullscreen")) {
+                e.createChild(ToolButton, (e) => {
+                    e.label = "\u{f065}";
+                    e.onClick.connect(() => {
+                        this._viewer = createElement(document.body, MediaViewer, (e) => {
+                            e.value = this.value;
+                        }, this, this._element);
+                    });
+                });
+            }
+
+            if (features.includes("upload")) {
+                e.createChild(ToolButton, (e) => {
+                    e.label = "\u{f093}";
+                    e.onClick.connect(() => {
+                        this._filePicker.open();
+                    });
+                });
+            }
+
+            if (features.includes("download")) {
+                e.createChild(ToolButton, (e) => {
+                    e.label = "\u{f019}";
+                    e.onClick.connect(async () => {
+                        let value = this.value;
+                        if (!value) return;
+
+                        await fetch(value)
+                        .then((response) => response.blob())
+                        .then((blob) => {
+                            let mimeType = value.substring(value.indexOf(":") + 1, value.indexOf(";"));
+                            let format = mimeType.substring(mimeType.indexOf("/") + 1);
+
+                            let link = document.createElement("a");
+                            link.download = `temporal_${new Date(Date.now()).toISOString()}.${format}`;
+                            link.href = URL.createObjectURL(blob);
+                            link.dataset.downloadurl = [mimeType, link.download, link.href];
+                            link.click();
+                        });
+                    });
+                });
+            }
         });
 
         this._viewer = null;

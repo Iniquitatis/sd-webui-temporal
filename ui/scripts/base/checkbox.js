@@ -1,3 +1,4 @@
+import {Block} from "../../scripts/base/block.js";
 import {Signal} from "../../scripts/core/signal.js";
 import {Widget} from "../../scripts/core/widget.js";
 
@@ -33,6 +34,24 @@ export class Checkbox extends Widget {
         this._input.checked = value;
 
         this.onValueChange.fire(this.value);
+    }
+
+    attachTitle(title) {
+        this.style.display = "flex";
+        this.style.flexDirection = "row";
+        this.style.gap = "calc(var(--layout-gap) / 2)";
+
+        this.createChild(Block, (e) => {
+            e.innerText = title;
+            e.style.alignContent = "center";
+            e.style.color = "var(--hint-color)";
+            e.style.fontSize = "0.9rem";
+            e.style.height = "var(--widget-height)";
+        });
+    }
+
+    canAttachTitle() {
+        return true;
     }
 }
 customElements.define("custom-checkbox", Checkbox);

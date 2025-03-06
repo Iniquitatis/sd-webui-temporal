@@ -70,5 +70,9 @@ export class VideoRendererEditor extends Form {
     set value(value) {
         this._manager.value = value;
     }
+
+    isComplexWidget() {
+        return true;
+    }
 }
 customElements.define("video-renderer-editor", VideoRendererEditor);

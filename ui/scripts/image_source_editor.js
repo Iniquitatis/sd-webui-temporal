@@ -41,12 +41,12 @@ export class ImageSourceEditor extends Form {
 
         this._imageBox = this.createChild(ImageBox, (e) => {
             this._manager.manage(e, "value");
-        });
+        }, ["clear", "download", "fullscreen", "upload"]);
 
         this._videoBox = this.createChild(VideoBox, (e) => {
             e.style.display = "none";
             this._manager.manage(e, "value");
-        });
+        }, ["clear", "download", "fullscreen", "upload"]);
     }
 
     get value() {
@@ -55,6 +55,10 @@ export class ImageSourceEditor extends Form {
 
     set value(value) {
         this._manager.value = value;
+    }
+
+    isComplexWidget() {
+        return true;
     }
 }
 customElements.define("image-source-editor", ImageSourceEditor);

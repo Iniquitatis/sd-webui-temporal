@@ -1,5 +1,7 @@
 import {Block} from "../../scripts/base/block.js";
+import {GroupBox} from "../../scripts/base/group_box.js";
 import {Widget} from "../../scripts/core/widget.js";
+import {createElement} from "../../scripts/utils/dom.js";
 
 export class Form extends Widget {
     constructor(isRow = false) {
@@ -18,22 +20,33 @@ export class Form extends Widget {
     }
 
     createField(name, tagOrClass, initializer, ...args) {
-        let result = null;
+        let result = createElement(null, tagOrClass, initializer, ...args);
 
-        this.createChild(Block, (e) => {
-            e.style.display = "flex";
-            e.style.flexDirection = "column";
-
-            e.createChild(Block, (e) => {
-                e.innerText = name;
-                e.style.alignContent = "center";
-                e.style.color = "var(--hint-color)";
-                e.style.fontSize = "0.9rem";
-                e.style.height = "var(--widget-height)";
+        if (result.canAttachTitle && result.canAttachTitle()) {
+            result.attachTitle(name);
+            this.appendChild(result);
+        } else if (result.isComplexWidget && result.isComplexWidget()) {
+            this.createChild(GroupBox, (e) => {
+                e.label = name;
+                // FIXME: Accesses private stuff
+                e._fieldset.appendChild(result);
             });
+        } else {
+            this.createChild(Block, (e) => {
+                e.style.display = "flex";
+                e.style.flexDirection = "column";
 
-            result = e.createChild(tagOrClass, initializer, ...args);
-        });
+                e.createChild(Block, (e) => {
+                    e.innerText = name;
+                    e.style.alignContent = "center";
+                    e.style.color = "var(--hint-color)";
+                    e.style.fontSize = "0.9rem";
+                    e.style.marginBottom = "calc(var(--layout-gap) / 2)";
+                });
+
+                e.appendChild(result);
+            });
+        }
 
         return result;
     }

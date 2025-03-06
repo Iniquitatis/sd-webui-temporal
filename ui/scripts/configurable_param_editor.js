@@ -51,6 +51,18 @@ export class ConfigurableParamEditor extends Widget {
     set value(value) {
         this._editor.value = value;
     }
+
+    attachTitle(title) {
+        this._editor.attachTitle(title);
+    }
+
+    canAttachTitle() {
+        return this._editor.canAttachTitle();
+    }
+
+    isComplexWidget() {
+        return this._editor.isComplexWidget();
+    }
 }
 customElements.define("configurable-param-editor", ConfigurableParamEditor);
 
@@ -115,7 +127,7 @@ const EDITORS = {
 
     "numpy.ndarray": (parent, definition) => parent.createChild(ImageBox, (e) => {
         e.channels = definition.channels ?? 3;
-    }),
+    }, ["clear", "download", "fullscreen", "upload"]),
 
     "temporal.color.Color": (parent, definition) => parent.createChild(ColorPicker, (e) => {
         e.value = definition.default ?? {r: 0.0, g: 0.0, b: 0.0, a: 1.0};

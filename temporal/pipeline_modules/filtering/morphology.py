@@ -14,7 +14,7 @@ class MorphologyFilter(ImageFilter):
         "dilation": "Dilation",
         "opening": "Opening",
         "closing": "Closing",
-    }, value = "erosion", ui_type = "menu")
+    }, value = "erosion", ui_type = "radio")
     radius: int = Param("Radius", minimum = 0, maximum = 50, step = 1, value = 0, ui_type = "slider")
 
     def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:

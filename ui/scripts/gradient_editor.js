@@ -53,5 +53,9 @@ export class GradientEditor extends Form {
     set value(value) {
         this._manager.value = value;
     }
+
+    isComplexWidget() {
+        return true;
+    }
 }
 customElements.define("gradient-editor", GradientEditor);

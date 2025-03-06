@@ -103,7 +103,7 @@ export class PipelineModuleEditor extends ReorderableAccordion {
                                 });
                             });
 
-                            this._video = e.createChild(VideoBox);
+                            this._video = e.createChild(VideoBox, null, ["download", "fullscreen"]);
                         }
                     });
                 }

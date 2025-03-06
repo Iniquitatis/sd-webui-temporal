@@ -45,6 +45,7 @@ export class ColorPicker extends Row {
             e.classList.add("checkerboard-bg");
             e.style.border = "var(--thin-border)";
             e.style.borderRadius = "var(--corners)";
+            e.style.overflow = "hidden";
             e.style.width = "var(--small-input-width)";
 
             this._preview = e.createChild(Block, (e) => {
@@ -64,6 +65,10 @@ export class ColorPicker extends Row {
 
     set value(value) {
         this._manager.value = value;
+    }
+
+    isComplexWidget() {
+        return true;
     }
 }
 customElements.define("color-picker", ColorPicker);

@@ -73,5 +73,9 @@ export class NoiseEditor extends Form {
     set value(value) {
         this._manager.value = value;
     }
+
+    isComplexWidget() {
+        return true;
+    }
 }
 customElements.define("noise-editor", NoiseEditor);
