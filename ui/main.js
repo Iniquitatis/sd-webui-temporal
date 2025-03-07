@@ -24,18 +24,11 @@ export class MainUI extends Widget {
         this.onGenerationStart = new Signal();
         this.onGenerationStop = new Signal();
         this.onStateCheck = new Signal();
-        this.onNewPreview = new Signal();
 
         this._manager = new FieldManager(this.onValueChange);
 
         this._stateTimer = new Timer(async () => {
             this.onStateCheck.fire(await getRequest("/temporal/state"));
-
-            let preview = await getRequest("/temporal/preview");
-
-            if (preview) {
-                this.onNewPreview.fire(preview);
-            }
         }, 1.0);
         this.onGenerationStart.connect(() => this._stateTimer.start());
         this.onGenerationStop.connect(() => this._stateTimer.stop());
@@ -65,8 +58,11 @@ export class MainUI extends Widget {
                     }
                 });
                 this.onStateCheck.connect((state) => {
-                    if (state.state == "stopped") {
+                    if (state.state == "stopping") {
+                        e.enabled = false;
+                    } else if (state.state == "stopped") {
                         e.state = "stopped";
+                        e.enabled = true;
                     }
                 });
             });
@@ -93,8 +89,10 @@ export class MainUI extends Widget {
                 e._element.width = 512;
                 e._element.height = 512;
                 this._manager.manage(e, "image");
-                this.onNewPreview.connect((preview) => {
-                    e.value = preview;
+                this.onStateCheck.connect((state) => {
+                    if (state.preview) {
+                        e.value = state.preview;
+                    }
                 });
             }, ["clear", "download", "fullscreen", "upload"]);
 

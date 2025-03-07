@@ -1,21 +1,17 @@
 from math import floor
-from pathlib import Path
 from typing import Any, Literal, Optional
 
 import requests
 
 from temporal.backend import Backend
 from temporal.processing_params import ProcessingParams
-from temporal.thread_queue import ThreadQueue
-from temporal.utils.image import NumpyImage, base64_to_image, image_to_base64, np_to_pil, save_image
+from temporal.utils.image import NumpyImage, base64_to_image, image_to_base64
 
 
 class WebUIAPIBackend(Backend):
     def __init__(self, host: str, port: int) -> None:
         self.host = host
         self.port = port
-        self.image_save_queue = ThreadQueue()
-        self._preview_image = None
 
     @property
     def url(self):
@@ -40,7 +36,7 @@ class WebUIAPIBackend(Backend):
     def list_schedulers(self) -> list[str]:
         return [x["label"] for x in _safe_request("GET", f"{self.url}/sdapi/v1/schedulers").json()]
 
-    def image_to_image(self, image: NumpyImage, params: ProcessingParams, width: int, height: int, preview: bool = False) -> Optional[NumpyImage]:
+    def image_to_image(self, image: NumpyImage, params: ProcessingParams, width: int, height: int) -> Optional[NumpyImage]:
         if result := _safe_request("POST", f"{self.url}/sdapi/v1/img2img", json = {
             "init_images": [image_to_base64(image, False, "fast")],
             "prompt": params.positive_prompt,
@@ -78,24 +74,8 @@ class WebUIAPIBackend(Backend):
             "upscaler_1": upscaler,
         }).json()["image"], False)
 
-    def get_preview(self) -> Optional[NumpyImage]:
-        return self._preview_image
-
-    def set_preview(self, image: Optional[NumpyImage] = None) -> None:
-        self._preview_image = image
-
-    def save_image(self, image: NumpyImage, path: Path, archive_mode: bool = False) -> None:
-        self.image_save_queue.enqueue(save_image, np_to_pil(image), path, archive_mode)
-
-    def are_images_saved(self) -> bool:
-        return not self.image_save_queue.busy
-
     def interrupt(self) -> None:
         _safe_request("POST", f"{self.url}/sdapi/v1/interrupt")
-
-    def is_interrupted(self) -> bool:
-        state = _safe_request("GET", f"{self.url}/sdapi/v1/progress").json()["state"]
-        return state["interrupted"] or state["skipped"]
 
 
 def _safe_request(method: Literal["GET", "POST"], *args: Any, **kwargs: Any) -> requests.Response:

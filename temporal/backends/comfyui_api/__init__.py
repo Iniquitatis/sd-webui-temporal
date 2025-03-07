@@ -1,6 +1,5 @@
 from io import BytesIO
 from math import floor
-from pathlib import Path
 from time import sleep
 from typing import Any, Literal, Optional
 
@@ -9,17 +8,13 @@ from PIL import Image
 
 from temporal.backend import Backend
 from temporal.processing_params import ProcessingParams
-from temporal.thread_queue import ThreadQueue
-from temporal.utils.image import NumpyImage, np_to_pil, pil_to_np, save_image
+from temporal.utils.image import NumpyImage, np_to_pil, pil_to_np
 
 
 class ComfyUIAPIBackend(Backend):
     def __init__(self, host: str, port: int) -> None:
         self.host = host
         self.port = port
-        self.image_save_queue = ThreadQueue()
-        self._preview_image = None
-        self._interrupted = True
 
     @property
     def url(self):
@@ -40,9 +35,7 @@ class ComfyUIAPIBackend(Backend):
     def list_schedulers(self) -> list[str]:
         return _safe_request("GET", f"{self.url}/object_info").json()["KSampler"]["input"]["required"]["scheduler"][0]
 
-    def image_to_image(self, image: NumpyImage, params: ProcessingParams, width: int, height: int, preview: bool = False) -> Optional[NumpyImage]:
-        self._interrupted = False
-
+    def image_to_image(self, image: NumpyImage, params: ProcessingParams, width: int, height: int) -> Optional[NumpyImage]:
         self._clear_queue()
 
         is_vae_defined = params.vae and params.vae != "Automatic"
@@ -126,8 +119,6 @@ class ComfyUIAPIBackend(Backend):
         }))
 
     def upscale_image(self, image: NumpyImage, upscaler: str, scale: float) -> Optional[NumpyImage]:
-        self._interrupted = False
-
         self._clear_queue()
 
         return self._get_image(self._prompt({
@@ -169,25 +160,8 @@ class ComfyUIAPIBackend(Backend):
             },
         }))
 
-    def get_preview(self) -> Optional[NumpyImage]:
-        return self._preview_image
-
-    def set_preview(self, image: Optional[NumpyImage] = None) -> None:
-        self._preview_image = image
-
-    def save_image(self, image: NumpyImage, path: Path, archive_mode: bool = False) -> None:
-        self.image_save_queue.enqueue(save_image, np_to_pil(image), path, archive_mode)
-
-    def are_images_saved(self) -> bool:
-        return not self.image_save_queue.busy
-
     def interrupt(self) -> None:
         _safe_request("POST", f"{self.url}/interrupt")
-
-        self._interrupted = True
-
-    def is_interrupted(self) -> bool:
-        return self._interrupted
 
     def _clear_queue(self) -> None:
         _safe_request("POST", f"{self.url}/queue", json = {"clear": "true"})

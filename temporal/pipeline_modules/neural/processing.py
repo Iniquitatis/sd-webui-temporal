@@ -28,7 +28,6 @@ class ProcessingModule(NeuralModule):
             ),
             int(quantize(floor(general.image_size.x * self.scale), 8)),
             int(quantize(floor(general.image_size.y * self.scale), 8)),
-            shared.previewed_modules[self.uuid],
         )) is not None:
             return result
         else:

@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
-from pathlib import Path
 from typing import Optional
 
 from temporal.processing_params import ProcessingParams
@@ -29,7 +28,7 @@ class Backend(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def image_to_image(self, image: NumpyImage, params: ProcessingParams, width: int, height: int, preview: bool = False) -> Optional[NumpyImage]:
+    def image_to_image(self, image: NumpyImage, params: ProcessingParams, width: int, height: int) -> Optional[NumpyImage]:
         raise NotImplementedError
 
     @abstractmethod
@@ -37,25 +36,5 @@ class Backend(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_preview(self) -> Optional[NumpyImage]:
-        raise NotImplementedError
-
-    @abstractmethod
-    def set_preview(self, image: Optional[NumpyImage] = None) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def save_image(self, image: NumpyImage, path: Path, archive_mode: bool = False) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def are_images_saved(self) -> bool:
-        raise NotImplementedError
-
-    @abstractmethod
     def interrupt(self) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def is_interrupted(self) -> bool:
         raise NotImplementedError

@@ -18,8 +18,7 @@ class Pipeline(Serializable):
     animation: Animation = Field(Animation)
 
     def find_module(self, uuid: str, type: Type[T] = PipelineModule) -> Optional[T]:
-        if ((result := find_by_predicate(self.modules, lambda x: x.uuid == uuid)) is not None and
-            isinstance(result, type)):
+        if isinstance(result := find_by_predicate(self.modules, lambda x: x.uuid == uuid), type):
             return result
 
     def run(self, general: GeneralData, iteration: IterationData) -> bool:
@@ -42,13 +41,12 @@ class Pipeline(Serializable):
             iteration.image = image
             iteration.step += 1
 
-            # FIXME: Gives issues when any non-Processing module is first in the
-            # module list
-            # if shared.backend.is_interrupted():
-            #     return False
+            with shared.state_lock:
+                if not shared.state.running:
+                    return False
 
-            if shared.previewed_modules[module.uuid]:
-                shared.backend.set_preview(iteration.image)
+                if shared.previewed_modules[module.uuid]:
+                    shared.state.preview = iteration.image
 
         iteration.index += 1
         iteration.step = 0

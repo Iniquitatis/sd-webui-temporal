@@ -1,7 +1,5 @@
-from dataclasses import dataclass
-from threading import Lock
+import dataclasses
 from time import perf_counter
-from typing import Literal, Optional
 
 import numpy as np
 
@@ -11,24 +9,8 @@ from temporal.utils import logging
 from temporal.utils.image import ensure_image_dims
 
 
-@dataclass
-class ExecutionState:
-    active_project: Optional[Project] = None
-    running: bool = False
-    state: Literal["active", "stopped"] = "stopped"
-    current_iteration: int = 0
-    total_iterations: int = 0
-
-
 class Engine:
-    def __init__(self) -> None:
-        self.state = ExecutionState()
-        self._state_lock = Lock()
-
     def start(self, project: Project, iter_count: int) -> None:
-        with self._state_lock:
-            self.state = ExecutionState(project, True, "active", 0, iter_count)
-
         if project.general.initial_image is None:
             project.general.initial_image = np.full((project.general.image_size.y, project.general.image_size.x, 3), 0.5)
 
@@ -37,15 +19,27 @@ class Engine:
 
         project.iteration.image = ensure_image_dims(project.iteration.image, (project.general.image_size.x, project.general.image_size.y), 3)
 
+        with shared.state_lock:
+            shared.state = dataclasses.replace(
+                shared.state,
+                active_project = project,
+                running = True,
+                state = "active",
+                current_iteration = 0,
+                total_iterations = iter_count,
+                preview = project.iteration.image,
+            )
+
         for i in range(iter_count):
-            with self._state_lock:
-                if not self.state.running:
+            with shared.state_lock:
+                if not shared.state.running:
+                    shared.state.state = "stopping"
                     break
 
             logging.info(f"Iteration {i + 1} / {iter_count}")
 
-            with self._state_lock:
-                self.state.current_iteration = i
+            with shared.state_lock:
+                shared.state.current_iteration = i
 
             start_time = perf_counter()
 
@@ -63,11 +57,19 @@ class Engine:
 
         project.save(project.general.path)
 
-        with self._state_lock:
-            self.state = ExecutionState()
+        with shared.state_lock:
+            shared.state = dataclasses.replace(
+                shared.state,
+                active_project = project,
+                running = False,
+                state = "stopped",
+                current_iteration = 0,
+                total_iterations = 0,
+                preview = None,
+            )
 
     def stop(self) -> None:
         shared.backend.interrupt()
 
-        with self._state_lock:
-            self.state.running = False
+        with shared.state_lock:
+            shared.state.running = False
