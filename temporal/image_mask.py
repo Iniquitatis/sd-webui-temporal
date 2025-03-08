@@ -18,7 +18,7 @@ class ImageMask(Serializable):
         if self.image is None or image is other:
             return other
 
-        factor = match_image(self.image, image, channels = False)
+        factor = match_image(self.image, image)
 
         if self.normalized:
             factor = normalize(factor, factor.min(), factor.max())

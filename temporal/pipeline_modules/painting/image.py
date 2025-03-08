@@ -5,18 +5,27 @@ from temporal.general_data import GeneralData
 from temporal.image_source import ImageSource
 from temporal.meta.configurable import ConfigurableParam as Param
 from temporal.pipeline_modules.painting import PaintingModule
-from temporal.utils.image import NumpyImage, ensure_image_dims
+from temporal.utils.image import NumpyImage, ensure_image_dims, make_trs_transform
 from temporal.utils.numpy import saturate_array
+from temporal.vector import FloatVector
 
 
 class ImagePaintingModule(PaintingModule):
     name = "Image"
 
     source: ImageSource = Param("Image source", channels = 4, value = ImageSource)
+    offset: FloatVector = Param("Offset", axes = ["X", "Y"], minimum = -1.0, maximum = 1.0, step = 0.001, value = lambda: FloatVector(0.0, 0.0), ui_type = "slider")
     blurring: float = Param("Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, ui_type = "slider")
 
     def draw(self, size: tuple[int, int], general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
         if (image := self.source.get_image(general.initial_image, frame_index - 1)) is None:
             return np.zeros((size[1], size[0], 4))
 
-        return ensure_image_dims(saturate_array(skimage.filters.gaussian(image, round(self.blurring), channel_axis = -1)), size = size)
+        # FIXME: Channel count should be handled in advance, on receiving an
+        # image from the source/frontend
+        image = ensure_image_dims(image, channels = 4)
+
+        return skimage.transform.warp(
+            saturate_array(skimage.filters.gaussian(ensure_image_dims(image, size = size), round(self.blurring), channel_axis = -1)),
+            make_trs_transform(size, translation = (self.offset.x, self.offset.y)),
+        )

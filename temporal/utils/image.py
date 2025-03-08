@@ -98,13 +98,23 @@ def load_image(path: str | Path) -> PILImage:
 
 def make_trs_transform(
     image_size: tuple[int, int],
+    *,
     translation: tuple[float, float] = (0.0, 0.0),
+    translation_relative: bool = True,
     rotation: float = 0.0,
     scale: float = 1.0,
     origin: tuple[float, float] = (0.5, 0.5),
+    origin_relative: bool = True,
 ) -> Transform:
-    abs_translation = (-translation[0] * image_size[0], -translation[1] * image_size[1])
-    abs_origin = (-origin[0] * image_size[0], -origin[1] * image_size[1])
+    abs_translation = tuple(-x for x in translation)
+
+    if translation_relative:
+        abs_translation = tuple(x * y for x, y in zip(abs_translation, image_size))
+
+    abs_origin = tuple(-x for x in origin)
+
+    if origin_relative:
+        abs_origin = tuple(x * y for x, y in zip(abs_origin, image_size))
 
     result = Transform()
     result.params @= Transform(translation = abs_translation).params
