@@ -1,4 +1,3 @@
-from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from threading import Lock
@@ -34,7 +33,6 @@ class SharedData:
         self.preset_store.refresh()
         self.project_store = FSStore(Project, self.settings.output.output_dir, self.settings.ui.project_sorting_order)
         self.project_store.refresh()
-        self.previewed_modules: defaultdict[str, bool] = defaultdict(lambda: True)
         self.sample_image = pil_to_np(load_image("data/sample_image.png"))
         self.state = ExecutionState()
         self.state_lock = Lock()

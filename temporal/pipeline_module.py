@@ -24,6 +24,7 @@ class PipelineModule(Configurable, abstract = True):
 
     uuid: str = Field("")
     enabled: bool = Field(True)
+    preview: bool = Field(True)
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)

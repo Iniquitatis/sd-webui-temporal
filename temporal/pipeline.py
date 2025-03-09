@@ -45,7 +45,7 @@ class Pipeline(Serializable):
                 if not shared.state.running:
                     return False
 
-                if shared.previewed_modules[module.uuid]:
+                if module.preview:
                     shared.state.preview = iteration.image
 
         iteration.index += 1
