@@ -31,7 +31,11 @@ export class PipelineModuleEditor extends ReorderableAccordion {
         this.enabled = false;
 
         getRequest("/temporal/uuid", (value) => {
-            this._manager.value.uuid = value;
+            // NOTE: Because editor's value could be set earlier than when this
+            // callback is getting called
+            if (!this._manager.value.uuid) {
+                this._manager.value.uuid = value;
+            }
 
             this.enabled = true;
         });
