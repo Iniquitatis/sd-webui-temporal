@@ -18,9 +18,13 @@ from temporal.shared import shared
 parser = ArgumentParser()
 parser.add_argument("--host", type = str, default = "0.0.0.0")
 parser.add_argument("--port", type = int, default = 7870)
-parser.add_argument("--backend", choices = ["comfyui", "sdwebui"], default = "sdwebui")
+parser.add_argument("--settings-dir", type = Path, default = "settings")
+parser.add_argument("--presets-dir", type = Path, default = "presets")
+parser.add_argument("--backend", choices = ["comfyui", "sdwebui", "standalone"], default = "standalone")
 parser.add_argument("--backend-host", type = str, default = "")
 parser.add_argument("--backend-port", type = int, default = 0)
+parser.add_argument("--model-dir", type = Path, default = ".")
+parser.add_argument("--vae-dir", type = Path, default = ".")
 
 args = parser.parse_args()
 
@@ -34,10 +38,15 @@ elif args.backend == "sdwebui":
 
     backend = WebUIAPIBackend(args.backend_host or "http://127.0.0.1", args.backend_port or 7860)
 
+elif args.backend == "standalone":
+    from temporal.backends.standalone import StandaloneBackend
+
+    backend = StandaloneBackend(args.model_dir, args.vae_dir)
+
 else:
     raise ValueError(f"Unknown backend {args.backend}")
 
-shared.init(backend, Path("settings"), Path("presets"))
+shared.init(backend, args.settings_dir, args.presets_dir)
 
 app = FastAPI(title = "Temporal API")
 register_api(app, Engine())

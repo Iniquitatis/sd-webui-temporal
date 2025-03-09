@@ -8,7 +8,7 @@ from PIL import Image
 
 from temporal.backend import Backend
 from temporal.processing_params import ProcessingParams
-from temporal.utils.image import NumpyImage, np_to_pil, pil_to_np
+from temporal.utils.image import NumpyImage, ensure_image_dims, np_to_pil, pil_to_np
 
 
 class ComfyUIAPIBackend(Backend):
@@ -71,7 +71,7 @@ class ComfyUIAPIBackend(Backend):
             "image": {
                 "class_type": "LoadImage",
                 "inputs": {
-                    "image": self._upload_image("_temporal_image_to_image.png", image),
+                    "image": self._upload_image("_temporal_image_to_image.png", ensure_image_dims(image, (width, height))),
                 },
             },
             "latent_image": {

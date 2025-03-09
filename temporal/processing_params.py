@@ -6,7 +6,7 @@ from temporal.meta.serializable import Serializable, SerializableField as Field
 
 class ProcessingParams(Serializable):
     model: str = Field("")
-    vae: Optional[str] = Field("")
+    vae: Optional[str] = Field(None)
     clip_skip: int = Field(1)
     positive_prompt: str = Field("")
     negative_prompt: str = Field("")
