@@ -54,8 +54,6 @@ export class PipelineModuleEditor extends ReorderableAccordion {
                     "state": value == "on",
                 });
             });
-            // FIXME: Needed here only for the preset system, and it will get
-            // broken after loading a project from the UI
             this._manager.manage(e, "preview", (value) => value ? "on" : "off", (value) => value == "on");
         }), this._header.lastChild);
 

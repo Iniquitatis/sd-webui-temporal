@@ -10,7 +10,7 @@ export class NumberBox extends Widget {
         this._input = this.createChild("input", (e) => {
             e.type = "number";
             e.style.width = "100%";
-            e.addEventListener("input", () => {
+            e.addEventListener("change", () => {
                 this.onValueChange.fire(e.valueAsNumber);
             });
         });
