@@ -25,6 +25,7 @@ export class MainUI extends Widget {
         this.onValueChange = new Signal();
         this.onProjectDataReceive = new Signal();
         this.onProjectChange = new Signal();
+        this.onProjectSave = new Signal();
         this.onGenerationStart = new Signal();
         this.onGenerationStop = new Signal();
         this.onStateCheck = new Signal();
@@ -36,6 +37,8 @@ export class MainUI extends Widget {
         }, 1.0);
         this.onGenerationStart.connect(() => this._stateTimer.start());
         this.onGenerationStop.connect(() => this._stateTimer.stop());
+
+        this._projectDirty = false;
 
         this.style.height = "100%";
         this.style.position = "fixed";
@@ -126,6 +129,7 @@ export class MainUI extends Widget {
                 }, "presets", ["refresh", "load", "save", "rename", "delete"]);
 
                 e.createField("Project", FSStoreBox, (e) => {
+                    e.saveCallback = () => this._manager.value.project;
                     e.onNew.connect(async () => {
                         await postRequest("/temporal/project/new");
 
@@ -146,11 +150,23 @@ export class MainUI extends Widget {
                             "image": await getRequest("/temporal/project/last_image"),
                         });
                     });
+                    e.onSave.connect(() => {
+                        this.onProjectSave.fire();
+                    });
                 }, "projects", ["refresh", "new", "load", "save", "rename", "delete"]);
 
                 e.createField("Active project", Block, async (e) => {
                     this.onProjectChange.connect((project) => {
-                        e.innerText = project.general.name;
+                        e.innerText = `${project.general.name} \u{23fa}`;
+
+                        this._projectDirty = true;
+                    });
+                    this.onProjectSave.connect(() => {
+                        if (e.innerText.endsWith(" \u{23fa}")) {
+                            e.innerText = e.innerText.substring(0, e.innerText.length - 2);
+                        }
+
+                        this._projectDirty = false;
                     });
                 });
 

@@ -1,9 +1,9 @@
-import {Form} from "../scripts/base/form.js";
+import {Block} from "../scripts/base/block.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
-import {ConfigurableParamEditor} from "../scripts/configurable_param_editor.js";
+import {ParamForm} from "../scripts/param_form.js";
 
-export class OptionCategoryEditor extends Form {
+export class OptionCategoryEditor extends Block {
     constructor(definition) {
         super();
 
@@ -12,11 +12,7 @@ export class OptionCategoryEditor extends Form {
         this._manager = new FieldManager(this.onValueChange);
         this._manager.value = {__type__: definition.type};
 
-        for (let [key, param] of Object.entries(definition.parameters)) {
-            this.createField(param.name, ConfigurableParamEditor, (e) => {
-                this._manager.manage(e, key);
-            }, param);
-        }
+        this.createChild(ParamForm, null, definition.parameters, this._manager);
     }
 
     get value() {

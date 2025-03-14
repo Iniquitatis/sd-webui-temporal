@@ -1,9 +1,9 @@
 import {Form} from "../scripts/base/form.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
-import {ConfigurableParamEditor} from "../scripts/configurable_param_editor.js";
+import {ParamEditor} from "../scripts/param_editor.js";
 
-export class ConfigurableParamForm extends Form {
+export class ParamForm extends Form {
     constructor(params, manager = null) {
         super(false);
 
@@ -12,7 +12,7 @@ export class ConfigurableParamForm extends Form {
         this._manager = manager ?? new FieldManager(this.onValueChange);
 
         for (let [key, param] of Object.entries(params)) {
-            this.createField(param.name, ConfigurableParamEditor, (e) => {
+            this.createField(param.name, ParamEditor, (e) => {
                 this._manager.manage(e, key);
 
                 if (!param.dependencies) return;
@@ -30,4 +30,4 @@ export class ConfigurableParamForm extends Form {
         }
     }
 }
-customElements.define("configurable-param-form", ConfigurableParamForm);
+customElements.define("param-form", ParamForm);

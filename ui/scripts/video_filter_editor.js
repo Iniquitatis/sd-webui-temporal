@@ -5,7 +5,7 @@ import {ReorderableAccordion} from "../scripts/base/reorderable_list.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
 import {createElement} from "../scripts/utils/dom.js";
-import {ConfigurableParamForm} from "../scripts/configurable_param_form.js";
+import {ParamForm} from "../scripts/param_form.js";
 
 export class VideoFilterEditor extends ReorderableAccordion {
     constructor(definition) {
@@ -23,7 +23,7 @@ export class VideoFilterEditor extends ReorderableAccordion {
         }), this._header.firstChild.nextSibling);
 
         this.createChild(Column, (e) => {
-            e.createChild(ConfigurableParamForm, null, definition.parameters, this._manager);
+            e.createChild(ParamForm, null, definition.parameters, this._manager);
 
             e.createChild(Button, (e) => {
                 e.label = "\u{f2ed} Remove";

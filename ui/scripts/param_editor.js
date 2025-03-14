@@ -16,7 +16,7 @@ import {ProcessingParamsEditor} from "../scripts/processing_params_editor.js";
 import {SeedBox} from "../scripts/seed_box.js";
 import {VideoRendererEditor} from "../scripts/video_renderer_editor.js";
 
-export class ConfigurableParamEditor extends Widget {
+export class ParamEditor extends Widget {
     constructor(definition) {
         super();
 
@@ -62,7 +62,7 @@ export class ConfigurableParamEditor extends Widget {
         return this._editor.isComplexWidget();
     }
 }
-customElements.define("configurable-param-editor", ConfigurableParamEditor);
+customElements.define("param-editor", ParamEditor);
 
 const EDITORS = {
     "bool": (parent, definition) => parent.createChild(Checkbox, (e) => {
