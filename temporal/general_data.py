@@ -2,15 +2,18 @@ from pathlib import Path
 from random import randint
 from typing import Any, Optional
 
-from temporal.meta.serializable import Serializable, SerializableField as Field
+from temporal.object import Field, Object
+from temporal.shared import shared
 from temporal.utils.image import NumpyImage
 from temporal.vector import IntVector
 
 
-class GeneralData(Serializable):
+class GeneralData(Object):
     # FIXME: Path should be constructed dynamically by getting the global
     # project directory and the name (sanitized, of course)
-    path: Path = Field(Path("outputs/temporal/untitled"), flags = {"runtime"})
+    # TODO: Set to a temporary directory until it's saved. On save, it should be
+    # moved into an appropriate directory (shared.settings.fs.project_dir).
+    path: Path = Field(lambda: shared.settings.fs.project_dir / "untitled", flags = {"runtime"})
     name: str = Field("untitled")
     description: str = Field("")
     initial_image: Optional[NumpyImage] = Field(None)

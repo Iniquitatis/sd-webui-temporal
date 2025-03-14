@@ -127,10 +127,6 @@ const EDITORS = {
         e.value = definition.default ?? "";
     }),
 
-    "numpy.ndarray": (parent, definition) => parent.createChild(ImageBox, (e) => {
-        e.channels = definition.channels ?? 3;
-    }, ["clear", "download", "fullscreen", "upload"]),
-
     "temporal.color.Color": (parent, definition) => parent.createChild(ColorPicker, (e) => {
         e.value = definition.default ?? {r: 0.0, g: 0.0, b: 0.0, a: 1.0};
     }, definition.channels ?? 3),
@@ -142,6 +138,10 @@ const EDITORS = {
     "temporal.processing_params.ProcessingParams": (parent, definition) => parent.createChild(ProcessingParamsEditor, (e) => {
         e.value = definition.default ?? {};
     }),
+
+    "temporal.utils.image.NumpyImage": (parent, definition) => parent.createChild(ImageBox, (e) => {
+        e.channels = definition.channels ?? 3;
+    }, ["clear", "download", "fullscreen", "upload"]),
 
     "temporal.vector.IntVector|box": (parent, definition) => parent.createChild(VectorEditor, (e) => {
         e.minimum = definition.minimum ?? undefined;

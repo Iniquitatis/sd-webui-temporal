@@ -1,10 +1,10 @@
 from random import randint
 from typing import Any, Optional
 
-from temporal.meta.serializable import Serializable, SerializableField as Field
+from temporal.object import Field, Object
 
 
-class ProcessingParams(Serializable):
+class ProcessingParams(Object):
     model: str = Field("")
     vae: Optional[str] = Field(None)
     clip_skip: int = Field(1)

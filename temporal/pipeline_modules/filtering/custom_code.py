@@ -5,7 +5,7 @@ import scipy
 import skimage
 
 from temporal.general_data import GeneralData
-from temporal.meta.configurable import ConfigurableParam as Param
+from temporal.object import Param
 from temporal.pipeline_modules.filtering import ImageFilter
 from temporal.utils.image import NumpyImage
 from temporal.utils.numpy import saturate_array

@@ -2,7 +2,7 @@ import {Dropdown} from "../scripts/base/dropdown.js";
 import {Row} from "../scripts/base/row.js";
 import {ToolButton} from "../scripts/base/tool_button.js";
 import {Signal} from "../scripts/core/signal.js";
-import {getRequest, postRequest} from "../scripts/utils/requests.js";
+import {postRequest} from "../scripts/utils/requests.js";
 
 export class FSStoreBox extends Row {
     constructor(store, features) {
@@ -12,6 +12,7 @@ export class FSStoreBox extends Row {
 
         this.onValueChange = new Signal();
         this.onRefresh = new Signal();
+        this.onNew = new Signal();
         this.onLoad = new Signal();
         this.onSave = new Signal();
         this.onRename = new Signal();
@@ -32,14 +33,35 @@ export class FSStoreBox extends Row {
                 e.label = "\u{f021}";
                 e.visible = features.includes("refresh");
                 e.onClick.connect(async () => {
-                    await postRequest("/temporal/fs_operation", {
+                    this.enabled = false;
+
+                    await postRequest("/temporal/storage/refresh", {
                         "store": store,
-                        "operation": "refresh",
                     });
 
-                    this.entries = await getRequest(`/temporal/${store}`);
+                    this.entries = await postRequest("/temporal/storage/list", {
+                        "store": store,
+                    });
+
+                    this.enabled = true;
 
                     this.onRefresh.fire();
+                });
+            });
+
+            e.createChild(ToolButton, (e) => {
+                e.label = "\u{f15b}";
+                e.visible = features.includes("new");
+                e.onClick.connect(async () => {
+                    this.enabled = false;
+
+                    await postRequest("/temporal/storage/new", {
+                        "store": store,
+                    });
+
+                    this.enabled = true;
+
+                    this.onNew.fire();
                 });
             });
 
@@ -47,13 +69,16 @@ export class FSStoreBox extends Row {
                 e.label = "\u{f07c}";
                 e.visible = features.includes("load");
                 e.onClick.connect(async () => {
-                    this.onLoad.fire(await postRequest("/temporal/fs_operation", {
+                    this.enabled = false;
+
+                    let data = await postRequest("/temporal/storage/load", {
                         "store": store,
-                        "operation": "load",
-                        "args": {
-                            "name": this._dropdown.value,
-                        },
-                    }));
+                        "name": this._dropdown.value,
+                    });
+
+                    this.enabled = true;
+
+                    this.onLoad.fire(data);
                 });
             });
 
@@ -66,16 +91,19 @@ export class FSStoreBox extends Row {
                     let name = window.prompt("Enter name:", this._dropdown.value);
                     if (!name) return;
 
-                    await postRequest("/temporal/fs_operation", {
+                    this.enabled = false;
+
+                    await postRequest("/temporal/storage/save", {
                         "store": store,
-                        "operation": "save",
-                        "args": {
-                            "name": name,
-                            "data": this.saveCallback(),
-                        },
+                        "name": name,
+                        "data": this.saveCallback(),
                     });
 
-                    this.entries = await getRequest(`/temporal/${store}`);
+                    this.entries = await postRequest("/temporal/storage/list", {
+                        "store": store,
+                    });
+
+                    this.enabled = true;
 
                     this.onSave.fire();
                 });
@@ -89,16 +117,19 @@ export class FSStoreBox extends Row {
                     let newName = window.prompt("Enter new name:", oldName);
                     if (!newName) return;
 
-                    await postRequest("/temporal/fs_operation", {
+                    this.enabled = false;
+
+                    await postRequest("/temporal/storage/rename", {
                         "store": store,
-                        "operation": "rename",
-                        "args": {
-                            "old_name": oldName,
-                            "new_name": newName,
-                        },
+                        "old_name": oldName,
+                        "new_name": newName,
                     });
 
-                    this.entries = await getRequest(`/temporal/${store}`);
+                    this.entries = await postRequest("/temporal/storage/list", {
+                        "store": store,
+                    });
+
+                    this.enabled = true;
 
                     this.onRename.fire(oldName, newName);
                 });
@@ -112,19 +143,31 @@ export class FSStoreBox extends Row {
 
                     if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
 
-                    await postRequest("/temporal/fs_operation", {
+                    this.enabled = false;
+
+                    await postRequest("/temporal/storage/delete", {
                         "store": store,
-                        "operation": "delete",
-                        "args": {
-                            "name": name,
-                        },
+                        "name": name,
                     });
 
-                    this.entries = await getRequest(`/temporal/${store}`);
+                    this.entries = await postRequest("/temporal/storage/list", {
+                        "store": store,
+                    });
+
+                    this.enabled = true;
 
                     this.onDelete.fire(name);
                 });
             });
+        });
+
+        this.enabled = false;
+
+        postRequest("/temporal/storage/list", {
+            "store": store,
+        }, (value) => {
+            this.entries = value;
+            this.enabled = true;
         });
     }
 

@@ -1,8 +1,11 @@
+import {Block} from "./scripts/base/block.js";
 import {CanvasBox} from "./scripts/base/canvas_box.js";
+import {Checkbox} from "./scripts/base/checkbox.js";
 import {Column} from "./scripts/base/column.js";
 import {DockGroup} from "./scripts/base/dock_group.js";
 import {Form} from "./scripts/base/form.js";
 import {MultiStateButton} from "./scripts/base/multi_state_button.js";
+import {NumberBox} from "./scripts/base/number_box.js";
 import {ProgressBar} from "./scripts/base/progress_bar.js";
 import {Tabs} from "./scripts/base/tabs.js";
 import {FieldManager} from "./scripts/core/field_manager.js";
@@ -12,15 +15,16 @@ import {Widget} from "./scripts/core/widget.js";
 import {getRequest, postRequest} from "./scripts/utils/requests.js";
 import {FSStoreBox} from "./scripts/fs_store_box.js";
 import {ProjectEditor} from "./scripts/project_editor.js";
-import {SessionEditor} from "./scripts/session_editor.js";
 import {SettingsEditor} from "./scripts/settings_editor.js";
-import {initializeData, presets, projects} from "./scripts/shared_data.js";
+import {initializeData} from "./scripts/shared_data.js";
 
 export class MainUI extends Widget {
     constructor() {
         super();
 
         this.onValueChange = new Signal();
+        this.onProjectDataReceive = new Signal();
+        this.onProjectChange = new Signal();
         this.onGenerationStart = new Signal();
         this.onGenerationStop = new Signal();
         this.onStateCheck = new Signal();
@@ -28,7 +32,7 @@ export class MainUI extends Widget {
         this._manager = new FieldManager(this.onValueChange);
 
         this._stateTimer = new Timer(async () => {
-            this.onStateCheck.fire(await getRequest("/temporal/state"));
+            this.onStateCheck.fire(await getRequest("/temporal/execution/state"));
         }, 1.0);
         this.onGenerationStart.connect(() => this._stateTimer.start());
         this.onGenerationStop.connect(() => this._stateTimer.stop());
@@ -50,11 +54,11 @@ export class MainUI extends Widget {
                     if (state == "active") {
                         this.onGenerationStart.fire();
 
-                        await postRequest("/temporal/generate", this._manager.value);
+                        await postRequest("/temporal/execution/generate", this._manager.value);
                     } else if (state == "stopped") {
                         this.onGenerationStop.fire();
 
-                        await postRequest("/temporal/interrupt");
+                        await postRequest("/temporal/execution/interrupt");
                     }
                 });
                 this.onStateCheck.connect((state) => {
@@ -86,6 +90,7 @@ export class MainUI extends Widget {
             });
 
             this._image = e.createChild(CanvasBox, (e) => {
+                // FIXME: Accesses private stuff
                 e._element.width = 512;
                 e._element.height = 512;
                 this._manager.manage(e, "image");
@@ -112,51 +117,97 @@ export class MainUI extends Widget {
         this.createChild(DockGroup, (e) => {
             e.createDock("\u{f53f}", "Project", Form, (e) => {
                 e.createField("Preset", FSStoreBox, (e) => {
-                    e.entries = presets;
                     e.saveCallback = () => ({"data": this._manager.value});
                     e.onLoad.connect((value) => {
-                        let newValue = this._manager.value;
-                        newValue.image = value.data.project.general.initial_image;
-                        newValue.project = value.data.project;
-
-                        this._manager.value = newValue;
+                        this._manager.value = Object.assign(this._manager.value, {
+                            "image": value.data.project.general.initial_image,
+                        });
                     });
                 }, "presets", ["refresh", "load", "save", "rename", "delete"]);
 
                 e.createField("Project", FSStoreBox, (e) => {
-                    e.entries = projects;
+                    e.onNew.connect(async () => {
+                        await postRequest("/temporal/project/new");
+
+                        this.onProjectDataReceive.fire(await getRequest("/temporal/project/data"));
+
+                        this._manager.value = Object.assign(this._manager.value, {
+                            "image": await getRequest("/temporal/project/last_image"),
+                        });
+                    });
                     e.onLoad.connect(async (value) => {
-                        let metadata = await postRequest("/temporal/project_metadata", {
+                        await postRequest("/temporal/project/load", {
                             "name": value.general.name,
-                            "include_last_image": true,
                         });
 
-                        let newValue = this._manager.value;
-                        newValue.image = metadata.last_image;
-                        newValue.project = value;
+                        this.onProjectDataReceive.fire(await getRequest("/temporal/project/data"));
 
-                        this._manager.value = newValue;
+                        this._manager.value = Object.assign(this._manager.value, {
+                            "image": await getRequest("/temporal/project/last_image"),
+                        });
                     });
-                }, "projects", ["refresh", "load", "rename", "delete"]);
+                }, "projects", ["refresh", "new", "load", "save", "rename", "delete"]);
 
-                e.createChild(SessionEditor, (e) => {
-                    this._manager.manage(e, "session");
+                e.createField("Active project", Block, async (e) => {
+                    this.onProjectChange.connect((project) => {
+                        e.innerText = project.general.name;
+                    });
                 });
 
-                e.createChild(ProjectEditor, (e) => {
+                e.createField("Iteration count", NumberBox, (e) => {
+                    e.minimum = 1;
+                    e.step = 1;
+                    e.value = 10;
+                    this._manager.manage(e, "iter_count");
+                });
+
+                e.createRow((e) => {
+                    e.createField("Load parameters", Checkbox, (e) => {
+                        e.value = true;
+                        this._manager.manage(e, "load_parameters");
+                    });
+
+                    e.createField("Continue from last frame", Checkbox, (e) => {
+                        e.value = true;
+                        this._manager.manage(e, "continue_from_last_frame");
+                    });
+                });
+
+                e.createChild(ProjectEditor, async (e) => {
                     e.onImageSizeChange.connect((value) => {
                         // FIXME: Accesses private stuff
                         this._image._element.width = value.x;
                         this._image._element.height = value.y;
                     });
+                    e.onValueChange.connect(async (value) => {
+                        await postRequest("/temporal/project/data", {
+                            "data": value,
+                        });
+
+                        this.onProjectChange.fire(value);
+                    });
+                    this.onProjectDataReceive.connect((project) => {
+                        e.value = project;
+                        // FIXME: The initializer doesn't re-enable the widget
+                        // on mobile for some reason (async stuff?)
+                        // e.enabled = true;
+                    });
                     this._manager.manage(e, "project");
+
+                    // TODO
+                    // e.enabled = false;
+                    // e.value = await getRequest("/temporal/project/data");
+                    // e.enabled = true;
+
+                    // FIXME: Temporary
+                    e.onValueChange.connect((value) => console.log("PROJECT", value));
                 });
             });
 
             e.createDock("\u{f013}", "System", Tabs, (e) => {
                 e.createTab("Settings", SettingsEditor, (e) => {
                     e.onApply.connect(async (value) => {
-                        await postRequest("/temporal/apply_settings", {
+                        await postRequest("/temporal/settings/apply", {
                             "data": value,
                         });
                     });
@@ -167,9 +218,6 @@ export class MainUI extends Widget {
                 });
             });
         });
-
-        // FIXME: Temporary
-        this.onValueChange.connect((value) => console.log("GEN", value));
     }
 }
 customElements.define("main-ui", MainUI);

@@ -22,6 +22,7 @@ class Engine:
         with shared.state_lock:
             shared.state = dataclasses.replace(
                 shared.state,
+                # FIXME: Shouldn't be controlled by this class
                 active_project = project,
                 running = True,
                 state = "active",
@@ -46,7 +47,7 @@ class Engine:
             if not project.pipeline.run(project.general, project.iteration):
                 break
 
-            if i % shared.settings.output.autosave_every_n_iterations == 0:
+            if i % shared.settings.execution.autosave_every_n_iterations == 0:
                 project.save(project.general.path)
 
             end_time = perf_counter()
@@ -60,7 +61,8 @@ class Engine:
         with shared.state_lock:
             shared.state = dataclasses.replace(
                 shared.state,
-                active_project = project,
+                # FIXME: Shouldn't be controlled by this class
+                active_project = Project(),
                 running = False,
                 state = "stopped",
                 current_iteration = 0,

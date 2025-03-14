@@ -1,12 +1,12 @@
 from pathlib import Path
 from typing import Generic, Type, TypeVar
 
-from temporal.meta.serializable import Serializable
+from temporal.object import Object
 from temporal.utils.collection import natural_sort
 from temporal.utils.fs import iterate_subdirectories, remove_entry, rename_entry
 
 
-T = TypeVar("T", bound = Serializable)
+T = TypeVar("T", bound = Object)
 
 
 class FSStore(Generic[T]):
@@ -45,3 +45,5 @@ class FSStore(Generic[T]):
             self.entry_names[:] = natural_sort(self.entry_names)
         elif self.sorting_order == "date":
             self.entry_names[:] = sorted(self.entry_names, key = lambda x: (self.path / x).stat().st_ctime_ns)
+        else:
+            raise ValueError

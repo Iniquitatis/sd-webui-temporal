@@ -9,7 +9,7 @@ from temporal.shared import shared
 
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/apply_settings"
+    path = "/temporal/settings/apply"
 
     class Request(BaseModel):
         data: dict[str, Any] = {}

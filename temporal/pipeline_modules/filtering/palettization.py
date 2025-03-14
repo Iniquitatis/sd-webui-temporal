@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 
 from temporal.general_data import GeneralData
-from temporal.meta.configurable import ConfigurableParam as Param
+from temporal.object import Param
 from temporal.pipeline_modules.filtering import ImageFilter
 from temporal.utils.image import NumpyImage, apply_channelwise, np_to_pil, pil_to_np
 from temporal.utils.numpy import FloatType, stretch_array

@@ -3,11 +3,11 @@ from pathlib import Path
 from temporal.compat import get_latest_version, upgrade_project
 from temporal.general_data import GeneralData
 from temporal.iteration_data import IterationData
-from temporal.meta.serializable import Serializable, SerializableField as Field
+from temporal.object import Field, Object
 from temporal.pipeline import Pipeline
 
 
-class Project(Serializable):
+class Project(Object):
     version: int = Field(get_latest_version(), flags = {"private"})
     general: GeneralData = Field(GeneralData)
     pipeline: Pipeline = Field(Pipeline)

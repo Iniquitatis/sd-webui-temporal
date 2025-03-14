@@ -4,7 +4,7 @@ from typing import Optional
 from temporal.blend_modes import BlendMode, NormalBlendMode
 from temporal.general_data import GeneralData
 from temporal.image_mask import ImageMask
-from temporal.meta.serializable import SerializableField as Field
+from temporal.object import Field
 from temporal.pipeline_module import PipelineModule
 from temporal.utils.image import NumpyImage
 from temporal.utils.math import lerp
@@ -12,6 +12,7 @@ from temporal.utils.numpy import saturate_array
 
 
 class ImageFilter(PipelineModule, abstract = True):
+    is_filter = True
     is_sampleable = True
 
     amount: float = Field(1.0)

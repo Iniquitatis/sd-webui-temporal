@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from temporal.general_data import GeneralData
-from temporal.meta.configurable import ConfigurableParam as Param
+from temporal.object import Param
 from temporal.pipeline_modules.tool import ToolModule
 from temporal.utils.fs import ensure_directory_exists, remove_entry
 from temporal.utils.image import NumpyImage

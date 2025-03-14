@@ -1,10 +1,10 @@
 from typing import Optional
 
-from temporal.meta.serializable import Serializable, SerializableField as Field
+from temporal.object import Field, Object
 from temporal.utils.image import NumpyImage
 
 
-class IterationData(Serializable):
+class IterationData(Object):
     image: Optional[NumpyImage] = Field(None)
     index: int = Field(1)
     step: int = Field(0)

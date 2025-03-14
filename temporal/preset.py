@@ -1,7 +1,7 @@
 from typing import Any
 
-from temporal.meta.serializable import Serializable, SerializableField as Field
+from temporal.object import Field, Object
 
 
-class Preset(Serializable):
+class Preset(Object):
     data: dict[str, Any] = Field(dict)

@@ -7,8 +7,7 @@ import scipy
 from matplotlib.ticker import MaxNLocator
 
 from temporal.general_data import GeneralData
-from temporal.meta.configurable import ConfigurableParam as Param
-from temporal.meta.serializable import SerializableField as Field
+from temporal.object import Field, Param, Static
 from temporal.pipeline_module import PipelineModule
 from temporal.utils.fs import ensure_directory_exists
 from temporal.utils.image import NumpyImage, PILImage, save_image
@@ -17,8 +16,8 @@ from temporal.utils.numpy import FloatArray
 
 
 class MeasuringModule(PipelineModule, abstract = True):
-    file_name: str = ""
-    channels: list[tuple[str, str]] = []
+    file_name: str = Static("")
+    channels: list[tuple[str, str]] = Static([])
 
     plot_every_nth_frame: int = Param("Plot every N-th frame", minimum = 1, step = 1, value = 10, ui_type = "box")
 

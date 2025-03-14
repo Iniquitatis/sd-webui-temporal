@@ -4,8 +4,7 @@ import numpy as np
 import skimage
 
 from temporal.general_data import GeneralData
-from temporal.meta.configurable import ConfigurableParam as Param
-from temporal.meta.serializable import SerializableField as Field
+from temporal.object import Field, Param
 from temporal.pipeline_modules.temporal import TemporalModule
 from temporal.utils.image import NumpyImage, apply_channelwise, ensure_image_dims, match_image
 from temporal.utils.math import lerp

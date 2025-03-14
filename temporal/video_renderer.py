@@ -3,16 +3,18 @@ from itertools import chain
 from pathlib import Path
 from subprocess import run
 
-from temporal.meta.serializable import Serializable, SerializableField as Field
+from temporal.object import Field, Object
 from temporal.thread_queue import ThreadQueue
 from temporal.utils.fs import save_text
 from temporal.video_filter import VideoFilter
 
 
+# FIXME: Not sure if renderer should know about threading... or even exist at
+# all
 video_render_queue = ThreadQueue()
 
 
-class VideoRenderer(Serializable):
+class VideoRenderer(Object):
     fps: int = Field(30)
     first_frame: int = Field(1)
     last_frame: int = Field(0)

@@ -27,17 +27,13 @@ export class PipelineModuleEditor extends ReorderableAccordion {
 
         this._manager = new FieldManager(this.onValueChange);
         this._manager.value = {__type__: definition.type, enabled: true};
+        this._manager.onFieldChange.connect(async (key, value) => {
+            await this._ensureID();
 
-        this.enabled = false;
-
-        getRequest("/temporal/uuid", (value) => {
-            // NOTE: Because editor's value could be set earlier than when this
-            // callback is getting called
-            if (!this._manager.value.uuid) {
-                this._manager.value.uuid = value;
-            }
-
-            this.enabled = true;
+            await postRequest(`/temporal/object/${this._manager.value.__id__}/field`, {
+                "key": key,
+                "value": value,
+            });
         });
 
         this._header.insertBefore(createElement(null, Checkbox, (e) => {
@@ -48,20 +44,18 @@ export class PipelineModuleEditor extends ReorderableAccordion {
         this._header.insertBefore(createElement(null, MultiStateToggle, (e) => {
             e.states = {on: "\u{f06e}", off: "\u{f070}"};
             e.value = "on";
-            e.onValueChange.connect(async (value) => {
-                await postRequest("/temporal/preview_state", {
-                    "uuid": this._manager.value.uuid,
-                    "state": value == "on",
-                });
-            });
             this._manager.manage(e, "preview", (value) => value ? "on" : "off", (value) => value == "on");
         }), this._header.lastChild);
 
         this.createChild(Column, (e) => {
             if (definition.is_sampleable) {
-                this._sampleBox = e.createChild(ImageBox, (e) => {
+                e.createChild(ImageBox, (e) => {
                     e.style.height = "12rem";
-                    this.onValueChange.connect(() => this._updateSample());
+                    this.onValueChange.connect(async (value) => {
+                        await this._ensureID();
+
+                        e.value = await postRequest(`/temporal/module/${this._manager.value.__id__}/render_sample`);
+                    });
                 });
             }
 
@@ -76,9 +70,9 @@ export class PipelineModuleEditor extends ReorderableAccordion {
                                 e.onClick.connect(async () => {
                                     e.enabled = false;
 
-                                    this._graph.value = await postRequest("/temporal/render_graph", {
-                                        "uuid": this._manager.value.uuid,
-                                    });
+                                    await this._ensureID();
+
+                                    this._graph.value = await postRequest(`/temporal/module/${this._manager.value.__id__}/render_graph`);
 
                                     e.enabled = true;
                                 });
@@ -93,9 +87,9 @@ export class PipelineModuleEditor extends ReorderableAccordion {
                                 e.onClick.connect(async () => {
                                     e.enabled = false;
 
-                                    this._video.value = await postRequest("/temporal/render_video", {
-                                        "uuid": this._manager.value.uuid,
-                                    });
+                                    await this._ensureID();
+
+                                    this._video.value = await postRequest(`/temporal/module/${this._manager.value.__id__}/render_video`);
 
                                     e.enabled = true;
                                 });
@@ -141,10 +135,6 @@ export class PipelineModuleEditor extends ReorderableAccordion {
                 });
             });
         });
-
-        if (definition.is_sampleable) {
-            this._updateSample();
-        }
     }
 
     get value() {
@@ -155,12 +145,9 @@ export class PipelineModuleEditor extends ReorderableAccordion {
         this._manager.value = value;
     }
 
-    _updateSample() {
-        postRequest("/temporal/render_sample", {
-            "data": this._manager.value,
-        }, (value) => {
-            this._sampleBox.value = value;
-        });
+    async _ensureID() {
+        if (this._manager.value.__id__) return;
+        this._manager.value.__id__ = await getRequest("/temporal/utils/uuid");
     }
 }
 customElements.define("pipeline-module-editor", PipelineModuleEditor);

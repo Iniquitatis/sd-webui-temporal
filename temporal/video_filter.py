@@ -1,15 +1,11 @@
 from abc import abstractmethod
-from typing import Iterator, Type
+from typing import Iterator
 
-from temporal.meta.configurable import Configurable
-from temporal.meta.serializable import SerializableField as Field
-
-
-VIDEO_FILTERS: list[Type["VideoFilter"]] = []
+from temporal.object import Field, Meta, Object
 
 
-class VideoFilter(Configurable, abstract = True):
-    store = VIDEO_FILTERS
+class VideoFilter(Object, abstract = True):
+    name: str = Meta("UNDEFINED")
 
     enabled: bool = Field(True)
 

@@ -2,16 +2,16 @@ from itertools import pairwise
 from typing import Any, Literal
 
 from temporal.color import Color
-from temporal.meta.serializable import Serializable, SerializableField as Field
+from temporal.object import Field, Object
 from temporal.serialization import SerializationParams
 
 
-class Keyframe(Serializable):
+class Keyframe(Object):
     frame: int = Field(0)
     value: Any = Field(None)
 
 
-class Track(Serializable):
+class Track(Object):
     interpolation: Literal["linear", "smoothstep", "smootherstep", "step", "step_start", "step_end"] = Field("linear")
     bounds: Literal["clamp", "repeat", "mirror"] = Field("clamp")
     keyframes: list[Keyframe] = Field(list)
@@ -71,7 +71,7 @@ class Track(Serializable):
                 return _interpolate(value_a, value_b, (frame - frame_a) / (frame_b - frame_a), self.interpolation)
 
 
-class Animation(Serializable):
+class Animation(Object):
     tracks: dict[str, Track] = Field(dict)
 
     @classmethod

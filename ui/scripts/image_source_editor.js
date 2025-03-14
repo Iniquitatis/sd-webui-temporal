@@ -41,12 +41,12 @@ export class ImageSourceEditor extends Form {
 
         this._imageBox = this.createChild(ImageBox, (e) => {
             e.visible = true;
-            this._manager.manage(e, "value");
+            this._manager.manage(e, "image");
         }, ["clear", "download", "fullscreen", "upload"]);
 
         this._videoBox = this.createChild(VideoBox, (e) => {
             e.visible = false;
-            this._manager.manage(e, "value");
+            this._manager.manage(e, "video");
         }, ["clear", "download", "fullscreen", "upload"]);
     }
 

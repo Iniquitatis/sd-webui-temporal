@@ -1,6 +1,6 @@
 import re
 from collections.abc import Iterable, Sequence
-from typing import Any, Callable, Iterator, Optional, TypeVar
+from typing import Any, Callable, Iterator, TypeVar
 
 
 T = TypeVar("T")
@@ -35,18 +35,20 @@ def cartesian_product_at(*sets: Sequence[Any], index: int, major: bool = True) -
     return tuple(reversed(result) if major else result)
 
 
-def find_by_predicate(iterable: Iterable[T], pred: Callable[[T], bool]) -> Optional[T]:
+def find_by_predicate(iterable: Iterable[T], pred: Callable[[T], bool], fallback: U = None) -> T | U:
     for item in iterable:
         if pred(item):
             return item
 
+    return fallback
 
-def find_index_by_predicate(iterable: Iterable[T], pred: Callable[[T], bool]) -> int:
+
+def find_index_by_predicate(iterable: Iterable[T], pred: Callable[[T], bool], fallback: int = -1) -> int:
     for i, item in enumerate(iterable):
         if pred(item):
             return i
 
-    return -1
+    return fallback
 
 
 def get_first_element(iterable: Iterable[T], fallback: U = None) -> T | U:

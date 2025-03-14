@@ -6,13 +6,13 @@ from typing import Any, Literal, Optional
 
 from PIL import Image
 
-from temporal.meta.serializable import Serializable, SerializableField as Field
+from temporal.object import Field, Object
 from temporal.serialization import SerializationParams
 from temporal.utils.fs import ensure_directory_exists
 from temporal.utils.image import NumpyImage, pil_to_np
 
 
-class Video(Serializable):
+class Video(Object):
     path: Optional[Path] = Field(None, flags = {"runtime"})
     format: Literal["unknown", "avi", "mkv", "mp4"] = Field("unknown")
     data: Optional[bytes] = Field(None)

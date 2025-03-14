@@ -1,18 +1,19 @@
 from io import BytesIO
 from pathlib import Path
-from typing import Optional
+from typing import Annotated, Optional
 
 import numpy as np
 from numpy.typing import NDArray
 from scipy import stats
 
 from temporal.utils.base64 import decode, decode_with_mime_type, encode, encode_with_mime_type
+from temporal.utils.typing import Alias
 
 
 IntType = np.int32
-IntArray = NDArray[IntType]
+IntArray = Annotated[NDArray[IntType], Alias("IntArray")]
 FloatType = np.float64
-FloatArray = NDArray[FloatType]
+FloatArray = Annotated[NDArray[FloatType], Alias("FloatArray")]
 
 
 def array_to_base64(arr: FloatArray, with_mime_type: bool = True) -> str:

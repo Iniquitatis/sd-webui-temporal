@@ -7,8 +7,7 @@ export class ConfigurableParamForm extends Form {
     constructor(params, manager = null) {
         super(false);
 
-        // FIXME: Accesses private stuff
-        this.onValueChange = manager ? manager._onValueChange : new Signal();
+        this.onValueChange = manager ? manager.onValueChange : new Signal();
 
         this._manager = manager ?? new FieldManager(this.onValueChange);
 

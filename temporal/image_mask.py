@@ -2,13 +2,13 @@ from typing import Optional
 
 import skimage
 
-from temporal.meta.serializable import Serializable, SerializableField as Field
+from temporal.object import Field, Object
 from temporal.utils.image import NumpyImage, match_image
 from temporal.utils.math import lerp, normalize
 from temporal.utils.numpy import saturate_array
 
 
-class ImageMask(Serializable):
+class ImageMask(Object):
     image: Optional[NumpyImage] = Field(None)
     normalized: bool = Field(False)
     inverted: bool = Field(False)

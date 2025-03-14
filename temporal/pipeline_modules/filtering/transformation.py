@@ -1,7 +1,7 @@
 import skimage
 
 from temporal.general_data import GeneralData
-from temporal.meta.configurable import ConfigurableParam as Param
+from temporal.object import Param
 from temporal.pipeline_modules.filtering import ImageFilter
 from temporal.utils.image import NumpyImage, make_trs_transform
 from temporal.vector import FloatVector

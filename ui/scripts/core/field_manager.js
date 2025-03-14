@@ -1,42 +1,42 @@
 import {Signal} from "../../scripts/core/signal.js";
 
 export class FieldManager {
-    constructor(signal, reader = null, writer = null) {
+    constructor(signal = null) {
+        this.onFieldChange = new Signal();
+        this.onValueChange = signal ?? new Signal();
         this._onValueReceive = new Signal();
-        this._onValueChange = signal;
-        this._reader = reader;
-        this._writer = writer;
         this._value = {};
     }
 
     get value() {
-        return this._reader ? this._reader(this._value) : this._value;
+        return this._value;
     }
 
     set value(value) {
-        this._value = this._writer ? this._writer(value) : value;
+        this._value = value;
 
-        this._onValueChange.withDisabled(() => {
-            this._onValueReceive.fire(this._value);
+        this.onValueChange.withDisabled(() => {
+            this._onValueReceive.fire(value);
         });
-        this._onValueChange.fire(this.value);
+        this.onValueChange.fire(this.value);
     }
 
-    manage(widget, field, reader = null, writer = null) {
-        this._value[field] = writer ? writer(widget.value) : widget.value;
+    manage(widget, key, reader = null, writer = null) {
+        this._value[key] = writer ? writer(widget.value) : widget.value;
 
         this._onValueReceive.connect((value) => {
-            if (value.hasOwnProperty(field)) {
-                widget.value = reader ? reader(value[field]) : value[field];
+            if (value.hasOwnProperty(key)) {
+                widget.value = reader ? reader(value[key]) : value[key];
             } else {
-                console.log(`${value} doesn't contain ${field} field`);
+                console.log(`${value} doesn't contain ${key} field`);
             }
         });
 
         widget.onValueChange.connect((value) => {
-            this._value[field] = writer ? writer(value) : value;
+            this._value[key] = writer ? writer(value) : value;
 
-            this._onValueChange.fire(this.value);
+            this.onFieldChange.fire(key, this._value[key]);
+            this.onValueChange.fire(this.value);
         });
     }
 }

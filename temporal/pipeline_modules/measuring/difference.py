@@ -3,7 +3,7 @@ from typing import Optional
 import numpy as np
 
 from temporal.general_data import GeneralData
-from temporal.meta.serializable import SerializableField as Field
+from temporal.object import Field
 from temporal.pipeline_modules.measuring import MeasuringModule
 from temporal.utils.image import NumpyImage
 

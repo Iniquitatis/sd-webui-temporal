@@ -1,12 +1,12 @@
 from math import floor
 
 from temporal.general_data import GeneralData
-from temporal.meta.configurable import ConfigurableParam as Param
+from temporal.object import Param
 from temporal.pipeline_modules.neural import NeuralModule
 from temporal.processing_params import ProcessingParams
 from temporal.shared import shared
+from temporal.utils import logging
 from temporal.utils.image import NumpyImage, ensure_image_dims
-from temporal.utils.logging import warning
 from temporal.utils.math import quantize
 from temporal.utils.object import copy_with_overrides
 from temporal.utils.prompt import evaluate_prompt
@@ -31,5 +31,5 @@ class ProcessingModule(NeuralModule):
         )) is not None:
             return ensure_image_dims(result, (general.image_size.x, general.image_size.y), 3)
         else:
-            warning("Couldn't process an image for some reason")
+            logging.warning("Couldn't process an image for some reason")
             return image

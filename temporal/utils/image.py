@@ -10,10 +10,11 @@ from skimage.transform import AffineTransform as Transform
 from temporal.utils.base64 import decode, decode_with_mime_type, encode, encode_with_mime_type
 from temporal.utils.math import lerp
 from temporal.utils.numpy import FloatArray, saturate_array
+from temporal.utils.typing import Alias
 
 
-PILImage = Image.Image
-NumpyImage = Annotated[FloatArray, "image"]
+PILImage = Annotated[Image.Image, Alias("PILImage")]
+NumpyImage = Annotated[FloatArray, Alias("NumpyImage")]
 
 
 def alpha_blend(a: NumpyImage, b: NumpyImage) -> NumpyImage:

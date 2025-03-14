@@ -1,6 +1,6 @@
 from typing import Iterator
 
-from temporal.meta.configurable import ConfigurableParam as Param
+from temporal.object import Param
 from temporal.video_filter import VideoFilter, make_filter as mf
 
 

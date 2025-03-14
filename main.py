@@ -19,7 +19,6 @@ parser = ArgumentParser()
 parser.add_argument("--host", type = str, default = "0.0.0.0")
 parser.add_argument("--port", type = int, default = 7870)
 parser.add_argument("--settings-dir", type = Path, default = "settings")
-parser.add_argument("--presets-dir", type = Path, default = "presets")
 parser.add_argument("--backend", choices = ["comfyui", "sdwebui", "standalone"], default = "standalone")
 parser.add_argument("--backend-host", type = str, default = "")
 parser.add_argument("--backend-port", type = int, default = 0)
@@ -46,7 +45,7 @@ elif args.backend == "standalone":
 else:
     raise ValueError(f"Unknown backend {args.backend}")
 
-shared.init(backend, args.settings_dir, args.presets_dir)
+shared.init(backend, args.settings_dir)
 
 app = FastAPI(title = "Temporal API")
 register_api(app, Engine())

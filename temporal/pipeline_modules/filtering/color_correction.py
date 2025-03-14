@@ -2,7 +2,7 @@ import skimage
 
 from temporal.general_data import GeneralData
 from temporal.image_source import ImageSource
-from temporal.meta.configurable import ConfigurableParam as Param
+from temporal.object import Param
 from temporal.pipeline_modules.filtering import ImageFilter
 from temporal.utils.image import NumpyImage, match_image
 

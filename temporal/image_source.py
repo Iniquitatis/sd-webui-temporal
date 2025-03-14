@@ -1,23 +1,14 @@
 from typing import Literal, Optional
 
-import numpy as np
-
-from temporal.meta.serializable import Serializable, SerializableField as Field
+from temporal.object import Field, Object
 from temporal.utils.image import NumpyImage
 from temporal.video import Video
 
 
-class ImageSource(Serializable):
+class ImageSource(Object):
     type: Literal["image", "initial_image", "video"] = Field("image")
-    value: Optional[NumpyImage | Video] = Field(None)
-
-    @property
-    def image(self) -> Optional[NumpyImage]:
-        return self.value if isinstance(self.value, np.ndarray) else None
-
-    @property
-    def video(self) -> Optional[Video]:
-        return self.value if isinstance(self.value, Video) else None
+    image: Optional[NumpyImage] = Field(None)
+    video: Optional[Video] = Field(None)
 
     def get_image(self, initial_image: Optional[NumpyImage], frame_index: int) -> Optional[NumpyImage]:
         if self.type == "image":

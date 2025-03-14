@@ -3,8 +3,7 @@ from typing import Optional
 import numpy as np
 
 from temporal.general_data import GeneralData
-from temporal.meta.configurable import ConfigurableParam as Param
-from temporal.meta.serializable import SerializableField as Field
+from temporal.object import Field, Param
 from temporal.pipeline_modules.temporal import TemporalModule
 from temporal.utils.image import NumpyImage, ensure_image_dims, match_image
 from temporal.utils.numpy import FloatArray, average_array, make_eased_weight_array, saturate_array

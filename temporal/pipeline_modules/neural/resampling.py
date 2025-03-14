@@ -1,13 +1,12 @@
 from math import floor
 
 from temporal.general_data import GeneralData
-from temporal.meta.configurable import ConfigurableParam as Param
-from temporal.meta.serializable import UndefinedValue
+from temporal.object import Param, UndefinedValue
 from temporal.pipeline_modules.neural import NeuralModule
 from temporal.shared import shared
+from temporal.utils import logging
 from temporal.utils.collection import get_first_element
 from temporal.utils.image import NumpyImage, ensure_image_dims
-from temporal.utils.logging import warning
 
 
 class ResamplingModule(NeuralModule):
@@ -26,5 +25,5 @@ class ResamplingModule(NeuralModule):
         if (result := shared.backend.upscale_image(image, self.upscaler, scale)) is not None:
             return ensure_image_dims(result, (general.image_size.x, general.image_size.y), 3)
         else:
-            warning("Couldn't resample an image for some reason")
+            logging.warning("Couldn't resample an image for some reason")
             return image

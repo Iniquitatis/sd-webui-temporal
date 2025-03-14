@@ -1,18 +1,13 @@
 from abc import abstractmethod
-from typing import Type
 
 import numpy as np
 
-from temporal.meta.registerable import Registerable
-from temporal.meta.serializable import Serializable
+from temporal.object import Meta, Object
 from temporal.utils.image import NumpyImage, join_hsv_to_rgb, split_hsv
 
 
-BLEND_MODES: list[Type["BlendMode"]] = []
-
-
-class BlendMode(Registerable, Serializable, abstract = True):
-    store = BLEND_MODES
+class BlendMode(Object, abstract = True):
+    name: str = Meta("UNDEFINED")
 
     @staticmethod
     @abstractmethod

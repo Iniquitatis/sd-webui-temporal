@@ -2,7 +2,7 @@ import numpy as np
 
 from temporal.color import Color
 from temporal.general_data import GeneralData
-from temporal.meta.configurable import ConfigurableParam as Param
+from temporal.object import Param
 from temporal.pipeline_modules.filtering import ImageFilter
 from temporal.utils.image import NumpyImage, apply_color_matrix
 

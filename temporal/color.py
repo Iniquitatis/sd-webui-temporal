@@ -2,18 +2,19 @@ from typing import Iterator
 
 import numpy as np
 
-from temporal.meta.serializable import Serializable, SerializableField as Field
+from temporal.object import Field, Object
 from temporal.utils.numpy import FloatArray, FloatType
 
 
-class Color(Serializable):
+class Color(Object):
     r: float = Field(0.0)
     g: float = Field(0.0)
     b: float = Field(0.0)
     a: float = Field(1.0)
 
     def __iter__(self) -> Iterator[float]:
-        yield from self.__dict__.values()
+        for key in self.__fields__.keys():
+            yield getattr(self, key)
 
     @classmethod
     def from_hex(cls, hex: str) -> "Color":

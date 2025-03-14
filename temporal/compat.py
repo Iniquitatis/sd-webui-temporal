@@ -2,28 +2,25 @@ import xml.etree.ElementTree as ET
 from abc import abstractmethod
 from pathlib import Path
 from shutil import copy2, rmtree
-from typing import Any, Optional, Type
+from typing import Any, Optional
 
 import numpy as np
 
-from temporal.meta.registerable import Registerable
+from temporal.object import Object, Static
 from temporal.utils import logging
 from temporal.utils.fs import ensure_directory_exists, load_json, load_text, move_entry, remove_entry, save_json, save_text
 from temporal.utils.image import load_image, pil_to_np
 from temporal.utils.numpy import load_array, save_array
 
 
-UPGRADERS: list[Type["Upgrader"]] = []
-
-
 def get_latest_version() -> int:
-    return max(x.version for x in UPGRADERS)
+    return max(x.version for x in Upgrader.__subtypes__)
 
 
 def upgrade_project(path: Path) -> None:
     last_version = 0
 
-    for cls in UPGRADERS:
+    for cls in Upgrader.__subtypes__:
         upgrader = cls()
 
         if upgrader.upgrade(path):
@@ -33,10 +30,8 @@ def upgrade_project(path: Path) -> None:
         logging.info(f"Upgraded project to version {last_version}")
 
 
-class Upgrader(Registerable, abstract = True):
-    store = UPGRADERS
-
-    version: int = -1
+class Upgrader(Object, abstract = True):
+    version: int = Static(-1)
 
     @abstractmethod
     def upgrade(self, path: Path) -> bool:
@@ -44,7 +39,7 @@ class Upgrader(Registerable, abstract = True):
 
     @property
     def previous_version(self) -> int:
-        return max(x.version for x in UPGRADERS if x.version < self.version)
+        return max(x.version for x in Upgrader.__subtypes__ if x.version < self.version)
 
 
 class _(Upgrader):
