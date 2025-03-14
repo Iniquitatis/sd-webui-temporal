@@ -1,6 +1,10 @@
 :root {
     --global-hs: 0 0%;
     --accent-hs: 210 25%;
+    --channel-1-ch: 25% 30deg;
+    --channel-2-ch: 25% 150deg;
+    --channel-3-ch: 25% 270deg;
+    --channel-4-ch: 0% 0deg;
     --background-color: light-dark(hsl(var(--global-hs) 100%), hsl(var(--global-hs) 10%));
     --accent-color: light-dark(hsl(var(--accent-hs) 50%), hsl(var(--accent-hs) 75%));
     --text-color: light-dark(hsl(var(--global-hs) 0%), hsl(var(--global-hs) 100%));
