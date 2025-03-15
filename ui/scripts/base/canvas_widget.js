@@ -1,14 +1,14 @@
 import {Block} from "../../scripts/base/block.js";
-import {Column} from "../../scripts/base/column.js";
-import {Form} from "../../scripts/base/form.js";
-import {Row} from "../../scripts/base/row.js";
-import {Slider} from "../../scripts/base/slider.js";
-import {ToolButton} from "../../scripts/base/tool_button.js";
 import {Signal} from "../../scripts/core/signal.js";
+import {colorToHex} from "../../scripts/utils/color.js";
 
 export class CanvasWidget extends Block {
     constructor() {
         super();
+
+        this.brushEnabled = false;
+        this.brushColor = {r: 0.0, g: 0.0, b: 0.0, a: 1.0};
+        this.brushThickness = 16;
 
         this.onValueChange = new Signal();
 
@@ -48,106 +48,6 @@ export class CanvasWidget extends Block {
                 e.addEventListener("pointerdown", (event) => this._onMouseDown(event));
 
                 this._overlayCtx = e.getContext("2d");
-            });
-
-            e.createChild(Column, (e) => {
-                e.style.left = "var(--layout-padding)";
-                e.style.pointerEvents = "none";
-                e.style.position = "absolute";
-                e.style.top = "var(--layout-padding)";
-                e.style.width = "unset";
-
-                e.style.gridColumnStart = "1";
-                e.style.gridRowStart = "1";
-
-                e.createChild(Row, (e) => {
-                    e.createChild(ToolButton, (e) => {
-                        e.label = "\u{f1fc}";
-                        e.style.pointerEvents = "auto";
-                        e.onClick.connect(() => {
-                            this._paintingColumn.visible = !this._paintingColumn.visible;
-                        });
-                    });
-
-                    e.createChild(ToolButton, (e) => {
-                        e.label = "\u{f575}";
-                        e.style.pointerEvents = "auto";
-                        e.onClick.connect(() => {
-                            this._mainCtx.fillStyle = this._brushColor.value;
-                            this._mainCtx.fillRect(0, 0, this.width, this.height);
-
-                            this._value = this._mainCanvas.toDataURL("image/png");
-                            this.onValueChange.fire(this._value);
-                        });
-                    });
-
-                    e.createChild(ToolButton, (e) => {
-                        e.label = "\u{f0ec}";
-                        e.style.pointerEvents = "auto";
-                        e.onClick.connect(() => {
-                            this._overlayCtx.drawImage(this._mainCanvas, 0, 0);
-
-                            this._mainCtx.clearRect(0, 0, this.width, this.height);
-                            this._mainCtx.save();
-                            this._mainCtx.translate(this.width, 0);
-                            this._mainCtx.scale(-1.0, 1.0);
-                            this._mainCtx.drawImage(this._overlayCanvas, 0, 0);
-                            this._mainCtx.restore();
-
-                            this._overlayCtx.clearRect(0, 0, this.width, this.height);
-
-                            this._value = this._mainCanvas.toDataURL("image/png");
-                            this.onValueChange.fire(this._value);
-                        });
-                    });
-
-                    e.createChild(ToolButton, (e) => {
-                        e.label = "\u{e099}";
-                        e.style.pointerEvents = "auto";
-                        e.onClick.connect(() => {
-                            this._overlayCtx.drawImage(this._mainCanvas, 0, 0);
-
-                            this._mainCtx.clearRect(0, 0, this.width, this.height);
-                            this._mainCtx.save();
-                            this._mainCtx.translate(0, this.height);
-                            this._mainCtx.scale(1.0, -1.0);
-                            this._mainCtx.drawImage(this._overlayCanvas, 0, 0);
-                            this._mainCtx.restore();
-
-                            this._overlayCtx.clearRect(0, 0, this.width, this.height);
-
-                            this._value = this._mainCanvas.toDataURL("image/png");
-                            this.onValueChange.fire(this._value);
-                        });
-                    });
-                });
-
-                this._paintingColumn = e.createChild(Form, (e) => {
-                    e.visible = false;
-                    e.style.maxWidth = "15rem";
-
-                    this._brushColor = e.createField("Color", "input", (e) => {
-                        e.type = "color";
-                        e.style.pointerEvents = "auto";
-                        e.style.width = "100%";
-                    });
-
-                    this._brushOpacity = e.createField("Opacity", Slider, (e) => {
-                        e.minimum = 0.0;
-                        e.maximum = 1.0;
-                        e.step = 0.01;
-                        e.value = 1.0;
-                        e.style.pointerEvents = "auto";
-                    });
-
-                    this._brushThickness = e.createField("Thickness", Slider, (e) => {
-                        e.minimum = 1;
-                        e.maximum = 128;
-                        e.step = 1;
-                        e.value = 16;
-                        e.style.pointerEvents = "auto";
-                    });
-                });
             });
         });
     }
@@ -195,16 +95,56 @@ export class CanvasWidget extends Block {
         this._overlayCanvas.width = value;
     }
 
-    _onMouseDown(event) {
-        if (event.button != 0) return;
+    fill() {
+        this._mainCtx.fillStyle = colorToHex(this.brushColor);
+        this._mainCtx.fillRect(0, 0, this.width, this.height);
 
-        this._overlayCanvas.style.opacity = `${this._brushOpacity.value}`;
+        this._value = this._mainCanvas.toDataURL("image/png");
+        this.onValueChange.fire(this._value);
+    }
+
+    flipH() {
+        this._overlayCtx.drawImage(this._mainCanvas, 0, 0);
+
+        this._mainCtx.clearRect(0, 0, this.width, this.height);
+        this._mainCtx.save();
+        this._mainCtx.translate(this.width, 0);
+        this._mainCtx.scale(-1.0, 1.0);
+        this._mainCtx.drawImage(this._overlayCanvas, 0, 0);
+        this._mainCtx.restore();
+
+        this._overlayCtx.clearRect(0, 0, this.width, this.height);
+
+        this._value = this._mainCanvas.toDataURL("image/png");
+        this.onValueChange.fire(this._value);
+    }
+
+    flipV() {
+        this._overlayCtx.drawImage(this._mainCanvas, 0, 0);
+
+        this._mainCtx.clearRect(0, 0, this.width, this.height);
+        this._mainCtx.save();
+        this._mainCtx.translate(0, this.height);
+        this._mainCtx.scale(1.0, -1.0);
+        this._mainCtx.drawImage(this._overlayCanvas, 0, 0);
+        this._mainCtx.restore();
+
+        this._overlayCtx.clearRect(0, 0, this.width, this.height);
+
+        this._value = this._mainCanvas.toDataURL("image/png");
+        this.onValueChange.fire(this._value);
+    }
+
+    _onMouseDown(event) {
+        if (!this.brushEnabled || event.button != 0) return;
+
+        this._overlayCanvas.style.opacity = `${this.brushColor.a}`;
 
         this._overlayCtx.imageSmoothingEnabled = true;
         this._overlayCtx.lineCap = "round";
         this._overlayCtx.lineJoin = "round";
-        this._overlayCtx.lineWidth = this._brushThickness.value;
-        this._overlayCtx.strokeStyle = this._brushColor.value;
+        this._overlayCtx.lineWidth = this.brushThickness;
+        this._overlayCtx.strokeStyle = colorToHex(this.brushColor, 3);
 
         this._lastPosition = this._stroke(this._overlayCanvas, event);
 
@@ -221,7 +161,7 @@ export class CanvasWidget extends Block {
 
     _onMouseUp(event) {
         this._mainCtx.save();
-        this._mainCtx.globalAlpha = this._brushOpacity.value;
+        this._mainCtx.globalAlpha = this.brushColor.a;
         this._mainCtx.imageSmoothingEnabled = true;
         this._mainCtx.drawImage(this._overlayCanvas, 0, 0);
         this._mainCtx.restore();

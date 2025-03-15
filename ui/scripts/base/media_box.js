@@ -1,4 +1,5 @@
 import {Block} from "../../scripts/base/block.js";
+import {DockGroup} from "../../scripts/base/dock_group.js";
 import {Row} from "../../scripts/base/row.js";
 import {ToolButton} from "../../scripts/base/tool_button.js";
 import {FilePicker} from "../../scripts/core/file_picker.js";
@@ -97,8 +98,6 @@ export class MediaBox extends Block {
         this._element = this.createChild(cls, (e) => {
             e.style.height = "100%";
             e.onValueChange.connect((value) => {
-                this._buttonRow.visible = value;
-
                 if (this._viewer) {
                     this._viewer.value = value;
                 }
@@ -107,13 +106,16 @@ export class MediaBox extends Block {
             });
         });
 
-        this._buttonRow = this.createChild(Row, (e) => {
+        this.createChild(Row, (e) => {
             e.visible = false;
             e.style.flexDirection = "row-reverse";
             e.style.position = "absolute";
             e.style.right = "var(--layout-padding)";
             e.style.top = "var(--layout-padding)";
             e.style.width = "auto";
+            this.onValueChange.connect((value) => {
+                e.visible = value;
+            });
 
             if (features.includes("clear")) {
                 e.createChild(ToolButton, (e) => {
@@ -166,6 +168,10 @@ export class MediaBox extends Block {
                     });
                 });
             }
+        });
+
+        this.tools = this.createChild(DockGroup, (e) => {
+            e.style.textAlign = "initial";
         });
 
         this._viewer = null;

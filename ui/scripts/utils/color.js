@@ -3,11 +3,11 @@ function channelToHex(channel) {
     return result.length == 2 ? result : `0${result}`;
 }
 
-export function colorToHex(color) {
-    return `#${channelToHex(color.r ?? 0.0)}` +
-            `${channelToHex(color.g ?? 0.0)}` +
-            `${channelToHex(color.b ?? 0.0)}` +
-            `${channelToHex(color.a ?? 1.0)}`;
+export function colorToHex(color, channels = 4) {
+    return `#${channels >= 1 ? channelToHex(color.r ?? 0.0) : ""}` +
+            `${channels >= 2 ? channelToHex(color.g ?? 0.0) : ""}` +
+            `${channels >= 3 ? channelToHex(color.b ?? 0.0) : ""}` +
+            `${channels >= 4 ? channelToHex(color.a ?? 1.0) : ""}`;
 }
 
 export function hexToColor(string) {
