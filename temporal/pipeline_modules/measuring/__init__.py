@@ -60,7 +60,7 @@ class MeasuringModule(PipelineModule, abstract = True):
         indices = self.data[:self.count, 0]
 
         plt.title(self.name)
-        plt.xlabel("Frame")
+        plt.xlabel("Iteration")
         plt.xticks(indices)
         plt.xlim(indices[0], indices[-1])
         plt.gca().xaxis.set_major_locator(MaxNLocator(integer = True))
