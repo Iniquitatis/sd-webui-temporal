@@ -36,7 +36,6 @@ class PipelineModule(Object, abstract = True):
         for i in range(self.sample_iterations):
             if (result := self.forward(last_image, GeneralData(
                 initial_image = sample_image,
-                image_size = IntVector(*size),
                 seed = 31337,
             ), i + 1, 31337 + i)) is not None:
                 last_image = result
