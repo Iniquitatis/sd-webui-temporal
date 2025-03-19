@@ -14,11 +14,11 @@ class VideoRenderingModule(ToolModule):
 
     file_name: str = Param("File name", value = "video", ui_type = "box")
     image_name_prefix: str = Param("Image name prefix", value = "", ui_type = "box")
-    render_every_nth_frame: int = Param("Render every N-th frame", minimum = 1, step = 1, value = 100, ui_type = "box")
+    render_every_nth_iteration: int = Param("Render every N-th iteration", minimum = 1, step = 1, value = 100, ui_type = "box")
     renderer: VideoRenderer = Param("Rendering parameters", value = VideoRenderer)
 
-    def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> None:
-        if frame_index % self.render_every_nth_frame == 0:
+    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> None:
+        if iter_index % self.render_every_nth_iteration == 0:
             self.render(general, True)
 
     def finalize(self, image: NumpyImage, general: GeneralData) -> None:

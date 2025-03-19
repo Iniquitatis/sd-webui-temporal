@@ -13,18 +13,18 @@ class SavingModule(ToolModule):
 
     file_name_prefix: str = Param("File name prefix", value = "", ui_type = "box")
     scale: float = Param("Scale", minimum = 0.25, maximum = 1.0, step = 0.25, value = 1.0, ui_type = "slider")
-    save_every_nth_frame: int = Param("Save every N-th frame", minimum = 1, step = 1, value = 1, ui_type = "box")
+    save_every_nth_iteration: int = Param("Save every N-th iteration", minimum = 1, step = 1, value = 1, ui_type = "box")
     archive_mode: bool = Param("Archive mode", value = False)
 
-    def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> None:
-        if frame_index % self.save_every_nth_frame == 0:
+    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> None:
+        if iter_index % self.save_every_nth_iteration == 0:
             _save_queue.enqueue(
                 save_image,
                 np_to_pil(ensure_image_dims(image, size = (
                     int(quantize(general.image_size.x * self.scale, 8)),
                     int(quantize(general.image_size.y * self.scale, 8)),
                 )) if self.scale != 1.0 else image),
-                ensure_directory_exists(general.path) / f"{self.file_name_prefix}{frame_index:05d}.png",
+                ensure_directory_exists(general.path) / f"{self.file_name_prefix}{iter_index:05d}.png",
                 self.archive_mode,
             )
 

@@ -15,7 +15,7 @@ class ResamplingModule(NeuralModule):
     upscaler: str = Param("Upscaler", choices = list(shared.backend.list_upscalers()), value = get_first_element(shared.backend.list_upscalers(), UndefinedValue), ui_type = "menu")
     scale: float = Param("Scale", minimum = 0.25, maximum = 4.0, step = 0.25, value = 1.0, ui_type = "slider")
 
-    def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
         scale = self.scale
 
         if scale < 1.0:

@@ -17,8 +17,8 @@ class ImagePaintingModule(PaintingModule):
     offset: FloatVector = Param("Offset", axes = ["X", "Y"], minimum = -1.0, maximum = 1.0, step = 0.001, value = lambda: FloatVector(0.0, 0.0), ui_type = "slider")
     blurring: float = Param("Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, ui_type = "slider")
 
-    def draw(self, size: tuple[int, int], general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
-        if (image := self.source.get_image(general.initial_image, frame_index - 1)) is None:
+    def draw(self, size: tuple[int, int], general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
+        if (image := self.source.get_image(general.initial_image, iter_index - 1)) is None:
             return np.zeros((size[1], size[0], 4))
 
         # FIXME: Channel count should be handled in advance, on receiving an

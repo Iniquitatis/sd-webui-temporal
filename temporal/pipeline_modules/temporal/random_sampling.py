@@ -18,7 +18,7 @@ class RandomSamplingModule(TemporalModule):
 
     buffer: Optional[FloatArray] = Field(None, flags = {"private"})
 
-    def forward(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> Optional[NumpyImage]:
+    def forward(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> Optional[NumpyImage]:
         if self.buffer is None:
             self.buffer = ensure_image_dims(image.copy(), (general.image_size.x, general.image_size.y), 3)
 

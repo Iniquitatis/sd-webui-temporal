@@ -12,7 +12,7 @@ class TilingFilter(ImageFilter):
 
     exponent: float = Param("Exponent", minimum = 1.0, maximum = 16.0, step = 0.1, value = 1.0, ui_type = "slider")
 
-    def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
         h, w, _ = image.shape
 
         hh, hw = h // 2, w // 2

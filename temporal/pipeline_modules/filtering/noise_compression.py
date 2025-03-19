@@ -12,7 +12,7 @@ class NoiseCompressionFilter(ImageFilter):
     constant: float = Param("Constant", minimum = 0.0, maximum = 1.0, step = 1e-5, value = 0.0, ui_type = "slider")
     adaptive: float = Param("Adaptive", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.0, ui_type = "slider")
 
-    def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
         weight = 0.0
 
         if self.constant > 0.0:

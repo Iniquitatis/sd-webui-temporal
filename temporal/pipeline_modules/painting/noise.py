@@ -34,7 +34,7 @@ class NoisePaintingModule(PaintingModule):
         if self.seed == -1:
             self.seed = randint(0, 0x7fffffff)
 
-    def draw(self, size: tuple[int, int], general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+    def draw(self, size: tuple[int, int], general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
         if self.type == "duochrome":
             return lerp(
                 self.color_a.to_numpy(4),

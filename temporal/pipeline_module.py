@@ -8,7 +8,6 @@ from temporal.object import Field, Meta, Object, Static
 from temporal.shared import shared
 from temporal.utils import logging
 from temporal.utils.image import NumpyImage, ensure_image_dims, make_trs_transform
-from temporal.vector import IntVector
 
 
 class PipelineModule(Object, abstract = True):
@@ -20,7 +19,7 @@ class PipelineModule(Object, abstract = True):
     enabled: bool = Field(True)
     preview: bool = Field(True)
 
-    def forward(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> Optional[NumpyImage]:
+    def forward(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> Optional[NumpyImage]:
         return image
 
     def finalize(self, image: NumpyImage, general: GeneralData) -> None:

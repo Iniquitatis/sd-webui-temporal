@@ -182,9 +182,9 @@ export class MainUI extends Widget {
                         this._manager.manage(e, "load_parameters");
                     });
 
-                    e.createField("Continue from last frame", Checkbox, (e) => {
+                    e.createField("Continue from last iteration", Checkbox, (e) => {
                         e.value = true;
-                        this._manager.manage(e, "continue_from_last_frame");
+                        this._manager.manage(e, "continue_from_last_iteration");
                     });
                 });
 

@@ -19,11 +19,11 @@ class ImageFilter(PipelineModule, abstract = True):
     blend_mode: BlendMode = Field(NormalBlendMode)
     mask: ImageMask = Field(ImageMask)
 
-    def forward(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> Optional[NumpyImage]:
-        return self._blend(image, self.process(image, general, frame_index, seed))
+    def forward(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> Optional[NumpyImage]:
+        return self._blend(image, self.process(image, general, iter_index, seed))
 
     @abstractmethod
-    def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
         raise NotImplementedError
 
     def _blend(self, image: NumpyImage, processed: NumpyImage) -> NumpyImage:

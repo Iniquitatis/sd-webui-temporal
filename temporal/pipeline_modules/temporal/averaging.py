@@ -12,7 +12,7 @@ from temporal.utils.numpy import FloatArray, average_array, make_eased_weight_ar
 class AveragingModule(TemporalModule):
     name = "Averaging"
 
-    frames: int = Param("Frame count", minimum = 1, step = 1, value = 1, ui_type = "box")
+    sample_count: int = Param("Sample count", minimum = 1, step = 1, value = 1, ui_type = "box")
     trimming: float = Param("Trimming", minimum = 0.0, maximum = 0.5, step = 0.01, value = 0.0, ui_type = "slider")
     easing: float = Param("Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0, ui_type = "slider")
     preference: float = Param("Preference", minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0, ui_type = "slider")
@@ -20,11 +20,11 @@ class AveragingModule(TemporalModule):
     buffer: Optional[FloatArray] = Field(None, flags = {"private"})
     last_index: int = Field(0, flags = {"private"})
 
-    def forward(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> Optional[NumpyImage]:
+    def forward(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> Optional[NumpyImage]:
         if self.buffer is None:
             self.buffer = np.repeat(
                 ensure_image_dims(image, (general.image_size.x, general.image_size.y), 3)[np.newaxis, ...],
-                self.frames,
+                self.sample_count,
                 axis = 0,
             )
             self.last_index = 0
@@ -32,14 +32,14 @@ class AveragingModule(TemporalModule):
         self.buffer[self.last_index] = match_image(image, self.buffer[0])
 
         self.last_index += 1
-        self.last_index %= self.frames
+        self.last_index %= self.sample_count
 
-        return self.buffer[0].copy() if self.frames == 1 else saturate_array(average_array(
+        return self.buffer[0].copy() if self.sample_count == 1 else saturate_array(average_array(
             self.buffer,
             axis = 0,
             trim = self.trimming,
             power = self.preference + 1.0,
-            weights = np.roll(make_eased_weight_array(self.frames, self.easing), self.last_index),
+            weights = np.roll(make_eased_weight_array(self.sample_count, self.easing), self.last_index),
         ))
 
     def reset(self, general: GeneralData) -> None:

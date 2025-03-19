@@ -12,5 +12,5 @@ class BlurringFilter(ImageFilter):
 
     radius: float = Param("Radius", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, ui_type = "slider")
 
-    def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
         return saturate_array(skimage.filters.gaussian(image, round(self.radius), channel_axis = -1))

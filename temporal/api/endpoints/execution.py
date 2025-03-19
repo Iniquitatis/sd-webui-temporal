@@ -16,7 +16,7 @@ class _(Endpoint):
     class Request(BaseModel):
         image: Optional[str] = None
         load_parameters: bool = True
-        continue_from_last_frame: bool = True
+        continue_from_last_iteration: bool = True
         iter_count: int = 10
         project: dict[str, Any] = {}
 
@@ -33,7 +33,7 @@ class _(Endpoint):
         if request.load_parameters:
             project = Project.load(path)
 
-            if not request.continue_from_last_frame:
+            if not request.continue_from_last_iteration:
                 project.delete_session_data()
                 project.general.initial_image = base64_to_image(request.image, True) if request.image else None
 

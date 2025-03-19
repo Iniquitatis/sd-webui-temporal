@@ -16,8 +16,8 @@ class DisplacementFilter(ImageFilter):
     source: ImageSource = Param("Image source", channels = 3, value = ImageSource)
     scale: FloatVector = Param("Scale", axes = ["X", "Y"], step = 0.1, value = lambda: FloatVector(1.0, 1.0), ui_type = "box")
 
-    def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
-        if (source := self.source.get_image(general.initial_image, frame_index - 1)) is None:
+    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
+        if (source := self.source.get_image(general.initial_image, iter_index - 1)) is None:
             return image
 
         source = ensure_image_dims(source, size = (general.image_size.x, general.image_size.y))

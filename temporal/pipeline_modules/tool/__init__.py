@@ -7,10 +7,10 @@ from temporal.utils.image import NumpyImage
 
 
 class ToolModule(PipelineModule, abstract = True):
-    def forward(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> Optional[NumpyImage]:
-        self.process(image, general, frame_index, seed)
+    def forward(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> Optional[NumpyImage]:
+        self.process(image, general, iter_index, seed)
         return image
 
     @abstractmethod
-    def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> None:
+    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> None:
         raise NotImplementedError

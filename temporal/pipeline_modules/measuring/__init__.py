@@ -19,13 +19,13 @@ class MeasuringModule(PipelineModule, abstract = True):
     file_name: str = Static("")
     channels: list[tuple[str, str]] = Static([])
 
-    plot_every_nth_frame: int = Param("Plot every N-th frame", minimum = 1, step = 1, value = 10, ui_type = "box")
+    plot_every_nth_iteration: int = Param("Plot every N-th iteration", minimum = 1, step = 1, value = 10, ui_type = "box")
 
     data: Optional[FloatArray] = Field(None, flags = {"private"})
     count: int = Field(0, flags = {"private"})
 
-    def forward(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> Optional[NumpyImage]:
-        if frame_index % self.plot_every_nth_frame != 0:
+    def forward(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> Optional[NumpyImage]:
+        if iter_index % self.plot_every_nth_iteration != 0:
             return image
 
         if self.data is None:
@@ -35,9 +35,9 @@ class MeasuringModule(PipelineModule, abstract = True):
         if self.data.shape[0] <= self.count:
             self.data = np.concatenate([self.data, np.zeros_like(self.data)], axis = 0)
 
-        frame_data = self.data[self.count]
-        frame_data[0] = frame_index
-        frame_data[1:] = self.measure(image)
+        iter_data = self.data[self.count]
+        iter_data[0] = iter_index
+        iter_data[1:] = self.measure(image)
 
         self.count += 1
 

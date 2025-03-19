@@ -14,7 +14,7 @@ class ColorBalancingFilter(ImageFilter):
     saturation: float = Param("Saturation", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, ui_type = "slider")
 
     # TODO: Make non-idempotent
-    def process(self, image: NumpyImage, general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
         image = remap_range(image, image.min(), image.max(), 0.0, self.brightness)
 
         image = remap_range(image, image.min(), image.max(), 0.5 - self.contrast / 2, 0.5 + self.contrast / 2)

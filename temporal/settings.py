@@ -19,7 +19,7 @@ class FileSystemCategory(OptionCategory):
 class ExecutionCategory(OptionCategory):
     name = "Execution"
 
-    autosave_every_n_iterations: int = Param("Autosave every N iterations", minimum = 1, step = 1, value = 10, ui_type = "box")
+    autosave_every_nth_iteration: int = Param("Autosave every N-th iteration", minimum = 1, step = 1, value = 10, ui_type = "box")
 
 
 class Settings(Object):

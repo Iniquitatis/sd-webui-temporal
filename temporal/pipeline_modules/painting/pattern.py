@@ -22,7 +22,7 @@ class PatternPaintingModule(PaintingModule):
     color_a: Color = Param("Color A", channels = 4, value = lambda: Color(1.0, 1.0, 1.0))
     color_b: Color = Param("Color B", channels = 4, value = lambda: Color(0.0, 0.0, 0.0))
 
-    def draw(self, size: tuple[int, int], general: GeneralData, frame_index: int, seed: int) -> NumpyImage:
+    def draw(self, size: tuple[int, int], general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
         return self._generate((size[1], size[0], 4))
 
     def _generate(self, shape: tuple[int, ...]) -> FloatArray:
