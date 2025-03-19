@@ -1,6 +1,6 @@
+import {CanvasBox} from "../scripts/base/canvas_box.js";
 import {Checkbox} from "../scripts/base/checkbox.js";
 import {Form} from "../scripts/base/form.js";
-import {ImageBox} from "../scripts/base/image_box.js";
 import {Slider} from "../scripts/base/slider.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
@@ -13,7 +13,10 @@ export class ImageMaskEditor extends Form {
 
         this._manager = new FieldManager(this.onValueChange);
 
-        this.createField("Image", ImageBox, (e) => {
+        this.createField("Image", CanvasBox, (e) => {
+            e.canvasHeight = 512;
+            e.canvasWidth = 512;
+            e.height = "24rem";
             this._manager.manage(e, "image");
         }, ["clear", "download", "fullscreen", "upload"]);
 

@@ -5,8 +5,8 @@ export function getObjectKeyByIndex(object, index) {
 export function mapObject(object, callback) {
     let result = {};
 
-    for (let key of Object.keys(object)) {
-        result[key] = callback(key, object[key]);
+    for (let [key, value] of Object.entries(object)) {
+        result[key] = callback(key, value);
     }
 
     return result;

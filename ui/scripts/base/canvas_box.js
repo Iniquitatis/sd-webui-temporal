@@ -1,61 +1,45 @@
-import {Button} from "../../scripts/base/button.js";
-import {CanvasWidget} from "../../scripts/base/canvas_widget.js";
-import {Checkbox} from "../../scripts/base/checkbox.js";
-import {ColorPicker} from "../../scripts/base/color_picker.js";
+import {CanvasWidget, TOOLS} from "../../scripts/base/canvas_widget.js";
 import {Form} from "../../scripts/base/form.js";
 import {MediaBox} from "../../scripts/base/media_box.js";
-import {Slider} from "../../scripts/base/slider.js";
+import {Radio} from "../../scripts/base/radio.js";
+import {clearElement} from "../../scripts/utils/dom.js";
+import {mapObject} from "../../scripts/utils/object.js";
 
 export class CanvasBox extends MediaBox {
     constructor(features = []) {
         super(CanvasWidget, "image/*", features);
 
         this.tools.createDock("\u{f1fc}", "Drawing", Form, (e) => {
-            e.createField("Brush enabled", Checkbox, (e) => {
-                e.value = this._element.brushEnabled;
+            e.createField("Tool", Radio, (e) => {
+                e.choices = mapObject(TOOLS, (key, tool) => `${tool.icon} ${tool.name}`);
+                e.value = "none";
                 e.onValueChange.connect((value) => {
-                    this._element.brushEnabled = value;
+                    this._element.tool = value;
+
+                    clearElement(this._ui);
+
+                    this._element.tool.makeUI(this._ui);
                 });
             });
 
-            e.createField("Brush color", ColorPicker, (e) => {
-                e.value = this._element.brushColor;
-                e.onValueChange.connect((value) => {
-                    this._element.brushColor = value;
-                });
-            });
-
-            e.createField("Brush thickness", Slider, (e) => {
-                e.minimum = 1;
-                e.maximum = 128;
-                e.step = 1;
-                e.value = this._element.brushThickness;
-                e.onValueChange.connect((value) => {
-                    this._element.brushThickness = value;
-                });
-            });
-
-            e.createChild(Button, (e) => {
-                e.label = "\u{f575} Fill";
-                e.onClick.connect(() => {
-                    this._element.fill();
-                });
-            });
-
-            e.createChild(Button, (e) => {
-                e.label = "\u{f0ec} Flip horizontally";
-                e.onClick.connect(() => {
-                    this._element.flipH();
-                });
-            });
-
-            e.createChild(Button, (e) => {
-                e.label = "\u{e099} Flip vertically";
-                e.onClick.connect(() => {
-                    this._element.flipV();
-                });
-            });
+            this._ui = e.createChild(Form);
         });
+    }
+
+    get canvasHeight() {
+        return this._element.height;
+    }
+
+    get canvasWidth() {
+        return this._element.width;
+    }
+
+    set canvasHeight(value) {
+        this._element.height = value;
+    }
+
+    set canvasWidth(value) {
+        this._element.width = value;
     }
 }
 customElements.define("canvas-box", CanvasBox);
