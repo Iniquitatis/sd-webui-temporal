@@ -14,8 +14,8 @@ export class ImageMaskEditor extends Form {
         this._manager = new FieldManager(this.onValueChange);
 
         this.createField("Image", CanvasBox, (e) => {
-            e.canvasHeight = 512;
-            e.canvasWidth = 512;
+            e.canvasWidth = 256;
+            e.canvasHeight = 256;
             e.height = "24rem";
             this._manager.manage(e, "image");
         }, ["clear", "download", "fullscreen", "upload"]);

@@ -1,6 +1,6 @@
 export class Signal {
     constructor() {
-        this._enabled = true;
+        this._locks = 0;
         this._listeners = [];
     }
 
@@ -14,7 +14,7 @@ export class Signal {
     }
 
     fire(...args) {
-        if (!this._enabled) return;
+        if (this._locks > 0) return;
 
         for (let listener of this._listeners) {
             listener(...args);
@@ -22,8 +22,8 @@ export class Signal {
     }
 
     withDisabled(callback) {
-        this._enabled = false;
+        this._locks += 1;
         callback();
-        this._enabled = true;
+        this._locks -= 1;
     }
 }

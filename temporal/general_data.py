@@ -17,7 +17,6 @@ class GeneralData(Object):
     name: str = Field("untitled")
     description: str = Field("")
     initial_image: Optional[NumpyImage] = Field(None)
-    image_size: IntVector = Field(lambda: IntVector(512, 512))
     seed: int = Field(-1)
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -25,3 +24,10 @@ class GeneralData(Object):
 
         if self.seed == -1:
             self.seed = randint(0, 0x7fffffff)
+
+    @property
+    def image_size(self) -> IntVector:
+        if self.initial_image is not None:
+            return IntVector(*reversed(self.initial_image.shape[:2]))
+        else:
+            return IntVector(0, 0)

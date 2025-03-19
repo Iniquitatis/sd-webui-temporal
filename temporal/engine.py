@@ -12,7 +12,7 @@ from temporal.utils.image import ensure_image_dims
 class Engine:
     def start(self, project: Project, iter_count: int) -> None:
         if project.general.initial_image is None:
-            project.general.initial_image = np.full((project.general.image_size.y, project.general.image_size.x, 3), 0.5)
+            project.general.initial_image = np.full((512, 512, 3), 0.5)
 
         if project.iteration.image is None:
             project.iteration.image = project.general.initial_image.copy()

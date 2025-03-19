@@ -492,6 +492,7 @@ export class CanvasWidget extends Block {
         this.style.userSelect = "none";
 
         this.createChild(Block, (e) => {
+            e.classList.add("checkerboard-bg");
             e.style.height = "100%";
             e.style.position = "relative";
 
@@ -539,8 +540,7 @@ export class CanvasWidget extends Block {
     }
 
     set height(value) {
-        this._mainCanvas.height = value;
-        this._overlayCanvas.height = value;
+        this._resize(this.width, value);
     }
 
     set tool(value) {
@@ -569,8 +569,7 @@ export class CanvasWidget extends Block {
     }
 
     set width(value) {
-        this._mainCanvas.width = value;
-        this._overlayCanvas.width = value;
+        this._resize(value, this.height);
     }
 
     _onMouseDown(event) {
@@ -602,6 +601,35 @@ export class CanvasWidget extends Block {
         this.onValueChange.fire(this._value);
 
         currentWidget = null;
+    }
+
+    _resize(width, height) {
+        this._overlayCanvas.width = width;
+        this._overlayCanvas.height = height;
+
+        this._overlayCtx.clearRect(0, 0, this._overlayCanvas.width, this._overlayCanvas.height);
+        this._overlayCtx.drawImage(
+            this._mainCanvas,
+            0,
+            0,
+            this._mainCanvas.width,
+            this._mainCanvas.height,
+            0,
+            0,
+            this._overlayCanvas.width,
+            this._overlayCanvas.height,
+        );
+
+        this._mainCanvas.width = width;
+        this._mainCanvas.height = height;
+
+        this._mainCtx.clearRect(0, 0, this._mainCanvas.width, this._mainCanvas.height);
+        this._mainCtx.drawImage(this._overlayCanvas, 0, 0);
+
+        this._overlayCtx.clearRect(0, 0, this._overlayCanvas.width, this._overlayCanvas.height);
+
+        this._value = this._mainCanvas.toDataURL("image/png");
+        this.onValueChange.fire(this._value);
     }
 }
 customElements.define("canvas-widget", CanvasWidget);

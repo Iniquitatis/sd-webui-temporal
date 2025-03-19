@@ -11,14 +11,10 @@ export class ProjectEditor extends Tabs {
         super();
 
         this.onValueChange = new Signal();
-        this.onImageSizeChange = new Signal();
 
         this._manager = new FieldManager(this.onValueChange);
 
         this.createTab("General", GeneralDataEditor, (e) => {
-            e.onImageSizeChange.connect((value) => {
-                this.onImageSizeChange.fire(value);
-            });
             this._manager.manage(e, "general");
         });
 

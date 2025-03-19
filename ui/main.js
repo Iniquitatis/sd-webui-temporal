@@ -93,9 +93,8 @@ export class MainUI extends Widget {
             });
 
             this._image = e.createChild(CanvasBox, (e) => {
-                // FIXME: Accesses private stuff
-                e._element.width = 512;
-                e._element.height = 512;
+                e.canvasWidth = 512;
+                e.canvasHeight = 512;
                 this._manager.manage(e, "image");
                 this.onStateCheck.connect((state) => {
                     if (state.preview) {
@@ -190,11 +189,6 @@ export class MainUI extends Widget {
                 });
 
                 e.createChild(ProjectEditor, async (e) => {
-                    e.onImageSizeChange.connect((value) => {
-                        // FIXME: Accesses private stuff
-                        this._image._element.width = value.x;
-                        this._image._element.height = value.y;
-                    });
                     e.onValueChange.connect(async (value) => {
                         await postRequest("/temporal/project/data", {
                             "data": value,
