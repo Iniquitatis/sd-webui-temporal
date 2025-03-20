@@ -11,9 +11,12 @@ import {TextBox} from "../scripts/base/text_box.js";
 import {VectorEditor} from "../scripts/base/vector_editor.js";
 import {Signal} from "../scripts/core/signal.js";
 import {Widget} from "../scripts/core/widget.js";
+import {mapObject} from "../scripts/utils/object.js";
 import {ImageSourceEditor} from "../scripts/image_source_editor.js";
+import {ModuleList} from "../scripts/module_list.js";
 import {SeedBox} from "../scripts/seed_box.js";
-import {VideoRendererEditor} from "../scripts/video_renderer_editor.js";
+import {videoFilters} from "../scripts/shared_data.js";
+import {VideoFilterEditor} from "../scripts/video_filter_editor.js";
 
 export class ParamEditor extends Widget {
     constructor(definition) {
@@ -24,6 +27,10 @@ export class ParamEditor extends Widget {
         this._editor = null;
 
         let typeParts = [definition.type];
+
+        if (definition.subtype) {
+            typeParts.push(definition.subtype);
+        }
 
         if (definition.ui_type) {
             typeParts.push(definition.ui_type);
@@ -122,6 +129,10 @@ const EDITORS = {
         e.value = definition.default ?? null;
     }),
 
+    "list|temporal.video_filter.VideoFilter": (parent, definition) => parent.createChild(ModuleList, (e) => {
+        e.value = definition.default ?? [];
+    }, VideoFilterEditor, mapObject(videoFilters, (_, filter) => filter.name), videoFilters),
+
     "pathlib.Path": (parent, definition) => parent.createChild(TextBox, (e) => {
         e.value = definition.default ?? "";
     }),
@@ -176,9 +187,5 @@ const EDITORS = {
     }, Slider, {
         x: definition.axes?.[0] ?? "X",
         y: definition.axes?.[1] ?? "Y",
-    }),
-
-    "temporal.video_renderer.VideoRenderer": (parent, definition) => parent.createChild(VideoRendererEditor, (e) => {
-        e.value = definition.default ?? {};
     }),
 };

@@ -3,7 +3,7 @@ from inspect import isclass, isfunction
 from itertools import chain
 from json import dumps, loads
 from pathlib import Path
-from typing import Any, Callable, Generic, Literal, Optional, Type, TypeVar, cast, get_type_hints
+from typing import Any, Callable, Generic, Literal, Optional, Type, TypeVar, cast, get_args, get_type_hints
 from typing_extensions import Self
 from uuid import uuid4
 from weakref import WeakValueDictionary
@@ -168,6 +168,7 @@ class Param(Field[T]):
         return {
             "type": get_full_type_name(type),
             "optional": is_optional(self.type),
+            "subtype": get_full_type_name(get_args(type)[0]) if safe_get_origin(type) is list else None,
             "name": self.name,
             **({"minimum": self.minimum} if self.minimum is not None else {}),
             **({"maximum": self.maximum} if self.maximum is not None else {}),

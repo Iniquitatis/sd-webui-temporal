@@ -30,6 +30,14 @@ class _(Endpoint):
 
 class _(Endpoint):
     method = "GET"
+    path = "/temporal/object/{type}/schema"
+
+    async def do(self, type: str) -> dict[str, Any]:
+        return object_types[type].schema()
+
+
+class _(Endpoint):
+    method = "GET"
     path = "/temporal/object/{id}/data"
 
     async def do(self, id: str) -> Optional[dict[str, Any]]:
