@@ -1,6 +1,6 @@
 from math import ceil
 from random import randint
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 import skimage
@@ -11,7 +11,7 @@ from temporal.object import Param
 from temporal.pipeline_modules.painting import PaintingModule
 from temporal.utils.image import NumpyImage, make_trs_transform
 from temporal.utils.math import lerp
-from temporal.utils.numpy import FloatArray, random_array
+from temporal.utils.numpy import FloatArray, FloatType, random_array
 
 
 class NoisePaintingModule(PaintingModule):
@@ -46,12 +46,12 @@ class NoisePaintingModule(PaintingModule):
         else:
             raise ValueError(f"Incorrect type {self.type}")
 
-    def _generate(self, shape: tuple[int, ...], global_seed: Optional[int] = None) -> FloatArray:
+    def _generate(self, shape: tuple[int, ...], seed: int) -> FloatArray:
         noises = random_array(
             (ceil(self.detail),) + shape,
             low = 0.0,
             high = 1.0,
-            seed = global_seed if global_seed and self.use_global_seed else self.seed,
+            seed = seed if self.use_global_seed else self.seed,
         )
 
         def scale_noise(i: int, scale: float) -> FloatArray:
@@ -66,7 +66,7 @@ class NoisePaintingModule(PaintingModule):
             else:
                 raise NotImplementedError
 
-        result = np.zeros(shape)
+        result = np.zeros(shape, dtype = FloatType)
         total_amplitude = 0.0
         scale = self.scale
         amplitude = 0.5
@@ -78,4 +78,6 @@ class NoisePaintingModule(PaintingModule):
             scale /= self.lacunarity
             amplitude *= self.persistence
 
-        return result / total_amplitude
+        result /= total_amplitude
+
+        return result
