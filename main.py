@@ -1,8 +1,4 @@
 import mimetypes
-mimetypes.add_type("application/javascript", ".js")
-mimetypes.add_type("application/json", ".json")
-mimetypes.add_type("text/css", ".css")
-
 from argparse import ArgumentParser
 from pathlib import Path
 
@@ -14,6 +10,10 @@ from temporal.api import register_api
 from temporal.engine import Engine
 from temporal.shared import shared
 
+
+mimetypes.add_type("application/javascript", ".js")
+mimetypes.add_type("application/json", ".json")
+mimetypes.add_type("text/css", ".css")
 
 parser = ArgumentParser()
 parser.add_argument("--host", type = str, default = "0.0.0.0")

@@ -47,7 +47,7 @@ class Engine:
             if not project.pipeline.run(project.general, project.iteration):
                 break
 
-            if i % shared.settings.execution.autosave_every_n_iterations == 0:
+            if i % shared.settings.execution.autosave_every_nth_iteration == 0:
                 project.save(project.general.path)
 
             end_time = perf_counter()

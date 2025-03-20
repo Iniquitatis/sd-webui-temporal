@@ -12,22 +12,44 @@ export class ParamForm extends Form {
         this._manager = manager ?? new FieldManager(this.onValueChange);
 
         for (let [key, param] of Object.entries(params)) {
-            this.createField(param.name, ParamEditor, (e) => {
+            let field = this.createField(param.name, ParamEditor, (e) => {
                 this._manager.manage(e, key);
 
                 if (!param.dependencies) return;
 
                 this.onValueChange.connect((value) => {
-                    for (let [depKey, depValue] of Object.entries(param.dependencies)) {
-                        if (value[depKey] == depValue) continue;
-                        e.formItem.visible = false;
-                        return;
-                    }
-
-                    e.formItem.visible = true;
+                    toggleDependencies(value, e, param.dependencies);
                 });
             }, param);
+
+            // NOTE: Because field isn't yet appended to a form within its
+            // initializer
+            if (!param.dependencies) continue;
+
+            toggleDependencies(createDefault(params), field, param.dependencies);
         }
     }
 }
 customElements.define("param-form", ParamForm);
+
+function createDefault(params) {
+    let result = {};
+
+    for (let [key, param] of Object.entries(params)) {
+        if (param.default !== undefined) {
+            result[key] = param.default;
+        }
+    }
+
+    return result;
+}
+
+function toggleDependencies(value, element, dependencies) {
+    for (let [depKey, depValue] of Object.entries(dependencies)) {
+        if (value[depKey] == depValue) continue;
+        element.formItem.visible = false;
+        return;
+    }
+
+    element.formItem.visible = true;
+}

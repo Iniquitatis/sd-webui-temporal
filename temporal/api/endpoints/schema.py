@@ -4,7 +4,6 @@ from temporal.api.endpoint import Endpoint
 from temporal.blend_modes import BlendMode
 from temporal.pipeline_module import PipelineModule
 from temporal.settings import Settings
-from temporal.shared import shared
 from temporal.video_filter import VideoFilter
 
 
@@ -14,14 +13,6 @@ class _(Endpoint):
 
     async def do(self) -> dict[str, str]:
         return {x.__type_name__: x.name for x in BlendMode.__subtypes__}
-
-
-class _(Endpoint):
-    method = "GET"
-    path = "/temporal/schema/models"
-
-    async def do(self) -> list[str]:
-        return [x for x in shared.backend.list_models()]
 
 
 class _(Endpoint):
@@ -38,38 +29,6 @@ class _(Endpoint):
 
     async def do(self) -> dict[str, dict[str, Any]]:
         return {x.__type_name__: x.schema() for x in PipelineModule.__subtypes__}
-
-
-class _(Endpoint):
-    method = "GET"
-    path = "/temporal/schema/samplers"
-
-    async def do(self) -> list[str]:
-        return [x for x in shared.backend.list_samplers()]
-
-
-class _(Endpoint):
-    method = "GET"
-    path = "/temporal/schema/schedulers"
-
-    async def do(self) -> list[str]:
-        return [x for x in shared.backend.list_schedulers()]
-
-
-class _(Endpoint):
-    method = "GET"
-    path = "/temporal/schema/upscalers"
-
-    async def do(self) -> list[str]:
-        return [x for x in shared.backend.list_upscalers()]
-
-
-class _(Endpoint):
-    method = "GET"
-    path = "/temporal/schema/vaes"
-
-    async def do(self) -> list[str]:
-        return [x for x in shared.backend.list_vaes()]
 
 
 class _(Endpoint):

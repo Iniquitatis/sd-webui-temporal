@@ -12,7 +12,6 @@ import {VectorEditor} from "../scripts/base/vector_editor.js";
 import {Signal} from "../scripts/core/signal.js";
 import {Widget} from "../scripts/core/widget.js";
 import {ImageSourceEditor} from "../scripts/image_source_editor.js";
-import {ProcessingParamsEditor} from "../scripts/processing_params_editor.js";
 import {SeedBox} from "../scripts/seed_box.js";
 import {VideoRendererEditor} from "../scripts/video_renderer_editor.js";
 
@@ -133,10 +132,6 @@ const EDITORS = {
 
     "temporal.image_source.ImageSource": (parent, definition) => parent.createChild(ImageSourceEditor, (e) => {
         e.channels = definition.channels ?? 3;
-    }),
-
-    "temporal.processing_params.ProcessingParams": (parent, definition) => parent.createChild(ProcessingParamsEditor, (e) => {
-        e.value = definition.default ?? {};
     }),
 
     "temporal.utils.image.NumpyImage": (parent, definition) => parent.createChild(ImageBox, (e) => {

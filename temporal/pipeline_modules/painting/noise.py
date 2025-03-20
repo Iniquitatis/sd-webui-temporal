@@ -23,8 +23,8 @@ class NoisePaintingModule(PaintingModule):
     detail: float = Param("Detail", minimum = 1.0, maximum = 10.0, step = 0.01, value = 1.0, ui_type = "slider")
     lacunarity: float = Param("Lacunarity", minimum = 0.01, maximum = 4.0, step = 0.01, value = 2.0, ui_type = "slider")
     persistence: float = Param("Persistence", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.5, ui_type = "slider")
-    seed: int = Param("Seed", value = -1, ui_type = "seed")
     use_global_seed: bool = Param("Use global seed", value = False)
+    seed: int = Param("Seed", value = -1, dependencies = {"use_global_seed": False}, ui_type = "seed")
     color_a: Color = Param("Color A", value = lambda: Color(0.0, 0.0, 0.0), channels = 4, dependencies = {"type": "duochrome"})
     color_b: Color = Param("Color B", value = lambda: Color(1.0, 1.0, 1.0), channels = 4, dependencies = {"type": "duochrome"})
 
