@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import IntEnum, auto
 
 
@@ -13,24 +14,24 @@ log_level = LogLevel.INFO
 
 
 def log(*values):
-    print("[Temporal]", *values)
+    print("[\x1b[97mTEMPORAL\x1b[0m]", f"[\x1b[34m{datetime.now().strftime('%H:%M:%S')}\x1b[0m]", *values)
 
 
 def debug(*values):
     if log_level <= LogLevel.DEBUG:
-        log("[DEBUG]", *values)
+        log("[\x1b[90mDEBUG\x1b[0m]", *values)
 
 
 def info(*values):
     if log_level <= LogLevel.INFO:
-        log("[INFO]", *values)
+        log("[\x1b[36mINFO\x1b[0m]", *values)
 
 
 def warning(*values):
     if log_level <= LogLevel.WARNING:
-        log("[WARNING]", *values)
+        log("[\x1b[33mWARNING\x1b[0m]", *values)
 
 
 def error(*values):
     if log_level <= LogLevel.ERROR:
-        log("[ERROR]", *values)
+        log("[\x1b[31mERROR\x1b[0m]", *values)

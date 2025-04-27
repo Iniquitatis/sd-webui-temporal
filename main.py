@@ -51,4 +51,4 @@ app = FastAPI(title = "Temporal API")
 register_api(app, Engine())
 app.mount("/", StaticFiles(directory = "ui", html = True), name = "static")
 
-uvicorn.run(app, host = args.host, port = args.port)
+uvicorn.run(app, host = args.host, port = args.port, log_level = "warning")
