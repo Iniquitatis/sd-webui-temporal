@@ -3,7 +3,7 @@ from typing import Optional
 import numpy as np
 
 from temporal.general_data import GeneralData
-from temporal.object import Field, Param
+from temporal.object import Field
 from temporal.pipeline_modules.temporal import TemporalModule
 from temporal.utils.image import NumpyImage, ensure_image_dims, match_image
 from temporal.utils.numpy import FloatArray, saturate_array
@@ -12,9 +12,8 @@ from temporal.utils.numpy import FloatArray, saturate_array
 class LimitingModule(TemporalModule):
     name = "Limiting"
 
-    mode: str = Param("Mode", choices = {"clamp": "Clamp", "compress": "Compress"}, value = "clamp", ui_type = "radio")
-    max_difference: float = Param("Maximum difference", minimum = 0.001, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
-
+    mode: str = Field("clamp", name = "Mode", choices = {"clamp": "Clamp", "compress": "Compress"}, display = "radio")
+    max_difference: float = Field(1.0, name = "Maximum difference", minimum = 0.001, maximum = 1.0, step = 0.001, display = "slider")
     buffer: Optional[FloatArray] = Field(None, flags = {"private"})
 
     def forward(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> Optional[NumpyImage]:

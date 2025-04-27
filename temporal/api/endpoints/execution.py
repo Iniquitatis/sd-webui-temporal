@@ -1,12 +1,14 @@
+from asyncio import sleep
 from typing import Any, Optional
 
 from pydantic import BaseModel
 
 from temporal.api.endpoint import Endpoint
+from temporal.api.session import global_session
 from temporal.project import Project
 from temporal.shared import shared
 from temporal.thread_queue import ThreadQueue
-from temporal.utils.image import base64_to_image, image_to_base64
+from temporal.utils.image import image_to_base64
 
 
 class _(Endpoint):
@@ -14,7 +16,6 @@ class _(Endpoint):
     path = "/temporal/execution/generate"
 
     class Request(BaseModel):
-        image: Optional[str] = None
         load_parameters: bool = True
         continue_from_last_iteration: bool = True
         iter_count: int = 10
@@ -24,18 +25,19 @@ class _(Endpoint):
         super().__init__(*args, **kwargs)
         self.queue = ThreadQueue()
 
-    async def do(self, request: Request) -> None:
+    async def do(self, request: Request) -> bool:
         if self.queue.busy:
-            return
+            return False
 
         path = shared.settings.fs.project_dir / request.project.get("general", {}).get("name", "untitled")
 
+        # TODO: Extract this logic into frontend. This endpoint should accept
+        # either name of a project to load, or data of a new project.
         if request.load_parameters:
             project = Project.load(path)
 
             if not request.continue_from_last_iteration:
                 project.delete_session_data()
-                project.general.initial_image = base64_to_image(request.image, True) if request.image else None
 
         else:
             if path.is_dir():
@@ -43,10 +45,27 @@ class _(Endpoint):
                 existing.delete_session_data()
 
             project = Project.from_json(request.project)
-            project.general.path = path
-            project.general.initial_image = base64_to_image(request.image, True) if request.image else None
 
-        self.queue.enqueue(self.engine.start, project, request.iter_count)
+        def execute(project: Project, iter_count: int) -> None:
+            global_session.active_project = project
+            global_session.engine.start(project, iter_count)
+            global_session.active_project = None
+
+        self.queue.enqueue(execute, project, request.iter_count)
+
+        # FIXME: Kind of a hack and might still fail, for example, on 0
+        # iterations or very fast ones. The state should be probably somehow
+        # controllable _outside_ of the engine. For example, right here.
+        for _ in range(100):  # NOTE: 10 seconds
+            with global_session.engine.state_lock:
+                if global_session.engine.state.state == "active":
+                    break
+
+            await sleep(0.1)
+        else:
+            return False
+
+        return True
 
 
 class _(Endpoint):
@@ -54,7 +73,7 @@ class _(Endpoint):
     path = "/temporal/execution/interrupt"
 
     async def do(self) -> None:
-        self.engine.stop()
+        global_session.engine.stop()
 
 
 class _(Endpoint):
@@ -72,16 +91,21 @@ class _(Endpoint):
         self.last_preview = None
 
     async def do(self) -> Response:
-        with shared.state_lock:
-            if (preview := shared.state.preview) is not None and preview is not self.last_preview:
+        with global_session.engine.state_lock:
+            # FIXME: After starting the Engine in a _different_ thread, this
+            # thing might not even be "initialized", providing false information
+            # to the frontend
+            state = global_session.engine.state
+
+            if (preview := state.preview) is not None and preview is not self.last_preview:
                 self.last_preview = preview
                 sent_preview = preview
             else:
                 sent_preview = None
 
             return self.Response(
-                state = shared.state.state,
-                current_iteration = shared.state.current_iteration,
-                total_iterations = shared.state.total_iterations,
+                state = state.state,
+                current_iteration = state.current_iteration,
+                total_iterations = state.total_iterations,
                 preview = image_to_base64(sent_preview, True, "fast") if sent_preview is not None else None,
             )

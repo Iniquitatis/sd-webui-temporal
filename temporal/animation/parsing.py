@@ -1,8 +1,9 @@
 import re
 from dataclasses import dataclass, field
 from typing import Any, cast
+from typing_extensions import Self
 
-from temporal.animation import Animation, Track
+from temporal.animation import Animatable, Animation, Track
 from temporal.color import Color
 
 
@@ -16,7 +17,7 @@ class Node:
     key: str = ""
     arg: str = ""
     value: str = ""
-    children: list["Node"] = field(default_factory = list)
+    children: list[Self] = field(default_factory = list)
 
 
 def _parse_tree(code: str, indentation: int = 4) -> Node:
@@ -60,7 +61,7 @@ def _read_animation(node: Node) -> Animation:
     return result
 
 
-def _read_track(node: Node) -> Track:
+def _read_track(node: Node) -> Track[Animatable]:
     result = Track()
 
     for child in node.children:

@@ -1,14 +1,14 @@
 from typing import Iterator
 
-from temporal.object import Param
+from temporal.object import Field
 from temporal.video_filter import VideoFilter, make_filter as mf
 
 
 class InterpolationFilter(VideoFilter):
     name = "Interpolation"
 
-    fps: int = Param("Frames per second", minimum = 1, maximum = 60, step = 1, value = 60, ui_type = "slider")
-    mb_subframes: int = Param("Motion blur subframes", minimum = 0, maximum = 15, step = 1, value = 0, ui_type = "slider")
+    fps: int = Field(60, name = "Frames per second", minimum = 1, maximum = 60, step = 1, display = "slider")
+    mb_subframes: int = Field(0, name = "Motion blur subframes", minimum = 0, maximum = 15, step = 1, display = "slider")
 
     def generate(self, fps: int) -> Iterator[str]:
         yield mf([], [], "minterpolate",

@@ -1,7 +1,5 @@
 from typing import Any, Literal
 
-from pydantic import BaseModel
-
 from temporal.api.endpoint import Endpoint
 from temporal.fs_store import FSStore
 from temporal.shared import shared
@@ -12,97 +10,62 @@ StoreType = Literal["presets", "projects"]
 
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/storage/delete"
+    path = "/temporal/storage/{type}/list"
 
-    class Request(BaseModel):
-        store: StoreType
-        name: str
-
-    async def do(self, request: Request) -> None:
-        _get_store(request.store).delete_entry(request.name)
+    async def do(self, type: StoreType) -> list[str]:
+        return _get_store(type).entry_names
 
 
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/storage/list"
+    path = "/temporal/storage/{type}/new"
 
-    class Request(BaseModel):
-        store: StoreType
-
-    async def do(self, request: Request) -> list[str]:
-        return _get_store(request.store).entry_names
+    async def do(self, type: StoreType) -> None:
+        return _get_store(type).type().to_json()
 
 
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/storage/load"
+    path = "/temporal/storage/{type}/refresh"
 
-    class Request(BaseModel):
-        store: StoreType
-        name: str
-
-    async def do(self, request: Request) -> dict[str, Any]:
-        # FIXME: Shouldn't rely on knowledge about the store type
-        if request.store == "presets":
-            return _get_store(request.store).load_entry(request.name).to_json()
-        elif request.store == "projects":
-            project = _get_store(request.store).load_entry(request.name)
-            shared.state.active_project = project
-            return project.to_json()
-        else:
-            raise ValueError
+    async def do(self, type: StoreType) -> None:
+        _get_store(type).refresh()
 
 
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/storage/new"
+    path = "/temporal/storage/{type}/{entry}/delete"
 
-    class Request(BaseModel):
-        store: StoreType
-
-    async def do(self, request: Request) -> None:
-        pass  # TODO
+    async def do(self, type: StoreType, entry: str) -> None:
+        _get_store(type).delete_entry(entry)
 
 
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/storage/refresh"
+    path = "/temporal/storage/{type}/{entry}/load"
 
-    class Request(BaseModel):
-        store: StoreType
-
-    async def do(self, request: Request) -> None:
-        _get_store(request.store).refresh()
+    async def do(self, type: StoreType, entry: str) -> dict[str, Any]:
+        return _get_store(type).load_entry(entry).to_json()
 
 
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/storage/rename"
+    path = "/temporal/storage/{type}/{entry}/rename"
 
-    class Request(BaseModel):
-        store: StoreType
-        old_name: str
-        new_name: str
-
-    async def do(self, request: Request) -> None:
-        _get_store(request.store).rename_entry(request.old_name, request.new_name)
+    async def do(self, type: StoreType, entry: str, new_name: str) -> None:
+        _get_store(type).rename_entry(entry, new_name)
 
 
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/storage/save"
+    path = "/temporal/storage/{type}/{entry}/save"
 
-    class Request(BaseModel):
-        store: StoreType
-        name: str
-        data: dict[str, Any]
-
-    async def do(self, request: Request) -> None:
-        store = _get_store(request.store)
-        store.save_entry(request.name, store.type.from_json(request.data))
+    async def do(self, type: StoreType, entry: str, data: dict[str, Any]) -> None:
+        store = _get_store(type)
+        store.save_entry(entry, store.type.from_json(data))
 
 
-def _get_store(name: str) -> FSStore[Any]:
+def _get_store(name: StoreType) -> FSStore[Any]:
     if name == "presets":
         return shared.preset_store
     elif name == "projects":

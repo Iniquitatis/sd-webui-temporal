@@ -1,6 +1,7 @@
 import {Block} from "../../scripts/base/block.js";
 import {MultiStateToggle} from "../../scripts/base/multi_state_toggle.js";
 import {Widget} from "../../scripts/core/widget.js";
+import {createElement} from "../../scripts/utils/dom.js";
 
 export class Accordion extends Widget {
     constructor() {
@@ -48,6 +49,14 @@ export class Accordion extends Widget {
 
     set label(value) {
         this._label.innerText = value;
+    }
+
+    createBeforeLabel(tagOrClass, initializer, ...args) {
+        this._header.insertBefore(createElement(null, tagOrClass, initializer, ...args), this._label);
+    }
+
+    createAfterLabel(tagOrClass, initializer, ...args) {
+        this._header.insertBefore(createElement(null, tagOrClass, initializer, ...args), this._openToggle);
     }
 
     createChild(tagOrClass, initializer, ...args) {

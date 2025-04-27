@@ -1,23 +1,29 @@
 from functools import lru_cache
-from typing import Optional
+from typing import Literal, Optional
 
 import skimage
 
 from temporal.general_data import GeneralData
-from temporal.object import Field, Meta, Object, Static
+from temporal.object import Field, Object, Static
 from temporal.shared import shared
 from temporal.utils import logging
-from temporal.utils.image import NumpyImage, ensure_image_dims, make_trs_transform
+from temporal.utils.image import NumpyImage, PILImage, ensure_image_dims, make_trs_transform
+from temporal.video import Video
+
+
+VisualizableType = NumpyImage | PILImage | Video
 
 
 class PipelineModule(Object, abstract = True):
-    name: str = Meta("UNDEFINED")
-    is_filter: bool = Meta(False)
-    is_sampleable: bool = Meta(False)
-    sample_iterations: int = Static(1)
+    name: str = Static("UNDEFINED")
+    is_filter: bool = Static(False)
+    is_visualizable: bool = Static(False)
+    visualization_type: Literal["image", "video"] = Static("image")
+    is_sampleable: bool = Static(False)
+    sample_iterations: int = Static(1, flags = {"private"})
 
-    enabled: bool = Field(True)
-    preview: bool = Field(True)
+    enabled: bool = Field(True, name = "Enabled")
+    preview: bool = Field(True, name = "Preview")
 
     def forward(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> Optional[NumpyImage]:
         return image
@@ -27,6 +33,9 @@ class PipelineModule(Object, abstract = True):
 
     def reset(self, general: GeneralData) -> None:
         pass
+
+    def visualize(self, general: GeneralData) -> VisualizableType:
+        raise NotImplementedError
 
     def sample(self, size: tuple[int, int]) -> NumpyImage:
         sample_image = _get_scaled_sample_image(size)

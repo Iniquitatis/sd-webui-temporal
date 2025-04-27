@@ -1,5 +1,5 @@
 from temporal.general_data import GeneralData
-from temporal.object import Param
+from temporal.object import Field
 from temporal.pipeline_modules.tool import ToolModule
 from temporal.thread_queue import ThreadQueue
 from temporal.utils.fs import clear_directory, ensure_directory_exists
@@ -11,10 +11,10 @@ from temporal.utils.time import wait_until
 class SavingModule(ToolModule):
     name = "Saving"
 
-    file_name_prefix: str = Param("File name prefix", value = "", ui_type = "box")
-    scale: float = Param("Scale", minimum = 0.25, maximum = 1.0, step = 0.25, value = 1.0, ui_type = "slider")
-    save_every_nth_iteration: int = Param("Save every N-th iteration", minimum = 1, step = 1, value = 1, ui_type = "box")
-    archive_mode: bool = Param("Archive mode", value = False)
+    file_name_prefix: str = Field("", name = "File name prefix", display = "box")
+    scale: float = Field(1.0, name = "Scale", minimum = 0.25, maximum = 1.0, step = 0.25, display = "slider")
+    save_every_nth_iteration: int = Field(1, name = "Save every N-th iteration", minimum = 1, step = 1, display = "box")
+    archive_mode: bool = Field(False, name = "Archive mode")
 
     def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> None:
         if iter_index % self.save_every_nth_iteration == 0:

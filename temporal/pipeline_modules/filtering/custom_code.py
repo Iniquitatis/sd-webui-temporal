@@ -5,7 +5,7 @@ import scipy
 import skimage
 
 from temporal.general_data import GeneralData
-from temporal.object import Param
+from temporal.object import Field
 from temporal.pipeline_modules.filtering import ImageFilter
 from temporal.utils.image import NumpyImage
 from temporal.utils.numpy import saturate_array
@@ -14,7 +14,7 @@ from temporal.utils.numpy import saturate_array
 class CustomCodeFilter(ImageFilter):
     name = "Custom code"
 
-    code: str = Param("Code", value = "output = input", ui_type = "code", language = "python")
+    code: str = Field("output = input", name = "Code", display = "code", language = "python")
 
     def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
         code_globals: dict[str, Any] = dict(

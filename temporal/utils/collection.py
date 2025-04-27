@@ -52,7 +52,10 @@ def find_index_by_predicate(iterable: Iterable[T], pred: Callable[[T], bool], fa
 
 
 def get_first_element(iterable: Iterable[T], fallback: U = None) -> T | U:
-    return next(iter(iterable)) if iterable else fallback
+    try:
+        return next(iter(iterable))
+    except StopIteration:
+        return fallback
 
 
 def get_next_element(iterable: Iterable[T], current: T, fallback: U = None) -> T | U:
@@ -79,6 +82,10 @@ def get_with_fallback(sequence: Sequence[T], index: int, fallback: U = None) -> 
 
 def natural_sort(iterable: Iterable[str]) -> list[str]:
     return sorted(iterable, key = lambda item: tuple(int(x) if x.isdigit() else x for x in re.split(r"(\d+)", item)))
+
+
+def reorder(sequence: Sequence[T], order: Iterable[int]) -> list[T]:
+    return [sequence[x] for x in order]
 
 
 def reorder_dict(d: dict[T, U], order: Iterable[T]) -> dict[T, U]:

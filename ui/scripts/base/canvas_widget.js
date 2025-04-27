@@ -316,7 +316,7 @@ class SmudgeTool extends CanvasTool {
             e.minimum = 0.0;
             e.maximum = 1.0;
             e.step = 0.01;
-            e.value = 1.0;
+            e.value = 0.5;
         });
 
         this._hardness = form.createField("Hardness", Slider, (e) => {
@@ -500,8 +500,10 @@ export class CanvasWidget extends Block {
                 e.height = 300;
                 e.width = 400;
                 e.style.height = "100%";
-                e.style.maxHeight = "100%";
                 e.style.maxWidth = "100%";
+                e.style.objectFit = "contain";
+                e.style.verticalAlign = "middle";
+                e.style.width = "auto";
 
                 this._mainCtx = e.getContext("2d", {willReadFrequently: true});
             });
@@ -511,11 +513,13 @@ export class CanvasWidget extends Block {
                 e.width = this.width;
                 e.style.height = "100%";
                 e.style.left = "0";
-                e.style.maxHeight = "100%";
                 e.style.maxWidth = "100%";
+                e.style.objectFit = "contain";
                 e.style.opacity = "1.0";
                 e.style.position = "absolute";
                 e.style.top = "0";
+                e.style.verticalAlign = "middle";
+                e.style.width = "auto";
                 e.addEventListener("pointerdown", (event) => this._onMouseDown(event));
 
                 this._overlayCtx = e.getContext("2d");

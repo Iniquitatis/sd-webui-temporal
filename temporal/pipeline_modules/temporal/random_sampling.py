@@ -3,7 +3,7 @@ from typing import Optional
 import numpy as np
 
 from temporal.general_data import GeneralData
-from temporal.object import Field, Param
+from temporal.object import Field
 from temporal.pipeline_modules.temporal import TemporalModule
 from temporal.utils.image import NumpyImage, ensure_image_dims
 from temporal.utils.math import clamp, lerp
@@ -13,9 +13,8 @@ from temporal.utils.numpy import FloatArray, random_array
 class RandomSamplingModule(TemporalModule):
     name = "Random sampling"
 
-    chance: float = Param("Chance", minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
-    opacity: float = Param("Opacity", minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
-
+    chance: float = Field(1.0, name = "Chance", minimum = 0.0, maximum = 1.0, step = 0.001, display = "slider")
+    opacity: float = Field(1.0, name = "Opacity", minimum = 0.0, maximum = 1.0, step = 0.001, display = "slider")
     buffer: Optional[FloatArray] = Field(None, flags = {"private"})
 
     def forward(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> Optional[NumpyImage]:

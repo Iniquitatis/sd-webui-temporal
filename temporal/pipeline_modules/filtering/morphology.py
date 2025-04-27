@@ -1,7 +1,7 @@
 import skimage
 
 from temporal.general_data import GeneralData
-from temporal.object import Param
+from temporal.object import Field
 from temporal.pipeline_modules.filtering import ImageFilter
 from temporal.utils.image import NumpyImage, apply_channelwise
 
@@ -9,13 +9,13 @@ from temporal.utils.image import NumpyImage, apply_channelwise
 class MorphologyFilter(ImageFilter):
     name = "Morphology"
 
-    mode: str = Param("Mode", choices = {
+    mode: str = Field("erosion", name = "Mode", choices = {
         "erosion": "Erosion",
         "dilation": "Dilation",
         "opening": "Opening",
         "closing": "Closing",
-    }, value = "erosion", ui_type = "radio")
-    radius: int = Param("Radius", minimum = 0, maximum = 50, step = 1, value = 0, ui_type = "slider")
+    }, display = "radio")
+    radius: int = Field(0, name = "Radius", minimum = 0, maximum = 50, step = 1, display = "slider")
 
     def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
         func = (

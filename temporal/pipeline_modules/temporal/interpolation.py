@@ -4,7 +4,7 @@ import numpy as np
 import skimage
 
 from temporal.general_data import GeneralData
-from temporal.object import Field, Param
+from temporal.object import Field
 from temporal.pipeline_modules.temporal import TemporalModule
 from temporal.utils.image import NumpyImage, apply_channelwise, ensure_image_dims, match_image
 from temporal.utils.math import lerp
@@ -14,10 +14,9 @@ from temporal.utils.numpy import FloatArray, FloatType
 class InterpolationModule(TemporalModule):
     name = "Interpolation"
 
-    blending: float = Param("Blending", minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
-    movement: float = Param("Movement", minimum = 0.0, maximum = 1.0, step = 0.001, value = 1.0, ui_type = "slider")
-    radius: int = Param("Radius", minimum = 7, maximum = 31, step = 2, value = 15, ui_type = "slider")
-
+    blending: float = Field(1.0, name = "Blending", minimum = 0.0, maximum = 1.0, step = 0.001, display = "slider")
+    movement: float = Field(1.0, name = "Movement", minimum = 0.0, maximum = 1.0, step = 0.001, display = "slider")
+    radius: int = Field(15, name = "Radius", minimum = 7, maximum = 31, step = 2, display = "slider")
     buffer: Optional[FloatArray] = Field(None, flags = {"private"})
 
     def forward(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> Optional[NumpyImage]:

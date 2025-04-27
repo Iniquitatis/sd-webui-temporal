@@ -1,75 +1,56 @@
 from asyncio import get_event_loop
-from typing import Optional
+from typing import Any, Optional
 
+import numpy as np
+from PIL import Image
 from pydantic import BaseModel
 
 from temporal.api.endpoint import Endpoint
+from temporal.api.session import global_session
 from temporal.object import object_registry
 from temporal.pipeline_module import PipelineModule
-from temporal.pipeline_modules.measuring import MeasuringModule
-from temporal.shared import shared
-from temporal.utils import logging
 from temporal.utils.base64 import encode_with_mime_type
 from temporal.utils.image import image_to_base64, pil_to_np
-
-
-# FIXME: Temporary
-logging.log_level = logging.LogLevel.DEBUG
+from temporal.video import Video
 
 
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/module/{id}/preview_state"
+    path = "/temporal/module/sample"
 
     class Request(BaseModel):
-        state: bool
-
-    async def do(self, id: str, request: Request) -> None:
-        if isinstance(module := object_registry.get(id, None), PipelineModule):
-            module.preview = request.state
-
-
-class _(Endpoint):
-    method = "POST"
-    path = "/temporal/module/{id}/render_graph"
-
-    async def do(self, id: str) -> Optional[str]:
-        def render() -> Optional[str]:
-            if isinstance(module := object_registry.get(id, None), MeasuringModule):
-                return image_to_base64(pil_to_np(module.plot()), True, "fast")
-
-        return await get_event_loop().run_in_executor(None, render)
-
-
-class _(Endpoint):
-    method = "POST"
-    path = "/temporal/module/{id}/render_sample"
-
-    class Request(BaseModel):
+        data: dict[str, Any]
         size: tuple[int, int] = (256, 256)
 
-    async def do(self, id: str, request: Request) -> Optional[str]:
+    async def do(self, request: Request) -> Optional[str]:
         def render() -> Optional[str]:
-            if isinstance(module := object_registry.get(id, None), PipelineModule):
-                return image_to_base64(module.sample(request.size), True, "fast")
+            return image_to_base64(PipelineModule.from_json(request.data).sample(request.size), True, "fast")
 
         return await get_event_loop().run_in_executor(None, render)
 
 
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/module/{id}/render_video"
+    path = "/temporal/module/{id}/visualize"
 
     async def do(self, id: str) -> Optional[str]:
-        # NOTE/FIXME: Not a big deal, including it on top just messes up
-        # registration ordering a little
-        from temporal.pipeline_modules.tool.video_rendering import VideoRenderingModule
-
         def render() -> Optional[str]:
-            with shared.state_lock:
-                project = shared.state.active_project
+            with global_session.engine.state_lock:
+                if not (project := global_session.active_project):
+                    return
 
-            if isinstance(module := object_registry.get(id, None), VideoRenderingModule):
-                return encode_with_mime_type("video", "mp4", module.render(project.general, False).read_bytes())
+                if not isinstance(module := object_registry.get(id, None), PipelineModule):
+                    return
+
+                result = module.visualize(project.general)
+
+                if isinstance(result, np.ndarray):
+                    return image_to_base64(result, True, "fast")
+                elif isinstance(result, Image.Image):
+                    return image_to_base64(pil_to_np(result), True, "fast")
+                elif isinstance(result, Video) and (data := result.store_in_memory()):
+                    return encode_with_mime_type("video", result.format, data)
+                else:
+                    raise TypeError(result)
 
         return await get_event_loop().run_in_executor(None, render)

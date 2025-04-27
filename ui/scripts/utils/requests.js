@@ -1,5 +1,7 @@
+const DEBUG = false;
+
 async function apiRequest(url, method, data = null, successCallback = null, errorCallback = null) {
-    console.log(method, url, data);
+    if (DEBUG) console.log(method, url, data);
 
     return fetch(url, {
         method: method,
@@ -7,7 +9,7 @@ async function apiRequest(url, method, data = null, successCallback = null, erro
         body: method == "POST" ? JSON.stringify(data ?? {}) : undefined,
     })
     .then(async (response) => {
-        console.log("RESPONSE", response);
+        if (DEBUG) console.log("RESPONSE", response);
 
         if (!response.ok) {
             throw new Error(`${response.status} (${response.statusText}): ${await response.text()}`);
@@ -16,7 +18,7 @@ async function apiRequest(url, method, data = null, successCallback = null, erro
         return response.json();
     })
     .then((json) => {
-        console.log("DATA", json);
+        if (DEBUG) console.log("DATA", json);
 
         if (successCallback) {
             successCallback(json);
@@ -25,7 +27,7 @@ async function apiRequest(url, method, data = null, successCallback = null, erro
         return json;
     })
     .catch((reason) => {
-        console.log("ERROR", reason);
+        if (DEBUG) console.log("ERROR", reason);
 
         if (errorCallback) {
             errorCallback();

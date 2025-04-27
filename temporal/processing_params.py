@@ -1,5 +1,4 @@
-from random import randint
-from typing import Any, Optional
+from typing import Optional
 
 from temporal.object import Field, Object
 
@@ -16,9 +15,3 @@ class ProcessingParams(Object):
     cfg: float = Field(5.0)
     strength: float = Field(0.5)
     seed: int = Field(-1)
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-
-        if self.seed == -1:
-            self.seed = randint(0, 0x7fffffff)

@@ -39,7 +39,7 @@ export class Checkbox extends Widget {
     attachTitle(title) {
         this.style.display = "flex";
         this.style.flexDirection = "row";
-        this.style.gap = "calc(var(--layout-gap) / 2)";
+        this.style.gap = "var(--layout-small-gap)";
 
         this.createChild(Block, (e) => {
             e.innerText = title;

@@ -1,4 +1,5 @@
 from typing import Iterator
+from typing_extensions import Self
 
 import numpy as np
 
@@ -15,7 +16,7 @@ class IntVector(Object):
             yield getattr(self, key)
 
     @classmethod
-    def from_numpy(cls, arr: IntArray) -> "IntVector":
+    def from_numpy(cls, arr: IntArray) -> Self:
         return cls(*arr)
 
     def to_numpy(self) -> IntArray:
@@ -31,7 +32,7 @@ class FloatVector(Object):
             yield getattr(self, key)
 
     @classmethod
-    def from_numpy(cls, arr: FloatArray) -> "FloatVector":
+    def from_numpy(cls, arr: FloatArray) -> Self:
         return cls(*arr)
 
     def to_numpy(self) -> FloatArray:

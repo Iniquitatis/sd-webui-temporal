@@ -37,7 +37,7 @@ class WebUIAPIBackend(Backend):
         return [x["label"] for x in _safe_request("GET", f"{self.url}/sdapi/v1/schedulers").json()]
 
     def image_to_image(self, image: NumpyImage, params: ProcessingParams, width: int, height: int) -> Optional[NumpyImage]:
-        if result := _safe_request("POST", f"{self.url}/sdapi/v1/img2img", json = {
+        if (result := _safe_request("POST", f"{self.url}/sdapi/v1/img2img", json = {
             "init_images": [image_to_base64(image, False, "fast")],
             "prompt": params.positive_prompt,
             "negative_prompt": params.negative_prompt,
@@ -62,20 +62,24 @@ class WebUIAPIBackend(Backend):
                 "show_progress_every_n_steps": -1,
             },
             "override_settings_restore_afterwards": False,
-        }).json()["images"]:
-            return base64_to_image(result[0], False)
+        }).json()) and not self._is_interrupted():
+            return base64_to_image(result["images"][0], False)
 
     def upscale_image(self, image: NumpyImage, upscaler: str, scale: float) -> Optional[NumpyImage]:
-        return base64_to_image(_safe_request("POST", f"{self.url}/sdapi/v1/extra-single-image", json = {
+        if (result := _safe_request("POST", f"{self.url}/sdapi/v1/extra-single-image", json = {
             "image": image_to_base64(image, False, "fast"),
             "resize_mode": 0,
             "upscaling_resize_w": floor(image.shape[1] * scale),
             "upscaling_resize_h": floor(image.shape[0] * scale),
             "upscaler_1": upscaler,
-        }).json()["image"], False)
+        }).json()) and not self._is_interrupted():
+            return base64_to_image(result["image"], False)
 
     def interrupt(self) -> None:
         _safe_request("POST", f"{self.url}/sdapi/v1/interrupt")
+
+    def _is_interrupted(self) -> bool:
+        return _safe_request("GET", f"{self.url}/sdapi/v1/progress").json()["state"]["interrupted"]
 
 
 def _safe_request(method: Literal["GET", "POST"], *args: Any, **kwargs: Any) -> requests.Response:

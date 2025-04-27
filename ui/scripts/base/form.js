@@ -43,7 +43,7 @@ export class Form extends Widget {
                     e.style.alignContent = "center";
                     e.style.color = "var(--hint-color)";
                     e.style.fontSize = "0.9rem";
-                    e.style.marginBottom = "calc(var(--layout-gap) / 2)";
+                    e.style.marginBottom = "var(--layout-small-gap)";
                 });
 
                 result.formItem = e;

@@ -8,7 +8,7 @@ from typing_extensions import Self
 from uuid import uuid4
 from weakref import WeakValueDictionary
 
-from temporal.serialization import SerializationDataFlag, SerializationParams, Serializer, deserialize, serialize
+from temporal.serialization import JSONValue, SerializationDataFlag, SerializationParams, Serializer, deserialize, serialize
 from temporal.utils import logging
 from temporal.utils.fs import recreate_directory
 from temporal.utils.typing import get_full_type_name, get_optional_type, is_optional, safe_get_origin
@@ -22,26 +22,37 @@ class UndefinedValue:
 
 
 class Static(Generic[T]):
-    def __new__(cls, value: T | Type[UndefinedValue] = UndefinedValue) -> T:
+    def __new__(
+        cls,
+        value: T | Type[UndefinedValue] = UndefinedValue,
+        *,
+        flags: set[Literal["private"]] = set(),
+    ) -> T:
         instance = object.__new__(cls)
-        instance.__init__(value)
+        instance.__init__(
+            value = value,
+            flags = flags,
+        )
         return cast(T, instance)
 
-    def __init__(self, value: T | Type[UndefinedValue] = UndefinedValue) -> None:
-        self.key = ""
+    def __init__(
+        self,
+        value: T | Type[UndefinedValue] = UndefinedValue,
+        *,
+        flags: set[Literal["private"]] = set(),
+    ) -> None:
+        self.key: str
         self.type: Type[Any]
         self.value = value
+        self.flags = flags
 
     def __set_name__(self, owner: Any, name: str) -> None:
         self.key = name
         self.type = get_type_hints(owner, include_extras = True)[name]
 
 
-class Meta(Static[T]):
-    def __new__(cls, value: T | Type[UndefinedValue] = UndefinedValue) -> T:
-        instance = object.__new__(cls)
-        instance.__init__(value)
-        return cast(T, instance)
+Choices = list[str] | dict[str, str]
+Display = Literal["accordion", "area", "box", "code", "group", "menu", "radio", "slider", "tab"]
 
 
 class Field(Generic[T]):
@@ -49,21 +60,64 @@ class Field(Generic[T]):
         cls,
         value: T | Callable[[], T] | Type[UndefinedValue] = UndefinedValue,
         *,
+        name: Optional[str] = None,
+        minimum: Optional[int | float] = None,
+        maximum: Optional[int | float] = None,
+        step: Optional[int | float] = None,
+        axes: Optional[list[str]] = None,
+        channels: Optional[int] = None,
+        choices: Optional[Choices] | Callable[[], Choices] = None,
+        language: Optional[str] = None,
+        dependencies: Optional[dict[str, Any]] = None,
+        display: Optional[Display] = None,
         flags: set[SerializationDataFlag] = set(),
     ) -> T:
         instance = object.__new__(cls)
-        instance.__init__(value, flags = flags)
+        instance.__init__(
+            value = value,
+            name = name,
+            minimum = minimum,
+            maximum = maximum,
+            step = step,
+            axes = axes,
+            channels = channels,
+            choices = choices,
+            language = language,
+            dependencies = dependencies,
+            display = display,
+            flags = flags,
+        )
         return cast(T, instance)
 
     def __init__(
         self,
         value: T | Callable[[], T] | Type[UndefinedValue] = UndefinedValue,
         *,
+        name: Optional[str] = None,
+        minimum: Optional[int | float] = None,
+        maximum: Optional[int | float] = None,
+        step: Optional[int | float] = None,
+        axes: Optional[list[str]] = None,
+        channels: Optional[int] = None,
+        choices: Optional[Choices] | Callable[[], Choices] = None,
+        language: Optional[str] = None,
+        dependencies: Optional[dict[str, Any]] = None,
+        display: Optional[Display] = None,
         flags: set[SerializationDataFlag] = set(),
     ) -> None:
-        self.key = ""
+        self.key: str
         self.type: Type[Any]
         self.value = value
+        self.name = name
+        self.minimum = minimum
+        self.maximum = maximum
+        self.step = step
+        self.axes = axes
+        self.channels = channels
+        self.choices = choices
+        self.language = language
+        self.dependencies = dependencies
+        self.display = display
         self.flags = flags
 
     def __set_name__(self, owner: Any, name: str) -> None:
@@ -83,72 +137,8 @@ class Field(Generic[T]):
         else:
             return cast(T, value)
 
-
-Choices = list[T] | dict[T, str]
-UIType = Literal["area", "box", "code", "menu", "radio", "seed", "slider"]
-
-
-class Param(Field[T]):
-    def __new__(
-        cls,
-        name: str = "Parameter",
-        value: T | Callable[[], T] | Type[UndefinedValue] = UndefinedValue,
-        *,
-        minimum: Optional[int | float] = None,
-        maximum: Optional[int | float] = None,
-        step: Optional[int | float] = None,
-        axes: Optional[list[str]] = None,
-        channels: Optional[int] = None,
-        choices: Optional[Choices[T]] | Callable[[], Choices[T]] = None,
-        language: Optional[str] = None,
-        dependencies: Optional[dict[str, Any]] = None,
-        ui_type: Optional[UIType] = None,
-    ) -> T:
-        instance = object.__new__(cls)
-        instance.__init__(
-            name = name,
-            value = value,
-            minimum = minimum,
-            maximum = maximum,
-            step = step,
-            axes = axes,
-            channels = channels,
-            choices = choices,
-            language = language,
-            dependencies = dependencies,
-            ui_type = ui_type,
-        )
-        return cast(T, instance)
-
-    def __init__(
-        self,
-        name: str = "Parameter",
-        value: T | Callable[[], T] | Type[UndefinedValue] = UndefinedValue,
-        *,
-        minimum: Optional[int | float] = None,
-        maximum: Optional[int | float] = None,
-        step: Optional[int | float] = None,
-        axes: Optional[list[str]] = None,
-        channels: Optional[int] = None,
-        choices: Optional[Choices[T]] | Callable[[], Choices[T]] = None,
-        language: Optional[str] = None,
-        dependencies: Optional[dict[str, Any]] = None,
-        ui_type: Optional[UIType] = None,
-    ) -> None:
-        super().__init__(value = value)
-        self.name = name
-        self.minimum = minimum
-        self.maximum = maximum
-        self.step = step
-        self.axes = axes
-        self.channels = channels
-        self.choices = choices
-        self.language = language
-        self.dependencies = dependencies
-        self.ui_type = ui_type
-
     @property
-    def schema(self) -> dict[str, Any]:
+    def schema(self) -> dict[str, JSONValue]:
         choices = self.choices
 
         if choices is not None:
@@ -169,7 +159,8 @@ class Param(Field[T]):
             "type": get_full_type_name(type),
             "optional": is_optional(self.type),
             "subtype": get_full_type_name(get_args(type)[0]) if safe_get_origin(type) is list else None,
-            "name": self.name,
+            "default": serialize(self.type, self.default, SerializationParams()),
+            **({"name": self.name} if self.name is not None else {}),
             **({"minimum": self.minimum} if self.minimum is not None else {}),
             **({"maximum": self.maximum} if self.maximum is not None else {}),
             **({"step": self.step} if self.step is not None else {}),
@@ -178,25 +169,17 @@ class Param(Field[T]):
             **({"choices": choices} if choices is not None else {}),
             **({"language": self.language} if self.language is not None else {}),
             **({"dependencies": {k: serialize(v.__class__, v, SerializationParams()) for k, v in self.dependencies.items()}} if self.dependencies else {}),
-            **({"ui_type": self.ui_type} if self.ui_type is not None else {}),
-            **({"default": serialize(self.type, self.default, SerializationParams())} if self.default is not None else {}),
+            **({"display": self.display} if self.display is not None else {}),
         }
 
 
 class Object:
     __type_name__: str
     __statics__: dict[str, Static[Any]] = {}
-    __metas__: dict[str, Meta[Any]] = {}
     __fields__: dict[str, Field[Any]] = {}
-    __params__: dict[str, Param[Any]] = {}
     __subtypes__: list[Type[Self]] = []
 
-    def __init_subclass__(
-        cls,
-        *,
-        abstract: bool = False,
-        **kwargs: Any,
-    ) -> None:
+    def __init_subclass__(cls, *, abstract: bool = False, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
 
         class _(Serializer[cls]):
@@ -219,11 +202,6 @@ class Object:
             for key, field in cls.__dict__.items()
             if isinstance(field, Static)
         }
-        cls.__metas__ = {
-            key: field
-            for key, field in cls.__statics__.items()
-            if isinstance(field, Meta)
-        }
         cls.__fields__ = {
             key: field
             for base_cls in list(reversed(cls.__mro__[1:]))
@@ -233,11 +211,6 @@ class Object:
             key: field
             for key, field in cls.__dict__.items()
             if isinstance(field, Field)
-        }
-        cls.__params__ = {
-            key: field
-            for key, field in cls.__fields__.items()
-            if isinstance(field, Param)
         }
         cls.__subtypes__ = []
 
@@ -273,19 +246,27 @@ class Object:
         return f"{self.__class__.__name__}({args})"
 
     @classmethod
-    def schema(cls) -> dict[str, Any]:
+    def schema(cls) -> dict[str, JSONValue]:
         return {
             "type": cls.__type_name__,
-            **{k: v.value for k, v in cls.__metas__.items()},
-            "parameters": {
-                key: param.schema
-                for key, param in cls.__params__.items()
+            **{
+                key: serialize(field.type, field.value, SerializationParams())
+                for key, field in cls.__statics__.items()
+                if "private" not in field.flags
+            },
+            "fields": {
+                key: field.schema
+                for key, field in cls.__fields__.items()
+                if "private" not in field.flags
             },
         }
 
     @classmethod
-    def from_json(cls, data: dict[str, Any], params: SerializationParams = SerializationParams()) -> Self:
-        if type_name := data.pop("__type__", None):
+    def from_json(cls, data: JSONValue, params: SerializationParams = SerializationParams()) -> Self:
+        if not isinstance(data, dict):
+            raise ValueError
+
+        if isinstance(type_name := data.pop("__type__", None), str):
             if not issubclass(actual_cls := object_types[type_name], cls):
                 raise TypeError
         else:
@@ -297,7 +278,7 @@ class Object:
             if key in data and field.flags.issubset(params.flags)
         })
 
-    def to_json(self, params: SerializationParams = SerializationParams()) -> dict[str, Any]:
+    def to_json(self, params: SerializationParams = SerializationParams()) -> JSONValue:
         return {"__type__": self.__type_name__, "__id__": self.__id__} | {
             key: serialize(field.type, getattr(self, key), params)
             for key, field in self.__fields__.items()

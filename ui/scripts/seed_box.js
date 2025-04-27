@@ -9,6 +9,8 @@ export class SeedBox extends Row {
 
         this.onValueChange = new Signal();
 
+        this.style.gap = "var(--layout-small-gap)";
+
         this._box = this.createChild(NumberBox, (e) => {
             e.minimum = -1;
             e.maximum = 0x7fffffff;

@@ -1,9 +1,8 @@
-import {Block} from "./scripts/base/block.js";
-import {CanvasBox} from "./scripts/base/canvas_box.js";
 import {Checkbox} from "./scripts/base/checkbox.js";
 import {Column} from "./scripts/base/column.js";
 import {DockGroup} from "./scripts/base/dock_group.js";
 import {Form} from "./scripts/base/form.js";
+import {ImageBox} from "./scripts/base/image_box.js";
 import {MultiStateButton} from "./scripts/base/multi_state_button.js";
 import {NumberBox} from "./scripts/base/number_box.js";
 import {ProgressBar} from "./scripts/base/progress_bar.js";
@@ -14,7 +13,7 @@ import {Timer} from "./scripts/core/timer.js";
 import {Widget} from "./scripts/core/widget.js";
 import {getRequest, postRequest} from "./scripts/utils/requests.js";
 import {FSStoreBox} from "./scripts/fs_store_box.js";
-import {ProjectEditor} from "./scripts/project_editor.js";
+import {ObjectForm} from "./scripts/object_form.js";
 import {SettingsEditor} from "./scripts/settings_editor.js";
 import {initializeData} from "./scripts/shared_data.js";
 
@@ -23,9 +22,8 @@ export class MainUI extends Widget {
         super();
 
         this.onValueChange = new Signal();
-        this.onProjectDataReceive = new Signal();
+        this.onProjectLoad = new Signal();
         this.onProjectChange = new Signal();
-        this.onProjectSave = new Signal();
         this.onGenerationStart = new Signal();
         this.onGenerationStop = new Signal();
         this.onStateCheck = new Signal();
@@ -37,8 +35,6 @@ export class MainUI extends Widget {
         }, 1.0);
         this.onGenerationStart.connect(() => this._stateTimer.start());
         this.onGenerationStop.connect(() => this._stateTimer.stop());
-
-        this._projectDirty = false;
 
         this.style.height = "100%";
         this.style.position = "fixed";
@@ -55,9 +51,15 @@ export class MainUI extends Widget {
                 e.style.minHeight = "calc(var(--widget-height) * 2)";
                 e.onStateChange.connect(async (state) => {
                     if (state == "active") {
-                        this.onGenerationStart.fire();
-
+                        // FIXME: Kinda ugly, as it makes UI's responsiveness
+                        // dependent on the server state, but we shouldn't start
+                        // the state-changing timer until this call returns.
+                        // ...
+                        // (Yes, I hate all those "deferred" things that make
+                        // my UX feel sluggish.)
                         await postRequest("/temporal/execution/generate", this._manager.value);
+
+                        this.onGenerationStart.fire();
                     } else if (state == "stopped") {
                         this.onGenerationStop.fire();
 
@@ -92,16 +94,13 @@ export class MainUI extends Widget {
                 });
             });
 
-            this._image = e.createChild(CanvasBox, (e) => {
-                e.canvasWidth = 512;
-                e.canvasHeight = 512;
-                this._manager.manage(e, "image");
+            this._image = e.createChild(ImageBox, (e) => {
                 this.onStateCheck.connect((state) => {
                     if (state.preview) {
                         e.value = state.preview;
                     }
                 });
-            }, ["clear", "download", "fullscreen", "upload"]);
+            }, ["clear", "download", "fullscreen"]);
 
             e.createChild(MultiStateButton, (e) => {
                 e.states = {normal: "Fullscreen", fullscreen: "Back to normal"};
@@ -121,53 +120,17 @@ export class MainUI extends Widget {
                 e.createField("Preset", FSStoreBox, (e) => {
                     e.saveCallback = () => ({"data": this._manager.value});
                     e.onLoad.connect((value) => {
-                        this._manager.value = Object.assign(this._manager.value, {
-                            "image": value.data.project.general.initial_image,
-                        });
+                        this._image.value = value.data.project.general.initial_image;
                     });
                 }, "presets", ["refresh", "load", "save", "rename", "delete"]);
 
                 e.createField("Project", FSStoreBox, (e) => {
-                    e.saveCallback = () => this._manager.value.project;
-                    e.onNew.connect(async () => {
-                        await postRequest("/temporal/project/new");
-
-                        this.onProjectDataReceive.fire(await getRequest("/temporal/project/data"));
-
-                        this._manager.value = Object.assign(this._manager.value, {
-                            "image": await getRequest("/temporal/project/last_image"),
-                        });
-                    });
                     e.onLoad.connect(async (value) => {
-                        await postRequest("/temporal/project/load", {
-                            "name": value.general.name,
-                        });
+                        this._image.value = await getRequest(`/temporal/project/${e.value}/last_image`);
 
-                        this.onProjectDataReceive.fire(await getRequest("/temporal/project/data"));
-
-                        this._manager.value = Object.assign(this._manager.value, {
-                            "image": await getRequest("/temporal/project/last_image"),
-                        });
+                        this.onProjectLoad.fire(value);
                     });
-                    e.onSave.connect(() => {
-                        this.onProjectSave.fire();
-                    });
-                }, "projects", ["refresh", "new", "load", "save", "rename", "delete"]);
-
-                e.createField("Active project", Block, async (e) => {
-                    this.onProjectChange.connect((project) => {
-                        e.innerText = `${project.general.name} \u{23fa}`;
-
-                        this._projectDirty = true;
-                    });
-                    this.onProjectSave.connect(() => {
-                        if (e.innerText.endsWith(" \u{23fa}")) {
-                            e.innerText = e.innerText.substring(0, e.innerText.length - 2);
-                        }
-
-                        this._projectDirty = false;
-                    });
-                });
+                }, "projects", ["refresh", "load", "rename", "delete"]);
 
                 e.createField("Iteration count", NumberBox, (e) => {
                     e.minimum = 1;
@@ -188,30 +151,24 @@ export class MainUI extends Widget {
                     });
                 });
 
-                e.createChild(ProjectEditor, async (e) => {
-                    e.onValueChange.connect(async (value) => {
-                        await postRequest("/temporal/project/data", {
-                            "data": value,
-                        });
+                // TODO
+                this._hotReload = e.createField("Hot reload", Checkbox, (e) => {
+                    e.value = false;
+                });
 
+                e.createChild(ObjectForm, (e) => {
+                    e.manageAll();
+                    e.onValueChange.connect(async (value) => {
                         this.onProjectChange.fire(value);
                     });
-                    this.onProjectDataReceive.connect((project) => {
+                    this.onProjectLoad.connect((project) => {
                         e.value = project;
-                        // FIXME: The initializer doesn't re-enable the widget
-                        // on mobile for some reason (async stuff?)
-                        // e.enabled = true;
                     });
                     this._manager.manage(e, "project");
 
-                    // TODO
-                    // e.enabled = false;
-                    // e.value = await getRequest("/temporal/project/data");
-                    // e.enabled = true;
-
                     // FIXME: Temporary
                     e.onValueChange.connect((value) => console.log("PROJECT", value));
-                });
+                }, "temporal.project.Project");
             });
 
             e.createDock("\u{f013}", "System", Tabs, (e) => {
@@ -224,6 +181,7 @@ export class MainUI extends Widget {
                 });
 
                 e.createTab("Help", Column, (e) => {
+                    // TODO
                     e.innerText = "Blah";
                 });
             });

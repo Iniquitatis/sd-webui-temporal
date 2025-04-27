@@ -1,15 +1,15 @@
 from typing import Iterator
 
-from temporal.object import Param
+from temporal.object import Field
 from temporal.video_filter import VideoFilter, make_filter as mf
 
 
 class ColorBalancingFilter(VideoFilter):
     name = "Color balancing"
 
-    brightness: float = Param("Brightness", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, ui_type = "slider")
-    contrast: float = Param("Contrast", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, ui_type = "slider")
-    saturation: float = Param("Saturation", minimum = 0.0, maximum = 2.0, step = 0.01, value = 1.0, ui_type = "slider")
+    brightness: float = Field(1.0, name = "Brightness", minimum = 0.0, maximum = 2.0, step = 0.01, display = "slider")
+    contrast: float = Field(1.0, name = "Contrast", minimum = 0.0, maximum = 2.0, step = 0.01, display = "slider")
+    saturation: float = Field(1.0, name = "Saturation", minimum = 0.0, maximum = 2.0, step = 0.01, display = "slider")
 
     def generate(self, fps: int) -> Iterator[str]:
         yield mf([], [], "eq",

@@ -1,7 +1,7 @@
 import numpy as np
 
 from temporal.general_data import GeneralData
-from temporal.object import Param
+from temporal.object import Field
 from temporal.pipeline_modules.filtering import ImageFilter
 from temporal.utils.image import NumpyImage
 
@@ -9,8 +9,8 @@ from temporal.utils.image import NumpyImage
 class SymmetryFilter(ImageFilter):
     name = "Symmetry"
 
-    horizontal: bool = Param("Horizontal", value = False)
-    vertical: bool = Param("Vertical", value = False)
+    horizontal: bool = Field(False, name = "Horizontal")
+    vertical: bool = Field(False, name = "Vertical")
 
     def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
         height, width = image.shape[:2]

@@ -1,11 +1,11 @@
 from abc import abstractmethod
 from typing import Iterator
 
-from temporal.object import Field, Meta, Object
+from temporal.object import Field, Object, Static
 
 
 class VideoFilter(Object, abstract = True):
-    name: str = Meta("UNDEFINED")
+    name: str = Static("UNDEFINED")
 
     enabled: bool = Field(True)
 

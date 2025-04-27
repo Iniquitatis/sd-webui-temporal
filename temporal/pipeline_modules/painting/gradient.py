@@ -2,7 +2,7 @@ import numpy as np
 
 from temporal.color import Color
 from temporal.general_data import GeneralData
-from temporal.object import Param
+from temporal.object import Field
 from temporal.pipeline_modules.painting import PaintingModule
 from temporal.utils.image import NumpyImage
 from temporal.utils.math import lerp
@@ -13,11 +13,11 @@ from temporal.vector import FloatVector
 class GradientPaintingModule(PaintingModule):
     name = "Gradient"
 
-    type: str = Param("Type", choices = {"linear": "Linear", "radial": "Radial"}, value = "linear", ui_type = "radio")
-    start: FloatVector = Param("Start", axes = ["X", "Y"], step = 0.01, value = lambda: FloatVector(0.0, 0.0), ui_type = "box")
-    end: FloatVector = Param("End", axes = ["X", "Y"], step = 0.01, value = lambda: FloatVector(1.0, 1.0), ui_type = "box")
-    start_color: Color = Param("Start color", channels = 4, value = lambda: Color(0.0, 0.0, 0.0))
-    end_color: Color = Param("End color", channels = 4, value = lambda: Color(1.0, 1.0, 1.0))
+    type: str = Field("linear", name = "Type", choices = {"linear": "Linear", "radial": "Radial"}, display = "radio")
+    start: FloatVector = Field(lambda: FloatVector(0.0, 0.0), name = "Start", axes = ["X", "Y"], step = 0.01, display = "box")
+    end: FloatVector = Field(lambda: FloatVector(1.0, 1.0), name = "End", axes = ["X", "Y"], step = 0.01, display = "box")
+    start_color: Color = Field(lambda: Color(0.0, 0.0, 0.0), name = "Start color", channels = 4)
+    end_color: Color = Field(lambda: Color(1.0, 1.0, 1.0), name = "End color", channels = 4)
 
     def draw(self, size: tuple[int, int], general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
         return self._generate((size[1], size[0], 4))

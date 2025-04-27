@@ -7,17 +7,18 @@ import {Signal} from "../scripts/core/signal.js";
 import {clearElement} from "../scripts/utils/dom.js";
 
 export class ModuleList extends Column {
-    constructor(moduleClass, names, definitions) {
+    constructor(moduleClass, names) {
         super();
 
         this.onValueChange = new Signal();
 
         this._moduleClass = moduleClass;
         this._names = names;
-        this._definitions = definitions;
         this._value = [];
 
         this.createChild(Row, (e) => {
+            e.style.gap = "var(--layout-small-gap)";
+
             let selectedModule = e.createChild(Dropdown, (e) => {
                 e.choices = names;
                 e.style.width = "100%";
@@ -25,9 +26,11 @@ export class ModuleList extends Column {
 
             e.createChild(ToolButton, (e) => {
                 e.label = "\u{e59e}";
-                e.onClick.connect(() => {
+                e.onClick.connect(async () => {
                     let module = this._createModule(selectedModule.value);
                     this._value.push(module.value);
+
+                    this._updateListVisibility();
 
                     this.onValueChange.fire(this._value);
                 });
@@ -35,6 +38,7 @@ export class ModuleList extends Column {
         });
 
         this._list = this.createChild(ReorderableList, (e) => {
+            e.visible = false;
             e.onOrderChange.connect(() => {
                 this._value = [...e.childNodes].map((node) => node.value);
 
@@ -56,6 +60,8 @@ export class ModuleList extends Column {
             this._createModule(module.__type__, module);
         }
 
+        this._updateListVisibility();
+
         this.onValueChange.fire(value);
     }
 
@@ -73,9 +79,15 @@ export class ModuleList extends Column {
             e.onRemove.connect(() => {
                 this._value = [...this._list.childNodes].map((node) => node.value);
 
+                this._updateListVisibility();
+
                 this.onValueChange.fire(this._value);
             });
-        }, this._definitions[type]);
+        }, type);
+    }
+
+    _updateListVisibility() {
+        this._list.visible = this._value.length > 0;
     }
 }
 customElements.define("module-list", ModuleList);

@@ -1,8 +1,8 @@
-export function getObjectKeyByIndex(object, index) {
-    return Object.keys(object)[index];
+export function deepCopy(object) {
+    return JSON.parse(JSON.stringify(object));
 }
 
-export function mapObject(object, callback) {
+export function mapValues(object, callback) {
     let result = {};
 
     for (let [key, value] of Object.entries(object)) {

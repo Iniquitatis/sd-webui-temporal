@@ -7,7 +7,6 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from temporal.api import register_api
-from temporal.engine import Engine
 from temporal.shared import shared
 
 
@@ -48,7 +47,7 @@ else:
 shared.init(backend, args.settings_dir)
 
 app = FastAPI(title = "Temporal API")
-register_api(app, Engine())
+register_api(app)
 app.mount("/", StaticFiles(directory = "ui", html = True), name = "static")
 
 uvicorn.run(app, host = args.host, port = args.port, log_level = "warning")

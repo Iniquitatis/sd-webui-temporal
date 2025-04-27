@@ -1,14 +1,14 @@
 from typing import Iterator
 
-from temporal.object import Param
+from temporal.object import Field
 from temporal.video_filter import VideoFilter, make_filter as mf
 
 
 class SharpeningFilter(VideoFilter):
     name = "Sharpening"
 
-    strength: float = Param("Strength", minimum = 0.0, maximum = 1.0, step = 0.1, value = 0.0, ui_type = "slider")
-    radius: int = Param("Radius", minimum = 3, maximum = 13, step = 2, value = 3, ui_type = "slider")
+    strength: float = Field(0.0, name = "Strength", minimum = 0.0, maximum = 1.0, step = 0.1, display = "slider")
+    radius: int = Field(3, name = "Radius", minimum = 3, maximum = 13, step = 2, display = "slider")
 
     def generate(self, fps: int) -> Iterator[str]:
         yield mf([], [], "unsharp",

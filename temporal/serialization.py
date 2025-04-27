@@ -17,14 +17,18 @@ class SerializationParams:
     flags: set[SerializationDataFlag] = datafield(default_factory = set)
 
 
-def deserialize(type: Type[Any], obj: Any, params: SerializationParams) -> Any:
-    if safe_get_origin(type) is list:
+# NOTE: `Any` because type-checkers aren't good with recursive types
+JSONValue = None | bool | int | float | str | list[Any] | dict[str, Any]
+
+
+def deserialize(type: Type[Any], obj: JSONValue, params: SerializationParams) -> Any:
+    if safe_get_origin(type) is list and isinstance(obj, list):
         return [
             deserialize(get_args(type)[0], value, params)
             for value in obj
         ]
 
-    elif safe_get_origin(type) is dict:
+    elif safe_get_origin(type) is dict and isinstance(obj, dict):
         return {
             key: deserialize(get_args(type)[1], value, params)
             for key, value in obj.items()
@@ -46,7 +50,7 @@ def deserialize(type: Type[Any], obj: Any, params: SerializationParams) -> Any:
         raise Exception(f"Couldn't find a serializer for '{type}'")
 
 
-def serialize(type: Type[Any], obj: Any, params: SerializationParams) -> Any:
+def serialize(type: Type[Any], obj: Any, params: SerializationParams) -> JSONValue:
     if safe_get_origin(type) is list:
         return [
             serialize(get_args(type)[0], value, params)
@@ -89,34 +93,34 @@ class Serializer(Generic[T]):
         return get_args(getattr(cls, "__orig_bases__")[0])[0]
 
     @classmethod
-    def read_json(cls, obj: Any, params: SerializationParams) -> T:
+    def read_json(cls, obj: JSONValue, params: SerializationParams) -> T:
         raise NotImplementedError
 
     @classmethod
-    def write_json(cls, obj: T, params: SerializationParams) -> Any:
+    def write_json(cls, obj: T, params: SerializationParams) -> JSONValue:
         raise NotImplementedError
 
 
 def _find_serializer(type: Type[Any]) -> Optional[Type[Serializer[Any]]]:
-    if (best_type := _serializers.get(type, None)) is not None:
-        return best_type
+    if (serializer := _serializers.get(type, None)) is not None:
+        return serializer
 
     best_index = int(1e9)
-    best_type = None
+    best_serializer = None
 
     mro = type.mro()
 
-    for key, alias in _serializers.items():
+    for serialized_type, serializer in _serializers.items():
         try:
-            mro_index = mro.index(key)
+            mro_index = mro.index(serialized_type)
         except ValueError:
             continue
 
         if mro_index < best_index:
             best_index = mro_index
-            best_type = alias
+            best_serializer = serializer
 
-    return best_type
+    return best_serializer
 
 
 _serializers: dict[Type[Any], Type[Serializer[Any]]] = {}
@@ -135,6 +139,9 @@ from temporal.utils.numpy import FloatArray, array_to_base64, base64_to_array, l
 class _(Serializer[NoneType]):
     @classmethod
     def read_json(cls, obj, params):
+        if obj is not None:
+            raise ValueError
+
         return obj
 
     @classmethod
@@ -145,6 +152,9 @@ class _(Serializer[NoneType]):
 class _(Serializer[bool]):
     @classmethod
     def read_json(cls, obj, params):
+        if not isinstance(obj, bool):
+            raise ValueError
+
         return obj
 
     @classmethod
@@ -155,7 +165,10 @@ class _(Serializer[bool]):
 class _(Serializer[int]):
     @classmethod
     def read_json(cls, obj, params):
-        return obj
+        if not isinstance(obj, (bool, int)):
+            raise ValueError
+
+        return int(obj)
 
     @classmethod
     def write_json(cls, obj, params):
@@ -165,7 +178,10 @@ class _(Serializer[int]):
 class _(Serializer[float]):
     @classmethod
     def read_json(cls, obj, params):
-        return obj
+        if not isinstance(obj, (bool, int, float)):
+            raise ValueError
+
+        return float(obj)
 
     @classmethod
     def write_json(cls, obj, params):
@@ -175,6 +191,9 @@ class _(Serializer[float]):
 class _(Serializer[str]):
     @classmethod
     def read_json(cls, obj, params):
+        if not isinstance(obj, str):
+            raise ValueError
+
         return obj
 
     @classmethod
@@ -185,6 +204,9 @@ class _(Serializer[str]):
 class _(Serializer[Path]):
     @classmethod
     def read_json(cls, obj, params):
+        if not isinstance(obj, str):
+            raise ValueError
+
         return Path(obj)
 
     @classmethod
@@ -195,6 +217,9 @@ class _(Serializer[Path]):
 class _(Serializer[bytes]):
     @classmethod
     def read_json(cls, obj, params):
+        if not isinstance(obj, str):
+            raise ValueError
+
         if params.data_dir is not None:
             return (params.data_dir / obj).read_bytes()
         else:
@@ -213,6 +238,9 @@ class _(Serializer[bytes]):
 class _(Serializer[PILImage]):
     @classmethod
     def read_json(cls, obj, params):
+        if not isinstance(obj, str):
+            raise ValueError
+
         if params.data_dir is not None:
             return load_image(params.data_dir / obj)
         else:
@@ -231,6 +259,9 @@ class _(Serializer[PILImage]):
 class _(Serializer[FloatArray]):
     @classmethod
     def read_json(cls, obj, params):
+        if not isinstance(obj, str):
+            raise ValueError
+
         if params.data_dir is not None:
             return load_array(params.data_dir / obj)
         else:
@@ -249,6 +280,9 @@ class _(Serializer[FloatArray]):
 class _(Serializer[NumpyImage]):
     @classmethod
     def read_json(cls, obj, params):
+        if not isinstance(obj, str):
+            raise ValueError
+
         if params.data_dir is not None:
             return load_array(params.data_dir / obj)
         else:

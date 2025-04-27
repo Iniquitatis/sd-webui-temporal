@@ -1,14 +1,13 @@
 from math import ceil
-from random import randint
-from typing import Any
 
 import numpy as np
 import skimage
 
 from temporal.color import Color
 from temporal.general_data import GeneralData
-from temporal.object import Param
+from temporal.object import Field
 from temporal.pipeline_modules.painting import PaintingModule
+from temporal.seed import Seed
 from temporal.utils.image import NumpyImage, make_trs_transform
 from temporal.utils.math import lerp
 from temporal.utils.numpy import FloatArray, FloatType, random_array
@@ -17,22 +16,16 @@ from temporal.utils.numpy import FloatArray, FloatType, random_array
 class NoisePaintingModule(PaintingModule):
     name = "Noise"
 
-    type: str = Param("Type", choices = {"duochrome": "Duochrome", "colored": "Colored"}, value = "duochrome", ui_type = "radio")
-    mode: str = Param("Mode", choices = {"fbm": "fBm", "turbulence": "Turbulence", "ridge": "Ridge"}, value = "fbm", ui_type = "radio")
-    scale: int = Param("Scale", minimum = 1, maximum = 1024, step = 1, value = 1, ui_type = "slider")
-    detail: float = Param("Detail", minimum = 1.0, maximum = 10.0, step = 0.01, value = 1.0, ui_type = "slider")
-    lacunarity: float = Param("Lacunarity", minimum = 0.01, maximum = 4.0, step = 0.01, value = 2.0, ui_type = "slider")
-    persistence: float = Param("Persistence", minimum = 0.0, maximum = 1.0, step = 0.01, value = 0.5, ui_type = "slider")
-    use_global_seed: bool = Param("Use global seed", value = False)
-    seed: int = Param("Seed", value = -1, dependencies = {"use_global_seed": False}, ui_type = "seed")
-    color_a: Color = Param("Color A", value = lambda: Color(0.0, 0.0, 0.0), channels = 4, dependencies = {"type": "duochrome"})
-    color_b: Color = Param("Color B", value = lambda: Color(1.0, 1.0, 1.0), channels = 4, dependencies = {"type": "duochrome"})
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-
-        if self.seed == -1:
-            self.seed = randint(0, 0x7fffffff)
+    type: str = Field("duochrome", name = "Type", choices = {"duochrome": "Duochrome", "colored": "Colored"}, display = "radio")
+    mode: str = Field("fbm", name = "Mode", choices = {"fbm": "fBm", "turbulence": "Turbulence", "ridge": "Ridge"}, display = "radio")
+    scale: int = Field(1, name = "Scale", minimum = 1, maximum = 1024, step = 1, display = "slider")
+    detail: float = Field(1.0, name = "Detail", minimum = 1.0, maximum = 10.0, step = 0.01, display = "slider")
+    lacunarity: float = Field(2.0, name = "Lacunarity", minimum = 0.01, maximum = 4.0, step = 0.01, display = "slider")
+    persistence: float = Field(0.5, name = "Persistence", minimum = 0.0, maximum = 1.0, step = 0.01, display = "slider")
+    use_global_seed: bool = Field(False, name = "Use global seed")
+    seed: Seed = Field(Seed, name = "Seed", dependencies = {"use_global_seed": False})
+    color_a: Color = Field(lambda: Color(0.0, 0.0, 0.0), name = "Color A", channels = 4, dependencies = {"type": "duochrome"})
+    color_b: Color = Field(lambda: Color(1.0, 1.0, 1.0), name = "Color B", channels = 4, dependencies = {"type": "duochrome"})
 
     def draw(self, size: tuple[int, int], general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
         if self.type == "duochrome":
@@ -51,7 +44,7 @@ class NoisePaintingModule(PaintingModule):
             (ceil(self.detail),) + shape,
             low = 0.0,
             high = 1.0,
-            seed = seed if self.use_global_seed else self.seed,
+            seed = seed if self.use_global_seed else self.seed.fixed_value,
         )
 
         def scale_noise(i: int, scale: float) -> FloatArray:

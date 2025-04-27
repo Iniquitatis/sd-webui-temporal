@@ -19,7 +19,7 @@ export class Tabs extends Widget {
             e.style.display = "flex";
             e.style.flexDirection = "row";
             e.style.flexWrap = "wrap";
-            e.style.gap = "calc(var(--layout-gap) / 2)";
+            e.style.gap = "var(--layout-small-gap)";
             e.style.margin = "0 var(--corners)";
         });
 

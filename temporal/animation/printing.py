@@ -1,6 +1,6 @@
-from typing import Any
+from typing import Optional
 
-from temporal.animation import Animation
+from temporal.animation import Animatable, Animation
 from temporal.color import Color
 
 
@@ -25,7 +25,7 @@ def print_animation(animation: Animation, indentation: int = 4) -> str:
     return "\n".join(lines)
 
 
-def _format_value(value: Any) -> str:
+def _format_value(value: Optional[Animatable]) -> str:
     if isinstance(value, str):
         return f"\"{value}\""
     elif isinstance(value, Color):

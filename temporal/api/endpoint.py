@@ -3,8 +3,8 @@ from typing import Any, Literal, Type, get_type_hints
 
 from fastapi import APIRouter
 
-from temporal.engine import Engine
 from temporal.utils import logging
+from temporal.utils.string import ellipsize
 
 
 # FIXME: Temporary
@@ -24,10 +24,10 @@ class Endpoint:
         async def wrapped_do(self, *args: Any, **kwargs: Any) -> Any:
             logging.info(cls.method, cls.path.format_map(kwargs))
 
-            # NOTE: Wrapped into a condition because sometimes values can be
-            # _very_ big
+            # NOTE: Wrapped into a condition (and limited arguments to 4 kB)
+            # because sometimes values can be _very_ big
             if logging.log_level == logging.LogLevel.DEBUG and len(kwargs) > 0:
-                logging.debug(", ".join(f"{k} = {repr(v)}" for k, v in kwargs.items()))
+                logging.debug(", ".join(f"{k} = {ellipsize(repr(v), 4096)}" for k, v in kwargs.items()))
 
             return await original_do(self, *args, **kwargs)
 
@@ -37,8 +37,7 @@ class Endpoint:
 
         ENDPOINTS.append(cls)
 
-    def __init__(self, engine: Engine) -> None:
-        self.engine = engine
+    def __init__(self) -> None:
         self.router = APIRouter()
         self.router.add_api_route(
             self.path,

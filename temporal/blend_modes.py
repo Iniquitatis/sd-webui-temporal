@@ -2,12 +2,12 @@ from abc import abstractmethod
 
 import numpy as np
 
-from temporal.object import Meta, Object
+from temporal.object import Object, Static
 from temporal.utils.image import NumpyImage, join_hsv_to_rgb, split_hsv
 
 
 class BlendMode(Object, abstract = True):
-    name: str = Meta("UNDEFINED")
+    name: str = Static("UNDEFINED")
 
     @staticmethod
     @abstractmethod

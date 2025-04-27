@@ -3,7 +3,7 @@ import skimage
 
 from temporal.general_data import GeneralData
 from temporal.image_source import ImageSource
-from temporal.object import Param
+from temporal.object import Field
 from temporal.pipeline_modules.painting import PaintingModule
 from temporal.utils.image import NumpyImage, ensure_image_dims, make_trs_transform
 from temporal.utils.numpy import saturate_array
@@ -13,9 +13,9 @@ from temporal.vector import FloatVector
 class ImagePaintingModule(PaintingModule):
     name = "Image"
 
-    source: ImageSource = Param("Image source", channels = 4, value = ImageSource)
-    offset: FloatVector = Param("Offset", axes = ["X", "Y"], minimum = -1.0, maximum = 1.0, step = 0.001, value = lambda: FloatVector(0.0, 0.0), ui_type = "slider")
-    blurring: float = Param("Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, value = 0.0, ui_type = "slider")
+    source: ImageSource = Field(ImageSource, name = "Image source", channels = 4, display = "group")
+    offset: FloatVector = Field(lambda: FloatVector(0.0, 0.0), name = "Offset", axes = ["X", "Y"], minimum = -1.0, maximum = 1.0, step = 0.001, display = "slider")
+    blurring: float = Field(0.0, name = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, display = "slider")
 
     def draw(self, size: tuple[int, int], general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
         if (image := self.source.get_image(general.initial_image, iter_index - 1)) is None:

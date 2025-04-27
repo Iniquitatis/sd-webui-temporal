@@ -3,7 +3,7 @@ from typing import Optional
 import numpy as np
 
 from temporal.general_data import GeneralData
-from temporal.object import Field, Param
+from temporal.object import Field
 from temporal.pipeline_modules.temporal import TemporalModule
 from temporal.utils.image import NumpyImage, ensure_image_dims, match_image
 from temporal.utils.numpy import FloatArray, average_array, make_eased_weight_array, saturate_array
@@ -12,11 +12,10 @@ from temporal.utils.numpy import FloatArray, average_array, make_eased_weight_ar
 class AveragingModule(TemporalModule):
     name = "Averaging"
 
-    sample_count: int = Param("Sample count", minimum = 1, step = 1, value = 1, ui_type = "box")
-    trimming: float = Param("Trimming", minimum = 0.0, maximum = 0.5, step = 0.01, value = 0.0, ui_type = "slider")
-    easing: float = Param("Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0, ui_type = "slider")
-    preference: float = Param("Preference", minimum = -2.0, maximum = 2.0, step = 0.1, value = 0.0, ui_type = "slider")
-
+    sample_count: int = Field(1, name = "Sample count", minimum = 1, step = 1, display = "box")
+    trimming: float = Field(0.0, name = "Trimming", minimum = 0.0, maximum = 0.5, step = 0.01, display = "slider")
+    easing: float = Field(0.0, name = "Easing", minimum = 0.0, maximum = 16.0, step = 0.1, display = "slider")
+    preference: float = Field(0.0, name = "Preference", minimum = -2.0, maximum = 2.0, step = 0.1, display = "slider")
     buffer: Optional[FloatArray] = Field(None, flags = {"private"})
     last_index: int = Field(0, flags = {"private"})
 

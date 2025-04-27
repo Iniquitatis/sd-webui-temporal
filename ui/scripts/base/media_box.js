@@ -1,45 +1,17 @@
 import {Block} from "../../scripts/base/block.js";
-import {DockGroup} from "../../scripts/base/dock_group.js";
+import {Overlay} from "../../scripts/base/overlay.js";
 import {Row} from "../../scripts/base/row.js";
 import {ToolButton} from "../../scripts/base/tool_button.js";
+import {FileDownloader} from "../../scripts/core/file_downloader.js";
 import {FilePicker} from "../../scripts/core/file_picker.js";
 import {Signal} from "../../scripts/core/signal.js";
-import {Widget} from "../../scripts/core/widget.js";
 import {createElement} from "../../scripts/utils/dom.js";
 
-class MediaViewer extends Widget {
-    constructor(controller, element) {
+class MediaViewer extends Overlay {
+    constructor(element) {
         super();
 
-        this.style.alignContent = "center";
-        this.style.background = "hsla(0 0% 0% / 75%)";
-        this.style.height = "100%";
-        this.style.left = "0";
-        this.style.position = "fixed";
-        this.style.top = "0";
-        this.style.width = "100%";
-        this.style.zIndex = "1";
-
-        this._element = this.appendChild(element.cloneNode());
-
-        this._closeButton = this.createChild(Block, (e) => {
-            e.innerText = "\u{f00d}";
-            e.style.alignContent = "center";
-            e.style.color = "white";
-            e.style.cursor = "pointer";
-            e.style.fontSize = "4rem";
-            e.style.fontWeight = "bold";
-            e.style.height = "4rem";
-            e.style.position = "absolute";
-            e.style.right = "0";
-            e.style.textAlign = "center";
-            e.style.top = "0";
-            e.style.width = "4rem";
-            e.addEventListener("click", () => {
-                this.parentElement.removeChild(this);
-                controller._viewer = null;
-            });
-        });
+        this._element = this._content.appendChild(element.cloneNode());
     }
 
     get value() {
@@ -63,6 +35,8 @@ export class MediaBox extends Block {
         this._filePicker.onLoad.connect((data) => {
             this.value = data;
         });
+
+        this._fileDownloader = new FileDownloader();
 
         this.style.alignContent = "center";
         this.style.background = "var(--input-color)";
@@ -96,6 +70,7 @@ export class MediaBox extends Block {
         }
 
         this._element = this.createChild(cls, (e) => {
+            e.visible = false;
             e.style.height = "100%";
             e.onValueChange.connect((value) => {
                 if (this._viewer) {
@@ -104,75 +79,100 @@ export class MediaBox extends Block {
 
                 this.onValueChange.fire(this.value);
             });
+            this.onValueChange.connect((value) => {
+                e.visible = !!value;
+            });
         });
 
-        this.createChild(Row, (e) => {
+        this._tools = this.createChild(Row, (e) => {
             e.visible = false;
             e.style.flexDirection = "row-reverse";
+            e.style.gap = "var(--layout-small-gap)";
             e.style.position = "absolute";
             e.style.right = "var(--layout-padding)";
             e.style.top = "var(--layout-padding)";
             e.style.width = "auto";
             this.onValueChange.connect((value) => {
-                e.visible = value;
+                e.visible = !!value;
+            });
+        });
+
+        if (features.includes("clear")) {
+            this.addTool("\u{f2ed}", () => {
+                this.value = null;
+            });
+        }
+
+        if (features.includes("fullscreen")) {
+            this.addTool("\u{f065}", () => {
+                this._viewer = createElement(document.body, MediaViewer, (e) => {
+                    e.value = this.value;
+
+                    if (features.includes("download")) {
+                        e.addTool("\u{f019}", async () => {
+                            this._fileDownloader.download(this.value, getDownloadFileName());
+                        });
+                    }
+
+                    e.onClose.connect(() => {
+                        this._viewer = null;
+                    });
+                }, this._element);
+            });
+        }
+
+        if (features.includes("upload")) {
+            this.addTool("\u{f093}", () => {
+                this._filePicker.open();
             });
 
-            if (features.includes("clear")) {
-                e.createChild(ToolButton, (e) => {
-                    e.label = "\u{f00d}";
-                    e.onClick.connect(() => {
-                        this.value = null;
+            this.addEventListener("dragover", (event) => {
+                event.preventDefault();
+
+                if (this.classList.contains("drag-over")) return;
+
+                if (![...event.dataTransfer.items].some((item) =>
+                    (item.kind == "string" && matchMimeType(item.type, "text/plain")) ||
+                    (item.kind == "file" && matchMimeType(item.type, mimeType))
+                )) return;
+
+                this.toggleClass("drag-over", true);
+            });
+
+            this.addEventListener("dragleave", (event) => {
+                this.toggleClass("drag-over", false);
+            });
+
+            this.addEventListener("drop", (event) => {
+                event.preventDefault();
+
+                if (!this.classList.contains("drag-over")) return;
+
+                let item = event.dataTransfer.items[0];
+
+                if (item.kind == "string" && matchMimeType(item.type, "text/plain")) {
+                    item.getAsString((data) => {
+                        if (matchDataMimeType(data, mimeType)) this.value = data;
                     });
-                });
-            }
+                } else if (item.kind == "file" && matchMimeType(item.type, mimeType)) {
+                    let file = item.getAsFile();
 
-            if (features.includes("fullscreen")) {
-                e.createChild(ToolButton, (e) => {
-                    e.label = "\u{f065}";
-                    e.onClick.connect(() => {
-                        this._viewer = createElement(document.body, MediaViewer, (e) => {
-                            e.value = this.value;
-                        }, this, this._element);
+                    let reader = new FileReader();
+                    reader.addEventListener("load", (event) => {
+                        this.value = event.target.result;
                     });
-                });
-            }
+                    reader.readAsDataURL(file);
+                }
 
-            if (features.includes("upload")) {
-                e.createChild(ToolButton, (e) => {
-                    e.label = "\u{f093}";
-                    e.onClick.connect(() => {
-                        this._filePicker.open();
-                    });
-                });
-            }
+                this.toggleClass("drag-over", false);
+            });
+        }
 
-            if (features.includes("download")) {
-                e.createChild(ToolButton, (e) => {
-                    e.label = "\u{f019}";
-                    e.onClick.connect(async () => {
-                        let value = this.value;
-                        if (!value) return;
-
-                        await fetch(value)
-                        .then((response) => response.blob())
-                        .then((blob) => {
-                            let mimeType = value.substring(value.indexOf(":") + 1, value.indexOf(";"));
-                            let format = mimeType.substring(mimeType.indexOf("/") + 1);
-
-                            let link = document.createElement("a");
-                            link.download = `temporal_${new Date(Date.now()).toISOString()}.${format}`;
-                            link.href = URL.createObjectURL(blob);
-                            link.dataset.downloadurl = [mimeType, link.download, link.href];
-                            link.click();
-                        });
-                    });
-                });
-            }
-        });
-
-        this.tools = this.createChild(DockGroup, (e) => {
-            e.style.textAlign = "initial";
-        });
+        if (features.includes("download")) {
+            this.addTool("\u{f019}", async () => {
+                this._fileDownloader.download(this.value, getDownloadFileName());
+            });
+        }
 
         this._viewer = null;
     }
@@ -192,5 +192,30 @@ export class MediaBox extends Block {
     set value(value) {
         this._element.value = value;
     }
+
+    addTool(icon, callback) {
+        this._tools.createChild(ToolButton, (e) => {
+            e.label = icon;
+            e.onClick.connect(callback);
+        });
+    }
 }
 customElements.define("media-box", MediaBox);
+
+function getDownloadFileName() {
+    return `temporal_${new Date(Date.now()).toISOString()}`;
+}
+
+function matchDataMimeType(data, mask) {
+    let [type, subtype] = mask.split("/");
+
+    return data.startsWith(`data:${type}/${subtype != "*" ? subtype : ""}`);
+}
+
+function matchMimeType(target, mask) {
+    let [targetType, targetSubtype] = target.split("/");
+    let [maskType, maskSubtype] = mask.split("/");
+
+    return (maskType == "*" || maskType == targetType) &&
+        (maskSubtype == "*" || maskSubtype == targetSubtype);
+}

@@ -5,7 +5,7 @@ import {Signal} from "../scripts/core/signal.js";
 import {postRequest} from "../scripts/utils/requests.js";
 
 export class FSStoreBox extends Row {
-    constructor(store, features) {
+    constructor(type, features) {
         super();
 
         this.saveCallback = null;
@@ -18,6 +18,8 @@ export class FSStoreBox extends Row {
         this.onRename = new Signal();
         this.onDelete = new Signal();
 
+        this.style.gap = "var(--layout-small-gap)";
+
         this._dropdown = this.createChild(Dropdown, (e) => {
             e.style.width = "100%";
 
@@ -27,7 +29,7 @@ export class FSStoreBox extends Row {
         });
 
         this.createChild(Row, (e) => {
-            e.style.gap = "calc(var(--layout-gap) / 2)";
+            e.style.gap = "var(--layout-small-gap)";
 
             e.createChild(ToolButton, (e) => {
                 e.label = "\u{f021}";
@@ -35,13 +37,8 @@ export class FSStoreBox extends Row {
                 e.onClick.connect(async () => {
                     this.enabled = false;
 
-                    await postRequest("/temporal/storage/refresh", {
-                        "store": store,
-                    });
-
-                    this.entries = await postRequest("/temporal/storage/list", {
-                        "store": store,
-                    });
+                    await postRequest(`/temporal/storage/${type}/refresh`);
+                    this.entries = await postRequest(`/temporal/storage/${type}/list`);
 
                     this.enabled = true;
 
@@ -55,9 +52,7 @@ export class FSStoreBox extends Row {
                 e.onClick.connect(async () => {
                     this.enabled = false;
 
-                    await postRequest("/temporal/storage/new", {
-                        "store": store,
-                    });
+                    await postRequest(`/temporal/storage/${type}/new`);
 
                     this.enabled = true;
 
@@ -71,10 +66,7 @@ export class FSStoreBox extends Row {
                 e.onClick.connect(async () => {
                     this.enabled = false;
 
-                    let data = await postRequest("/temporal/storage/load", {
-                        "store": store,
-                        "name": this._dropdown.value,
-                    });
+                    let data = await postRequest(`/temporal/storage/${type}/${this._dropdown.value}/load`);
 
                     this.enabled = true;
 
@@ -93,15 +85,8 @@ export class FSStoreBox extends Row {
 
                     this.enabled = false;
 
-                    await postRequest("/temporal/storage/save", {
-                        "store": store,
-                        "name": name,
-                        "data": this.saveCallback(),
-                    });
-
-                    this.entries = await postRequest("/temporal/storage/list", {
-                        "store": store,
-                    });
+                    await postRequest(`/temporal/storage/${type}/${name}/save`, this.saveCallback());
+                    this.entries = await postRequest(`/temporal/storage/${type}/list`);
 
                     this.enabled = true;
 
@@ -119,15 +104,8 @@ export class FSStoreBox extends Row {
 
                     this.enabled = false;
 
-                    await postRequest("/temporal/storage/rename", {
-                        "store": store,
-                        "old_name": oldName,
-                        "new_name": newName,
-                    });
-
-                    this.entries = await postRequest("/temporal/storage/list", {
-                        "store": store,
-                    });
+                    await postRequest(`/temporal/storage/${type}/${oldName}/rename?new_name=${newName}`);
+                    this.entries = await postRequest(`/temporal/storage/${type}/list`);
 
                     this.enabled = true;
 
@@ -145,14 +123,8 @@ export class FSStoreBox extends Row {
 
                     this.enabled = false;
 
-                    await postRequest("/temporal/storage/delete", {
-                        "store": store,
-                        "name": name,
-                    });
-
-                    this.entries = await postRequest("/temporal/storage/list", {
-                        "store": store,
-                    });
+                    await postRequest(`/temporal/storage/${type}/${name}/delete`);
+                    this.entries = await postRequest(`/temporal/storage/${type}/list`);
 
                     this.enabled = true;
 
@@ -161,14 +133,13 @@ export class FSStoreBox extends Row {
             });
         });
 
-        this.enabled = false;
+        (async () => {
+            this.enabled = false;
 
-        postRequest("/temporal/storage/list", {
-            "store": store,
-        }, (value) => {
-            this.entries = value;
+            this.entries = await postRequest(`/temporal/storage/${type}/list`);
+
             this.enabled = true;
-        });
+        })();
     }
 
     get entries() {

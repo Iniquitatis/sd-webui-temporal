@@ -1,15 +1,15 @@
 from typing import Iterator
 
-from temporal.object import Param
+from temporal.object import Field
 from temporal.video_filter import VideoFilter, make_filter as mf
 
 
 class TemporalAveragingFilter(VideoFilter):
     name = "Temporal averaging"
 
-    radius: int = Param("Radius", minimum = 1, maximum = 60, step = 1, value = 1, ui_type = "slider")
-    algorithm: str = Param("Algorithm", choices = {"mean": "Mean", "median": "Median"}, value = "mean", ui_type = "radio")
-    easing: float = Param("Easing", minimum = 0.0, maximum = 16.0, step = 0.1, value = 0.0, ui_type = "slider")
+    radius: int = Field(1, name = "Radius", minimum = 1, maximum = 60, step = 1, display = "slider")
+    algorithm: str = Field("mean", name = "Algorithm", choices = {"mean": "Mean", "median": "Median"}, display = "radio")
+    easing: float = Field(0.0, name = "Easing", minimum = 0.0, maximum = 16.0, step = 0.1, display = "slider")
 
     def generate(self, fps: int) -> Iterator[str]:
         if self.algorithm == "mean":

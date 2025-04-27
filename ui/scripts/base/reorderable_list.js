@@ -2,7 +2,6 @@ import {Accordion} from "../../scripts/base/accordion.js";
 import {Block} from "../../scripts/base/block.js";
 import {Column} from "../../scripts/base/column.js";
 import {Signal} from "../../scripts/core/signal.js";
-import {createElement} from "../../scripts/utils/dom.js";
 
 let draggedAccordion = null;
 
@@ -62,7 +61,7 @@ export class ReorderableAccordion extends Accordion {
     constructor() {
         super();
 
-        this._header.insertBefore(createElement(null, Block, (e) => {
+        this.createBeforeLabel(Block, (e) => {
             e.innerText = "\u{e410}";
             e.style.alignContent = "center";
             e.style.color = "var(--hint-color)";
@@ -79,7 +78,7 @@ export class ReorderableAccordion extends Accordion {
 
                 draggedAccordion = this;
             });
-        }), this._header.firstChild);
+        });
     }
 }
 customElements.define("reorderable-accordion", ReorderableAccordion);

@@ -9,10 +9,10 @@ from temporal.utils.numpy import saturate_array
 
 
 class ImageMask(Object):
-    image: Optional[NumpyImage] = Field(None)
-    normalized: bool = Field(False)
-    inverted: bool = Field(False)
-    blurring: float = Field(0.0)
+    image: Optional[NumpyImage] = Field(None, name = "Image")
+    normalized: bool = Field(False, name = "Normalized")
+    inverted: bool = Field(False, name = "Inverted")
+    blurring: float = Field(0.0, name = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, display = "slider")
 
     def mask(self, image: NumpyImage, other: NumpyImage) -> NumpyImage:
         if self.image is None or image is other:

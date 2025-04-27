@@ -9,12 +9,13 @@
     --accent-color: light-dark(hsl(var(--accent-hs) 50%), hsl(var(--accent-hs) 75%));
     --text-color: light-dark(hsl(var(--global-hs) 0%), hsl(var(--global-hs) 100%));
     --hint-color: light-dark(hsl(var(--global-hs) 40%), hsl(var(--global-hs) 70%));
-    --input-color: light-dark(hsl(var(--global-hs) 96%), hsl(var(--global-hs) 16%));
+    --input-color: light-dark(hsl(var(--global-hs) 97%), hsl(var(--global-hs) 16%));
     --hover-color: light-dark(hsl(var(--global-hs) 90%), hsl(var(--global-hs) 24%));
     --active-color: light-dark(hsl(var(--accent-hs) 90%), hsl(var(--accent-hs) 24%));
     --line-height: 1.2rem;
     --layout-padding: 0.5rem;
     --layout-gap: calc(var(--line-height) / 2);
+    --layout-small-gap: calc(var(--layout-gap) / 2);
     --vertical-padding: 0.4rem;
     --horizontal-padding: 0.5rem;
     --padding: var(--vertical-padding) var(--horizontal-padding);
@@ -129,6 +130,11 @@ textarea {
 .disabled {
     opacity: 0.5;
     pointer-events: none;
+    transition: opacity 0.5s;
+}
+
+.drag-over {
+    outline: 2px solid var(--accent-color);
 }
 
 .dragged {
@@ -137,4 +143,13 @@ textarea {
 
 .hidden {
     display: none !important;
+}
+
+.transhover {
+    opacity: 0.5;
+    transition: opacity 0.1s;
+}
+
+.transhover:hover {
+    opacity: 1.0;
 }

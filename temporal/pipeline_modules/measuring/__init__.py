@@ -7,7 +7,7 @@ import scipy
 from matplotlib.ticker import MaxNLocator
 
 from temporal.general_data import GeneralData
-from temporal.object import Field, Param, Static
+from temporal.object import Field, Static
 from temporal.pipeline_module import PipelineModule
 from temporal.utils.fs import ensure_directory_exists
 from temporal.utils.image import NumpyImage, PILImage, save_image
@@ -16,11 +16,13 @@ from temporal.utils.numpy import FloatArray
 
 
 class MeasuringModule(PipelineModule, abstract = True):
-    file_name: str = Static("")
-    channels: list[tuple[str, str]] = Static([])
+    is_visualizable = True
+    visualization_type = "image"
 
-    plot_every_nth_iteration: int = Param("Plot every N-th iteration", minimum = 1, step = 1, value = 10, ui_type = "box")
+    file_name: str = Static("", flags = {"private"})
+    channels: list[tuple[str, str]] = Static([], flags = {"private"})
 
+    plot_every_nth_iteration: int = Field(10, name = "Plot every N-th iteration", minimum = 1, step = 1, display = "box")
     data: Optional[FloatArray] = Field(None, flags = {"private"})
     count: int = Field(0, flags = {"private"})
 
@@ -48,6 +50,9 @@ class MeasuringModule(PipelineModule, abstract = True):
     def reset(self, general: GeneralData) -> None:
         self.data = None
         self.count = 0
+
+    def visualize(self, general: GeneralData) -> PILImage:
+        return self.plot()
 
     @abstractmethod
     def measure(self, image: NumpyImage) -> list[float]:
