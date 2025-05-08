@@ -7,6 +7,7 @@ from temporal.utils.image import NumpyImage
 
 
 class Backend(ABC):
+    # TODO: Produce key/value pairs in the next five methods
     @abstractmethod
     def list_models(self) -> Iterable[str]:
         raise NotImplementedError
