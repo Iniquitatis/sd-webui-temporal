@@ -11,6 +11,7 @@ from temporal.vector import IntVector
 class GeneralData(Object):
     name: str = Field("untitled", name = "Name", display = "box")
     description: str = Field("", name = "Description", display = "area")
+    mode: str = Field("loop", name = "Mode", choices = {"loop": "Loop", "recursion": "Recursion"}, display = "radio")
     initial_image: Optional[NumpyImage] = Field(None, name = "Initial image")
     seed: Seed = Field(Seed, name = "Seed")
 

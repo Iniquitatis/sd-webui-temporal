@@ -57,9 +57,16 @@ class Engine:
 
             start_time = perf_counter()
 
+            if project.general.mode == "loop":
+                unprocessed_image = project.general.initial_image
+            elif project.general.mode == "recursion":
+                unprocessed_image = project.iteration.image
+            else:
+                raise ValueError
+
             success = True
 
-            for j, image, preview in project.pipeline.run(project.iteration.image, project.general, project.iteration.index):
+            for j, image, preview in project.pipeline.run(unprocessed_image, project.general, project.iteration.index):
                 if j < project.iteration.step:
                     continue
 
