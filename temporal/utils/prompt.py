@@ -7,16 +7,20 @@ from temporal.utils.math import clamp, product
 
 def evaluate_prompt(prompt: str, iteration: int, seed: int = -1) -> str:
     def repl(m: re.Match[str]) -> str:
+        nonlocal seed
+
         if not (groups := re.findall(r"(\w+)(?:\s+(.+?))?\s*:\s*(.+)", m[1], flags = re.DOTALL)):
             raise ValueError
 
         parts = groups[0]
-
         func = parts[0]
         args = _clean_split(r"\s*,\s*", parts[1])
         variants = _clean_split(r"\s*\|\s*", parts[2])
+        result = _evaluate_func(func, args, variants, iteration, seed)
 
-        return _evaluate_func(func, args, variants, iteration, seed)
+        seed += 1
+
+        return result
 
     return re.sub(r"\{(.+?)\}", repl, prompt, flags = re.DOTALL)
 
