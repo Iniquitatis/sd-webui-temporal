@@ -10,6 +10,7 @@ export class TextArea extends Widget {
         this._textArea = this.createChild("textarea", (e) => {
             e.rows = 5;
             e.style.display = "block";
+            e.style.resize = "vertical";
             e.style.width = "100%";
             e.addEventListener("change", () => {
                 this.onValueChange.fire(e.value);
