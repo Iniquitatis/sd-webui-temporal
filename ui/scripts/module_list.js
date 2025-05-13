@@ -10,6 +10,7 @@ export class ModuleList extends Column {
     constructor(moduleClass, names) {
         super();
 
+        this.onManualAdd = new Signal();
         this.onValueChange = new Signal();
 
         this._moduleClass = moduleClass;
@@ -32,6 +33,7 @@ export class ModuleList extends Column {
 
                     this._updateListVisibility();
 
+                    this.onManualAdd.fire(module);
                     this.onValueChange.fire(this._value);
                 });
             });

@@ -365,6 +365,7 @@ const EDITORS = {
         ],
         initializer: (e) => {
             e.value = deepCopy(schema.default) ?? [];
+            e.onManualAdd.connect((module) => module.updateSample());
         },
     }),
 

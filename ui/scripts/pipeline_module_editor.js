@@ -48,15 +48,10 @@ export class PipelineModuleEditor extends ReorderableAccordion {
 
         this.createChild(Column, (e) => {
             if (schema.is_sampleable) {
-                e.createChild(ImageBox, (e) => {
+                this._sampleBox = e.createChild(ImageBox, (e) => {
                     e.style.height = "12rem";
                     this.onValueChange.connect(async (value) => {
-                        await this._ensureID();
-
-                        e.value = await postRequest("/temporal/module/sample", {
-                            "data": this._manager.value,
-                            "size": [256, 256],
-                        });
+                        await this.updateSample();
                     });
                 });
             }
@@ -145,6 +140,15 @@ export class PipelineModuleEditor extends ReorderableAccordion {
 
     set value(value) {
         this._manager.value = value;
+    }
+
+    async updateSample() {
+        await this._ensureID();
+
+        this._sampleBox.value = await postRequest("/temporal/module/sample", {
+            "data": this._manager.value,
+            "size": [256, 256],
+        });
     }
 
     async _ensureID() {
