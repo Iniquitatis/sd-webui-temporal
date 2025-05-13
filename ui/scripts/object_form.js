@@ -39,9 +39,6 @@ export class ObjectForm extends Form {
     manage(key) {
         let field = objectTypes[this._type].fields[key];
 
-        // FIXME: Temporary
-        console.log("MANAGE", this._type, key, field);
-
         if (field.display == "accordion") {
             this._lastTabs = null;
 

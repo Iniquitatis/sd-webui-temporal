@@ -165,9 +165,6 @@ export class MainUI extends Widget {
                         e.value = project;
                     });
                     this._manager.manage(e, "project");
-
-                    // FIXME: Temporary
-                    e.onValueChange.connect((value) => console.log("PROJECT", value));
                 }, "temporal.project.Project");
             });
 

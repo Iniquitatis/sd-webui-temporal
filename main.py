@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from temporal.api import register_api
 from temporal.shared import shared
+from temporal.utils import logging
 
 
 mimetypes.add_type("application/javascript", ".js")
@@ -23,8 +24,11 @@ parser.add_argument("--backend-host", type = str, default = "")
 parser.add_argument("--backend-port", type = int, default = 0)
 parser.add_argument("--model-dir", type = Path, default = ".")
 parser.add_argument("--vae-dir", type = Path, default = ".")
+parser.add_argument("--log-level", type = str, choices = list(x.name.lower() for x in logging.LogLevel), default = logging.log_level.name.lower())
 
 args = parser.parse_args()
+
+logging.log_level = getattr(logging.LogLevel, args.log_level.upper())
 
 if args.backend == "comfyui":
     from temporal.backends.comfyui_api import ComfyUIAPIBackend

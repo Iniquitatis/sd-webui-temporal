@@ -7,10 +7,6 @@ from temporal.utils import logging
 from temporal.utils.string import ellipsize
 
 
-# FIXME: Temporary
-logging.log_level = logging.LogLevel.DEBUG
-
-
 ENDPOINTS: list[Type["Endpoint"]] = []
 
 
