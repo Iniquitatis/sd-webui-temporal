@@ -7,8 +7,8 @@ import numpy as np
 
 from temporal.project import Project
 from temporal.shared import shared
-from temporal.utils import logging
 from temporal.utils.image import NumpyImage, ensure_image_dims
+from temporal.utils.logging import log
 
 
 @dataclass
@@ -50,7 +50,7 @@ class Engine:
                     self.state.state = "stopping"
                     break
 
-            logging.info(f"Iteration {i + 1} / {iter_count}")
+            log.info(f"Iteration {i + 1} / {iter_count}")
 
             with self.state_lock:
                 self.state.current_iteration = i
@@ -91,7 +91,7 @@ class Engine:
 
             end_time = perf_counter()
 
-            logging.info(f"Iteration took {end_time - start_time:.6f} second(s)")
+            log.info(f"Iteration took {end_time - start_time:.6f} second(s)")
 
         project.pipeline.finalize(project.iteration.image, project.general)
 

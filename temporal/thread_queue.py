@@ -2,7 +2,7 @@ from threading import Lock, Thread
 from traceback import format_exc
 from typing import Any, Callable, ParamSpec
 
-from temporal.utils import logging
+from temporal.utils.logging import log
 
 
 P = ParamSpec("P")
@@ -25,7 +25,7 @@ class ThreadQueue:
                 try:
                     target(*args, **kwargs)
                 except:
-                    logging.error(f"Exception from queued thread:\n{format_exc()}")
+                    log.error(f"Exception from queued thread:\n{format_exc()}")
 
             with self._queue_lock:
                 self._queue.pop(0)

@@ -6,8 +6,8 @@ import skimage
 from temporal.general_data import GeneralData
 from temporal.object import Field, Object, Static
 from temporal.shared import shared
-from temporal.utils import logging
 from temporal.utils.image import NumpyImage, PILImage, ensure_image_dims, make_trs_transform
+from temporal.utils.logging import log
 from temporal.video import Video
 
 
@@ -48,7 +48,7 @@ class PipelineModule(Object, abstract = True):
             ), i + 1, 31337 + i)) is not None:
                 last_image = result
             else:
-                logging.warning("Module couldn't render an image for some reason")
+                log.warning("Module couldn't render an image for some reason")
                 return sample_image
 
             if (i + 1) != self.sample_iterations:

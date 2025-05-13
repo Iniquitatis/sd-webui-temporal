@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from temporal.compat.upgrader import Upgrader
-from temporal.utils import logging
+from temporal.utils.logging import log
 from temporal.utils.modules import import_modules, list_modules_in_directory
 
 
@@ -22,4 +22,4 @@ def upgrade_project(path: Path) -> None:
             last_version = upgrader.version
 
     if last_version:
-        logging.info(f"Upgraded project to version {last_version}")
+        log.info(f"Upgraded project to version {last_version}")

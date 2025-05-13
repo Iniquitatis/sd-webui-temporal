@@ -3,7 +3,7 @@ from typing import Any, Literal, Type, get_type_hints
 
 from fastapi import APIRouter
 
-from temporal.utils import logging
+from temporal.utils.logging import LogLevel, log
 from temporal.utils.string import ellipsize
 
 
@@ -18,12 +18,12 @@ class Endpoint:
         original_do = cls.do
 
         async def wrapped_do(self, *args: Any, **kwargs: Any) -> Any:
-            logging.info(cls.method, cls.path.format_map(kwargs))
+            log.info(cls.method, cls.path.format_map(kwargs))
 
             # NOTE: Wrapped into a condition (and limited arguments to 4 kB)
             # because sometimes values can be _very_ big
-            if logging.log_level == logging.LogLevel.DEBUG and len(kwargs) > 0:
-                logging.debug(", ".join(f"{k} = {ellipsize(repr(v), 4096)}" for k, v in kwargs.items()))
+            if log.level == LogLevel.DEBUG and len(kwargs) > 0:
+                log.debug(", ".join(f"{k} = {ellipsize(repr(v), 4096)}" for k, v in kwargs.items()))
 
             return await original_do(self, *args, **kwargs)
 

@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from copy import copy
 from typing import Any, Iterator, TypeVar
 
-from temporal.utils import logging
+from temporal.utils.logging import log
 
 
 T = TypeVar("T")
@@ -16,7 +16,7 @@ def copy_with_overrides(obj: T, **overrides: Any) -> T:
         if hasattr(instance, key):
             setattr(instance, key, value)
         else:
-            logging.warning(f"Key {key} doesn't exist in {instance.__class__.__name__}")
+            log.warning(f"Key {key} doesn't exist in {instance.__class__.__name__}")
 
     return instance
 

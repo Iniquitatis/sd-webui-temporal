@@ -9,8 +9,8 @@ from uuid import uuid4
 from weakref import WeakValueDictionary
 
 from temporal.serialization import JSONValue, SerializationDataFlag, SerializationParams, Serializer, deserialize, serialize
-from temporal.utils import logging
 from temporal.utils.fs import recreate_directory
+from temporal.utils.logging import log
 from temporal.utils.typing import get_full_type_name, get_optional_type, is_optional, safe_get_origin
 
 
@@ -288,7 +288,7 @@ class Object:
     @classmethod
     def load(cls, dir: Path) -> Self:
         if not dir.is_dir() or not (json_path := dir / "data.json").is_file():
-            logging.warning(f"Cannot load {cls.__name__} from {dir.as_posix()}")
+            log.warning(f"Cannot load {cls.__name__} from {dir.as_posix()}")
             return cls()
 
         return cls.from_json(loads(json_path.read_text()), SerializationParams(data_dir = dir, flags = {"private"}))
