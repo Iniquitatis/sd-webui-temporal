@@ -15,7 +15,7 @@ import {getRequest, postRequest} from "./scripts/utils/requests.js";
 import {FSStoreBox} from "./scripts/fs_store_box.js";
 import {ObjectForm} from "./scripts/object_form.js";
 import {SettingsEditor} from "./scripts/settings_editor.js";
-import {initializeData} from "./scripts/shared_data.js";
+import {initializeData, shared} from "./scripts/shared_data.js";
 
 export class MainUI extends Widget {
     constructor() {
@@ -159,6 +159,8 @@ export class MainUI extends Widget {
                 e.createChild(ObjectForm, (e) => {
                     e.manageAll();
                     e.onValueChange.connect(async (value) => {
+                        shared.projectName = value.general.name;
+
                         this.onProjectChange.fire(value);
                     });
                     this.onProjectLoad.connect((project) => {

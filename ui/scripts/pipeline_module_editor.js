@@ -13,7 +13,7 @@ import {deepCopy} from "../scripts/utils/object.js";
 import {getRequest, postRequest} from "../scripts/utils/requests.js";
 import {boolToString, stringToBool} from "../scripts/utils/types.js";
 import {ObjectForm} from "../scripts/object_form.js";
-import {objectTypes} from "../scripts/shared_data.js";
+import {objectTypes, shared} from "../scripts/shared_data.js";
 
 export class PipelineModuleEditor extends ReorderableAccordion {
     constructor(type) {
@@ -87,7 +87,7 @@ export class PipelineModuleEditor extends ReorderableAccordion {
 
                                     e.enabled = false;
 
-                                    this._visualization.value = await postRequest(`/temporal/module/${this._manager.value.__id__}/visualize`);
+                                    this._visualization.value = await postRequest(`/temporal/module/${shared.projectName}/${this._manager.value.__id__}/visualize`);
 
                                     e.enabled = true;
                                 });

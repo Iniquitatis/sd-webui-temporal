@@ -9,6 +9,8 @@ from temporal.api.endpoint import Endpoint
 from temporal.api.session import global_session
 from temporal.object import object_registry
 from temporal.pipeline_module import PipelineModule
+from temporal.project import Project
+from temporal.shared import shared
 from temporal.utils.base64 import encode_with_mime_type
 from temporal.utils.image import image_to_base64, pil_to_np
 from temporal.video import Video
@@ -31,13 +33,13 @@ class _(Endpoint):
 
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/module/{id}/visualize"
+    path = "/temporal/module/{project_name}/{id}/visualize"
 
-    async def do(self, id: str) -> Optional[str]:
+    async def do(self, project_name: str, id: str) -> Optional[str]:
         def render() -> Optional[str]:
             with global_session.engine.state_lock:
-                if not (project := global_session.active_project):
-                    return
+                if (project := global_session.active_project) is None or project.general.name != project_name:
+                    project = Project.load(shared.project_store.path / project_name)
 
                 if not isinstance(module := object_registry.get(id, None), PipelineModule):
                     return
