@@ -1,5 +1,5 @@
 from math import floor
-from typing import Any, Literal, Optional
+from typing import Any, Iterator, Literal, Optional
 
 import requests
 
@@ -17,24 +17,32 @@ class WebUIAPIBackend(Backend):
     def url(self):
         return f"{self.host}:{self.port}"
 
-    def list_models(self) -> list[str]:
+    def list_models(self) -> Iterator[tuple[str, str]]:
         _safe_request("POST", f"{self.url}/sdapi/v1/refresh-checkpoints")
 
-        return [x["model_name"] for x in _safe_request("GET", f"{self.url}/sdapi/v1/sd-models").json()]
+        for data in _safe_request("GET", f"{self.url}/sdapi/v1/sd-models").json():
+            yield data["model_name"], data["model_name"]
 
-    def list_vaes(self) -> list[str]:
+    def list_vaes(self) -> Iterator[tuple[str, str]]:
         _safe_request("POST", f"{self.url}/sdapi/v1/refresh-vae")
 
-        return ["Automatic", "None"] + [x["model_name"] for x in _safe_request("GET", f"{self.url}/sdapi/v1/sd-vae").json()]
+        yield "Automatic", "Automatic"
+        yield "None", "None"
 
-    def list_upscalers(self) -> list[str]:
-        return [x["name"] for x in _safe_request("GET", f"{self.url}/sdapi/v1/upscalers").json()]
+        for data in _safe_request("GET", f"{self.url}/sdapi/v1/sd-vae").json():
+            yield data["model_name"], data["model_name"]
 
-    def list_samplers(self) -> list[str]:
-        return [x["name"] for x in _safe_request("GET", f"{self.url}/sdapi/v1/samplers").json()]
+    def list_upscalers(self) -> Iterator[tuple[str, str]]:
+        for data in _safe_request("GET", f"{self.url}/sdapi/v1/upscalers").json():
+            yield data["name"], data["name"]
 
-    def list_schedulers(self) -> list[str]:
-        return [x["label"] for x in _safe_request("GET", f"{self.url}/sdapi/v1/schedulers").json()]
+    def list_samplers(self) -> Iterator[tuple[str, str]]:
+        for data in _safe_request("GET", f"{self.url}/sdapi/v1/samplers").json():
+            yield data["name"], data["name"]
+
+    def list_schedulers(self) -> Iterator[tuple[str, str]]:
+        for data in _safe_request("GET", f"{self.url}/sdapi/v1/schedulers").json():
+            yield data["label"], data["label"]
 
     def image_to_image(self, image: NumpyImage, params: ProcessingParams, width: int, height: int) -> Optional[NumpyImage]:
         if (result := _safe_request("POST", f"{self.url}/sdapi/v1/img2img", json = {

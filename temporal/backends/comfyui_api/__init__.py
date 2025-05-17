@@ -1,7 +1,7 @@
 from io import BytesIO
 from math import floor
 from time import sleep
-from typing import Any, Literal, Optional
+from typing import Any, Iterator, Literal, Optional
 
 import requests
 from PIL import Image
@@ -20,25 +20,32 @@ class ComfyUIAPIBackend(Backend):
     def url(self):
         return f"{self.host}:{self.port}"
 
-    def list_models(self) -> list[str]:
-        return _safe_request("GET", f"{self.url}/models/checkpoints").json()
+    def list_models(self) -> Iterator[tuple[str, str]]:
+        for name in _safe_request("GET", f"{self.url}/models/checkpoints").json():
+            yield name, name
 
-    def list_vaes(self) -> list[str]:
-        return ["Automatic"] + _safe_request("GET", f"{self.url}/models/vae").json()
+    def list_vaes(self) -> Iterator[tuple[str, str]]:
+        yield "auto", "Automatic"
 
-    def list_upscalers(self) -> list[str]:
-        return _safe_request("GET", f"{self.url}/models/upscale_models").json()
+        for name in _safe_request("GET", f"{self.url}/models/vae").json():
+            yield name, name
 
-    def list_samplers(self) -> list[str]:
-        return _safe_request("GET", f"{self.url}/object_info").json()["KSampler"]["input"]["required"]["sampler_name"][0]
+    def list_upscalers(self) -> Iterator[tuple[str, str]]:
+        for name in _safe_request("GET", f"{self.url}/models/upscale_models").json():
+            yield name, name
 
-    def list_schedulers(self) -> list[str]:
-        return _safe_request("GET", f"{self.url}/object_info").json()["KSampler"]["input"]["required"]["scheduler"][0]
+    def list_samplers(self) -> Iterator[tuple[str, str]]:
+        for name in _safe_request("GET", f"{self.url}/object_info").json()["KSampler"]["input"]["required"]["sampler_name"][0]:
+            yield name, name
+
+    def list_schedulers(self) -> Iterator[tuple[str, str]]:
+        for name in _safe_request("GET", f"{self.url}/object_info").json()["KSampler"]["input"]["required"]["scheduler"][0]:
+            yield name, name
 
     def image_to_image(self, image: NumpyImage, params: ProcessingParams, width: int, height: int) -> Optional[NumpyImage]:
         self._clear_queue()
 
-        is_vae_defined = params.vae and params.vae != "Automatic"
+        is_vae_defined = params.vae and params.vae != "auto"
 
         return self._get_image(self._prompt({
             "checkpoint_loader": {

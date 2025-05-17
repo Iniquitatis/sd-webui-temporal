@@ -12,7 +12,7 @@ from temporal.utils.logging import log
 class ResamplingModule(NeuralModule):
     name = "Resampling"
 
-    upscaler: str = Field(lambda: get_first_element(shared.backend.list_upscalers(), ""), name = "Upscaler", choices = lambda: list(shared.backend.list_upscalers()), display = "menu")
+    upscaler: str = Field(lambda: get_first_element(shared.backend.list_upscalers(), ("", ""))[0], name = "Upscaler", choices = lambda: dict(shared.backend.list_upscalers()), display = "menu")
     scale: float = Field(1.0, name = "Scale", minimum = 0.25, maximum = 4.0, step = 0.25, display = "slider")
 
     def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:

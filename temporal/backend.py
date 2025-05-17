@@ -7,25 +7,24 @@ from temporal.utils.image import NumpyImage
 
 
 class Backend(ABC):
-    # TODO: Produce key/value pairs in the next five methods
     @abstractmethod
-    def list_models(self) -> Iterable[str]:
+    def list_models(self) -> Iterable[tuple[str, str]]:
         raise NotImplementedError
 
     @abstractmethod
-    def list_vaes(self) -> Iterable[str]:
+    def list_vaes(self) -> Iterable[tuple[str, str]]:
         raise NotImplementedError
 
     @abstractmethod
-    def list_upscalers(self) -> Iterable[str]:
+    def list_upscalers(self) -> Iterable[tuple[str, str]]:
         raise NotImplementedError
 
     @abstractmethod
-    def list_samplers(self) -> Iterable[str]:
+    def list_samplers(self) -> Iterable[tuple[str, str]]:
         raise NotImplementedError
 
     @abstractmethod
-    def list_schedulers(self) -> Iterable[str]:
+    def list_schedulers(self) -> Iterable[tuple[str, str]]:
         raise NotImplementedError
 
     @abstractmethod

@@ -16,13 +16,13 @@ from temporal.utils.prompt import evaluate_prompt
 class ProcessingModule(NeuralModule):
     name = "Processing"
 
-    model: str = Field(lambda: get_first_element(shared.backend.list_models(), ""), name = "Model", choices = lambda: list(shared.backend.list_models()), display = "menu")
-    vae: str = Field(lambda: get_first_element(shared.backend.list_vaes(), ""), name = "VAE", choices = lambda: list(shared.backend.list_vaes()), display = "menu")
+    model: str = Field(lambda: get_first_element(shared.backend.list_models(), ("", ""))[0], name = "Model", choices = lambda: dict(shared.backend.list_models()), display = "menu")
+    vae: str = Field(lambda: get_first_element(shared.backend.list_vaes(), ("", ""))[0], name = "VAE", choices = lambda: dict(shared.backend.list_vaes()), display = "menu")
     clip_skip: int = Field(1, name = "CLIP skip", minimum = 1, maximum = 12, step = 1, display = "slider")
     positive_prompt: str = Field("", name = "Positive prompt", display = "area")
     negative_prompt: str = Field("", name = "Negative prompt", display = "area")
-    sampler: str = Field(lambda: get_first_element(shared.backend.list_samplers(), ""), name = "Sampler", choices = lambda: list(shared.backend.list_samplers()), display = "menu")
-    scheduler: str = Field(lambda: get_first_element(shared.backend.list_schedulers(), ""), name = "Scheduler", choices = lambda: list(shared.backend.list_schedulers()), display = "menu")
+    sampler: str = Field(lambda: get_first_element(shared.backend.list_samplers(), ("", ""))[0], name = "Sampler", choices = lambda: dict(shared.backend.list_samplers()), display = "menu")
+    scheduler: str = Field(lambda: get_first_element(shared.backend.list_schedulers(), ("", ""))[0], name = "Scheduler", choices = lambda: dict(shared.backend.list_schedulers()), display = "menu")
     steps: int = Field(20, name = "Steps", minimum = 1, maximum = 150, step = 1, display = "slider")
     cfg: float = Field(5.0, name = "CFG", minimum = 1.0, maximum = 30.0, step = 0.5, display = "slider")
     strength: float = Field(0.5, name = "Strength", minimum = 0.0, maximum = 1.0, step = 0.01, display = "slider")

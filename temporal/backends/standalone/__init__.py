@@ -3,7 +3,7 @@ from functools import lru_cache
 from inspect import signature
 from itertools import chain
 from pathlib import Path
-from typing import Any, Iterable, Optional, Type, TypeVar
+from typing import Any, Iterator, Optional, Type, TypeVar
 
 import torch
 from compel import Compel, ReturnedEmbeddingsType
@@ -35,20 +35,26 @@ class StandaloneBackend(Backend):
         self._cached_states: dict[tuple[str, Optional[str]], _PipelineState] = {}
         self._interrupted = False
 
-    def list_models(self) -> Iterable[str]:
-        return (x.name for x in self._model_dir.glob("*.safetensors"))
+    def list_models(self) -> Iterator[tuple[str, str]]:
+        for path in self._model_dir.glob("*.safetensors"):
+            yield path.name, path.name
 
-    def list_vaes(self) -> Iterable[str]:
-        return chain(iter(["Automatic"]), (x.name for x in self._vae_dir.glob("*.safetensors")))
+    def list_vaes(self) -> Iterator[tuple[str, str]]:
+        yield "auto", "Automatic"
 
-    def list_upscalers(self) -> Iterable[str]:
-        return ["None"]
+        for path in self._vae_dir.glob("*.safetensors"):
+            yield path.name, path.name
 
-    def list_samplers(self) -> Iterable[str]:
-        return _SCHEDULERS.keys()
+    def list_upscalers(self) -> Iterator[tuple[str, str]]:
+        yield "none", "None"
 
-    def list_schedulers(self) -> Iterable[str]:
-        return _SCHEDULES.keys()
+    def list_samplers(self) -> Iterator[tuple[str, str]]:
+        for key, scheduler in _SCHEDULERS.items():
+            yield key, scheduler.name
+
+    def list_schedulers(self) -> Iterator[tuple[str, str]]:
+        for key, schedule in _SCHEDULES.items():
+            yield key, schedule.name
 
     def image_to_image(self, image: NumpyImage, params: ProcessingParams, width: int, height: int) -> Optional[NumpyImage]:
         self._interrupted = False
@@ -96,7 +102,7 @@ class StandaloneBackend(Backend):
 
         self._cached_states[cache_key] = state = _PipelineState(
             self._model_dir / model_name,
-            self._vae_dir / vae_name if vae_name and vae_name != "Automatic" else None,
+            self._vae_dir / vae_name if vae_name and vae_name != "auto" else None,
         )
 
         return state
