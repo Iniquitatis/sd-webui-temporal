@@ -9,7 +9,7 @@ from temporal.utils.image import NumpyImage
 class SharpeningFilter(ImageFilter):
     name = "Sharpening"
 
-    strength: float = Field(0.0, name = "Strength", minimum = 0.0, maximum = 1.0, step = 0.01, display = "slider")
+    strength: float = Field(0.0, name = "Strength", minimum = 0.0, maximum = 2.0, step = 0.01, display = "slider")
     radius: float = Field(0.0, name = "Radius", minimum = 0.0, maximum = 5.0, step = 0.1, display = "slider")
 
     def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
