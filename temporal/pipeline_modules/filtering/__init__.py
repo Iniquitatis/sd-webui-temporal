@@ -30,7 +30,9 @@ class ImageFilter(PipelineModule, abstract = True):
         if self.amount == 0.0:
             return image
 
-        processed = saturate_array(self.blend_mode.blend(image, processed))
-        processed = self.mask.mask(image, processed)
+        result = image.copy()
+        result[..., :3] = saturate_array(self.blend_mode.blend(image[..., :3], processed[..., :3]))
+        result[:] = self.mask.mask(image, result)
+        result[:] = lerp(image, result, self.amount)
 
-        return lerp(image, processed, self.amount)
+        return result

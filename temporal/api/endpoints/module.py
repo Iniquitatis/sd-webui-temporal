@@ -7,13 +7,36 @@ from pydantic import BaseModel
 
 from temporal.api.endpoint import Endpoint
 from temporal.api.session import global_session
+from temporal.general_data import GeneralData
 from temporal.object import object_registry
 from temporal.pipeline_module import PipelineModule
 from temporal.project import Project
 from temporal.shared import shared
 from temporal.utils.base64 import encode_with_mime_type
-from temporal.utils.image import image_to_base64, pil_to_np
+from temporal.utils.image import base64_to_image, image_to_base64, pil_to_np
 from temporal.video import Video
+
+
+class _(Endpoint):
+    method = "POST"
+    path = "/temporal/module/execute"
+
+    class Request(BaseModel):
+        data: dict[str, Any]
+        image: str
+
+    async def do(self, request: Request) -> Optional[str]:
+        def render() -> Optional[str]:
+            image = base64_to_image(request.image)
+            module = PipelineModule.from_json(request.data)
+
+            if (result := module.forward(image, GeneralData(
+                initial_image = image,
+                seed = 31337,
+            ), 1, 31337)) is not None:
+                return image_to_base64(result, True, "fast")
+
+        return await get_event_loop().run_in_executor(None, render)
 
 
 class _(Endpoint):

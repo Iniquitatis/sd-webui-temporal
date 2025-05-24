@@ -1,6 +1,9 @@
+import {Block} from "./scripts/base/block.js";
 import {Checkbox} from "./scripts/base/checkbox.js";
 import {Column} from "./scripts/base/column.js";
+import {CANVAS_TOOLS, CanvasTool} from "./scripts/base/canvas_widget.js";
 import {DockGroup} from "./scripts/base/dock_group.js";
+import {Dropdown} from "./scripts/base/dropdown.js";
 import {Form} from "./scripts/base/form.js";
 import {ImageBox} from "./scripts/base/image_box.js";
 import {MultiStateButton} from "./scripts/base/multi_state_button.js";
@@ -15,7 +18,59 @@ import {getRequest, postRequest} from "./scripts/utils/requests.js";
 import {FSStoreBox} from "./scripts/fs_store_box.js";
 import {ObjectForm} from "./scripts/object_form.js";
 import {SettingsEditor} from "./scripts/settings_editor.js";
-import {initializeData, shared} from "./scripts/shared_data.js";
+import {initializeData, pipelineModules, shared} from "./scripts/shared_data.js";
+
+CANVAS_TOOLS.filter = class extends CanvasTool {
+    static name = "Filter";
+    static icon = "\u{f890}";
+    static retained = true;
+
+    makeUI(form) {
+        this._filter = form.createField("Filter", Dropdown, (e) => {
+            let names = {};
+            let schemas = {};
+
+            for (let [name, schema] of Object.entries(pipelineModules)) {
+                if (name.startsWith("temporal.pipeline_modules.filtering")) {
+                    names[name] = schema.name;
+                    schemas[name] = schema;
+                }
+            }
+
+            e.choices = names;
+            e.style.width = "100%";
+            e.onValueChange.connect((value) => {
+                if (this._params) {
+                    this._body.removeChild(this._params);
+                }
+
+                this._params = this._body.createChild(ObjectForm, (e) => {
+                    for (let key of Object.keys(schemas[value].fields)) {
+                        if (!["enabled", "preview"].includes(key)) {
+                            e.manage(key);
+                        }
+                    }
+                }, value);
+            });
+        });
+
+        this._body = form.createChild(Block);
+
+        // NOTE: To trigger the body creation
+        this._filter.value = this._filter.value;
+    }
+
+    async onApply() {
+        let image = new Image();
+        image.addEventListener("load", () => {
+            this._mainCtx.drawImage(image, 0, 0);
+        });
+        image.src = await postRequest("/temporal/module/execute", {
+            "data": this._params.value,
+            "image": this._mainCanvas.toDataURL("image/png"),
+        });
+    }
+}
 
 export class MainUI extends Widget {
     constructor() {

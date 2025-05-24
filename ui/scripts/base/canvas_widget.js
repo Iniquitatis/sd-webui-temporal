@@ -2,12 +2,17 @@ import {Block} from "../../scripts/base/block.js";
 import {Checkbox} from "../../scripts/base/checkbox.js";
 import {ColorPicker} from "../../scripts/base/color_picker.js";
 import {Slider} from "../../scripts/base/slider.js";
+import {VectorEditor} from "../../scripts/base/vector_editor.js";
 import {Signal} from "../../scripts/core/signal.js";
 import {colorToHex} from "../../scripts/utils/color.js";
 
-export const TOOLS = {};
+export const CANVAS_TOOLS = {};
 
-class CanvasTool {
+export class CanvasTool {
+    static name = "UNDEFINED";
+    static icon = "";
+    static retained = false;
+
     constructor(mainCanvas, overlayCanvas) {
         this._mainCanvas = mainCanvas;
         this._mainCtx = mainCanvas.getContext("2d");
@@ -25,6 +30,8 @@ class CanvasTool {
 
     makeUI(form) {}
 
+    async onApply() {}
+
     onMouseDown(event) {}
 
     onMouseMove(event) {}
@@ -32,13 +39,11 @@ class CanvasTool {
     onMouseUp(event) {}
 }
 
-class NoneTool extends CanvasTool {
+CANVAS_TOOLS.none = class extends CanvasTool {
     static name = "None";
-    static icon = "";
 }
-TOOLS.none = NoneTool;
 
-class BrushTool extends CanvasTool {
+CANVAS_TOOLS.brush = class extends CanvasTool {
     static name = "Brush";
     static icon = "\u{f1fc}";
 
@@ -90,9 +95,8 @@ class BrushTool extends CanvasTool {
         this._overlayCtx.clearRect(0, 0, this._overlayCanvas.width, this._overlayCanvas.height);
     }
 }
-TOOLS.brush = BrushTool;
 
-class LineTool extends CanvasTool {
+CANVAS_TOOLS.line = class extends CanvasTool {
     static name = "Line";
     static icon = "\u{f715}";
 
@@ -141,9 +145,8 @@ class LineTool extends CanvasTool {
         this._overlayCtx.clearRect(0, 0, this._overlayCanvas.width, this._overlayCanvas.height);
     }
 }
-TOOLS.line = LineTool;
 
-class RectangleTool extends CanvasTool {
+CANVAS_TOOLS.rectangle = class extends CanvasTool {
     static name = "Rectangle";
     static icon = "\u{f2fa}";
 
@@ -207,9 +210,8 @@ class RectangleTool extends CanvasTool {
         this._overlayCtx.clearRect(0, 0, this._overlayCanvas.width, this._overlayCanvas.height);
     }
 }
-TOOLS.rectangle = RectangleTool;
 
-class EllipseTool extends CanvasTool {
+CANVAS_TOOLS.ellipse = class extends CanvasTool {
     static name = "Ellipse";
     static icon = "\u{f111}";
 
@@ -279,9 +281,8 @@ class EllipseTool extends CanvasTool {
         this._overlayCtx.clearRect(0, 0, this._overlayCanvas.width, this._overlayCanvas.height);
     }
 }
-TOOLS.ellipse = EllipseTool;
 
-class FillTool extends CanvasTool {
+CANVAS_TOOLS.fill = class extends CanvasTool {
     static name = "Fill";
     static icon = "\u{f575}";
 
@@ -298,9 +299,8 @@ class FillTool extends CanvasTool {
         this._mainCtx.fillRect(0, 0, this._mainCanvas.width, this._mainCanvas.height);
     }
 }
-TOOLS.fill = FillTool;
 
-class SmudgeTool extends CanvasTool {
+CANVAS_TOOLS.smudge = class extends CanvasTool {
     static name = "Smudge";
     static icon = "\u{e19e}";
 
@@ -388,9 +388,8 @@ class SmudgeTool extends CanvasTool {
         this._lastPosition = [cx, cy];
     }
 }
-TOOLS.smudge = SmudgeTool;
 
-class MoveTool extends CanvasTool {
+CANVAS_TOOLS.move = class extends CanvasTool {
     static name = "Move";
     static icon = "\u{f0b2}";
 
@@ -431,15 +430,13 @@ class MoveTool extends CanvasTool {
         this._overlayCtx.clearRect(0, 0, this._overlayCanvas.width, this._overlayCanvas.height);
     }
 }
-TOOLS.move = MoveTool;
 
-class FlipHTool extends CanvasTool {
+CANVAS_TOOLS.flipH = class extends CanvasTool {
     static name = "Flip horizontally";
     static icon = "\u{f0ec}";
+    static retained = true;
 
-    onMouseDown(event) {
-        if (event.button != 0) return;
-
+    async onApply() {
         this._overlayCtx.drawImage(this._mainCanvas, 0, 0);
 
         this._mainCtx.clearRect(0, 0, this._mainCanvas.width, this._mainCanvas.height);
@@ -452,15 +449,13 @@ class FlipHTool extends CanvasTool {
         this._overlayCtx.clearRect(0, 0, this._overlayCanvas.width, this._overlayCanvas.height);
     }
 }
-TOOLS.flipH = FlipHTool;
 
-class FlipVTool extends CanvasTool {
+CANVAS_TOOLS.flipV = class extends CanvasTool {
     static name = "Flip vertically";
     static icon = "\u{e099}";
+    static retained = true;
 
-    onMouseDown(event) {
-        if (event.button != 0) return;
-
+    async onApply() {
         this._overlayCtx.drawImage(this._mainCanvas, 0, 0);
 
         this._mainCtx.clearRect(0, 0, this._mainCanvas.width, this._mainCanvas.height);
@@ -473,7 +468,47 @@ class FlipVTool extends CanvasTool {
         this._overlayCtx.clearRect(0, 0, this._overlayCanvas.width, this._overlayCanvas.height);
     }
 }
-TOOLS.flipV = FlipVTool;
+
+CANVAS_TOOLS.resize = class extends CanvasTool {
+    static name = "Resize";
+    static icon = "\u{f065}";
+    static retained = true;
+
+    makeUI(form) {
+        this._size = form.createField("Size", VectorEditor, (e) => {
+            e.minimum = 64;
+            e.maximum = 2048;
+            e.step = 8;
+            e.value = {x: this._mainCanvas.width, y: this._mainCanvas.height};
+        }, Slider, {x: "X", y: "Y"});
+    }
+
+    async onApply() {
+        this._overlayCanvas.width = this._size.value.x;
+        this._overlayCanvas.height = this._size.value.y;
+
+        this._overlayCtx.clearRect(0, 0, this._overlayCanvas.width, this._overlayCanvas.height);
+        this._overlayCtx.drawImage(
+            this._mainCanvas,
+            0,
+            0,
+            this._mainCanvas.width,
+            this._mainCanvas.height,
+            0,
+            0,
+            this._overlayCanvas.width,
+            this._overlayCanvas.height,
+        );
+
+        this._mainCanvas.width = this._size.value.x;
+        this._mainCanvas.height = this._size.value.y;
+
+        this._mainCtx.clearRect(0, 0, this._mainCanvas.width, this._mainCanvas.height);
+        this._mainCtx.drawImage(this._overlayCanvas, 0, 0);
+
+        this._overlayCtx.clearRect(0, 0, this._overlayCanvas.width, this._overlayCanvas.height);
+    }
+}
 
 export class CanvasWidget extends Block {
     constructor() {
@@ -482,7 +517,7 @@ export class CanvasWidget extends Block {
         this.onValueChange = new Signal();
 
         this._value = null;
-        this._toolInstance = null;
+        this._tool = null;
 
         this.style.alignItems = "center";
         this.style.display = "flex";
@@ -532,7 +567,7 @@ export class CanvasWidget extends Block {
     }
 
     get tool() {
-        return this._toolInstance;
+        return this._tool;
     }
 
     get value() {
@@ -543,22 +578,24 @@ export class CanvasWidget extends Block {
         return this._mainCanvas.width;
     }
 
-    set height(value) {
-        this._resize(this.width, value);
-    }
-
     set tool(value) {
-        this._toolInstance = new TOOLS[value](this._mainCanvas, this._overlayCanvas);
+        this._tool = new CANVAS_TOOLS[value](this._mainCanvas, this._overlayCanvas);
     }
 
     set value(value) {
         if (value) {
             let image = new Image();
             image.addEventListener("load", () => {
-                this.width = image.width;
-                this.height = image.height;
+                this._mainCanvas.width = image.width;
+                this._mainCanvas.height = image.height;
 
+                this._overlayCanvas.width = image.width;
+                this._overlayCanvas.height = image.height;
+
+                this._mainCtx.clearRect(0, 0, image.width, image.height);
                 this._mainCtx.drawImage(image, 0, 0);
+
+                this._overlayCtx.clearRect(0, 0, image.width, image.height);
 
                 this._value = value;
                 this.onValueChange.fire(value);
@@ -572,68 +609,49 @@ export class CanvasWidget extends Block {
         }
     }
 
-    set width(value) {
-        this._resize(value, this.height);
+    async applyRetainedTool() {
+        if (!this._tool) return;
+
+        this._beginEditing();
+        await this._tool.onApply();
+        this._endEditing();
     }
 
-    _onMouseDown(event) {
-        if (!this._toolInstance) return;
-
+    _beginEditing() {
         this._mainCtx.save();
         this._overlayCtx.save();
-
-        this._toolInstance.onMouseDown(event);
-
-        currentWidget = this;
     }
 
-    _onMouseMove(event) {
-        if (!this._toolInstance) return;
-
-        this._toolInstance.onMouseMove(event);
-    }
-
-    _onMouseUp(event) {
-        if (!this._toolInstance) return;
-
-        this._toolInstance.onMouseUp(event);
-
+    _endEditing() {
         this._overlayCtx.restore();
         this._mainCtx.restore();
 
         this._value = this._mainCanvas.toDataURL("image/png");
         this.onValueChange.fire(this._value);
-
-        currentWidget = null;
     }
 
-    _resize(width, height) {
-        this._overlayCanvas.width = width;
-        this._overlayCanvas.height = height;
+    _onMouseDown(event) {
+        if (!this._tool) return;
 
-        this._overlayCtx.clearRect(0, 0, this._overlayCanvas.width, this._overlayCanvas.height);
-        this._overlayCtx.drawImage(
-            this._mainCanvas,
-            0,
-            0,
-            this._mainCanvas.width,
-            this._mainCanvas.height,
-            0,
-            0,
-            this._overlayCanvas.width,
-            this._overlayCanvas.height,
-        );
+        this._beginEditing();
+        this._tool.onMouseDown(event);
 
-        this._mainCanvas.width = width;
-        this._mainCanvas.height = height;
+        currentWidget = this;
+    }
 
-        this._mainCtx.clearRect(0, 0, this._mainCanvas.width, this._mainCanvas.height);
-        this._mainCtx.drawImage(this._overlayCanvas, 0, 0);
+    _onMouseMove(event) {
+        if (!this._tool) return;
 
-        this._overlayCtx.clearRect(0, 0, this._overlayCanvas.width, this._overlayCanvas.height);
+        this._tool.onMouseMove(event);
+    }
 
-        this._value = this._mainCanvas.toDataURL("image/png");
-        this.onValueChange.fire(this._value);
+    _onMouseUp(event) {
+        if (!this._tool) return;
+
+        this._tool.onMouseUp(event);
+        this._endEditing();
+
+        currentWidget = null;
     }
 }
 customElements.define("canvas-widget", CanvasWidget);
