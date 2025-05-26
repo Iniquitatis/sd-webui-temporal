@@ -18,12 +18,14 @@ class MorphologyFilter(ImageFilter):
     radius: int = Field(0, name = "Radius", minimum = 0, maximum = 50, step = 1, display = "slider")
 
     def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
-        func = (
-            skimage.morphology.erosion  if self.mode == "erosion"  else
-            skimage.morphology.dilation if self.mode == "dilation" else
-            skimage.morphology.opening  if self.mode == "opening"  else
-            skimage.morphology.closing  if self.mode == "closing"  else
-            lambda image, footprint: image
-        )
+        func = _MODES[self.mode]
         footprint = skimage.morphology.disk(self.radius)
         return apply_channelwise(image, lambda x: func(x, footprint))
+
+
+_MODES = {
+    "erosion": skimage.morphology.erosion,
+    "dilation": skimage.morphology.dilation,
+    "opening": skimage.morphology.opening,
+    "closing": skimage.morphology.closing,
+}
