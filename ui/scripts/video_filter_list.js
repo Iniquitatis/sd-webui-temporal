@@ -1,25 +1,29 @@
 import {Button} from "../scripts/base/button.js";
 import {Checkbox} from "../scripts/base/checkbox.js";
 import {Column} from "../scripts/base/column.js";
+import {ChoiceListEditor} from "../scripts/base/list_editor.js";
 import {ReorderableAccordion} from "../scripts/base/reorderable_list.js";
 import {Row} from "../scripts/base/row.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
-import {deepCopy} from "../scripts/utils/object.js";
+import {deepCopy, mapValues} from "../scripts/utils/object.js";
 import {ObjectForm} from "../scripts/object_form.js";
-import {objectTypes} from "../scripts/shared_data.js";
+import {videoFilters} from "../scripts/shared_data.js";
 
-export class VideoFilterEditor extends ReorderableAccordion {
+class VideoFilterEditor extends ReorderableAccordion {
     constructor(type) {
         super();
 
         this.onValueChange = new Signal();
-        this.onRemove = new Signal();
+        this.onDuplicateRequest = new Signal();
+        this.onRemoveRequest = new Signal();
 
         this._manager = new FieldManager(this.onValueChange);
         this._manager.value.__type__ = type;
 
-        let schema = objectTypes[type];
+        let schema = videoFilters[type];
+
+        this.label = schema.name;
 
         this.createBeforeLabel(Checkbox, (e) => {
             e.value = schema.fields.enabled.default;
@@ -27,13 +31,9 @@ export class VideoFilterEditor extends ReorderableAccordion {
         });
 
         this.createChild(Column, (e) => {
-            let filteredKeys = [];
-
-            for (let key of Object.keys(schema.fields)) {
-                if (key != "enabled") {
-                    filteredKeys.push(key);
-                }
-            }
+            let filteredKeys = Object.keys(schema.fields).filter((key) => {
+                return key != "enabled";
+            });
 
             if (filteredKeys.length > 0) {
                 e.createChild(ObjectForm, (e) => {
@@ -41,7 +41,7 @@ export class VideoFilterEditor extends ReorderableAccordion {
                 }, schema.type, this._manager);
             } else {
                 e.createChild("span", (e) => {
-                    e.innerText = "This filter has no configurable paremeters.";
+                    e.innerText = "This filter has no configurable parameters.";
                 });
             }
 
@@ -51,11 +51,9 @@ export class VideoFilterEditor extends ReorderableAccordion {
                     e.style.width = "100%";
                     e.onClick.connect(() => {
                         let newValue = deepCopy(this.value);
+                        // FIXME: Doesn't "deep drop", though
                         delete newValue.__id__;
-                        // FIXME: Hacky. Should somehow interact with the
-                        // ModuleList (which is one level higher), not
-                        // ReorderableList.
-                        this.parentElement.parentElement._createModule(type, newValue);
+                        this.onDuplicateRequest.fire(newValue);
                     });
                 });
 
@@ -63,9 +61,7 @@ export class VideoFilterEditor extends ReorderableAccordion {
                     e.label = "\u{f2ed} Remove";
                     e.style.width = "100%";
                     e.onClick.connect(() => {
-                        this.parentElement.removeChild(this);
-
-                        this.onRemove.fire();
+                        this.onRemoveRequest.fire();
                     });
                 });
             });
@@ -81,3 +77,18 @@ export class VideoFilterEditor extends ReorderableAccordion {
     }
 }
 customElements.define("video-filter-editor", VideoFilterEditor);
+
+export class VideoFilterList extends ChoiceListEditor {
+    constructor() {
+        super(VideoFilterEditor, mapValues(videoFilters, (_, schema) => schema.name));
+    }
+
+    getArgsFromItem(item) {
+        return [item.__type__];
+    }
+
+    getArgsFromChoice(choice) {
+        return [choice];
+    }
+}
+customElements.define("video-filter-list", VideoFilterList);

@@ -3,6 +3,7 @@ from typing import Literal, Optional
 
 import skimage
 
+from temporal.animation import Animation
 from temporal.general_data import GeneralData
 from temporal.object import Field, Object, Static
 from temporal.shared import shared
@@ -24,6 +25,7 @@ class PipelineModule(Object, abstract = True):
 
     enabled: bool = Field(True, name = "Enabled")
     preview: bool = Field(True, name = "Preview")
+    animation: Animation = Field(Animation, name = "Animation")
 
     def forward(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> Optional[NumpyImage]:
         return image

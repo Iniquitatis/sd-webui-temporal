@@ -16,13 +16,12 @@ import {VectorEditor} from "../scripts/base/vector_editor.js";
 import {VideoBox} from "../scripts/base/video_box.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
-import {deepCopy, mapValues} from "../scripts/utils/object.js";
+import {deepCopy} from "../scripts/utils/object.js";
 import {AnimationEditor} from "../scripts/animation_editor.js";
-import {ModuleList} from "../scripts/module_list.js";
-import {PipelineModuleEditor} from "../scripts/pipeline_module_editor.js";
+import {PipelineModuleList} from "../scripts/pipeline_module_list.js";
 import {SeedBox} from "../scripts/seed_box.js";
-import {blendModes, objectTypes, pipelineModules, videoFilters} from "../scripts/shared_data.js";
-import {VideoFilterEditor} from "../scripts/video_filter_editor.js";
+import {blendModes, objectTypes} from "../scripts/shared_data.js";
+import {VideoFilterList} from "../scripts/video_filter_list.js";
 
 export class ObjectForm extends Form {
     constructor(type, manager = null) {
@@ -235,7 +234,7 @@ const EDITORS = {
     "temporal.animation.Animation": (schema) => ({
         cls: AnimationEditor,
         initializer: (e) => {
-            e.value = deepCopy(schema.default) ?? {code: ""};
+            e.value = deepCopy(schema.default) ?? {};
         },
     }),
 
@@ -340,38 +339,16 @@ const EDITORS = {
     }),
 
     "list[temporal.pipeline_module.PipelineModule]": (schema) => ({
-        cls: ModuleList,
-        args: [
-            PipelineModuleEditor,
-            mapValues(pipelineModules, (_, module) => {
-                for (let [start, icon] of Object.entries({
-                    "temporal.pipeline_modules.filtering": "\u{f890}",
-                    "temporal.pipeline_modules.measuring": "\u{f201}",
-                    "temporal.pipeline_modules.neural": "\u{e0c6}",
-                    "temporal.pipeline_modules.painting": "\u{f1fc}",
-                    "temporal.pipeline_modules.temporal": "\u{f017}",
-                    "temporal.pipeline_modules.tool": "\u{f0ad}",
-                })) {
-                    if (module.type.startsWith(start)) {
-                        return `${icon} ${module.name}`;
-                    }
-                }
-
-                return `\u{f013} ${module.name}`;
-            }),
-        ],
+        cls: PipelineModuleList,
+        args: [],
         initializer: (e) => {
             e.value = deepCopy(schema.default) ?? [];
-            e.onManualAdd.connect((module) => module.updateSample());
         },
     }),
 
     "list[temporal.video_filter.VideoFilter]": (schema) => ({
-        cls: ModuleList,
-        args: [
-            VideoFilterEditor,
-            mapValues(videoFilters, (_, filter) => filter.name),
-        ],
+        cls: VideoFilterList,
+        args: [],
         initializer: (e) => {
             e.value = deepCopy(schema.default) ?? [];
         },

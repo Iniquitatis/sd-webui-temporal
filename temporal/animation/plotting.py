@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
-from temporal.animation import Animatable, Animation, Track
+from temporal.animation import Animation, Track
 from temporal.color import Color
 from temporal.utils.image import PILImage
 from temporal.utils.matplotlib import get_figure_as_image
@@ -9,12 +9,12 @@ from temporal.utils.matplotlib import get_figure_as_image
 
 def plot_animation(animation: Animation) -> list[PILImage]:
     return [
-        _plot_track(k, v, 1, v.last_frame * 2)
-        for k, v in animation.tracks.items()
+        _plot_track(x, 1, x.last_frame * 2)
+        for x in animation.tracks
     ]
 
 
-def _plot_track(property_name: str, track: Track[Animatable], first_frame: int = 1, last_frame: int = 60, bounds: int = 2) -> PILImage:
+def _plot_track(track: Track, first_frame: int = 1, last_frame: int = 60, bounds: int = 2) -> PILImage:
     keyframe_frames = []
     keyframe_values = []
     evaluated_frames = []
@@ -28,7 +28,7 @@ def _plot_track(property_name: str, track: Track[Animatable], first_frame: int =
         evaluated_frames.append(i)
         evaluated_values.append(track.evaluate(i))
 
-    plt.title(property_name)
+    plt.title(track.key)
     plt.xlabel("Frame")
     plt.xticks(evaluated_frames)
     plt.xlim(first_frame - bounds, last_frame + bounds)

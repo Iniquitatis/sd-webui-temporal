@@ -1,29 +1,27 @@
 from itertools import pairwise
-from typing import Generic, Literal, Optional, TypeVar
+from typing import Any, Literal, Optional, TypeVar
 
 from temporal.color import Color
 from temporal.object import Field, Object
-from temporal.serialization import JSONValue, SerializationParams
 
 
 Animatable = bool | int | float | str | Color
 
-T = TypeVar("T", bound = Animatable)
 
-
-class Keyframe(Object, Generic[T]):
+class Keyframe(Object):
     frame: int = Field(0)
-    value: Optional[T] = Field(None)
+    value: Optional[Any] = Field(None)
 
 
 InterpolationMode = Literal["linear", "smoothstep", "smootherstep", "step", "step_start", "step_end"]
 BoundsMode = Literal["clamp", "repeat", "mirror"]
 
 
-class Track(Object, Generic[T]):
+class Track(Object):
+    key: str = Field("")
     interpolation: InterpolationMode = Field("linear")
     bounds: BoundsMode = Field("clamp")
-    keyframes: list[Keyframe[T]] = Field(list)
+    keyframes: list[Keyframe] = Field(list)
 
     @property
     def first_frame(self) -> int:
@@ -37,11 +35,11 @@ class Track(Object, Generic[T]):
     def length(self) -> int:
         return self.last_frame - self.first_frame + 1
 
-    def add_keyframe(self, frame: int, value: T) -> None:
+    def add_keyframe(self, frame: int, value: Any) -> None:
         self.keyframes.append(Keyframe(frame, value))
         self.keyframes.sort(key = lambda x: x.frame)
 
-    def evaluate(self, frame: int) -> Optional[T]:
+    def evaluate(self, frame: int) -> Optional[Any]:
         if frame < self.first_frame:
             if self.bounds == "clamp":
                 frame = self.first_frame
@@ -81,40 +79,19 @@ class Track(Object, Generic[T]):
 
 
 class Animation(Object):
-    tracks: dict[str, Track[Animatable]] = Field(dict)
-
-    # NOTE: Can't use Self, as its type relies on the external code
-    @classmethod
-    def from_json(cls, data: JSONValue, params: SerializationParams = SerializationParams()) -> "Animation":
-        from temporal.animation.parsing import parse_animation
-
-        if not isinstance(data, dict):
-            raise ValueError
-
-        if isinstance(code := data.get("code", None), str):
-            return parse_animation(code)
-        else:
-            raise ValueError
-
-    def to_json(self, params: SerializationParams = SerializationParams()) -> JSONValue:
-        from temporal.animation.printing import print_animation
-
-        return {"code": print_animation(self)}
-
-    def get_track(self, property_name: str) -> Track[Animatable]:
-        if (property := self.tracks.get(property_name, None)) is None:
-            self.tracks[property_name] = property = Track()
-
-        return property
+    tracks: list[Track] = Field(list)
 
     def evaluate(self, frame: int) -> dict[str, Optional[Animatable]]:
         return {
-            property_name: track.evaluate(frame)
-            for property_name, track in self.tracks.items()
+            track.key: track.evaluate(frame)
+            for track in self.tracks
         }
 
 
-def _interpolate(a: T, b: T, x: float, mode: InterpolationMode = "linear") -> T:
+_T = TypeVar("_T", bound = Animatable)
+
+
+def _interpolate(a: _T, b: _T, x: float, mode: InterpolationMode = "linear") -> _T:
     if mode == "linear":
         x = x
     elif mode == "smoothstep":

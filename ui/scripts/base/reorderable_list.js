@@ -1,51 +1,52 @@
 import {Accordion} from "../../scripts/base/accordion.js";
 import {Block} from "../../scripts/base/block.js";
 import {Column} from "../../scripts/base/column.js";
+import {Row} from "../../scripts/base/row.js";
 import {Signal} from "../../scripts/core/signal.js";
 
-let draggedAccordion = null;
+let draggedElement = null;
 
 window.addEventListener("touchmove", (event) => {
-    if (!draggedAccordion) return;
+    if (!draggedElement) return;
 
     event.stopPropagation();
     event.preventDefault();
 }, {passive: false});
 
 window.addEventListener("pointermove", (event) => {
-    if (!draggedAccordion) return;
+    if (!draggedElement) return;
 
     event.stopPropagation();
 
-    let list = draggedAccordion.parentElement;
+    let list = draggedElement.parentElement;
 
     for (let other of list.childNodes) {
-        if (draggedAccordion == other) continue;
+        if (draggedElement == other) continue;
 
-        let selfRect = draggedAccordion.getBoundingClientRect();
+        let selfRect = draggedElement.getBoundingClientRect();
         let otherRect = other.getBoundingClientRect();
 
         if (selfRect.top < otherRect.top && event.clientY > otherRect.top) {
-            list.insertBefore(other, draggedAccordion);
+            list.insertBefore(other, draggedElement);
         }
 
         if (selfRect.top > otherRect.top && event.clientY < otherRect.bottom) {
-            list.insertBefore(draggedAccordion, other);
+            list.insertBefore(draggedElement, other);
         }
     }
 });
 
 window.addEventListener("pointerup", (event) => {
-    if (!draggedAccordion) return;
+    if (!draggedElement) return;
 
     event.stopPropagation();
 
-    let list = draggedAccordion.parentElement;
+    let list = draggedElement.parentElement;
     list.onOrderChange.fire();
 
-    draggedAccordion.classList.remove("dragged");
+    draggedElement.classList.remove("dragged");
 
-    draggedAccordion = null;
+    draggedElement = null;
 });
 
 export class ReorderableList extends Column {
@@ -53,6 +54,15 @@ export class ReorderableList extends Column {
         super();
 
         this.onOrderChange = new Signal();
+
+        this._mo = new MutationObserver(mutations => {
+            mutations.forEach(mutation => {
+                if (mutation.type == "childList") {
+                    this.visible = this.childElementCount > 0;
+                }
+            });
+        });
+        this._mo.observe(this, {childList: true, subtree: false});
     }
 }
 customElements.define("reorderable-list", ReorderableList);
@@ -76,9 +86,38 @@ export class ReorderableAccordion extends Accordion {
 
                 this.classList.add("dragged");
 
-                draggedAccordion = this;
+                draggedElement = this;
             });
         });
     }
 }
 customElements.define("reorderable-accordion", ReorderableAccordion);
+
+export class ReorderableElement extends Row {
+    constructor() {
+        super();
+
+        this.style.gap = "var(--layout-small-gap)";
+        this.style.width = "100%";
+
+        this.createChild(Block, (e) => {
+            e.innerText = "\u{e410}";
+            e.style.alignContent = "center";
+            e.style.color = "var(--hint-color)";
+            e.style.cursor = "move";
+            e.style.height = "var(--widget-height)";
+            e.style.maxWidth = "var(--widget-height)";
+            e.style.minWidth = "var(--widget-height)";
+            e.style.textAlign = "center";
+            e.style.userSelect = "none";
+            e.addEventListener("pointerdown", (event) => {
+                event.stopPropagation();
+
+                this.classList.add("dragged");
+
+                draggedElement = this;
+            });
+        });
+    }
+}
+customElements.define("reorderable-element", ReorderableElement);

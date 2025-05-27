@@ -2,6 +2,7 @@ import {Button} from "../scripts/base/button.js";
 import {Checkbox} from "../scripts/base/checkbox.js";
 import {Column} from "../scripts/base/column.js";
 import {ImageBox} from "../scripts/base/image_box.js";
+import {ChoiceListEditor} from "../scripts/base/list_editor.js";
 import {MultiStateToggle} from "../scripts/base/multi_state_toggle.js";
 import {ReorderableAccordion} from "../scripts/base/reorderable_list.js";
 import {Row} from "../scripts/base/row.js";
@@ -9,18 +10,20 @@ import {Tabs} from "../scripts/base/tabs.js";
 import {VideoBox} from "../scripts/base/video_box.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
-import {deepCopy} from "../scripts/utils/object.js";
+import {deepCopy, mapValues} from "../scripts/utils/object.js";
 import {getRequest, postRequest} from "../scripts/utils/requests.js";
 import {boolToString, stringToBool} from "../scripts/utils/types.js";
+import {AnimationEditor} from "../scripts/animation_editor.js";
 import {ObjectForm} from "../scripts/object_form.js";
-import {objectTypes, shared} from "../scripts/shared_data.js";
+import {pipelineModules, pipelineModuleIcons, shared} from "../scripts/shared_data.js";
 
-export class PipelineModuleEditor extends ReorderableAccordion {
+class PipelineModuleEditor extends ReorderableAccordion {
     constructor(type) {
         super();
 
         this.onValueChange = new Signal();
-        this.onRemove = new Signal();
+        this.onDuplicateRequest = new Signal();
+        this.onRemoveRequest = new Signal();
 
         this._manager = new FieldManager(this.onValueChange);
         this._manager.value.__type__ = type;
@@ -28,12 +31,14 @@ export class PipelineModuleEditor extends ReorderableAccordion {
         (async () => {
             this.enabled = false;
 
-            await this._ensureID()
+            await this._ensureID();
 
             this.enabled = true;
         })();
 
-        let schema = objectTypes[type];
+        let schema = pipelineModules[type];
+
+        this.label = `${pipelineModuleIcons[type]} ${schema.name}`;
 
         this.createBeforeLabel(Checkbox, (e) => {
             e.value = schema.fields.enabled.default;
@@ -50,19 +55,15 @@ export class PipelineModuleEditor extends ReorderableAccordion {
             if (schema.is_sampleable) {
                 this._sampleBox = e.createChild(ImageBox, (e) => {
                     e.style.height = "12rem";
-                    this.onValueChange.connect(async (value) => {
-                        await this.updateSample();
+                    this.onValueChange.connect(async () => {
+                        await this._updateSample();
                     });
                 });
             }
 
-            let filteredKeys = [];
-
-            for (let key of Object.keys(schema.fields)) {
-                if (!["enabled", "preview", "amount", "blend_mode", "mask"].includes(key)) {
-                    filteredKeys.push(key);
-                }
-            }
+            let filteredKeys = Object.keys(schema.fields).filter((key) => {
+                return !["enabled", "preview", "animation", "amount", "blend_mode", "mask"].includes(key);
+            });
 
             if (schema.is_filter || schema.is_visualizable) {
                 e.createChild(Tabs, (e) => {
@@ -77,6 +78,11 @@ export class PipelineModuleEditor extends ReorderableAccordion {
                             e.manageMultiple(["amount", "blend_mode", "mask"]);
                         }, schema.type, this._manager);
                     }
+
+                    // TODO: Filter out animatable fields
+                    e.createTab("Animation", AnimationEditor, (e) => {
+                        this._manager.manage(e, "animation");
+                    }, schema);
 
                     if (schema.is_visualizable) {
                         e.createTab("Viz", Column, (e) => {
@@ -113,11 +119,9 @@ export class PipelineModuleEditor extends ReorderableAccordion {
                     e.style.width = "100%";
                     e.onClick.connect(() => {
                         let newValue = deepCopy(this.value);
+                        // FIXME: Doesn't "deep drop", though
                         delete newValue.__id__;
-                        // FIXME: Hacky. Should somehow interact with the
-                        // ModuleList (which is one level higher), not
-                        // ReorderableList.
-                        this.parentElement.parentElement._createModule(type, newValue);
+                        this.onDuplicateRequest.fire(newValue);
                     });
                 });
 
@@ -125,13 +129,13 @@ export class PipelineModuleEditor extends ReorderableAccordion {
                     e.label = "\u{f2ed} Remove";
                     e.style.width = "100%";
                     e.onClick.connect(() => {
-                        this.parentElement.removeChild(this);
-
-                        this.onRemove.fire();
+                        this.onRemoveRequest.fire();
                     });
                 });
             });
         });
+
+        this._updateSample();
     }
 
     get value() {
@@ -142,7 +146,14 @@ export class PipelineModuleEditor extends ReorderableAccordion {
         this._manager.value = value;
     }
 
-    async updateSample() {
+    async _ensureID() {
+        if (this._manager.value.__id__) return;
+        this._manager.value.__id__ = await getRequest("/temporal/utils/uuid");
+    }
+
+    async _updateSample() {
+        if (!this._sampleBox) return;
+
         await this._ensureID();
 
         this._sampleBox.value = await postRequest("/temporal/module/sample", {
@@ -150,10 +161,22 @@ export class PipelineModuleEditor extends ReorderableAccordion {
             "size": [256, 256],
         });
     }
-
-    async _ensureID() {
-        if (this._manager.value.__id__) return;
-        this._manager.value.__id__ = await getRequest("/temporal/utils/uuid");
-    }
 }
 customElements.define("pipeline-module-editor", PipelineModuleEditor);
+
+export class PipelineModuleList extends ChoiceListEditor {
+    constructor() {
+        super(PipelineModuleEditor, mapValues(pipelineModules, (_, schema) => {
+            return `${pipelineModuleIcons[schema.type]} ${schema.name}`;
+        }));
+    }
+
+    getArgsFromItem(item) {
+        return [item.__type__];
+    }
+
+    getArgsFromChoice(choice) {
+        return [choice];
+    }
+}
+customElements.define("pipeline-module-list", PipelineModuleList);
