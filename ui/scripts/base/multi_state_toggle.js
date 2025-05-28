@@ -15,6 +15,7 @@ export class MultiStateToggle extends Widget {
             this.onValueChange.fire(value);
         });
 
+        this.tabIndex = 0;
         this.style.alignContent = "center";
         this.style.cursor = "pointer";
         this.style.height = "var(--widget-height)";

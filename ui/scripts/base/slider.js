@@ -7,8 +7,8 @@ let drag = new DragController();
 drag.onMove.connect((element, event) => {
     let rect = element.getBoundingClientRect();
     element._quantizedValue = lerp(
-        element.minimum,
-        element.maximum,
+        element._minimum,
+        element._maximum,
         clamp(event.clientX - rect.left, 0, rect.width) / rect.width,
     );
     element._updateElements();
@@ -28,14 +28,7 @@ export class Slider extends Block {
         this._step = 1;
         this._value = 0;
 
-        this.style.backgroundColor = "var(--input-color)";
-        this.style.border = "var(--thin-border)";
-        this.style.borderRadius = "var(--corners)";
-        this.style.cursor = "pointer";
-        this.style.height = "var(--widget-height)";
-        this.style.position = "relative";
-        this.style.userSelect = "none";
-        this.addEventListener("dblclick", () => {
+        let activateInput = () => {
             drag.enabled = false;
             this._caption.visible = false;
             this._input.max = this._maximum;
@@ -43,6 +36,44 @@ export class Slider extends Block {
             this._input.step = this._step;
             this._input.value = this._fixedValueString;
             this._input.style.display = "block";
+            this._input.focus();
+        };
+
+        let deactivateInput = () => {
+            this._input.style.display = "none";
+            this._caption.visible = true;
+            drag.enabled = true;
+            this.onValueChange.fire(this._value);
+        };
+
+        this.tabIndex = 0;
+        this.style.backgroundColor = "var(--input-color)";
+        this.style.border = "var(--thin-border)";
+        this.style.borderRadius = "var(--corners)";
+        this.style.cursor = "pointer";
+        this.style.height = "var(--widget-height)";
+        this.style.overflow = "hidden";
+        this.style.position = "relative";
+        this.style.userSelect = "none";
+        this.addEventListener("dblclick", activateInput);
+        this.addEventListener("keydown", (event) => {
+            switch (event.key) {
+                case "ArrowLeft": {
+                    this._quantizedValue = clamp(this._value - this._step, this._minimum, this._maximum);
+                    this._updateElements();
+                    this.onValueChange.fire(this._value);
+                } break;
+
+                case "ArrowRight": {
+                    this._quantizedValue = clamp(this._value + this._step, this._minimum, this._maximum);
+                    this._updateElements();
+                    this.onValueChange.fire(this._value);
+                } break;
+
+                case "Enter": {
+                    activateInput();
+                } break;
+            }
         });
         drag.register(this);
 
@@ -78,11 +109,12 @@ export class Slider extends Block {
                 this._quantizedValue = e.valueAsNumber;
                 this._updateElements();
             });
+            e.addEventListener("keydown", (event) => {
+                if (event.key == "Enter") event.stopPropagation();
+                if (["Enter", "Escape"].includes(event.key)) deactivateInput();
+            });
             e.addEventListener("blur", () => {
-                this._input.style.display = "none";
-                this._caption.visible = true;
-                drag.enabled = true;
-                this.onValueChange.fire(this._value);
+                deactivateInput();
             });
         });
     }
@@ -129,22 +161,22 @@ export class Slider extends Block {
     }
 
     get _fixedValueString() {
-        return this.value.toFixed(countFractionDigits(this.step));
+        return this._value.toFixed(countFractionDigits(this._step));
     }
 
     set _quantizedValue(value) {
         this._value = lerp(
-            this.minimum,
-            this.maximum,
+            this._minimum,
+            this._maximum,
             quantize(
-                normalize(value, this.minimum, this.maximum),
-                this.step / (this.maximum - this.minimum),
+                normalize(value, this._minimum, this._maximum),
+                this._step / (this._maximum - this._minimum),
             ),
         );
     }
 
     _updateElements() {
-        this._fill.style.width = `${clamp(normalize(this.value, this.minimum, this.maximum), 0.0, 1.0) * 100.0}%`;
+        this._fill.style.width = `${clamp(normalize(this._value, this._minimum, this._maximum), 0.0, 1.0) * 100.0}%`;
         this._caption.innerText = this._fixedValueString;
     }
 }

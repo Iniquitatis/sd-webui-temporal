@@ -47,10 +47,9 @@ class ListEditorBase extends Column {
                 this.onValueChange.fire(this._value);
             });
 
-            // FIXME: Broken
             if (e.onDuplicateRequest) {
                 e.onDuplicateRequest.connect((value = null) => {
-                    let editor = this._createEditor();
+                    let editor = this._createEditor(...args);
                     editor.onValueChange.withDisabled(() => editor.value = value ?? deepCopy(e.value));
                     this.onValueChange.fire(this._value);
                 });

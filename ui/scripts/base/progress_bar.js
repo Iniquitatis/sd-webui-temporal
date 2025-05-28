@@ -12,6 +12,7 @@ export class ProgressBar extends Block {
         this.style.border = "var(--thin-border)";
         this.style.borderRadius = "var(--corners)";
         this.style.height = "var(--widget-height)";
+        this.style.overflow = "hidden";
         this.style.position = "relative";
 
         this._fill = this.createChild(Block, (e) => {
@@ -62,7 +63,7 @@ export class ProgressBar extends Block {
     }
 
     _updateFill() {
-        this._fill.style.width = `${clamp(normalize(this.value, 0.0, this.total), 0.0, 1.0) * 100.0}%`;
+        this._fill.style.width = `${clamp(normalize(this._value, 0.0, this._total), 0.0, 1.0) * 100.0}%`;
     }
 }
 customElements.define("progress-bar", ProgressBar);

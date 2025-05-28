@@ -35,7 +35,7 @@ class KeyframeEditor extends ReorderableElement {
         if (schema.type == "bool") {
             this.createChild(Checkbox, (e) => {
                 e.style.width = "100%";
-                e.value = schema.default ? deepCopy(schema.default) : false;
+                e.value = schema.default ?? false;
                 this._manager.manage(e, "value");
             });
         } else if (schema.type == "int") {
