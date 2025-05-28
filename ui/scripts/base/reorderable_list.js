@@ -2,51 +2,39 @@ import {Accordion} from "../../scripts/base/accordion.js";
 import {Block} from "../../scripts/base/block.js";
 import {Column} from "../../scripts/base/column.js";
 import {Row} from "../../scripts/base/row.js";
+import {DragController} from "../../scripts/core/drag_controller.js";
 import {Signal} from "../../scripts/core/signal.js";
 
-let draggedElement = null;
-
-window.addEventListener("touchmove", (event) => {
-    if (!draggedElement) return;
-
-    event.stopPropagation();
-    event.preventDefault();
-}, {passive: false});
-
-window.addEventListener("pointermove", (event) => {
-    if (!draggedElement) return;
-
-    event.stopPropagation();
-
-    let list = draggedElement.parentElement;
+let drag = new DragController();
+drag.onStart.connect((element) => {
+    let item = element.dragRoot;
+    item.classList.add("dragged");
+});
+drag.onMove.connect((element, event) => {
+    let item = element.dragRoot;
+    let list = item.parentElement;
 
     for (let other of list.childNodes) {
-        if (draggedElement == other) continue;
+        if (item == other) continue;
 
-        let selfRect = draggedElement.getBoundingClientRect();
+        let selfRect = item.getBoundingClientRect();
         let otherRect = other.getBoundingClientRect();
 
         if (selfRect.top < otherRect.top && event.clientY > otherRect.top) {
-            list.insertBefore(other, draggedElement);
+            list.insertBefore(other, item);
         }
 
         if (selfRect.top > otherRect.top && event.clientY < otherRect.bottom) {
-            list.insertBefore(draggedElement, other);
+            list.insertBefore(item, other);
         }
     }
 });
-
-window.addEventListener("pointerup", (event) => {
-    if (!draggedElement) return;
-
-    event.stopPropagation();
-
-    let list = draggedElement.parentElement;
+drag.onEnd.connect((element) => {
+    let item = element.dragRoot;
+    let list = item.parentElement;
     list.onOrderChange.fire();
 
-    draggedElement.classList.remove("dragged");
-
-    draggedElement = null;
+    item.classList.remove("dragged");
 });
 
 export class ReorderableList extends Column {
@@ -72,6 +60,7 @@ export class ReorderableAccordion extends Accordion {
         super();
 
         this.createBeforeLabel(Block, (e) => {
+            e.dragRoot = this;
             e.innerText = "\u{e410}";
             e.style.alignContent = "center";
             e.style.color = "var(--hint-color)";
@@ -81,13 +70,7 @@ export class ReorderableAccordion extends Accordion {
             e.style.minWidth = "var(--widget-height)";
             e.style.textAlign = "center";
             e.style.userSelect = "none";
-            e.addEventListener("pointerdown", (event) => {
-                event.stopPropagation();
-
-                this.classList.add("dragged");
-
-                draggedElement = this;
-            });
+            drag.register(e);
         });
     }
 }
@@ -101,6 +84,7 @@ export class ReorderableElement extends Row {
         this.style.width = "100%";
 
         this.createChild(Block, (e) => {
+            e.dragRoot = this;
             e.innerText = "\u{e410}";
             e.style.alignContent = "center";
             e.style.color = "var(--hint-color)";
@@ -110,13 +94,7 @@ export class ReorderableElement extends Row {
             e.style.minWidth = "var(--widget-height)";
             e.style.textAlign = "center";
             e.style.userSelect = "none";
-            e.addEventListener("pointerdown", (event) => {
-                event.stopPropagation();
-
-                this.classList.add("dragged");
-
-                draggedElement = this;
-            });
+            drag.register(e);
         });
     }
 }

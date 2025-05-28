@@ -32,12 +32,11 @@ export class ColorPicker extends Row {
                     });
 
                     e.createChild(Slider, (e) => {
+                        e.fillColor = `oklch(from var(--fill-color) l var(--channel-${i}-ch))`;
                         e.minimum = 0.0;
                         e.maximum = 1.0;
                         e.step = 0.01;
                         e.value = 0.0;
-                        // FIXME: Accesses private stuff
-                        e._input.style.accentColor = `oklch(from var(--accent-color) l var(--channel-${i}-ch))`;
                         e.style.width = "100%";
                         this._manager.manage(e, channel);
                     });

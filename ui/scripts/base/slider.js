@@ -1,91 +1,151 @@
-import {Row} from "../../scripts/base/row.js";
+import {Block} from "../../scripts/base/block.js";
+import {DragController} from "../../scripts/core/drag_controller.js";
 import {Signal} from "../../scripts/core/signal.js";
-import {Widget} from "../../scripts/core/widget.js";
+import {clamp, countFractionDigits, lerp, normalize, quantize} from "../../scripts/utils/math.js";
 
-export class Slider extends Widget {
-    constructor(withNumber = true) {
+let drag = new DragController();
+drag.onMove.connect((element, event) => {
+    let rect = element.getBoundingClientRect();
+    element._quantizedValue = lerp(
+        element.minimum,
+        element.maximum,
+        clamp(event.clientX - rect.left, 0, rect.width) / rect.width,
+    );
+    element._updateElements();
+});
+drag.onEnd.connect((element) => {
+    element.onValueChange.fire(element._value);
+});
+
+export class Slider extends Block {
+    constructor() {
         super();
 
         this.onValueChange = new Signal();
 
-        this.createChild(Row, (e) => {
-            this._input = e.createChild("input", (e) => {
-                e.type = "range";
-                e.style.width = "100%";
-                e.addEventListener("input", () => {
-                    if (this._numberInput) {
-                        this._numberInput.valueAsNumber = e.valueAsNumber;
-                    }
-                });
-                e.addEventListener("change", () => {
-                    this.onValueChange.fire(e.valueAsNumber);
-                });
-            });
+        this._minimum = 0;
+        this._maximum = 1;
+        this._step = 1;
+        this._value = 0;
 
-            if (withNumber) {
-                this._numberInput = e.createChild("input", (e) => {
-                    e.type = "number";
-                    e.style.textAlign = "right";
-                    e.style.width = "var(--small-input-width)";
-                    e.addEventListener("input", () => {
-                        this._input.valueAsNumber = e.valueAsNumber;
-                    });
-                    e.addEventListener("change", () => {
-                        this.onValueChange.fire(e.valueAsNumber);
-                    });
-                });
-            }
+        this.style.backgroundColor = "var(--input-color)";
+        this.style.border = "var(--thin-border)";
+        this.style.borderRadius = "var(--corners)";
+        this.style.cursor = "pointer";
+        this.style.height = "var(--widget-height)";
+        this.style.position = "relative";
+        this.style.userSelect = "none";
+        this.addEventListener("dblclick", () => {
+            drag.enabled = false;
+            this._caption.visible = false;
+            this._input.max = this._maximum;
+            this._input.min = this._minimum;
+            this._input.step = this._step;
+            this._input.value = this._fixedValueString;
+            this._input.style.display = "block";
+        });
+        drag.register(this);
+
+        this._fill = this.createChild(Block, (e) => {
+            e.style.backgroundColor = "var(--fill-color)";
+            e.style.height = "100%";
+            e.style.inset = "0";
+            e.style.pointerEvents = "none";
+            e.style.position = "relative";
+            e.style.width = "0%";
+        });
+
+        this._caption = this.createChild(Block, (e) => {
+            e.style.alignContent = "center";
+            e.style.inset = "0";
+            e.style.padding = "0 var(--horizontal-padding)";
+            e.style.pointerEvents = "none";
+            e.style.position = "absolute";
+        });
+
+        this._input = this.createChild("input", (e) => {
+            e.type = "number";
+            e.style.alignContent = "center";
+            e.style.background = "none";
+            e.style.border = "none";
+            e.style.display = "none";
+            e.style.height = "100%";
+            e.style.inset = "0";
+            e.style.padding = "0 var(--horizontal-padding)";
+            e.style.position = "absolute";
+            e.style.textAlign = "left";
+            e.addEventListener("input", () => {
+                this._quantizedValue = e.valueAsNumber;
+                this._updateElements();
+            });
+            e.addEventListener("blur", () => {
+                this._input.style.display = "none";
+                this._caption.visible = true;
+                drag.enabled = true;
+                this.onValueChange.fire(this._value);
+            });
         });
     }
 
     get maximum() {
-        return this._input.max;
+        return this._maximum;
     }
 
     get minimum() {
-        return this._input.min;
+        return this._minimum;
     }
 
     get step() {
-        return this._input.step;
+        return this._step;
     }
 
     get value() {
-        return this._input.valueAsNumber;
+        return this._value;
+    }
+
+    set fillColor(value) {
+        this._fill.style.backgroundColor = value;
     }
 
     set maximum(value) {
-        this._input.max = value;
-
-        if (this._numberInput) {
-            this._numberInput.max = value;
-        }
+        this._maximum = value;
+        this._updateElements();
     }
 
     set minimum(value) {
-        this._input.min = value;
-
-        if (this._numberInput) {
-            this._numberInput.min = value;
-        }
+        this._minimum = value;
+        this._updateElements();
     }
 
     set step(value) {
-        this._input.step = value;
-
-        if (this._numberInput) {
-            this._numberInput.step = value;
-        }
+        this._step = value;
+        this._updateElements();
     }
 
     set value(value) {
-        this._input.valueAsNumber = value;
-
-        if (this._numberInput) {
-            this._numberInput.valueAsNumber = value;
-        }
-
+        this._quantizedValue = value;
+        this._updateElements();
         this.onValueChange.fire(value);
+    }
+
+    get _fixedValueString() {
+        return this.value.toFixed(countFractionDigits(this.step));
+    }
+
+    set _quantizedValue(value) {
+        this._value = lerp(
+            this.minimum,
+            this.maximum,
+            quantize(
+                normalize(value, this.minimum, this.maximum),
+                this.step / (this.maximum - this.minimum),
+            ),
+        );
+    }
+
+    _updateElements() {
+        this._fill.style.width = `${clamp(normalize(this.value, this.minimum, this.maximum), 0.0, 1.0) * 100.0}%`;
+        this._caption.innerText = this._fixedValueString;
     }
 }
 customElements.define("custom-slider", Slider);

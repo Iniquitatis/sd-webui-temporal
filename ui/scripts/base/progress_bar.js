@@ -1,55 +1,68 @@
 import {Block} from "../../scripts/base/block.js";
-import {Widget} from "../../scripts/core/widget.js";
+import {clamp, normalize} from "../../scripts/utils/math.js";
 
-export class ProgressBar extends Widget {
+export class ProgressBar extends Block {
     constructor() {
         super();
 
-        this.style.height = "calc(var(--widget-height) * 1.5)";
-        this.style.marginTop = "calc(var(--layout-gap) * -1)";
+        this._total = 1;
+        this._value = 0;
+
+        this.style.backgroundColor = "var(--input-color)";
+        this.style.border = "var(--thin-border)";
+        this.style.borderRadius = "var(--corners)";
+        this.style.height = "var(--widget-height)";
         this.style.position = "relative";
 
-        this._progress = this.createChild("progress", (e) => {
-            e.value = 0.0;
+        this._fill = this.createChild(Block, (e) => {
+            e.style.backgroundColor = "var(--fill-color)";
             e.style.height = "100%";
-            e.style.width = "100%";
+            e.style.inset = "0";
+            e.style.position = "relative";
+            e.style.width = "0%";
         });
 
-        this._text = this.createChild(Block, (e) => {
+        this._caption = this.createChild(Block, (e) => {
             e.style.alignContent = "center";
-            e.style.color = "var(--background-color)";
-            e.style.fontWeight = "bold";
-            e.style.height = "100%";
-            e.style.left = "0";
+            e.style.inset = "0";
+            e.style.padding = "0 var(--horizontal-padding)";
             e.style.position = "absolute";
             e.style.textAlign = "center";
-            e.style.top = "0";
-            e.style.width = "100%";
         });
     }
 
     get text() {
-        return this._text.innerText;
+        return this._caption.innerText;
     }
 
     get total() {
-        return this._progress.max;
+        return this._total;
     }
 
     get value() {
-        return this._progress.value;
+        return this._value;
+    }
+
+    set fillColor(value) {
+        this._fill.style.backgroundColor = value;
     }
 
     set text(value) {
-        this._text.innerText = value;
+        this._caption.innerText = value;
     }
 
     set total(value) {
-        this._progress.max = value;
+        this._total = value;
+        this._updateFill();
     }
 
     set value(value) {
-        this._progress.value = value;
+        this._value = value;
+        this._updateFill();
+    }
+
+    _updateFill() {
+        this._fill.style.width = `${clamp(normalize(this.value, 0.0, this.total), 0.0, 1.0) * 100.0}%`;
     }
 }
 customElements.define("progress-bar", ProgressBar);

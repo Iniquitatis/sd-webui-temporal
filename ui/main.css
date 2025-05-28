@@ -12,6 +12,7 @@
     --input-color: light-dark(hsl(var(--global-hs) 97%), hsl(var(--global-hs) 16%));
     --hover-color: light-dark(hsl(var(--global-hs) 90%), hsl(var(--global-hs) 24%));
     --active-color: light-dark(hsl(var(--accent-hs) 90%), hsl(var(--accent-hs) 24%));
+    --fill-color: light-dark(hsl(var(--global-hs) 90%), hsl(var(--global-hs) 24%));
     --line-height: 1.2rem;
     --layout-padding: 0.5rem;
     --layout-gap: calc(var(--line-height) / 2);
