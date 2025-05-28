@@ -1,11 +1,12 @@
 from pathlib import Path
 
+from temporal import REPO_ROOT
 from temporal.compat.upgrader import Upgrader
 from temporal.utils.logging import log
 from temporal.utils.modules import import_modules, list_modules_in_directory
 
 
-import_modules(list_modules_in_directory("temporal/compat/upgraders"))
+import_modules(list_modules_in_directory(REPO_ROOT / "temporal" / "compat" / "upgraders"))
 
 
 def get_latest_version() -> int:

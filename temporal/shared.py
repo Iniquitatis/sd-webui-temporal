@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from temporal import REPO_ROOT
 from temporal.backend import Backend
 from temporal.fs_store import FSStore
 from temporal.settings import Settings
@@ -20,10 +21,10 @@ class SharedData:
         self.preset_store.refresh()
         self.project_store = FSStore(Project, self.settings.fs.project_dir, self.settings.fs.project_sorting_order)
         self.project_store.refresh()
-        self.sample_image = pil_to_np(load_image("data/sample_image.png"))
+        self.sample_image = pil_to_np(load_image(REPO_ROOT / "data" / "sample_image.png"))
 
-        import_modules(list_modules_in_directory("temporal/pipeline_modules", True, 4))
-        import_modules(list_modules_in_directory("temporal/video_filters"))
+        import_modules(list_modules_in_directory(REPO_ROOT / "temporal" / "pipeline_modules", True, 4))
+        import_modules(list_modules_in_directory(REPO_ROOT / "temporal" / "video_filters"))
 
 
 shared = SharedData()

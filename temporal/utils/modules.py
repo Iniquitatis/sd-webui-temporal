@@ -4,6 +4,8 @@ from pathlib import Path
 from types import ModuleType
 from typing import Iterator, Optional
 
+from temporal import REPO_ROOT
+
 
 def import_modules(names: Iterable[str]) -> dict[str, ModuleType]:
     return {x: import_module(x) for x in names}
@@ -16,9 +18,9 @@ def list_modules_in_directory(path: str | Path, recursive: bool = False, depth: 
 
     for subpath in glob("*"):
         if subpath.is_dir() and (subpath / "__init__.py").is_file():
-            parts = subpath.parts
+            parts = subpath.relative_to(REPO_ROOT).parts
         elif subpath.is_file() and subpath.suffix == ".py" and subpath.stem != "__init__":
-            parts = subpath.parent.parts + (subpath.stem,)
+            parts = subpath.relative_to(REPO_ROOT).parent.parts + (subpath.stem,)
         else:
             continue
 

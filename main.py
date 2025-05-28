@@ -1,4 +1,5 @@
 import mimetypes
+import webbrowser
 from argparse import ArgumentParser
 from pathlib import Path
 
@@ -26,6 +27,7 @@ parser.add_argument("--model-dir", type = Path, default = ".")
 parser.add_argument("--vae-dir", type = Path, default = ".")
 parser.add_argument("--log-level", type = str, choices = list(x.name.lower() for x in LogLevel), default = log.level.name.lower())
 parser.add_argument("--log-path", type = Path)
+parser.add_argument("--browser", action = "store_true")
 
 args = parser.parse_args()
 
@@ -55,5 +57,8 @@ shared.init(backend, args.settings_dir)
 app = FastAPI(title = "Temporal API")
 register_api(app)
 app.mount("/", StaticFiles(directory = "ui", html = True), name = "static")
+
+if args.browser:
+    webbrowser.open(f"http://{args.host if args.host != '0.0.0.0' else '127.0.0.1'}:{args.port}")
 
 uvicorn.run(app, host = args.host, port = args.port, log_level = "warning")
