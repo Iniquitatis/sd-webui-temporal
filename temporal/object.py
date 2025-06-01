@@ -68,6 +68,7 @@ class Field(Generic[T]):
         channels: Optional[int] = None,
         choices: Optional[Choices] | Callable[[], Choices] = None,
         language: Optional[str] = None,
+        suffix: Optional[str] = None,
         dependencies: Optional[dict[str, Any]] = None,
         display: Optional[Display] = None,
         flags: set[SerializationDataFlag] = set(),
@@ -83,6 +84,7 @@ class Field(Generic[T]):
             channels = channels,
             choices = choices,
             language = language,
+            suffix = suffix,
             dependencies = dependencies,
             display = display,
             flags = flags,
@@ -101,6 +103,7 @@ class Field(Generic[T]):
         channels: Optional[int] = None,
         choices: Optional[Choices] | Callable[[], Choices] = None,
         language: Optional[str] = None,
+        suffix: Optional[str] = None,
         dependencies: Optional[dict[str, Any]] = None,
         display: Optional[Display] = None,
         flags: set[SerializationDataFlag] = set(),
@@ -116,6 +119,7 @@ class Field(Generic[T]):
         self.channels = channels
         self.choices = choices
         self.language = language
+        self.suffix = suffix
         self.dependencies = dependencies
         self.display = display
         self.flags = flags
@@ -168,6 +172,7 @@ class Field(Generic[T]):
             **({"channels": self.channels} if self.channels is not None else {}),
             **({"choices": choices} if choices is not None else {}),
             **({"language": self.language} if self.language is not None else {}),
+            **({"suffix": self.suffix} if self.suffix is not None else {}),
             **({"dependencies": {k: serialize(v.__class__, v, SerializationParams()) for k, v in self.dependencies.items()}} if self.dependencies else {}),
             **({"display": self.display} if self.display is not None else {}),
         }

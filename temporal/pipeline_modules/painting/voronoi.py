@@ -62,9 +62,9 @@ class VoronoiModule(PaintingModule):
         points = random_array((self.point_count, 2), seed = seed) * shape[:2]
         colors = random_array((self.point_count, shape[2]), seed = seed)
 
-        coords = np.indices(shape[:2]).transpose(1, 2, 0)
+        coords = np.indices(shape[:2]).reshape(2, -1).T
 
-        closest_indices = KDTree(points).query(coords.reshape(-1, 2))[1]
+        closest_indices = KDTree(points).query(coords)[1]
         closest_indices = closest_indices.reshape(shape[:2])
 
         return colors[closest_indices]
@@ -72,9 +72,9 @@ class VoronoiModule(PaintingModule):
     def _generate_edges(self, shape: tuple[int, int], seed: int) -> FloatArray:
         points = random_array((self.point_count, 2), seed = seed) * shape[:2]
 
-        coords = np.indices(shape[:2]).transpose(1, 2, 0)
+        coords = np.indices(shape[:2]).reshape(2, -1).T
 
-        closest_indices = KDTree(points).query(coords.reshape(-1, 2))[1]
+        closest_indices = KDTree(points).query(coords)[1]
         closest_indices = closest_indices.reshape(shape[:2])
 
         edges = np.zeros(shape[:2], dtype = np.bool_)
@@ -86,9 +86,9 @@ class VoronoiModule(PaintingModule):
     def _generate_distances(self, shape: tuple[int, int], seed: int) -> FloatArray:
         points = random_array((self.point_count, 2), seed = seed) * shape[:2]
 
-        coords = np.indices(shape[:2]).transpose(1, 2, 0)
+        coords = np.indices(shape[:2]).reshape(2, -1).T
 
-        distances = KDTree(points).query(coords.reshape(-1, 2))[0]
+        distances = KDTree(points).query(coords)[0]
         distances = distances.reshape(shape[:2])
 
         return normalize(distances, distances.min(), distances.max())

@@ -9,7 +9,7 @@ from temporal.utils.image import NumpyImage
 class PixelizationFilter(ImageFilter):
     name = "Pixelization"
 
-    pixel_size: int = Field(1, name = "Pixel size", minimum = 1, step = 1, display = "box")
+    pixel_size: int = Field(1, name = "Pixel size", minimum = 1, step = 1, suffix = " px", display = "box")
 
     def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
         height, width = image.shape[:2]

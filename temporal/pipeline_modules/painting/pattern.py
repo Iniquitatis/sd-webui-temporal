@@ -18,7 +18,7 @@ class PatternPaintingModule(PaintingModule):
         "diagonal_lines_ne": "Diagonal lines NE",
         "checkerboard": "Checkerboard",
     }, display = "radio");
-    size: int = Field(8, name = "Size", minimum = 1, step = 1, display = "box")
+    size: int = Field(8, name = "Size", minimum = 1, step = 1, suffix = " px", display = "box")
     color_a: Color = Field(lambda: Color(1.0, 1.0, 1.0), name = "Color A", channels = 4)
     color_b: Color = Field(lambda: Color(0.0, 0.0, 0.0), name = "Color B", channels = 4)
 

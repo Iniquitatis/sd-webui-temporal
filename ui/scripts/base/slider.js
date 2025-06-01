@@ -26,6 +26,7 @@ export class Slider extends Block {
         this._minimum = 0;
         this._maximum = 1;
         this._step = 1;
+        this._suffix = "";
         this._value = 0;
 
         let activateInput = () => {
@@ -110,6 +111,12 @@ export class Slider extends Block {
                 this._updateElements();
             });
             e.addEventListener("keydown", (event) => {
+                // FIXME: Enter causes weird behavior; steps to reproduce:
+                // 1. Activate editing.
+                // 2. Type in some value.
+                // 3. Hit enter.
+                // 4. Observe drag controller still considering the current
+                // widget being dragged.
                 if (event.key == "Enter") event.stopPropagation();
                 if (["Enter", "Escape"].includes(event.key)) deactivateInput();
             });
@@ -129,6 +136,10 @@ export class Slider extends Block {
 
     get step() {
         return this._step;
+    }
+
+    get suffix() {
+        return this._suffix;
     }
 
     get value() {
@@ -154,6 +165,10 @@ export class Slider extends Block {
         this._updateElements();
     }
 
+    set suffix(value) {
+        this._suffix = value;
+    }
+
     set value(value) {
         this._quantizedValue = value;
         this._updateElements();
@@ -177,7 +192,7 @@ export class Slider extends Block {
 
     _updateElements() {
         this._fill.style.width = `${clamp(normalize(this._value, this._minimum, this._maximum), 0.0, 1.0) * 100.0}%`;
-        this._caption.innerText = this._fixedValueString;
+        this._caption.innerText = `${this._fixedValueString}${this._suffix}`;
     }
 }
 customElements.define("custom-slider", Slider);

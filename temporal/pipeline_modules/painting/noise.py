@@ -18,7 +18,7 @@ class NoisePaintingModule(PaintingModule):
 
     type: str = Field("duochrome", name = "Type", choices = {"duochrome": "Duochrome", "colored": "Colored"}, display = "radio")
     mode: str = Field("fbm", name = "Mode", choices = {"fbm": "fBm", "turbulence": "Turbulence", "ridge": "Ridge"}, display = "radio")
-    scale: int = Field(1, name = "Scale", minimum = 1, maximum = 1024, step = 1, display = "slider")
+    scale: int = Field(1, name = "Scale", minimum = 1, maximum = 1024, step = 1, suffix = " px", display = "slider")
     detail: float = Field(1.0, name = "Detail", minimum = 1.0, maximum = 10.0, step = 0.01, display = "slider")
     lacunarity: float = Field(2.0, name = "Lacunarity", minimum = 0.01, maximum = 4.0, step = 0.01, display = "slider")
     persistence: float = Field(0.5, name = "Persistence", minimum = 0.0, maximum = 1.0, step = 0.01, display = "slider")

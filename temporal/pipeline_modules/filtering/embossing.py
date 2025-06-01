@@ -15,7 +15,7 @@ class EmbossingFilter(ImageFilter):
     name = "Embossing"
 
     strength: float = Field(1.0, name = "Strength", minimum = 0.01, maximum = 1.0, step = 0.01, display = "slider")
-    rotation: float = Field(0.0, name = "Rotation", minimum = 0.0, maximum = 360.0, step = 1.0, display = "slider")
+    rotation: float = Field(0.0, name = "Rotation", minimum = 0.0, maximum = 360.0, step = 1.0, suffix = "°", display = "slider")
     radius: int = Field(1, name = "Radius", minimum = 1, maximum = 5, display = "slider")
 
     def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:

@@ -41,25 +41,35 @@ export class VectorEditor extends Row {
         return this._editors[0].step;
     }
 
+    get suffix() {
+        return this._editors[0].suffix;
+    }
+
     get value() {
         return this._manager.value;
     }
 
     set maximum(value) {
-        for (let slider of this._editors) {
-            slider.maximum = value;
+        for (let editor of this._editors) {
+            editor.maximum = value;
         }
     }
 
     set minimum(value) {
-        for (let slider of this._editors) {
-            slider.minimum = value;
+        for (let editor of this._editors) {
+            editor.minimum = value;
         }
     }
 
     set step(value) {
-        for (let slider of this._editors) {
-            slider.step = value;
+        for (let editor of this._editors) {
+            editor.step = value;
+        }
+    }
+
+    set suffix(value) {
+        for (let editor of this._editors) {
+            editor.suffix = value;
         }
     }
 

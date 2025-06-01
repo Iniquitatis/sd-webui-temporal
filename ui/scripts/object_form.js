@@ -163,6 +163,7 @@ const EDITORS = {
             e.minimum = schema.minimum ?? undefined;
             e.maximum = schema.maximum ?? undefined;
             e.step = schema.step ?? 1;
+            e.suffix = schema.suffix ?? "";
             e.value = schema.default ?? e.minimum;
         },
     }),
@@ -183,6 +184,7 @@ const EDITORS = {
             e.minimum = schema.minimum ?? undefined;
             e.maximum = schema.maximum ?? undefined;
             e.step = schema.step ?? 0.1;
+            e.suffix = schema.suffix ?? "";
             e.value = schema.default ?? e.minimum;
         },
     }),
@@ -297,6 +299,7 @@ const EDITORS = {
             e.minimum = schema.minimum ?? undefined;
             e.maximum = schema.maximum ?? undefined;
             e.step = schema.step ?? 1;
+            e.suffix = schema.suffix ?? "";
             e.value = deepCopy(schema.default) ?? {x: e.minimum, y: e.minimum};
         },
     }),
@@ -325,6 +328,7 @@ const EDITORS = {
             e.minimum = schema.minimum ?? undefined;
             e.maximum = schema.maximum ?? undefined;
             e.step = schema.step ?? 0.1;
+            e.suffix = schema.suffix ?? "";
             e.value = deepCopy(schema.default) ?? {x: e.minimum, y: e.minimum};
         },
     }),
