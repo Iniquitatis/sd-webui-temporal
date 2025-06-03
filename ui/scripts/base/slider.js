@@ -111,14 +111,17 @@ export class Slider extends Block {
                 this._updateElements();
             });
             e.addEventListener("keydown", (event) => {
-                // FIXME: Enter causes weird behavior; steps to reproduce:
-                // 1. Activate editing.
-                // 2. Type in some value.
-                // 3. Hit enter.
-                // 4. Observe drag controller still considering the current
-                // widget being dragged.
-                if (event.key == "Enter") event.stopPropagation();
-                if (["Enter", "Escape"].includes(event.key)) deactivateInput();
+                switch (event.key) {
+                    case "Enter": {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        e.blur();
+                    } break;
+
+                    case "Escape": {
+                        e.blur();
+                    } break;
+                }
             });
             e.addEventListener("blur", () => {
                 deactivateInput();
@@ -180,14 +183,14 @@ export class Slider extends Block {
     }
 
     set _quantizedValue(value) {
-        this._value = lerp(
+        this._value = parseFloat(lerp(
             this._minimum,
             this._maximum,
             quantize(
                 normalize(value, this._minimum, this._maximum),
                 this._step / (this._maximum - this._minimum),
             ),
-        );
+        ).toFixed(countFractionDigits(this._step)));
     }
 
     _updateElements() {

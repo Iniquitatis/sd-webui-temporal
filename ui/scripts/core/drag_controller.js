@@ -51,6 +51,8 @@ export class DragController {
 
     register(element) {
         element.addEventListener("pointerdown", (event) => {
+            if (!this._enabled || this._element) return;
+
             event.stopPropagation();
 
             this.onStart.fire(element);

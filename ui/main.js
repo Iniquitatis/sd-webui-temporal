@@ -46,7 +46,7 @@ CANVAS_TOOLS.filter = class extends CanvasTool {
 
                 this._params = this._body.createChild(ObjectForm, (e) => {
                     for (let key of Object.keys(schemas[value].fields)) {
-                        if (!["enabled", "preview"].includes(key)) {
+                        if (!["enabled", "preview", "animation"].includes(key)) {
                             e.manage(key);
                         }
                     }

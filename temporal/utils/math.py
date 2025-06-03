@@ -30,5 +30,12 @@ def quantize(value: U, step: Any, rounding_func: Callable[[Any], Any] = round) -
     return rounding_func(value / step) * step
 
 
+def ratio(values: Iterable[float | int]) -> tuple[float, ...]:
+    if (minimum := min(values)) == 0:
+        raise ValueError
+
+    return tuple(x / minimum for x in values)
+
+
 def remap_range(value: U, old_min: Any, old_max: Any, new_min: Any, new_max: Any) -> U:
     return new_min + (value - old_min) / (old_max - old_min) * (new_max - new_min)
