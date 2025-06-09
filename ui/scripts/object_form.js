@@ -131,8 +131,14 @@ customElements.define("object-form", ObjectForm);
 
 function areDependenciesSatisfied(formValue, dependencies) {
     for (let [depKey, depValue] of Object.entries(dependencies)) {
-        if (formValue[depKey] != depValue) {
-            return false;
+        if (depValue instanceof Array) {
+            if (!depValue.some((depChild) => formValue[depKey] == depChild)) {
+                return false;
+            }
+        } else {
+            if (formValue[depKey] != depValue) {
+                return false;
+            }
         }
     }
 

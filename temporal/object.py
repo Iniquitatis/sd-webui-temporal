@@ -52,6 +52,7 @@ class Static(Generic[T]):
 
 
 Choices = list[str] | dict[str, str]
+Dependency = bool | int | float | str | list[bool | int | float | str]
 Display = Literal["accordion", "area", "box", "code", "group", "menu", "radio", "slider", "tab"]
 
 
@@ -69,7 +70,7 @@ class Field(Generic[T]):
         choices: Optional[Choices] | Callable[[], Choices] = None,
         language: Optional[str] = None,
         suffix: Optional[str] = None,
-        dependencies: Optional[dict[str, Any]] = None,
+        dependencies: Optional[dict[str, Dependency]] = None,
         display: Optional[Display] = None,
         flags: set[SerializationDataFlag] = set(),
     ) -> T:
@@ -104,7 +105,7 @@ class Field(Generic[T]):
         choices: Optional[Choices] | Callable[[], Choices] = None,
         language: Optional[str] = None,
         suffix: Optional[str] = None,
-        dependencies: Optional[dict[str, Any]] = None,
+        dependencies: Optional[dict[str, Dependency]] = None,
         display: Optional[Display] = None,
         flags: set[SerializationDataFlag] = set(),
     ) -> None:
@@ -173,7 +174,13 @@ class Field(Generic[T]):
             **({"choices": choices} if choices is not None else {}),
             **({"language": self.language} if self.language is not None else {}),
             **({"suffix": self.suffix} if self.suffix is not None else {}),
-            **({"dependencies": {k: serialize(v.__class__, v, SerializationParams()) for k, v in self.dependencies.items()}} if self.dependencies else {}),
+            **({"dependencies": {
+                k: [
+                    serialize(c.__class__, c, SerializationParams())
+                    for c in v
+                ] if isinstance(v, list) else serialize(v.__class__, v, SerializationParams())
+                for k, v in self.dependencies.items()
+            }} if self.dependencies else {}),
             **({"display": self.display} if self.display is not None else {}),
         }
 

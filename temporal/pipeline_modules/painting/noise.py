@@ -1,76 +1,57 @@
-from math import ceil
-
 import numpy as np
-import skimage
 
-from temporal.color import Color
 from temporal.general_data import GeneralData
 from temporal.object import Field
 from temporal.pipeline_modules.painting import PaintingModule
 from temporal.seed import Seed
-from temporal.utils.image import NumpyImage, make_trs_transform
-from temporal.utils.math import lerp
-from temporal.utils.numpy import FloatArray, FloatType, random_array
+from temporal.utils.image import NumpyImage
+from temporal.utils.numpy import FloatType
 
 
 class NoisePaintingModule(PaintingModule):
     name = "Noise"
 
-    type: str = Field("duochrome", name = "Type", choices = {"duochrome": "Duochrome", "colored": "Colored"}, display = "radio")
-    mode: str = Field("fbm", name = "Mode", choices = {"fbm": "fBm", "turbulence": "Turbulence", "ridge": "Ridge"}, display = "radio")
-    scale: int = Field(1, name = "Scale", minimum = 1, maximum = 1024, step = 1, suffix = " px", display = "slider")
-    detail: float = Field(1.0, name = "Detail", minimum = 1.0, maximum = 10.0, step = 0.01, display = "slider")
-    lacunarity: float = Field(2.0, name = "Lacunarity", minimum = 0.01, maximum = 4.0, step = 0.01, display = "slider")
-    persistence: float = Field(0.5, name = "Persistence", minimum = 0.0, maximum = 1.0, step = 0.01, display = "slider")
+    type: str = Field("uniform", name = "Type", choices = {"uniform": "Uniform", "gaussian": "Gaussian", "poisson": "Poisson"}, display = "radio")
+    minimum: float = Field(0.0, name = "Minimum", minimum = 0.0, maximum = 1.0, step = 0.01, dependencies = {"type": ["uniform", "poisson"]}, display = "slider")
+    maximum: float = Field(1.0, name = "Maximum", minimum = 0.0, maximum = 1.0, step = 0.01, dependencies = {"type": ["uniform", "poisson"]}, display = "slider")
+    mean: float = Field(0.5, name = "Mean", minimum = 0.0, maximum = 1.0, step = 0.01, dependencies = {"type": "gaussian"}, display = "slider")
+    standard_deviation: float = Field(0.5, name = "Standard deviation", minimum = 0.0, maximum = 1.0, step = 0.01, dependencies = {"type": "gaussian"}, display = "slider")
+    intensity: float = Field(0.5, name = "Intensity", minimum = 0.0, maximum = 1.0, step = 0.01, dependencies = {"type": "poisson"}, display = "slider")
+    colored: bool = Field(True, name = "Colored")
+    alpha: bool = Field(False, name = "Alpha")
     use_global_seed: bool = Field(False, name = "Use global seed")
     seed: Seed = Field(Seed, name = "Seed", dependencies = {"use_global_seed": False})
-    color_a: Color = Field(lambda: Color(0.0, 0.0, 0.0), name = "Color A", channels = 4, dependencies = {"type": "duochrome"})
-    color_b: Color = Field(lambda: Color(1.0, 1.0, 1.0), name = "Color B", channels = 4, dependencies = {"type": "duochrome"})
 
     def draw(self, size: tuple[int, int], general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
-        if self.type == "duochrome":
-            return lerp(
-                self.color_a.to_numpy(4),
-                self.color_b.to_numpy(4),
-                self._generate((size[1], size[0], 1), seed),
-            )
-        elif self.type == "colored":
-            return self._generate((size[1], size[0], 3), seed)
+        rng = np.random.default_rng(seed if self.use_global_seed else self.seed.fixed_value)
+
+        if self.colored and self.alpha:
+            channels = 4
+        elif self.colored:
+            channels = 3
+        elif self.alpha:
+            channels = 2
+        else:
+            channels = 1
+
+        shape = size[1], size[0], channels
+
+        if self.type == "uniform":
+            noise = self.minimum + rng.random(shape, dtype = FloatType) * (self.maximum - self.minimum)
+        elif self.type == "gaussian":
+            noise = self.mean + rng.standard_normal(shape, dtype = FloatType) * self.standard_deviation
+        elif self.type == "poisson" and self.intensity > 0.0:
+            noise = self.minimum + rng.poisson(self.intensity, shape).astype(FloatType) / self.intensity * (self.maximum - self.minimum)
+        elif self.type == "poisson" and self.intensity == 0.0:
+            noise = self.minimum + np.zeros(shape) * (self.maximum - self.minimum)
         else:
             raise ValueError(f"Incorrect type {self.type}")
 
-    def _generate(self, shape: tuple[int, ...], seed: int) -> FloatArray:
-        noises = random_array(
-            (ceil(self.detail),) + shape,
-            low = 0.0,
-            high = 1.0,
-            seed = seed if self.use_global_seed else self.seed.fixed_value,
-        )
-
-        def scale_noise(i: int, scale: float) -> FloatArray:
-            result = skimage.transform.warp(noises[i], make_trs_transform(image_size = (shape[1], shape[0]), scale = scale), order = 4, mode = "symmetric")
-
-            if self.mode == "fbm":
-                return result
-            elif self.mode == "turbulence":
-                return abs(result * 2.0 - 1.0)
-            elif self.mode == "ridge":
-                return 1.0 - abs(result * 2.0 - 1.0)
-            else:
-                raise NotImplementedError
-
-        result = np.zeros(shape, dtype = FloatType)
-        total_amplitude = 0.0
-        scale = self.scale
-        amplitude = 0.5
-
-        for i in range(ceil(self.detail)):
-            octave_scale = min(self.detail - i, 1.0)
-            result += scale_noise(i, scale) * (amplitude * octave_scale)
-            total_amplitude += (amplitude * octave_scale)
-            scale /= self.lacunarity
-            amplitude *= self.persistence
-
-        result /= total_amplitude
-
-        return result
+        if self.colored and self.alpha:
+            return noise
+        elif self.colored:
+            return noise
+        elif self.alpha:
+            return np.stack([noise[..., 0], noise[..., 0], noise[..., 0], noise[..., 1]], axis = -1)
+        else:
+            return np.stack([noise[..., 0], noise[..., 0], noise[..., 0]], axis = -1)

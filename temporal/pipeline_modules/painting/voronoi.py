@@ -24,8 +24,8 @@ class VoronoiModule(PaintingModule):
     seed: Seed = Field(Seed, name = "Seed", dependencies = {"use_global_seed": False})
     blurring: float = Field(0.0, name = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, dependencies = {"type": "diagram"}, display = "slider")
     dilation: int = Field(0, name = "Dilation", minimum = 0, maximum = 50, step = 1, dependencies = {"type": "edges"}, display = "slider")
-    color_a: Color = Field(lambda: Color(0.0, 0.0, 0.0), name = "Color A", channels = 4, dependencies = {"type": "distances"})
-    color_b: Color = Field(lambda: Color(1.0, 1.0, 1.0), name = "Color B", channels = 4, dependencies = {"type": "distances"})
+    color_a: Color = Field(lambda: Color(0.0, 0.0, 0.0), name = "Color A", channels = 4, dependencies = {"type": ["edges", "distances"]})
+    color_b: Color = Field(lambda: Color(1.0, 1.0, 1.0), name = "Color B", channels = 4, dependencies = {"type": ["edges", "distances"]})
 
     def draw(self, size: tuple[int, int], general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
         shape = size[1], size[0]
@@ -55,8 +55,8 @@ class VoronoiModule(PaintingModule):
                 pattern = skimage.morphology.dilation(pattern, footprint, out = pattern)
 
             return lerp(
-                Color(0.0, 0.0, 0.0).to_numpy(4),
-                Color(1.0, 1.0, 1.0).to_numpy(4),
+                self.color_a.to_numpy(4),
+                self.color_b.to_numpy(4),
                 pattern.reshape((size[1], size[0], 1)),
             )
 
