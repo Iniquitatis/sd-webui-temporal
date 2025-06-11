@@ -49,8 +49,13 @@ class ValueNoisePaintingModule(PaintingModule):
             seed = seed if self.use_global_seed else self.seed.fixed_value,
         )
 
-        def scale_noise(i: int, scale: float) -> FloatArray:
-            result = skimage.transform.warp(
+        result = np.zeros(shape, dtype = FloatType)
+        total_amplitude = 0.0
+        scale = self.scale
+        amplitude = 0.5
+
+        for i in range(octave_count):
+            noise = skimage.transform.warp(
                 noises[i],
                 make_trs_transform(image_size = (shape[1], shape[0]), scale = scale),
                 order = 4,
@@ -58,23 +63,17 @@ class ValueNoisePaintingModule(PaintingModule):
             )
 
             if self.mode == "fbm":
-                return result
+                pass
             elif self.mode == "turbulence":
-                return abs(result * 2.0 - 1.0)
+                noise = abs(noise * 2.0 - 1.0)
             elif self.mode == "ridge":
-                return 1.0 - abs(result * 2.0 - 1.0)
+                noise = 1.0 - abs(noise * 2.0 - 1.0)
             else:
                 raise NotImplementedError
 
-        result = np.zeros(shape, dtype = FloatType)
-        total_amplitude = 0.0
-        scale = self.scale
-        amplitude = 0.5
-
-        for i in range(octave_count):
             octave_scale = min(self.detail - i, 1.0)
             contribution = amplitude * octave_scale
-            result += scale_noise(i, scale) * contribution
+            result += noise * contribution
             total_amplitude += contribution
             scale /= self.lacunarity
             amplitude *= self.persistence
