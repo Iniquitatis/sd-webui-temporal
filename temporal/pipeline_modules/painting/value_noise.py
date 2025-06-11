@@ -73,6 +73,7 @@ class ValueNoisePaintingModule(PaintingModule):
 
             octave_scale = min(self.detail - i, 1.0)
             contribution = amplitude * octave_scale
+
             result += noise * contribution
             total_amplitude += contribution
             scale /= self.lacunarity
