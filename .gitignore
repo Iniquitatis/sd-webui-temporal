@@ -4,4 +4,5 @@ outputs/**
 presets/**
 settings/**
 tmp/**
+venv/**
 commit.txt
