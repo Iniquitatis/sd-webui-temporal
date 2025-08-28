@@ -34,7 +34,7 @@ class VoronoiModule(PaintingModule):
         counts, distances, indices = self._query(shape, seed)
 
         if self.type == "diagram":
-            colors = _random_nd(tuple(ceil(x) for x in counts) + (3,), 0.0, 1.0, seed = seed).reshape(-1, 3)
+            colors = _random_nd(tuple(ceil(x) for x in counts) + (3,), 0.0, 1.0, seed).reshape(-1, 3)
 
             result = colors[indices]
 
