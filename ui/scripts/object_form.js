@@ -247,24 +247,24 @@ const EDITORS = {
         },
     }),
 
-    "temporal.animation.Animation": (schema) => ({
+    "modules.animation.Animation": (schema) => ({
         cls: AnimationEditor,
         initializer: (e) => {
             e.value = deepCopy(schema.default) ?? {};
         },
     }),
 
-    "temporal.blend_modes.BlendMode": (schema) => ({
+    "modules.blend_modes.BlendMode": (schema) => ({
         cls: Dropdown,
         initializer: (e) => {
             e.choices = blendModes;
-            e.value = schema.default.__type__ ?? "temporal.blend_modes.NormalBlendMode";
+            e.value = schema.default.__type__ ?? "modules.blend_modes.NormalBlendMode";
         },
         reader: (value) => value.__type__,
         writer: (value) => ({__type__: value}),
     }),
 
-    "temporal.color.Color": (schema) => ({
+    "modules.color.Color": (schema) => ({
         cls: ColorPicker,
         args: [schema.channels ?? 3],
         initializer: (e) => {
@@ -272,14 +272,14 @@ const EDITORS = {
         },
     }),
 
-    "temporal.seed.Seed": (schema) => ({
+    "modules.seed.Seed": (schema) => ({
         cls: SeedBox,
         initializer: (e) => {
             e.value = schema.default ?? -1;
         },
     }),
 
-    "temporal.utils.image.NumpyImage": (schema) => ({
+    "modules.utils.image.NumpyImage": (schema) => ({
         cls: ImageBox,
         args: [["clear", "download", "edit", "fullscreen", "upload"]],
         initializer: (e) => {
@@ -289,7 +289,7 @@ const EDITORS = {
         },
     }),
 
-    "temporal.vector.IntVector<box>": (schema) => ({
+    "modules.vector.IntVector<box>": (schema) => ({
         cls: VectorEditor,
         args: [NumberBox, {
             x: schema.axes?.[0] ?? "X",
@@ -303,7 +303,7 @@ const EDITORS = {
         },
     }),
 
-    "temporal.vector.IntVector<slider>": (schema) => ({
+    "modules.vector.IntVector<slider>": (schema) => ({
         cls: VectorEditor,
         args: [Slider, {
             x: schema.axes?.[0] ?? "X",
@@ -318,7 +318,7 @@ const EDITORS = {
         },
     }),
 
-    "temporal.vector.FloatVector<box>": (schema) => ({
+    "modules.vector.FloatVector<box>": (schema) => ({
         cls: VectorEditor,
         args: [NumberBox, {
             x: schema.axes?.[0] ?? "X",
@@ -332,7 +332,7 @@ const EDITORS = {
         },
     }),
 
-    "temporal.vector.FloatVector<slider>": (schema) => ({
+    "modules.vector.FloatVector<slider>": (schema) => ({
         cls: VectorEditor,
         args: [Slider, {
             x: schema.axes?.[0] ?? "X",
@@ -347,7 +347,7 @@ const EDITORS = {
         },
     }),
 
-    "temporal.video.Video": (schema) => ({
+    "modules.video.Video": (schema) => ({
         cls: VideoBox,
         args: [["clear", "download", "fullscreen", "upload"]],
         initializer: (e) => {
@@ -356,7 +356,7 @@ const EDITORS = {
         },
     }),
 
-    "list[temporal.pipeline_module.PipelineModule]": (schema) => ({
+    "list[modules.pipeline_module.PipelineModule]": (schema) => ({
         cls: PipelineModuleList,
         args: [],
         initializer: (e) => {
@@ -364,7 +364,7 @@ const EDITORS = {
         },
     }),
 
-    "list[temporal.video_filter.VideoFilter]": (schema) => ({
+    "list[modules.video_filter.VideoFilter]": (schema) => ({
         cls: VideoFilterList,
         args: [],
         initializer: (e) => {

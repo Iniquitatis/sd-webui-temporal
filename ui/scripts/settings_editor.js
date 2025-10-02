@@ -22,7 +22,7 @@ export class SettingsEditor extends Column {
             e.onValueChange.connect((value) => {
                 this.onValueChange.fire(value);
             });
-        }, "temporal.settings.Settings");
+        }, "modules.settings.Settings");
     }
 
     get value() {

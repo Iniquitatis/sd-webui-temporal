@@ -5,7 +5,7 @@ from modules.utils.logging import log
 from modules.utils.modules import import_modules, list_modules_in_directory
 
 
-import_modules(list_modules_in_directory("temporal/compat/upgraders"))
+import_modules(list_modules_in_directory("modules/compat/upgraders"))
 
 
 def get_latest_version() -> int:

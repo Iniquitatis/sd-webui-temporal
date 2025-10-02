@@ -37,8 +37,8 @@ export class FSStoreBox extends Row {
                 e.onClick.connect(async () => {
                     this.enabled = false;
 
-                    await postRequest(`/temporal/storage/${type}/refresh`);
-                    this.entries = await postRequest(`/temporal/storage/${type}/list`);
+                    await postRequest(`/api/storage/${type}/refresh`);
+                    this.entries = await postRequest(`/api/storage/${type}/list`);
 
                     this.enabled = true;
 
@@ -52,7 +52,7 @@ export class FSStoreBox extends Row {
                 e.onClick.connect(async () => {
                     this.enabled = false;
 
-                    await postRequest(`/temporal/storage/${type}/new`);
+                    await postRequest(`/api/storage/${type}/new`);
 
                     this.enabled = true;
 
@@ -66,7 +66,7 @@ export class FSStoreBox extends Row {
                 e.onClick.connect(async () => {
                     this.enabled = false;
 
-                    let data = await postRequest(`/temporal/storage/${type}/${this._dropdown.value}/load`);
+                    let data = await postRequest(`/api/storage/${type}/${this._dropdown.value}/load`);
 
                     this.enabled = true;
 
@@ -85,8 +85,8 @@ export class FSStoreBox extends Row {
 
                     this.enabled = false;
 
-                    await postRequest(`/temporal/storage/${type}/${name}/save`, this.saveCallback());
-                    this.entries = await postRequest(`/temporal/storage/${type}/list`);
+                    await postRequest(`/api/storage/${type}/${name}/save`, this.saveCallback());
+                    this.entries = await postRequest(`/api/storage/${type}/list`);
 
                     this.enabled = true;
 
@@ -104,8 +104,8 @@ export class FSStoreBox extends Row {
 
                     this.enabled = false;
 
-                    await postRequest(`/temporal/storage/${type}/${oldName}/rename?new_name=${newName}`);
-                    this.entries = await postRequest(`/temporal/storage/${type}/list`);
+                    await postRequest(`/api/storage/${type}/${oldName}/rename?new_name=${newName}`);
+                    this.entries = await postRequest(`/api/storage/${type}/list`);
 
                     this.enabled = true;
 
@@ -123,8 +123,8 @@ export class FSStoreBox extends Row {
 
                     this.enabled = false;
 
-                    await postRequest(`/temporal/storage/${type}/${name}/delete`);
-                    this.entries = await postRequest(`/temporal/storage/${type}/list`);
+                    await postRequest(`/api/storage/${type}/${name}/delete`);
+                    this.entries = await postRequest(`/api/storage/${type}/list`);
 
                     this.enabled = true;
 
@@ -136,7 +136,7 @@ export class FSStoreBox extends Row {
         (async () => {
             this.enabled = false;
 
-            this.entries = await postRequest(`/temporal/storage/${type}/list`);
+            this.entries = await postRequest(`/api/storage/${type}/list`);
 
             this.enabled = true;
         })();

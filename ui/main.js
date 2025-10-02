@@ -31,7 +31,7 @@ CANVAS_TOOLS.filter = class extends CanvasTool {
             let schemas = {};
 
             for (let [name, schema] of Object.entries(pipelineModules)) {
-                if (name.startsWith("temporal.pipeline_modules.filtering")) {
+                if (name.startsWith("modules.pipeline_modules.filtering")) {
                     names[name] = schema.name;
                     schemas[name] = schema;
                 }
@@ -65,7 +65,7 @@ CANVAS_TOOLS.filter = class extends CanvasTool {
         image.addEventListener("load", () => {
             this._mainCtx.drawImage(image, 0, 0);
         });
-        image.src = await postRequest("/temporal/module/execute", {
+        image.src = await postRequest("/api/module/execute", {
             "data": this._params.value,
             "image": this._mainCanvas.toDataURL("image/png"),
         });
@@ -85,7 +85,7 @@ export class MainUI extends Widget {
         this._manager = new FieldManager(this.onValueChange);
 
         this._stateTimer = new Timer(async () => {
-            this.onStateCheck.fire(await getRequest("/temporal/execution/state"));
+            this.onStateCheck.fire(await getRequest("/api/execution/state"));
         }, 1.0);
         this.onGenerationStart.connect(() => this._stateTimer.start());
         this.onGenerationStop.connect(() => this._stateTimer.stop());
@@ -111,13 +111,13 @@ export class MainUI extends Widget {
                         // ...
                         // (Yes, I hate all those "deferred" things that make
                         // my UX feel sluggish.)
-                        await postRequest("/temporal/execution/generate", this._manager.value);
+                        await postRequest("/api/execution/generate", this._manager.value);
 
                         this.onGenerationStart.fire();
                     } else if (state == "stopped") {
                         this.onGenerationStop.fire();
 
-                        await postRequest("/temporal/execution/interrupt");
+                        await postRequest("/api/execution/interrupt");
                     }
                 });
                 this.onStateCheck.connect((state) => {
@@ -196,13 +196,13 @@ export class MainUI extends Widget {
                         e.value = project;
                     });
                     this._manager.manage(e, "project");
-                }, "temporal.project.Project");
+                }, "modules.project.Project");
             });
 
             e.createDock("\u{f013}", "System", Tabs, (e) => {
                 e.createTab("Settings", SettingsEditor, (e) => {
                     e.onApply.connect(async (value) => {
-                        await postRequest("/temporal/settings/apply", {
+                        await postRequest("/api/settings/apply", {
                             "data": value,
                         });
                     });

@@ -14,7 +14,7 @@ from modules.utils.image import NumpyImage, base64_to_image, ensure_image_dims, 
 
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/module/execute"
+    path = "/api/module/execute"
 
     class Request(BaseModel):
         data: dict[str, Any]
@@ -34,7 +34,7 @@ class _(Endpoint):
 
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/module/sample"
+    path = "/api/module/sample"
 
     class Request(BaseModel):
         data: dict[str, Any]
@@ -56,7 +56,7 @@ class _(Endpoint):
 # FIXME: Won't work, given that projects won't be saved anymore
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/module/{project_name}/{id}/visualize"
+    path = "/api/module/{project_name}/{id}/visualize"
 
     async def do(self, project_name: str, id: str) -> Optional[str]:
         def render() -> Optional[str]:

@@ -10,7 +10,7 @@ StoreType = Literal["projects"]
 
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/storage/{type}/list"
+    path = "/api/storage/{type}/list"
 
     async def do(self, type: StoreType) -> list[str]:
         return _get_store(type).entry_names
@@ -18,7 +18,7 @@ class _(Endpoint):
 
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/storage/{type}/new"
+    path = "/api/storage/{type}/new"
 
     async def do(self, type: StoreType) -> None:
         return _get_store(type).type().to_json()
@@ -26,7 +26,7 @@ class _(Endpoint):
 
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/storage/{type}/refresh"
+    path = "/api/storage/{type}/refresh"
 
     async def do(self, type: StoreType) -> None:
         _get_store(type).refresh()
@@ -34,7 +34,7 @@ class _(Endpoint):
 
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/storage/{type}/{entry}/delete"
+    path = "/api/storage/{type}/{entry}/delete"
 
     async def do(self, type: StoreType, entry: str) -> None:
         _get_store(type).delete_entry(entry)
@@ -42,7 +42,7 @@ class _(Endpoint):
 
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/storage/{type}/{entry}/load"
+    path = "/api/storage/{type}/{entry}/load"
 
     async def do(self, type: StoreType, entry: str) -> dict[str, Any]:
         return _get_store(type).load_entry(entry).to_json()
@@ -50,7 +50,7 @@ class _(Endpoint):
 
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/storage/{type}/{entry}/rename"
+    path = "/api/storage/{type}/{entry}/rename"
 
     async def do(self, type: StoreType, entry: str, new_name: str) -> None:
         _get_store(type).rename_entry(entry, new_name)
@@ -58,7 +58,7 @@ class _(Endpoint):
 
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/storage/{type}/{entry}/save"
+    path = "/api/storage/{type}/{entry}/save"
 
     async def do(self, type: StoreType, entry: str, data: dict[str, Any]) -> None:
         store = _get_store(type)

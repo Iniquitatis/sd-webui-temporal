@@ -64,7 +64,7 @@ class KeyframeEditor extends ReorderableElement {
                 e.value = schema.default ?? "";
                 this._manager.manage(e, "value");
             });
-        } else if (schema.type == "temporal.color.Color") {
+        } else if (schema.type == "modules.color.Color") {
             this.createChild(ColorPicker, (e) => {
                 e.style.width = "100%";
                 e.value = deepCopy(schema.default) ?? {r: 0.0, g: 0.0, b: 0.0, a: 1.0};

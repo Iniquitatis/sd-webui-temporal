@@ -9,7 +9,7 @@ from modules.shared import shared
 
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/settings/apply"
+    path = "/api/settings/apply"
 
     class Request(BaseModel):
         data: dict[str, Any] = {}

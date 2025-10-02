@@ -90,7 +90,7 @@ class PipelineModuleEditor extends ReorderableAccordion {
                                 e.onClick.connect(() => {
                                     e.enabled = false;
 
-                                    // this._visualization.value = await postRequest(`/temporal/module/${shared.projectName}/${this._manager.value.__id__}/visualize`);
+                                    // this._visualization.value = await postRequest(`/api/module/${shared.projectName}/${this._manager.value.__id__}/visualize`);
 
                                     e.enabled = true;
                                 });
@@ -143,7 +143,7 @@ class PipelineModuleEditor extends ReorderableAccordion {
     async _updateSample() {
         if (!this._sampleBox) return;
 
-        this._sampleBox.value = await postRequest("/temporal/module/sample", {
+        this._sampleBox.value = await postRequest("/api/module/sample", {
             "data": this._manager.value,
             "size": [256, 256],
         });

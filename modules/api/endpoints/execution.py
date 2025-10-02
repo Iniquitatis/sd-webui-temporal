@@ -13,7 +13,7 @@ from modules.utils.image import image_to_base64
 
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/execution/generate"
+    path = "/api/execution/generate"
 
     class Request(BaseModel):
         iterations: int = 10
@@ -29,7 +29,7 @@ class _(Endpoint):
 
 class _(Endpoint):
     method = "POST"
-    path = "/temporal/execution/interrupt"
+    path = "/api/execution/interrupt"
 
     async def do(self) -> None:
         global_session.engine.stop()
@@ -37,7 +37,7 @@ class _(Endpoint):
 
 class _(Endpoint):
     method = "GET"
-    path = "/temporal/execution/state"
+    path = "/api/execution/state"
 
     class Response(BaseModel):
         state: str
