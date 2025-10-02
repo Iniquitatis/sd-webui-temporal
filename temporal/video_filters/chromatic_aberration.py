@@ -1,7 +1,7 @@
 from typing import Iterator
 
-from temporal.object import Field
-from temporal.video_filter import VideoFilter, make_filter as mf
+from modules.object import Field
+from modules.video_filter import VideoFilter, make_filter as mf
 
 
 class ChromaticAberrationFilter(VideoFilter):

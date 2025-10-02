@@ -3,8 +3,8 @@ from typing_extensions import Self
 
 import numpy as np
 
-from temporal.object import Field, Object
-from temporal.utils.numpy import FloatArray, FloatType, IntArray, IntType
+from modules.object import Field, Object
+from modules.utils.numpy import FloatArray, FloatType, IntArray, IntType
 
 
 class IntVector(Object):

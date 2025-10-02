@@ -1,4 +1,4 @@
-from temporal.pipeline_module import PipelineModule
+from modules.pipeline_module import PipelineModule
 
 
 class ControlModule(PipelineModule, abstract = True):

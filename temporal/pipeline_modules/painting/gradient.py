@@ -1,13 +1,13 @@
 import numpy as np
 
-from temporal.color import Color
-from temporal.general_data import GeneralData
-from temporal.object import Field
-from temporal.pipeline_modules.painting import PaintingModule
-from temporal.utils.image import NumpyImage
-from temporal.utils.math import lerp
-from temporal.utils.numpy import FloatArray, IntType
-from temporal.vector import FloatVector
+from modules.color import Color
+from modules.general_data import GeneralData
+from modules.object import Field
+from modules.pipeline_modules.painting import PaintingModule
+from modules.utils.image import NumpyImage
+from modules.utils.math import lerp
+from modules.utils.numpy import FloatArray, IntType
+from modules.vector import FloatVector
 
 
 class GradientPaintingModule(PaintingModule):

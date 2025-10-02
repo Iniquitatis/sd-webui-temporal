@@ -2,7 +2,7 @@ from threading import Lock, Thread
 from traceback import format_exc
 from typing import Any, Callable, ParamSpec
 
-from temporal.utils.logging import log
+from modules.utils.logging import log
 
 
 P = ParamSpec("P")

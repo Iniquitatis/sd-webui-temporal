@@ -2,10 +2,10 @@ from typing import Optional
 
 import skimage
 
-from temporal.object import Field, Object
-from temporal.utils.image import NumpyImage, match_image
-from temporal.utils.math import lerp, normalize
-from temporal.utils.numpy import saturate_array
+from modules.object import Field, Object
+from modules.utils.image import NumpyImage, match_image
+from modules.utils.math import lerp, normalize
+from modules.utils.numpy import saturate_array
 
 
 class ImageMask(Object):

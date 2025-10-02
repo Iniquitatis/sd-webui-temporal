@@ -1,10 +1,10 @@
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
-from temporal.animation import Animation, Track
-from temporal.color import Color
-from temporal.utils.image import PILImage
-from temporal.utils.matplotlib import get_figure_as_image
+from modules.animation import Animation, Track
+from modules.color import Color
+from modules.utils.image import PILImage
+from modules.utils.matplotlib import get_figure_as_image
 
 
 def plot_animation(animation: Animation) -> list[PILImage]:

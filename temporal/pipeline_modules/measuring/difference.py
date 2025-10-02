@@ -2,9 +2,9 @@ from typing import Optional
 
 import numpy as np
 
-from temporal.object import Field
-from temporal.pipeline_modules.measuring import MeasuringModule
-from temporal.utils.image import NumpyImage
+from modules.object import Field
+from modules.pipeline_modules.measuring import MeasuringModule
+from modules.utils.image import NumpyImage
 
 
 class DifferenceMeasuringModule(MeasuringModule):

@@ -3,7 +3,7 @@ from inspect import getmodule, stack
 from types import NoneType
 from typing import Annotated, Any, Optional, Type, Union, get_args, get_origin
 
-from temporal.utils.collection import find_by_predicate
+from modules.utils.collection import find_by_predicate
 
 
 @dataclass(unsafe_hash = True)

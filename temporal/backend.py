@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from typing import Optional
 
-from temporal.processing_params import ProcessingParams
-from temporal.utils.image import NumpyImage
+from modules.processing_params import ProcessingParams
+from modules.utils.image import NumpyImage
 
 
 class Backend(ABC):

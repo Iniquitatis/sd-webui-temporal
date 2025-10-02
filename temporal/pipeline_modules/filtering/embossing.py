@@ -4,11 +4,11 @@ from typing import Iterator
 import numpy as np
 from scipy import ndimage
 
-from temporal.general_data import GeneralData
-from temporal.object import Field
-from temporal.pipeline_modules.filtering import ImageFilter
-from temporal.utils.image import NumpyImage, apply_channelwise
-from temporal.utils.numpy import FloatArray, saturate_array
+from modules.general_data import GeneralData
+from modules.object import Field
+from modules.pipeline_modules.filtering import ImageFilter
+from modules.utils.image import NumpyImage, apply_channelwise
+from modules.utils.numpy import FloatArray, saturate_array
 
 
 class EmbossingFilter(ImageFilter):

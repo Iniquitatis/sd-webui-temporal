@@ -1,12 +1,12 @@
 import numpy as np
 
-from temporal.general_data import GeneralData
-from temporal.object import Field
-from temporal.pipeline import Pipeline
-from temporal.pipeline_modules.control import ControlModule
-from temporal.pipeline_state import PipelineResult, PipelineState
-from temporal.utils.image import NumpyImage
-from temporal.utils.numpy import average_array, make_eased_weight_array, saturate_array
+from modules.general_data import GeneralData
+from modules.object import Field
+from modules.pipeline import Pipeline
+from modules.pipeline_modules.control import ControlModule
+from modules.pipeline_state import PipelineResult, PipelineState
+from modules.utils.image import NumpyImage
+from modules.utils.numpy import average_array, make_eased_weight_array, saturate_array
 
 
 class ParallelModule(ControlModule):

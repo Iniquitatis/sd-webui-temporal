@@ -1,8 +1,8 @@
 from random import randint
 from typing_extensions import Self
 
-from temporal.object import Field, Object
-from temporal.serialization import JSONValue, SerializationParams
+from modules.object import Field, Object
+from modules.serialization import JSONValue, SerializationParams
 
 
 class Seed(Object):

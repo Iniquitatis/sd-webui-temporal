@@ -3,14 +3,14 @@ from math import ceil
 import numpy as np
 import skimage
 
-from temporal.color import Color
-from temporal.general_data import GeneralData
-from temporal.object import Field
-from temporal.pipeline_modules.painting import PaintingModule
-from temporal.seed import Seed
-from temporal.utils.image import NumpyImage, make_trs_transform
-from temporal.utils.math import lerp
-from temporal.utils.numpy import FloatArray, FloatType, random_array
+from modules.color import Color
+from modules.general_data import GeneralData
+from modules.object import Field
+from modules.pipeline_modules.painting import PaintingModule
+from modules.seed import Seed
+from modules.utils.image import NumpyImage, make_trs_transform
+from modules.utils.math import lerp
+from modules.utils.numpy import FloatArray, FloatType, random_array
 
 
 class ValueNoisePaintingModule(PaintingModule):

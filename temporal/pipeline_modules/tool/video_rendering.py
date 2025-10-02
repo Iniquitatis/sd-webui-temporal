@@ -3,15 +3,15 @@ from itertools import chain
 from pathlib import Path
 from subprocess import run
 
-from temporal.general_data import GeneralData
-from temporal.object import Field
-from temporal.pipeline_modules.tool import ToolModule
-from temporal.thread_queue import ThreadQueue
-from temporal.utils.fs import ensure_directory_exists, save_text
-from temporal.utils.image import NumpyImage
-from temporal.utils.time import wait_until
-from temporal.video import Video
-from temporal.video_filter import VideoFilter
+from modules.general_data import GeneralData
+from modules.object import Field
+from modules.pipeline_modules.tool import ToolModule
+from modules.thread_queue import ThreadQueue
+from modules.utils.fs import ensure_directory_exists, save_text
+from modules.utils.image import NumpyImage
+from modules.utils.time import wait_until
+from modules.video import Video
+from modules.video_filter import VideoFilter
 
 
 class VideoRenderingModule(ToolModule):

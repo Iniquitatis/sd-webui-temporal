@@ -3,9 +3,9 @@ from pathlib import Path
 
 import numpy as np
 
-from temporal.compat.upgrader import Upgrader
-from temporal.utils.fs import load_text, save_text
-from temporal.utils.numpy import load_array, save_array
+from modules.compat.upgrader import Upgrader
+from modules.utils.fs import load_text, save_text
+from modules.utils.numpy import load_array, save_array
 
 
 class _(Upgrader):

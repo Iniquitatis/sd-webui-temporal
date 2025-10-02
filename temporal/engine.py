@@ -5,10 +5,10 @@ from typing import Literal, Optional
 
 import numpy as np
 
-from temporal.pipeline_state import PipelineState
-from temporal.project import Project
-from temporal.utils.image import NumpyImage, ensure_image_dims
-from temporal.utils.logging import log
+from modules.pipeline_state import PipelineState
+from modules.project import Project
+from modules.utils.image import NumpyImage, ensure_image_dims
+from modules.utils.logging import log
 
 
 @dataclass

@@ -2,9 +2,9 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from temporal.api.endpoint import Endpoint
-from temporal.settings import Settings
-from temporal.shared import shared
+from modules.api.endpoint import Endpoint
+from modules.settings import Settings
+from modules.shared import shared
 
 
 class _(Endpoint):

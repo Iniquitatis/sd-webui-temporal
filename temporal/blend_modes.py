@@ -2,8 +2,8 @@ from abc import abstractmethod
 
 import numpy as np
 
-from temporal.object import Object, Static
-from temporal.utils.image import NumpyImage, join_hsv_to_rgb, split_hsv
+from modules.object import Object, Static
+from modules.utils.image import NumpyImage, join_hsv_to_rgb, split_hsv
 
 
 class BlendMode(Object, abstract = True):

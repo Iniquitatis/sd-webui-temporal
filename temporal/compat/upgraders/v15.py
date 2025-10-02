@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from temporal.compat.upgrader import Upgrader
-from temporal.utils.fs import ensure_directory_exists, load_text, move_entry, save_text
+from modules.compat.upgrader import Upgrader
+from modules.utils.fs import ensure_directory_exists, load_text, move_entry, save_text
 
 
 class _(Upgrader):

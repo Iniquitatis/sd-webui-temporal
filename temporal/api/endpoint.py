@@ -3,8 +3,8 @@ from typing import Any, Literal, Type, get_type_hints
 
 from fastapi import APIRouter
 
-from temporal.utils.logging import LogLevel, log
-from temporal.utils.string import ellipsize
+from modules.utils.logging import LogLevel, log
+from modules.utils.string import ellipsize
 
 
 ENDPOINTS: list[Type["Endpoint"]] = []

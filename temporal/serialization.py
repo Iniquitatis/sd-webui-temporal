@@ -2,7 +2,7 @@ from dataclasses import dataclass, field as datafield
 from pathlib import Path
 from typing import Any, Generic, Literal, Optional, Type, TypeVar, get_args
 
-from temporal.utils.typing import get_optional_type, is_optional, safe_get_origin
+from modules.utils.typing import get_optional_type, is_optional, safe_get_origin
 
 
 T = TypeVar("T")
@@ -164,9 +164,9 @@ _serializers: dict[Type[Any], Type[Serializer[Any]]] = {}
 
 from types import NoneType
 
-from temporal.utils.bytes import base64_to_bytes, bytes_to_base64
-from temporal.utils.image import NumpyImage, PILImage, base64_to_image, ensure_image_dims, image_to_base64, load_image, np_to_pil, pil_to_np, save_image
-from temporal.utils.numpy import FloatArray, array_to_base64, base64_to_array, load_array, save_array
+from modules.utils.bytes import base64_to_bytes, bytes_to_base64
+from modules.utils.image import NumpyImage, PILImage, base64_to_image, ensure_image_dims, image_to_base64, load_image, np_to_pil, pil_to_np, save_image
+from modules.utils.numpy import FloatArray, array_to_base64, base64_to_array, load_array, save_array
 
 
 class _(Serializer[NoneType]):

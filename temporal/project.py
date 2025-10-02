@@ -1,10 +1,10 @@
 from pathlib import Path
 from typing_extensions import Self
 
-from temporal.compat import get_latest_version, upgrade_project
-from temporal.general_data import GeneralData
-from temporal.object import Field, Object
-from temporal.pipeline import Pipeline
+from modules.compat import get_latest_version, upgrade_project
+from modules.general_data import GeneralData
+from modules.object import Field, Object
+from modules.pipeline import Pipeline
 
 
 class Project(Object):

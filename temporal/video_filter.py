@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import Iterator
 
-from temporal.object import Field, Object, Static
+from modules.object import Field, Object, Static
 
 
 class VideoFilter(Object, abstract = True):

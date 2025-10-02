@@ -1,9 +1,9 @@
 from typing import Iterator
 
-from temporal.color import Color
-from temporal.object import Field
-from temporal.vector import FloatVector, IntVector
-from temporal.video_filter import VideoFilter, make_filter as mf
+from modules.color import Color
+from modules.object import Field
+from modules.vector import FloatVector, IntVector
+from modules.video_filter import VideoFilter, make_filter as mf
 
 
 class TextOverlayFilter(VideoFilter):

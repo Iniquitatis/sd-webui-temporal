@@ -1,4 +1,4 @@
-from temporal.pipeline_modules.filtering import ImageFilter
+from modules.pipeline_modules.filtering import ImageFilter
 
 
 class NeuralModule(ImageFilter, abstract = True):

@@ -1,11 +1,11 @@
 from pathlib import Path
 
-from temporal.backend import Backend
-from temporal.fs_store import FSStore
-from temporal.project import Project
-from temporal.settings import Settings
-from temporal.utils.image import load_image, pil_to_np
-from temporal.utils.modules import import_modules, list_modules_in_directory
+from modules.backend import Backend
+from modules.fs_store import FSStore
+from modules.project import Project
+from modules.settings import Settings
+from modules.utils.image import load_image, pil_to_np
+from modules.utils.modules import import_modules, list_modules_in_directory
 
 
 class SharedData:

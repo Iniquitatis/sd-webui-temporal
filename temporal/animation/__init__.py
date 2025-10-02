@@ -1,9 +1,9 @@
 from itertools import pairwise
 from typing import Any, Literal, TypeVar, cast
 
-from temporal.color import Color
-from temporal.object import Field, Object
-from temporal.utils.math import clamp, mirror, normalize, repeat
+from modules.color import Color
+from modules.object import Field, Object
+from modules.utils.math import clamp, mirror, normalize, repeat
 
 
 class Keyframe(Object):

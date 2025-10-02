@@ -1,11 +1,11 @@
 import numpy as np
 
-from temporal.general_data import GeneralData
-from temporal.object import Field
-from temporal.pipeline_modules.painting import PaintingModule
-from temporal.seed import Seed
-from temporal.utils.image import NumpyImage
-from temporal.utils.numpy import FloatType
+from modules.general_data import GeneralData
+from modules.object import Field
+from modules.pipeline_modules.painting import PaintingModule
+from modules.seed import Seed
+from modules.utils.image import NumpyImage
+from modules.utils.numpy import FloatType
 
 
 class NoisePaintingModule(PaintingModule):

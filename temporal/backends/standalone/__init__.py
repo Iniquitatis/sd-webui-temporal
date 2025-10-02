@@ -23,9 +23,9 @@ from diffusers.schedulers.scheduling_k_dpm_2_discrete import KDPM2DiscreteSchedu
 from diffusers.schedulers.scheduling_lms_discrete import LMSDiscreteScheduler
 from diffusers.schedulers.scheduling_unipc_multistep import UniPCMultistepScheduler
 
-from temporal.backend import Backend
-from temporal.processing_params import ProcessingParams
-from temporal.utils.image import NumpyImage, ensure_image_dims
+from modules.backend import Backend
+from modules.processing_params import ProcessingParams
+from modules.utils.image import NumpyImage, ensure_image_dims
 
 
 class StandaloneBackend(Backend):

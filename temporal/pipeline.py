@@ -1,8 +1,8 @@
-from temporal.general_data import GeneralData
-from temporal.object import Field, Object
-from temporal.pipeline_module import PipelineModule
-from temporal.pipeline_state import PipelineResult, PipelineState
-from temporal.utils.image import NumpyImage
+from modules.general_data import GeneralData
+from modules.object import Field, Object
+from modules.pipeline_module import PipelineModule
+from modules.pipeline_state import PipelineResult, PipelineState
+from modules.utils.image import NumpyImage
 
 
 class Pipeline(Object):

@@ -1,4 +1,4 @@
-from temporal.utils.base64 import decode, decode_with_mime_type, encode, encode_with_mime_type
+from modules.utils.base64 import decode, decode_with_mime_type, encode, encode_with_mime_type
 
 
 def base64_to_bytes(text: str, with_mime_type: bool = True) -> bytes:

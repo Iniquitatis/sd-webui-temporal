@@ -3,7 +3,7 @@ from functools import reduce
 from operator import mul
 from typing import Any, Callable, TypeVar
 
-from temporal.utils.numpy import FloatArray
+from modules.utils.numpy import FloatArray
 
 
 T = TypeVar("T")

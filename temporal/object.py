@@ -8,10 +8,10 @@ from typing_extensions import Self
 from uuid import uuid4
 from weakref import WeakValueDictionary
 
-from temporal.serialization import JSONValue, SerializationDataFlag, SerializationParams, Serializer, deserialize, serialize, validate
-from temporal.utils.fs import recreate_directory
-from temporal.utils.logging import log
-from temporal.utils.typing import get_full_type_name, get_optional_type, is_optional, safe_get_origin
+from modules.serialization import JSONValue, SerializationDataFlag, SerializationParams, Serializer, deserialize, serialize, validate
+from modules.utils.fs import recreate_directory
+from modules.utils.logging import log
+from modules.utils.typing import get_full_type_name, get_optional_type, is_optional, safe_get_origin
 
 
 T = TypeVar("T")

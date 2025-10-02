@@ -4,12 +4,12 @@ from typing import Any, Optional
 
 from pydantic import BaseModel
 
-from temporal.api.endpoint import Endpoint
-from temporal.general_data import GeneralData
-from temporal.pipeline_module import PipelineModule
-from temporal.seed import Seed
-from temporal.shared import shared
-from temporal.utils.image import NumpyImage, base64_to_image, ensure_image_dims, image_to_base64
+from modules.api.endpoint import Endpoint
+from modules.general_data import GeneralData
+from modules.pipeline_module import PipelineModule
+from modules.seed import Seed
+from modules.shared import shared
+from modules.utils.image import NumpyImage, base64_to_image, ensure_image_dims, image_to_base64
 
 
 class _(Endpoint):

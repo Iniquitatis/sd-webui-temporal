@@ -6,8 +6,8 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy import stats
 
-from temporal.utils.base64 import decode, decode_with_mime_type, encode, encode_with_mime_type
-from temporal.utils.typing import Alias
+from modules.utils.base64 import decode, decode_with_mime_type, encode, encode_with_mime_type
+from modules.utils.typing import Alias
 
 
 IntType = np.int32

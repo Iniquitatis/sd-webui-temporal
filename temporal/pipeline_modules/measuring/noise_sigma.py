@@ -1,7 +1,7 @@
 import skimage
 
-from temporal.pipeline_modules.measuring import MeasuringModule
-from temporal.utils.image import NumpyImage
+from modules.pipeline_modules.measuring import MeasuringModule
+from modules.utils.image import NumpyImage
 
 
 class NoiseSigmaMeasuringModule(MeasuringModule):

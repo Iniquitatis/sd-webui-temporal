@@ -1,7 +1,7 @@
 from typing import Any
 
-from temporal.api.endpoint import Endpoint
-from temporal.object import object_types
+from modules.api.endpoint import Endpoint
+from modules.object import object_types
 
 
 class _(Endpoint):

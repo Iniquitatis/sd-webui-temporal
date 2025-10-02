@@ -7,10 +7,10 @@ import skimage
 from PIL import Image
 from skimage.transform import AffineTransform as Transform
 
-from temporal.utils.base64 import decode, decode_with_mime_type, encode, encode_with_mime_type
-from temporal.utils.math import lerp
-from temporal.utils.numpy import FloatArray, saturate_array
-from temporal.utils.typing import Alias
+from modules.utils.base64 import decode, decode_with_mime_type, encode, encode_with_mime_type
+from modules.utils.math import lerp
+from modules.utils.numpy import FloatArray, saturate_array
+from modules.utils.typing import Alias
 
 
 PILImage = Annotated[Image.Image, Alias("PILImage")]

@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from pathlib import Path
 
-from temporal.object import Object, Static
+from modules.object import Object, Static
 
 
 class Upgrader(Object, abstract = True):

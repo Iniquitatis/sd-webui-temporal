@@ -2,14 +2,14 @@ from typing import Any, Literal, Self
 
 import skimage
 
-from temporal.animation import Animation
-from temporal.general_data import GeneralData
-from temporal.object import Field, Object, Static
-from temporal.pipeline_state import PipelineResult, PipelineState
-from temporal.seed import Seed
-from temporal.utils.image import NumpyImage, PILImage, make_trs_transform
-from temporal.utils.logging import log
-from temporal.video import Video
+from modules.animation import Animation
+from modules.general_data import GeneralData
+from modules.object import Field, Object, Static
+from modules.pipeline_state import PipelineResult, PipelineState
+from modules.seed import Seed
+from modules.utils.image import NumpyImage, PILImage, make_trs_transform
+from modules.utils.logging import log
+from modules.video import Video
 
 
 VisualizableType = NumpyImage | PILImage | Video

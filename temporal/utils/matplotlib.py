@@ -3,7 +3,7 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 from PIL import Image
 
-from temporal.utils.image import PILImage
+from modules.utils.image import PILImage
 
 
 def get_figure_as_image() -> PILImage:

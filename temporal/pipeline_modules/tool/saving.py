@@ -1,11 +1,11 @@
-from temporal.general_data import GeneralData
-from temporal.object import Field
-from temporal.pipeline_modules.tool import ToolModule
-from temporal.thread_queue import ThreadQueue
-from temporal.utils.fs import ensure_directory_exists
-from temporal.utils.image import NumpyImage, ensure_image_dims, np_to_pil, save_image
-from temporal.utils.math import quantize
-from temporal.utils.time import wait_until
+from modules.general_data import GeneralData
+from modules.object import Field
+from modules.pipeline_modules.tool import ToolModule
+from modules.thread_queue import ThreadQueue
+from modules.utils.fs import ensure_directory_exists
+from modules.utils.image import NumpyImage, ensure_image_dims, np_to_pil, save_image
+from modules.utils.math import quantize
+from modules.utils.time import wait_until
 
 
 class SavingModule(ToolModule):

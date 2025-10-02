@@ -1,10 +1,10 @@
 from pathlib import Path
 from typing import Optional
 
-from temporal.object import Field, Object
-from temporal.seed import Seed
-from temporal.utils.image import NumpyImage
-from temporal.vector import IntVector
+from modules.object import Field, Object
+from modules.seed import Seed
+from modules.utils.image import NumpyImage
+from modules.vector import IntVector
 
 
 class GeneralData(Object):

@@ -1,8 +1,8 @@
 from abc import abstractmethod
 
-from temporal.general_data import GeneralData
-from temporal.pipeline_modules.filtering import ImageFilter
-from temporal.utils.image import NumpyImage, alpha_blend
+from modules.general_data import GeneralData
+from modules.pipeline_modules.filtering import ImageFilter
+from modules.utils.image import NumpyImage, alpha_blend
 
 
 class PaintingModule(ImageFilter, abstract = True):

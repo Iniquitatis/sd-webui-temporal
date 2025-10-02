@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import Any
 
-from temporal.compat.upgrader import Upgrader
-from temporal.utils.fs import load_json, load_text, save_json, save_text
+from modules.compat.upgrader import Upgrader
+from modules.utils.fs import load_json, load_text, save_json, save_text
 
 
 class _(Upgrader):

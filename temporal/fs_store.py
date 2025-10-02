@@ -1,9 +1,9 @@
 from pathlib import Path
 from typing import Generic, Type, TypeVar
 
-from temporal.object import Object
-from temporal.utils.collection import natural_sort
-from temporal.utils.fs import iterate_subdirectories, remove_entry, rename_entry
+from modules.object import Object
+from modules.utils.collection import natural_sort
+from modules.utils.fs import iterate_subdirectories, remove_entry, rename_entry
 
 
 T = TypeVar("T", bound = Object)

@@ -1,13 +1,13 @@
 import numpy as np
 import skimage
 
-from temporal.general_data import GeneralData
-from temporal.image_source import ImageSource
-from temporal.object import Field
-from temporal.pipeline_modules.painting import PaintingModule
-from temporal.utils.image import NumpyImage, ensure_image_dims, make_trs_transform
-from temporal.utils.numpy import saturate_array
-from temporal.vector import FloatVector
+from modules.general_data import GeneralData
+from modules.image_source import ImageSource
+from modules.object import Field
+from modules.pipeline_modules.painting import PaintingModule
+from modules.utils.image import NumpyImage, ensure_image_dims, make_trs_transform
+from modules.utils.numpy import saturate_array
+from modules.vector import FloatVector
 
 
 class ImagePaintingModule(PaintingModule):

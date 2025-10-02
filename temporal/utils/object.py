@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from copy import copy
 from typing import Any, Iterator, TypeVar
 
-from temporal.utils.logging import log
+from modules.utils.logging import log
 
 
 T = TypeVar("T")

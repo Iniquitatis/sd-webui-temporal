@@ -4,14 +4,14 @@ import numpy as np
 import skimage
 from scipy.spatial import KDTree
 
-from temporal.color import Color
-from temporal.general_data import GeneralData
-from temporal.object import Field
-from temporal.pipeline_modules.painting import PaintingModule
-from temporal.seed import Seed
-from temporal.utils.image import NumpyImage
-from temporal.utils.math import lerp, normalize, ratio
-from temporal.utils.numpy import FloatArray, FloatType, IntArray, IntType, random_array, saturate_array
+from modules.color import Color
+from modules.general_data import GeneralData
+from modules.object import Field
+from modules.pipeline_modules.painting import PaintingModule
+from modules.seed import Seed
+from modules.utils.image import NumpyImage
+from modules.utils.math import lerp, normalize, ratio
+from modules.utils.numpy import FloatArray, FloatType, IntArray, IntType, random_array, saturate_array
 
 
 class VoronoiModule(PaintingModule):

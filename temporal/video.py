@@ -7,11 +7,11 @@ from typing_extensions import Self
 
 from PIL import Image
 
-from temporal.object import Field, Object
-from temporal.serialization import JSONValue, SerializationParams
-from temporal.utils.base64 import decode_with_mime_type, encode_with_mime_type
-from temporal.utils.fs import ensure_directory_exists
-from temporal.utils.image import NumpyImage, pil_to_np
+from modules.object import Field, Object
+from modules.serialization import JSONValue, SerializationParams
+from modules.utils.base64 import decode_with_mime_type, encode_with_mime_type
+from modules.utils.fs import ensure_directory_exists
+from modules.utils.image import NumpyImage, pil_to_np
 
 
 class Video(Object):

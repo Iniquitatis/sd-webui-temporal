@@ -1,16 +1,16 @@
 from math import floor
 
-from temporal.general_data import GeneralData
-from temporal.object import Field
-from temporal.pipeline_modules.neural import NeuralModule
-from temporal.pipeline_state import PipelineResult, PipelineState
-from temporal.processing_params import ProcessingParams
-from temporal.seed import Seed
-from temporal.shared import shared
-from temporal.utils.collection import get_first_element
-from temporal.utils.image import NumpyImage, ensure_image_dims
-from temporal.utils.math import quantize
-from temporal.utils.prompt import evaluate_prompt
+from modules.general_data import GeneralData
+from modules.object import Field
+from modules.pipeline_modules.neural import NeuralModule
+from modules.pipeline_state import PipelineResult, PipelineState
+from modules.processing_params import ProcessingParams
+from modules.seed import Seed
+from modules.shared import shared
+from modules.utils.collection import get_first_element
+from modules.utils.image import NumpyImage, ensure_image_dims
+from modules.utils.math import quantize
+from modules.utils.prompt import evaluate_prompt
 
 
 class ProcessingModule(NeuralModule):

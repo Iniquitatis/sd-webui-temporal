@@ -1,6 +1,6 @@
 from typing import Generator, Type, Union
 
-from temporal.utils.image import NumpyImage
+from modules.utils.image import NumpyImage
 
 
 class PipelineState:

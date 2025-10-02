@@ -3,12 +3,12 @@ from typing import Optional
 import numpy as np
 import skimage
 
-from temporal.general_data import GeneralData
-from temporal.object import Field
-from temporal.pipeline_modules.temporal import TemporalModule
-from temporal.utils.image import NumpyImage, apply_channelwise, ensure_image_dims, match_image
-from temporal.utils.math import lerp
-from temporal.utils.numpy import FloatArray, FloatType
+from modules.general_data import GeneralData
+from modules.object import Field
+from modules.pipeline_modules.temporal import TemporalModule
+from modules.utils.image import NumpyImage, apply_channelwise, ensure_image_dims, match_image
+from modules.utils.math import lerp
+from modules.utils.numpy import FloatArray, FloatType
 
 
 class InterpolationModule(TemporalModule):

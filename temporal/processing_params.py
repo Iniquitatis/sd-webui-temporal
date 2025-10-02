@@ -1,6 +1,6 @@
 from typing import Optional
 
-from temporal.object import Field, Object
+from modules.object import Field, Object
 
 
 class ProcessingParams(Object):

@@ -3,9 +3,9 @@ from typing import Any, Iterator, Literal, Optional
 
 import requests
 
-from temporal.backend import Backend
-from temporal.processing_params import ProcessingParams
-from temporal.utils.image import NumpyImage, base64_to_image, image_to_base64
+from modules.backend import Backend
+from modules.processing_params import ProcessingParams
+from modules.utils.image import NumpyImage, base64_to_image, image_to_base64
 
 
 class WebUIAPIBackend(Backend):

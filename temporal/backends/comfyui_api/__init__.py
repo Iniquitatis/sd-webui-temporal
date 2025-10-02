@@ -6,9 +6,9 @@ from typing import Any, Iterator, Literal, Optional
 import requests
 from PIL import Image
 
-from temporal.backend import Backend
-from temporal.processing_params import ProcessingParams
-from temporal.utils.image import NumpyImage, ensure_image_dims, np_to_pil, pil_to_np
+from modules.backend import Backend
+from modules.processing_params import ProcessingParams
+from modules.utils.image import NumpyImage, ensure_image_dims, np_to_pil, pil_to_np
 
 
 class ComfyUIAPIBackend(Backend):

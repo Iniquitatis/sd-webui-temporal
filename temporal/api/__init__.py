@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
-from temporal.api.endpoint import ENDPOINTS
-from temporal.utils.modules import import_modules, list_modules_in_directory
+from modules.api.endpoint import ENDPOINTS
+from modules.utils.modules import import_modules, list_modules_in_directory
 
 
 def register_api(app: FastAPI) -> None:

@@ -1,13 +1,13 @@
 import numpy as np
 import skimage
 
-from temporal.general_data import GeneralData
-from temporal.image_source import ImageSource
-from temporal.object import Field
-from temporal.pipeline_modules.filtering import ImageFilter
-from temporal.utils.image import NumpyImage, apply_channelwise, ensure_image_dims
-from temporal.utils.numpy import FloatType
-from temporal.vector import FloatVector
+from modules.general_data import GeneralData
+from modules.image_source import ImageSource
+from modules.object import Field
+from modules.pipeline_modules.filtering import ImageFilter
+from modules.utils.image import NumpyImage, apply_channelwise, ensure_image_dims
+from modules.utils.numpy import FloatType
+from modules.vector import FloatVector
 
 
 class DisplacementFilter(ImageFilter):

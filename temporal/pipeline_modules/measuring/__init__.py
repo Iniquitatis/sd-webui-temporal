@@ -6,14 +6,14 @@ import numpy as np
 import scipy
 from matplotlib.ticker import MaxNLocator
 
-from temporal.general_data import GeneralData
-from temporal.object import Field, Static
-from temporal.pipeline_module import PipelineModule
-from temporal.pipeline_state import PipelineResult, PipelineState
-from temporal.utils.fs import ensure_directory_exists
-from temporal.utils.image import NumpyImage, PILImage, save_image
-from temporal.utils.matplotlib import get_figure_as_image
-from temporal.utils.numpy import FloatArray
+from modules.general_data import GeneralData
+from modules.object import Field, Static
+from modules.pipeline_module import PipelineModule
+from modules.pipeline_state import PipelineResult, PipelineState
+from modules.utils.fs import ensure_directory_exists
+from modules.utils.image import NumpyImage, PILImage, save_image
+from modules.utils.matplotlib import get_figure_as_image
+from modules.utils.numpy import FloatArray
 
 
 class MeasuringModule(PipelineModule, abstract = True):

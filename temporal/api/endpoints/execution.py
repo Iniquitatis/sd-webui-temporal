@@ -3,12 +3,12 @@ from typing import Any, Optional
 
 from pydantic import BaseModel
 
-from temporal.api.endpoint import Endpoint
-from temporal.api.session import global_session
-from temporal.project import Project
-from temporal.shared import shared
-from temporal.utils.fs import remove_directory
-from temporal.utils.image import image_to_base64
+from modules.api.endpoint import Endpoint
+from modules.api.session import global_session
+from modules.project import Project
+from modules.shared import shared
+from modules.utils.fs import remove_directory
+from modules.utils.image import image_to_base64
 
 
 class _(Endpoint):

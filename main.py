@@ -7,9 +7,9 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from temporal.api import register_api
-from temporal.shared import shared
-from temporal.utils.logging import LogLevel, log
+from modules.api import register_api
+from modules.shared import shared
+from modules.utils.logging import LogLevel, log
 
 
 mimetypes.add_type("application/javascript", ".js")
@@ -35,17 +35,17 @@ log.level = getattr(LogLevel, args.log_level.upper())
 log.path = args.log_path
 
 if args.backend == "comfyui":
-    from temporal.backends.comfyui_api import ComfyUIAPIBackend
+    from modules.backends.comfyui_api import ComfyUIAPIBackend
 
     backend = ComfyUIAPIBackend(args.backend_host or "http://127.0.0.1", args.backend_port or 8188)
 
 elif args.backend == "sdwebui":
-    from temporal.backends.webui_api import WebUIAPIBackend
+    from modules.backends.webui_api import WebUIAPIBackend
 
     backend = WebUIAPIBackend(args.backend_host or "http://127.0.0.1", args.backend_port or 7860)
 
 elif args.backend == "standalone":
-    from temporal.backends.standalone import StandaloneBackend
+    from modules.backends.standalone import StandaloneBackend
 
     backend = StandaloneBackend(args.model_dir, args.vae_dir)
 

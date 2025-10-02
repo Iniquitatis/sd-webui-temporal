@@ -1,8 +1,8 @@
 from typing import Any, Optional, Self
 
-from temporal.object import Field, Object
-from temporal.utils.image import NumpyImage, ensure_image_dims
-from temporal.video import Video
+from modules.object import Field, Object
+from modules.utils.image import NumpyImage, ensure_image_dims
+from modules.video import Video
 
 
 class ImageSource(Object):

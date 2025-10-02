@@ -1,14 +1,14 @@
 from abc import abstractmethod
 
-from temporal.blend_modes import BlendMode, NormalBlendMode
-from temporal.general_data import GeneralData
-from temporal.image_mask import ImageMask
-from temporal.object import Field
-from temporal.pipeline_module import PipelineModule
-from temporal.pipeline_state import PipelineResult, PipelineState
-from temporal.utils.image import NumpyImage
-from temporal.utils.math import lerp
-from temporal.utils.numpy import saturate_array
+from modules.blend_modes import BlendMode, NormalBlendMode
+from modules.general_data import GeneralData
+from modules.image_mask import ImageMask
+from modules.object import Field
+from modules.pipeline_module import PipelineModule
+from modules.pipeline_state import PipelineResult, PipelineState
+from modules.utils.image import NumpyImage
+from modules.utils.math import lerp
+from modules.utils.numpy import saturate_array
 
 
 class ImageFilter(PipelineModule, abstract = True):

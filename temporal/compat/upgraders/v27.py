@@ -1,8 +1,8 @@
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from temporal.compat.upgrader import Upgrader
-from temporal.utils.fs import load_text, move_entry, remove_entry
+from modules.compat.upgrader import Upgrader
+from modules.utils.fs import load_text, move_entry, remove_entry
 
 
 class _(Upgrader):

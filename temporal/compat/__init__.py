@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from temporal.compat.upgrader import Upgrader
-from temporal.utils.logging import log
-from temporal.utils.modules import import_modules, list_modules_in_directory
+from modules.compat.upgrader import Upgrader
+from modules.utils.logging import log
+from modules.utils.modules import import_modules, list_modules_in_directory
 
 
 import_modules(list_modules_in_directory("temporal/compat/upgraders"))

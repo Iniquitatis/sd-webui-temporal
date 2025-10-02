@@ -1,8 +1,8 @@
 from typing import Any, Literal
 
-from temporal.api.endpoint import Endpoint
-from temporal.fs_store import FSStore
-from temporal.shared import shared
+from modules.api.endpoint import Endpoint
+from modules.fs_store import FSStore
+from modules.shared import shared
 
 
 StoreType = Literal["projects"]

@@ -2,13 +2,13 @@ from typing import Optional
 
 import numpy as np
 
-from temporal.general_data import GeneralData
-from temporal.object import Field
-from temporal.pipeline_modules.temporal import TemporalModule
-from temporal.seed import Seed
-from temporal.utils.image import NumpyImage, ensure_image_dims
-from temporal.utils.math import clamp, lerp
-from temporal.utils.numpy import FloatArray, random_array
+from modules.general_data import GeneralData
+from modules.object import Field
+from modules.pipeline_modules.temporal import TemporalModule
+from modules.seed import Seed
+from modules.utils.image import NumpyImage, ensure_image_dims
+from modules.utils.math import clamp, lerp
+from modules.utils.numpy import FloatArray, random_array
 
 
 class RandomSamplingModule(TemporalModule):

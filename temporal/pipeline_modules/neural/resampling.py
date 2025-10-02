@@ -1,12 +1,12 @@
 from math import floor
 
-from temporal.general_data import GeneralData
-from temporal.object import Field
-from temporal.pipeline_modules.neural import NeuralModule
-from temporal.pipeline_state import PipelineResult, PipelineState
-from temporal.shared import shared
-from temporal.utils.collection import get_first_element
-from temporal.utils.image import NumpyImage, ensure_image_dims
+from modules.general_data import GeneralData
+from modules.object import Field
+from modules.pipeline_modules.neural import NeuralModule
+from modules.pipeline_state import PipelineResult, PipelineState
+from modules.shared import shared
+from modules.utils.collection import get_first_element
+from modules.utils.image import NumpyImage, ensure_image_dims
 
 
 class ResamplingModule(NeuralModule):

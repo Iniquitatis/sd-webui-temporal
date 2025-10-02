@@ -1,9 +1,9 @@
-from temporal.general_data import GeneralData
-from temporal.object import Field
-from temporal.pipeline import Pipeline
-from temporal.pipeline_modules.control import ControlModule
-from temporal.pipeline_state import PipelineResult
-from temporal.utils.image import NumpyImage
+from modules.general_data import GeneralData
+from modules.object import Field
+from modules.pipeline import Pipeline
+from modules.pipeline_modules.control import ControlModule
+from modules.pipeline_state import PipelineResult
+from modules.utils.image import NumpyImage
 
 
 class GroupModule(ControlModule):

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from temporal.object import Field, Object, Static
+from modules.object import Field, Object, Static
 
 
 class OptionCategory(Object):

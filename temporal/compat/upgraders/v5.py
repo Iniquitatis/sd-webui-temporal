@@ -3,9 +3,9 @@ from typing import Any
 
 import numpy as np
 
-from temporal.compat.upgrader import Upgrader
-from temporal.utils.fs import load_json, load_text, save_json, save_text
-from temporal.utils.image import load_image, pil_to_np
+from modules.compat.upgrader import Upgrader
+from modules.utils.fs import load_json, load_text, save_json, save_text
+from modules.utils.image import load_image, pil_to_np
 
 
 class _(Upgrader):

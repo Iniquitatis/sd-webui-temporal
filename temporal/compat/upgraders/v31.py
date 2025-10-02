@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from temporal.compat.upgrader import Upgrader
+from modules.compat.upgrader import Upgrader
 
 
 class _(Upgrader):

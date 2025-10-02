@@ -1,10 +1,10 @@
 import numpy as np
 
-from temporal.color import Color
-from temporal.general_data import GeneralData
-from temporal.object import Field
-from temporal.pipeline_modules.filtering import ImageFilter
-from temporal.utils.image import NumpyImage, apply_color_matrix
+from modules.color import Color
+from modules.general_data import GeneralData
+from modules.object import Field
+from modules.pipeline_modules.filtering import ImageFilter
+from modules.utils.image import NumpyImage, apply_color_matrix
 
 
 class ColorMatrixFilter(ImageFilter):
