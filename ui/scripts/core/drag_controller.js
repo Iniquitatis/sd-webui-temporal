@@ -50,6 +50,10 @@ export class DragController {
     }
 
     register(element) {
+        element.addEventListener("dragstart", (event) => {
+            event.preventDefault();
+        });
+
         element.addEventListener("pointerdown", (event) => {
             if (!this._enabled || this._element) return;
 
