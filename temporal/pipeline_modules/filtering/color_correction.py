@@ -10,7 +10,7 @@ from temporal.utils.image import NumpyImage, match_image
 class ColorCorrectionFilter(ImageFilter):
     name = "Color correction"
 
-    source: ImageSource = Field(ImageSource, name = "Image source", channels = 3, display = "group")
+    source: ImageSource = Field(ImageSource, name = "Image source", channels = 3, display = "unpack")
     iteration: int = Field(0, flags = {"runtime"})
 
     def process(self, image: NumpyImage, general: GeneralData) -> NumpyImage:

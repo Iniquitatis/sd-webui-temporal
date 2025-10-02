@@ -13,7 +13,7 @@ from temporal.vector import FloatVector
 class ImagePaintingModule(PaintingModule):
     name = "Image"
 
-    source: ImageSource = Field(ImageSource, name = "Image source", channels = 4, display = "group")
+    source: ImageSource = Field(ImageSource, name = "Image source", channels = 4, display = "unpack")
     offset: FloatVector = Field(lambda: FloatVector(0.0, 0.0), name = "Offset", axes = ["X", "Y"], minimum = -1.0, maximum = 1.0, step = 0.001, display = "slider")
     blurring: float = Field(0.0, name = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, display = "slider")
     iteration: int = Field(0, flags = {"runtime"})

@@ -13,7 +13,7 @@ from temporal.vector import FloatVector
 class DisplacementFilter(ImageFilter):
     name = "Displacement"
 
-    source: ImageSource = Field(ImageSource, name = "Image source", channels = 2, display = "group")
+    source: ImageSource = Field(ImageSource, name = "Image source", channels = 2, display = "unpack")
     scale: FloatVector = Field(lambda: FloatVector(1.0, 1.0), name = "Scale", axes = ["X", "Y"], step = 0.1, display = "box")
     iteration: int = Field(0, flags = {"runtime"})
 
