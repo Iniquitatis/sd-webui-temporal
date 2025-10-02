@@ -1,4 +1,4 @@
-from asyncio import sleep
+from asyncio import get_event_loop
 from typing import Any, Optional
 
 from pydantic import BaseModel
@@ -7,7 +7,7 @@ from temporal.api.endpoint import Endpoint
 from temporal.api.session import global_session
 from temporal.project import Project
 from temporal.shared import shared
-from temporal.thread_queue import ThreadQueue
+from temporal.utils.fs import remove_directory
 from temporal.utils.image import image_to_base64
 
 
@@ -16,56 +16,15 @@ class _(Endpoint):
     path = "/temporal/execution/generate"
 
     class Request(BaseModel):
-        load_parameters: bool = True
-        continue_from_last_iteration: bool = True
-        iter_count: int = 10
+        iterations: int = 10
         project: dict[str, Any] = {}
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.queue = ThreadQueue()
-
-    async def do(self, request: Request) -> bool:
-        if self.queue.busy:
-            return False
-
-        path = shared.settings.fs.project_dir / request.project.get("general", {}).get("name", "untitled")
-
-        # TODO: Extract this logic into frontend. This endpoint should accept
-        # either name of a project to load, or data of a new project.
-        if request.load_parameters:
-            project = Project.load(path)
-
-            if not request.continue_from_last_iteration:
-                project.delete_session_data()
-
-        else:
-            if path.is_dir():
-                existing = Project.load(path)
-                existing.delete_session_data()
-
-            project = Project.from_json(request.project)
-
-        def execute(project: Project, iter_count: int) -> None:
-            global_session.active_project = project
-            global_session.engine.start(project, iter_count)
-            global_session.active_project = None
-
-        self.queue.enqueue(execute, project, request.iter_count)
-
-        # FIXME: Kind of a hack and might still fail, for example, on 0
-        # iterations or very fast ones. The state should be probably somehow
-        # controllable _outside_ of the engine. For example, right here.
-        for _ in range(100):  # NOTE: 10 seconds
-            with global_session.engine.state_lock:
-                if global_session.engine.state.state == "active":
-                    break
-
-            await sleep(0.1)
-        else:
-            return False
-
-        return True
+    async def do(self, request: Request) -> None:
+        project = Project.from_json(request.project)
+        project.general.path = shared.settings.fs.project_dir / project.general.name
+        remove_directory(project.general.path)
+        project.save(project.general.path)
+        get_event_loop().run_in_executor(None, global_session.engine.start, project, request.iterations)
 
 
 class _(Endpoint):

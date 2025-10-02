@@ -6,9 +6,9 @@ from temporal.utils.image import NumpyImage, alpha_blend
 
 
 class PaintingModule(ImageFilter, abstract = True):
-    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
-        return alpha_blend(image, self.draw((image.shape[1], image.shape[0]), general, iter_index, seed))
+    def process(self, image: NumpyImage, general: GeneralData) -> NumpyImage:
+        return alpha_blend(image, self.draw((image.shape[1], image.shape[0]), general))
 
     @abstractmethod
-    def draw(self, size: tuple[int, int], general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
+    def draw(self, size: tuple[int, int], general: GeneralData) -> NumpyImage:
         raise NotImplementedError

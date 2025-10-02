@@ -9,5 +9,5 @@ class NoteModule(ToolModule):
 
     text: str = Field("", name = "Text", display = "area")
 
-    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> None:
+    def process(self, image: NumpyImage, general: GeneralData) -> None:
         pass

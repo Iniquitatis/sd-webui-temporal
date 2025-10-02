@@ -11,11 +11,11 @@ import {VideoBox} from "../scripts/base/video_box.js";
 import {FieldManager} from "../scripts/core/field_manager.js";
 import {Signal} from "../scripts/core/signal.js";
 import {deepCopy, mapValues} from "../scripts/utils/object.js";
-import {getRequest, postRequest} from "../scripts/utils/requests.js";
+import {postRequest} from "../scripts/utils/requests.js";
 import {boolToString, stringToBool} from "../scripts/utils/types.js";
 import {AnimationEditor} from "../scripts/animation_editor.js";
 import {ObjectForm} from "../scripts/object_form.js";
-import {pipelineModules, pipelineModuleIcons, shared} from "../scripts/shared_data.js";
+import {pipelineModules, pipelineModuleIcons} from "../scripts/shared_data.js";
 
 class PipelineModuleEditor extends ReorderableAccordion {
     constructor(type) {
@@ -27,14 +27,6 @@ class PipelineModuleEditor extends ReorderableAccordion {
 
         this._manager = new FieldManager(this.onValueChange);
         this._manager.value.__type__ = type;
-
-        (async () => {
-            this.enabled = false;
-
-            await this._ensureID();
-
-            this.enabled = true;
-        })();
 
         let schema = pipelineModules[type];
 
@@ -61,6 +53,9 @@ class PipelineModuleEditor extends ReorderableAccordion {
                 });
             }
 
+            // FIXME: Should be handled differently. Probably fields would have
+            // to contain "display" property in order for them to be shown at
+            // all.
             let filteredKeys = Object.keys(schema.fields).filter((key) => {
                 return !["enabled", "preview", "animation", "amount", "blend_mode", "mask"].includes(key);
             });
@@ -84,16 +79,18 @@ class PipelineModuleEditor extends ReorderableAccordion {
                         this._manager.manage(e, "animation");
                     }, schema);
 
+                    // FIXME: Needs rework--probably send these into the main
+                    // preview area instead. Then there won't be any need in IDs
+                    // here, as these things won't store any state anymore and
+                    // will be just inputs instead.
                     if (schema.is_visualizable) {
                         e.createTab("Viz", Column, (e) => {
                             e.createChild(Button, (e) => {
                                 e.label = "Render";
-                                e.onClick.connect(async () => {
-                                    await this._ensureID();
-
+                                e.onClick.connect(() => {
                                     e.enabled = false;
 
-                                    this._visualization.value = await postRequest(`/temporal/module/${shared.projectName}/${this._manager.value.__id__}/visualize`);
+                                    // this._visualization.value = await postRequest(`/temporal/module/${shared.projectName}/${this._manager.value.__id__}/visualize`);
 
                                     e.enabled = true;
                                 });
@@ -118,10 +115,7 @@ class PipelineModuleEditor extends ReorderableAccordion {
                     e.label = "\u{f0c5} Duplicate";
                     e.style.width = "100%";
                     e.onClick.connect(() => {
-                        let newValue = deepCopy(this.value);
-                        // FIXME: Doesn't "deep drop", though
-                        delete newValue.__id__;
-                        this.onDuplicateRequest.fire(newValue);
+                        this.onDuplicateRequest.fire(deepCopy(this.value));
                     });
                 });
 
@@ -146,15 +140,8 @@ class PipelineModuleEditor extends ReorderableAccordion {
         this._manager.value = value;
     }
 
-    async _ensureID() {
-        if (this._manager.value.__id__) return;
-        this._manager.value.__id__ = await getRequest("/temporal/utils/uuid");
-    }
-
     async _updateSample() {
         if (!this._sampleBox) return;
-
-        await this._ensureID();
 
         this._sampleBox.value = await postRequest("/temporal/module/sample", {
             "data": this._manager.value,

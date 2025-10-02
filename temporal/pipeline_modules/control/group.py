@@ -1,32 +1,21 @@
-from typing import Optional
-
 from temporal.general_data import GeneralData
 from temporal.object import Field
-from temporal.pipeline_module import PipelineModule
+from temporal.pipeline import Pipeline
 from temporal.pipeline_modules.control import ControlModule
+from temporal.pipeline_state import PipelineResult
 from temporal.utils.image import NumpyImage
 
 
 class GroupModule(ControlModule):
     name = "Group"
 
-    modules: list[PipelineModule] = Field(list, name = "Modules")
+    pipeline: Pipeline = Field(Pipeline, name = "Pipeline", display = "unpack")
 
-    def forward(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> Optional[NumpyImage]:
-        last_image = image
+    def forward(self, image: NumpyImage, general: GeneralData) -> PipelineResult:
+        yield from self.pipeline.run(image, general)
 
-        for module in self.modules:
-            if not module.enabled:
-                continue
+    def finalize(self, general: GeneralData) -> None:
+        self.pipeline.finalize(general)
 
-            if (last_image := module.forward(last_image, general, iter_index, seed)) is None:
-                return None
-
-        return last_image
-
-    def finalize(self, image: NumpyImage, general: GeneralData) -> None:
-        for module in self.modules:
-            if not module.enabled:
-                continue
-
-            module.finalize(image, general)
+    def interrupt(self, general: GeneralData) -> None:
+        self.pipeline.interrupt(general)

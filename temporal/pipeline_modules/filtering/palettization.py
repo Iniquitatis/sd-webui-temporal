@@ -1,6 +1,7 @@
 from typing import Optional
 
 import numpy as np
+import skimage
 from PIL import Image
 
 from temporal.general_data import GeneralData
@@ -17,11 +18,11 @@ class PalettizationFilter(ImageFilter):
     stretch: bool = Field(False, name = "Stretch")
     dithering: bool = Field(False, name = "Dithering")
 
-    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
+    def process(self, image: NumpyImage, general: GeneralData) -> NumpyImage:
         if self.palette is None:
             return image
 
-        palette_arr = np.array(self.palette, dtype = FloatType).reshape((self.palette.shape[1] * self.palette.shape[0], 3))
+        palette_arr = np.array(skimage.util.img_as_ubyte(self.palette), dtype = FloatType).reshape((self.palette.shape[1] * self.palette.shape[0], 3))
 
         if self.stretch:
             palette_arr = apply_channelwise(palette_arr, lambda x: stretch_array(x, 256))

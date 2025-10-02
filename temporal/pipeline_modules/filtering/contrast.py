@@ -13,7 +13,7 @@ class ContrastFilter(ImageFilter):
 
     value: float = Field(1.0, name = "Value", minimum = 0.0, maximum = 2.0, step = 0.01, display = "slider")
 
-    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
+    def process(self, image: NumpyImage, general: GeneralData) -> NumpyImage:
         result = image.copy()
         result[..., :3] = saturate_array(lerp(np.full_like(image[..., :3], 0.5), image[..., :3], self.value))
         return result

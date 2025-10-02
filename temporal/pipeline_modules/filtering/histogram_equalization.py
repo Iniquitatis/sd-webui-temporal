@@ -8,5 +8,5 @@ from temporal.utils.image import NumpyImage
 class HistogramEqualizationFilter(ImageFilter):
     name = "Histogram equalization"
 
-    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
+    def process(self, image: NumpyImage, general: GeneralData) -> NumpyImage:
         return skimage.exposure.equalize_hist(image)

@@ -17,7 +17,7 @@ class SerializationParams:
     flags: set[SerializationDataFlag] = datafield(default_factory = set)
 
 
-# NOTE: `Any` because type-checkers aren't good with recursive types
+# NOTE: `Any` because type checkers aren't good with recursive types
 JSONValue = None | bool | int | float | str | list[Any] | dict[str, Any]
 
 
@@ -79,6 +79,35 @@ def serialize(type: Type[Any], obj: Any, params: SerializationParams) -> JSONVal
         raise Exception(f"Couldn't find a serializer for '{type}'")
 
 
+def validate(type: Type[Any], obj: Any, criteria: dict[str, Any]) -> Any:
+    if safe_get_origin(type) is list:
+        return [
+            validate(get_args(type)[0], value, criteria)
+            for value in obj
+        ]
+
+    elif safe_get_origin(type) is dict:
+        return {
+            key: validate(get_args(type)[1], value, criteria)
+            for key, value in obj.items()
+        }
+
+    elif safe_get_origin(type) is Any:
+        return obj
+
+    elif safe_get_origin(type) is Literal:
+        return validate(str, obj, criteria)
+
+    elif is_optional(type):
+        return validate(get_optional_type(type) if obj is not None else NoneType, obj, criteria)
+
+    elif serializer := _find_serializer(type):
+        return serializer.validate(obj, criteria)
+
+    else:
+        raise Exception(f"Couldn't find a serializer for '{type}'")
+
+
 class Serializer(Generic[T]):
     def __init_subclass__(cls) -> None:
         serialized_type = cls.get_type()
@@ -98,6 +127,10 @@ class Serializer(Generic[T]):
 
     @classmethod
     def write_json(cls, obj: T, params: SerializationParams) -> JSONValue:
+        raise NotImplementedError
+
+    @classmethod
+    def validate(cls, obj: T, criteria: dict[str, Any]) -> T:
         raise NotImplementedError
 
 
@@ -132,7 +165,7 @@ _serializers: dict[Type[Any], Type[Serializer[Any]]] = {}
 from types import NoneType
 
 from temporal.utils.bytes import base64_to_bytes, bytes_to_base64
-from temporal.utils.image import NumpyImage, PILImage, base64_to_image, image_to_base64, load_image, np_to_pil, pil_to_np, save_image
+from temporal.utils.image import NumpyImage, PILImage, base64_to_image, ensure_image_dims, image_to_base64, load_image, np_to_pil, pil_to_np, save_image
 from temporal.utils.numpy import FloatArray, array_to_base64, base64_to_array, load_array, save_array
 
 
@@ -148,6 +181,10 @@ class _(Serializer[NoneType]):
     def write_json(cls, obj, params):
         return obj
 
+    @classmethod
+    def validate(cls, obj, criteria):
+        return obj
+
 
 class _(Serializer[bool]):
     @classmethod
@@ -159,6 +196,10 @@ class _(Serializer[bool]):
 
     @classmethod
     def write_json(cls, obj, params):
+        return obj
+
+    @classmethod
+    def validate(cls, obj, criteria):
         return obj
 
 
@@ -174,6 +215,16 @@ class _(Serializer[int]):
     def write_json(cls, obj, params):
         return obj
 
+    @classmethod
+    def validate(cls, obj, criteria):
+        if (minimum := criteria.get("minimum")) is not None and obj < minimum:
+            obj = minimum
+
+        if (maximum := criteria.get("maximum")) is not None and obj > maximum:
+            obj = maximum
+
+        return obj
+
 
 class _(Serializer[float]):
     @classmethod
@@ -185,6 +236,16 @@ class _(Serializer[float]):
 
     @classmethod
     def write_json(cls, obj, params):
+        return obj
+
+    @classmethod
+    def validate(cls, obj, criteria):
+        if (minimum := criteria.get("minimum")) is not None and obj < minimum:
+            obj = minimum
+
+        if (maximum := criteria.get("maximum")) is not None and obj > maximum:
+            obj = maximum
+
         return obj
 
 
@@ -200,6 +261,10 @@ class _(Serializer[str]):
     def write_json(cls, obj, params):
         return obj
 
+    @classmethod
+    def validate(cls, obj, criteria):
+        return obj
+
 
 class _(Serializer[Path]):
     @classmethod
@@ -212,6 +277,10 @@ class _(Serializer[Path]):
     @classmethod
     def write_json(cls, obj, params):
         return obj.as_posix()
+
+    @classmethod
+    def validate(cls, obj, criteria):
+        return obj
 
 
 class _(Serializer[bytes]):
@@ -234,6 +303,10 @@ class _(Serializer[bytes]):
         else:
             return bytes_to_base64(obj, True)
 
+    @classmethod
+    def validate(cls, obj, criteria):
+        return obj
+
 
 class _(Serializer[PILImage]):
     @classmethod
@@ -254,6 +327,15 @@ class _(Serializer[PILImage]):
             return path.name
         else:
             return image_to_base64(pil_to_np(obj), True, "fast")
+
+    @classmethod
+    def validate(cls, obj, criteria):
+        image = pil_to_np(obj)
+
+        if (channels := criteria.get("channels")) is not None and image.shape[-1] != channels:
+            image = ensure_image_dims(image, channels = criteria["channels"])
+
+        return np_to_pil(image)
 
 
 class _(Serializer[FloatArray]):
@@ -276,6 +358,10 @@ class _(Serializer[FloatArray]):
         else:
             return array_to_base64(obj, True)
 
+    @classmethod
+    def validate(cls, obj, criteria):
+        return obj
+
 
 class _(Serializer[NumpyImage]):
     @classmethod
@@ -296,3 +382,10 @@ class _(Serializer[NumpyImage]):
             return path.name
         else:
             return image_to_base64(obj, True, "fast")
+
+    @classmethod
+    def validate(cls, obj, criteria):
+        if (channels := criteria.get("channels")) is not None and obj.shape[-1] != channels:
+            obj = ensure_image_dims(obj, channels = criteria["channels"])
+
+        return obj

@@ -17,9 +17,9 @@ class InterpolationModule(TemporalModule):
     blending: float = Field(1.0, name = "Blending", minimum = 0.0, maximum = 1.0, step = 0.001, display = "slider")
     movement: float = Field(1.0, name = "Movement", minimum = 0.0, maximum = 1.0, step = 0.001, display = "slider")
     radius: int = Field(15, name = "Radius", minimum = 7, maximum = 31, step = 2, display = "slider")
-    buffer: Optional[FloatArray] = Field(None, flags = {"private"})
+    buffer: Optional[FloatArray] = Field(None, flags = {"runtime"})
 
-    def forward(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> Optional[NumpyImage]:
+    def process(self, image: NumpyImage, general: GeneralData) -> NumpyImage:
         if self.buffer is None:
             self.buffer = ensure_image_dims(image.copy(), (general.image_size.x, general.image_size.y), 3)
 
@@ -32,9 +32,6 @@ class InterpolationModule(TemporalModule):
         self.buffer[:] = lerp(a, b, self.blending)
 
         return self.buffer.copy()
-
-    def reset(self, general: GeneralData) -> None:
-        self.buffer = None
 
     def _motion_warp(self, base: NumpyImage, target: NumpyImage) -> tuple[NumpyImage, NumpyImage]:
         def warp(image: NumpyImage, coords: FloatArray) -> NumpyImage:

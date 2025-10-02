@@ -21,9 +21,16 @@ class NoisePaintingModule(PaintingModule):
     alpha: bool = Field(False, name = "Alpha")
     use_global_seed: bool = Field(False, name = "Use global seed")
     seed: Seed = Field(Seed, name = "Seed", dependencies = {"use_global_seed": False})
+    advance_seed: bool = Field(False, name = "Advance seed")
+    iteration: int = Field(0, flags = {"runtime"})
 
-    def draw(self, size: tuple[int, int], general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
-        rng = np.random.default_rng(seed if self.use_global_seed else self.seed.fixed_value)
+    def draw(self, size: tuple[int, int], general: GeneralData) -> NumpyImage:
+        seed = (general.seed if self.use_global_seed else self.seed).fixed_value
+
+        if self.advance_seed:
+            seed += self.iteration
+
+        rng = np.random.default_rng(seed)
 
         if self.colored and self.alpha:
             channels = 4
@@ -48,10 +55,14 @@ class NoisePaintingModule(PaintingModule):
             raise ValueError(f"Incorrect type {self.type}")
 
         if self.colored and self.alpha:
-            return noise
+            result = noise
         elif self.colored:
-            return noise
+            result = noise
         elif self.alpha:
-            return np.stack([noise[..., 0], noise[..., 0], noise[..., 0], noise[..., 1]], axis = -1)
+            result = np.stack([noise[..., 0], noise[..., 0], noise[..., 0], noise[..., 1]], axis = -1)
         else:
-            return np.stack([noise[..., 0], noise[..., 0], noise[..., 0]], axis = -1)
+            result = np.stack([noise[..., 0], noise[..., 0], noise[..., 0]], axis = -1)
+
+        self.iteration += 1
+
+        return result

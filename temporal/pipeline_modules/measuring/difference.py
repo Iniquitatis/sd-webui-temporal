@@ -2,7 +2,6 @@ from typing import Optional
 
 import numpy as np
 
-from temporal.general_data import GeneralData
 from temporal.object import Field
 from temporal.pipeline_modules.measuring import MeasuringModule
 from temporal.utils.image import NumpyImage
@@ -17,11 +16,7 @@ class DifferenceMeasuringModule(MeasuringModule):
         ("Maximum", "darkblue"),
     ]
 
-    last_image: Optional[NumpyImage] = Field(None, flags = {"private"})
-
-    def reset(self, general: GeneralData) -> None:
-        super().reset(general)
-        self.last_image = None
+    last_image: Optional[NumpyImage] = Field(None, flags = {"runtime"})
 
     def measure(self, image: NumpyImage) -> list[float]:
         if self.last_image is None:

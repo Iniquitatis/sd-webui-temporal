@@ -14,7 +14,7 @@ class TransformationFilter(ImageFilter):
     rotation: float = Field(0.0, name = "Rotation", minimum = -90.0, maximum = 90.0, step = 0.1, suffix = "°", display = "slider")
     scale: float = Field(1.0, name = "Scale", minimum = 0.001, maximum = 2.0, step = 0.001, display = "slider")
 
-    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
+    def process(self, image: NumpyImage, general: GeneralData) -> NumpyImage:
         return skimage.transform.warp(image, make_trs_transform(
             image_size = (image.shape[1], image.shape[0]),
             translation = (self.translation.x, self.translation.y),

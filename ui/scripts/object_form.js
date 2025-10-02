@@ -72,6 +72,14 @@ export class ObjectForm extends Form {
                 e.value = deepCopy(field.default) ?? {};
                 this._manager.manage(e, key);
             }, field.type);
+        } else if (field.display == "unpack") {
+            this._lastTabs = null;
+
+            this.createChild(ObjectForm, (e) => {
+                e.manageAll();
+                e.value = deepCopy(field.default) ?? {};
+                this._manager.manage(e, key);
+            }, field.type);
         } else {
             this._lastTabs = null;
 

@@ -22,14 +22,19 @@ class VoronoiModule(PaintingModule):
     randomness: float = Field(0.0, name = "Randomness", minimum = 0.0, maximum = 1.0, step = 0.01, display = "slider")
     use_global_seed: bool = Field(False, name = "Use global seed")
     seed: Seed = Field(Seed, name = "Seed", dependencies = {"use_global_seed": False})
+    advance_seed: bool = Field(False, name = "Advance seed")
     blurring: float = Field(0.0, name = "Blurring", minimum = 0.0, maximum = 50.0, step = 0.1, dependencies = {"type": "diagram"}, display = "slider")
     dilation: int = Field(0, name = "Dilation", minimum = 0, maximum = 50, step = 1, dependencies = {"type": "edges"}, display = "slider")
     color_a: Color = Field(lambda: Color(0.0, 0.0, 0.0), name = "Color A", channels = 4, dependencies = {"type": ["edges", "distances"]})
     color_b: Color = Field(lambda: Color(1.0, 1.0, 1.0), name = "Color B", channels = 4, dependencies = {"type": ["edges", "distances"]})
+    iteration: int = Field(0, flags = {"runtime"})
 
-    def draw(self, size: tuple[int, int], general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
+    def draw(self, size: tuple[int, int], general: GeneralData) -> NumpyImage:
         shape = size[1], size[0]
-        seed = seed if self.use_global_seed else self.seed.fixed_value
+        seed = (general.seed if self.use_global_seed else self.seed).fixed_value
+
+        if self.advance_seed:
+            seed += self.iteration
 
         counts, distances, indices = self._query(shape, seed)
 
@@ -40,8 +45,6 @@ class VoronoiModule(PaintingModule):
 
             if self.blurring > 0.0:
                 result = saturate_array(skimage.filters.gaussian(result, round(self.blurring), channel_axis = -1))
-
-            return result
 
         elif self.type == "edges":
             edges = np.zeros(shape, dtype = np.bool_)
@@ -54,7 +57,7 @@ class VoronoiModule(PaintingModule):
                 footprint = skimage.morphology.disk(self.dilation)
                 pattern = skimage.morphology.dilation(pattern, footprint, out = pattern)
 
-            return lerp(
+            result = lerp(
                 self.color_a.to_numpy(4),
                 self.color_b.to_numpy(4),
                 pattern.reshape((size[1], size[0], 1)),
@@ -63,7 +66,7 @@ class VoronoiModule(PaintingModule):
         elif self.type == "distances":
             pattern = normalize(distances, distances.min(), distances.max())
 
-            return lerp(
+            result = lerp(
                 self.color_a.to_numpy(4),
                 self.color_b.to_numpy(4),
                 pattern.reshape((size[1], size[0], 1)),
@@ -71,6 +74,10 @@ class VoronoiModule(PaintingModule):
 
         else:
             raise ValueError(f"Incorrect type {self.type}")
+
+        self.iteration += 1
+
+        return result
 
     def _query(self, shape: tuple[int, ...], seed: int) -> tuple[FloatArray, FloatArray, IntArray]:
         dim_count = len(shape)

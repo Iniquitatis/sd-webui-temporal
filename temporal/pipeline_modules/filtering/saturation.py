@@ -19,7 +19,7 @@ class SaturationFilter(ImageFilter):
     }, display = "radio")
     value: float = Field(1.0, name = "Value", minimum = 0.0, maximum = 2.0, step = 0.01, display = "slider")
 
-    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
+    def process(self, image: NumpyImage, general: GeneralData) -> NumpyImage:
         if self.mode == "average":
             vector = 0.5, 0.5, 0.5
         elif self.mode == "bt601":

@@ -62,13 +62,15 @@ def ensure_image_dims(image: NumpyImage, size: Optional[tuple[int, int]] = None,
 
     pil_image = np_to_pil(image)
 
-    if image_channels != target_channels:
-        pil_image = pil_image.convert("RGBA" if target_channels == 4 else "RGB")
-
     if image_width != target_width or image_height != target_height:
         pil_image = pil_image.resize((target_width, target_height), Image.Resampling.LANCZOS)
 
-    return pil_to_np(pil_image)
+    image = pil_to_np(pil_image)
+
+    if image_channels != target_channels:
+        image = image[..., :target_channels]
+
+    return image
 
 
 def image_to_base64(image: NumpyImage, with_mime_type: bool = True, mode: Literal["default", "fast", "archive"] = "default") -> str:

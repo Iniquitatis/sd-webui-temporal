@@ -1,45 +1,46 @@
-from typing import Iterator, Optional, TypeVar
-
 from temporal.general_data import GeneralData
 from temporal.object import Field, Object
 from temporal.pipeline_module import PipelineModule
+from temporal.pipeline_state import PipelineResult, PipelineState
 from temporal.utils.image import NumpyImage
-
-
-T = TypeVar("T", bound = PipelineModule)
 
 
 class Pipeline(Object):
     modules: list[PipelineModule] = Field(list, name = "Modules")
+    iteration: int = Field(0, flags = {"runtime"})
 
-    def run(self, image: NumpyImage, general: GeneralData, iter_index: int) -> Iterator[tuple[int, Optional[NumpyImage], bool]]:
-        last_image = image
+    def run(self, image: NumpyImage, general: GeneralData) -> PipelineResult:
+        result = PipelineState.finish(image = image, preview = True)
 
-        for i, module in enumerate(self.modules):
-            if not module.enabled:
-                continue
-
-            for key, value in module.animation.evaluate(iter_index).items():
+        for module in self.modules:
+            # NOTE: Intentionally put before the enabled check, as it can change
+            # the enabled state
+            for key, value in module.animation.evaluate(self.iteration + 1).items():
                 setattr(module, key, value)
 
-            if (last_image := module.forward(
-                last_image,
-                general,
-                iter_index,
-                general.seed.fixed_value + iter_index * len(self.modules) + i,
-            )) is not None:
-                yield i, last_image, module.preview
-            else:
-                yield i, None, False
-                return
-
-    def finalize(self, image: NumpyImage, general: GeneralData) -> None:
-        for module in self.modules:
             if not module.enabled:
                 continue
 
-            module.finalize(image, general)
+            for state in module.forward(result.image, general):
+                match state:
+                    case PipelineState.progress():
+                        yield state
+                    case PipelineState.finish():
+                        result = state
+                        yield PipelineState.progress(image = state.image, preview = state.preview)
+                    case PipelineState.fail():
+                        yield state
+                        return
 
-    def reset(self, general: GeneralData) -> None:
+        self.iteration += 1
+
+        yield result
+
+    def finalize(self, general: GeneralData) -> None:
         for module in self.modules:
-            module.reset(general)
+            if module.enabled:
+                module.finalize(general)
+
+    def interrupt(self, general: GeneralData) -> None:
+        for module in self.modules:
+            module.interrupt(general)

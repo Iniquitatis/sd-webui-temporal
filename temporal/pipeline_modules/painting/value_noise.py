@@ -24,30 +24,36 @@ class ValueNoisePaintingModule(PaintingModule):
     persistence: float = Field(0.5, name = "Persistence", minimum = 0.0, maximum = 1.0, step = 0.01, display = "slider")
     use_global_seed: bool = Field(False, name = "Use global seed")
     seed: Seed = Field(Seed, name = "Seed", dependencies = {"use_global_seed": False})
+    advance_seed: bool = Field(False, name = "Advance seed")
     color_a: Color = Field(lambda: Color(0.0, 0.0, 0.0), name = "Color A", channels = 4, dependencies = {"type": "duochrome"})
     color_b: Color = Field(lambda: Color(1.0, 1.0, 1.0), name = "Color B", channels = 4, dependencies = {"type": "duochrome"})
+    iteration: int = Field(0, flags = {"runtime"})
 
-    def draw(self, size: tuple[int, int], general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
+    def draw(self, size: tuple[int, int], general: GeneralData) -> NumpyImage:
+        seed = (general.seed if self.use_global_seed else self.seed).fixed_value
+
+        if self.advance_seed:
+            seed += self.iteration
+
         if self.type == "duochrome":
-            return lerp(
+            result = lerp(
                 self.color_a.to_numpy(4),
                 self.color_b.to_numpy(4),
                 self._generate((size[1], size[0], 1), seed),
             )
         elif self.type == "colored":
-            return self._generate((size[1], size[0], 3), seed)
+            result = self._generate((size[1], size[0], 3), seed)
         else:
             raise ValueError(f"Incorrect type {self.type}")
+
+        self.iteration += 1
+
+        return result
 
     def _generate(self, shape: tuple[int, ...], seed: int) -> FloatArray:
         octave_count = ceil(self.detail)
 
-        noises = random_array(
-            (octave_count,) + shape,
-            low = 0.0,
-            high = 1.0,
-            seed = seed if self.use_global_seed else self.seed.fixed_value,
-        )
+        noises = random_array((octave_count,) + shape, low = 0.0, high = 1.0, seed = seed)
 
         result = np.zeros(shape, dtype = FloatType)
         total_amplitude = 0.0

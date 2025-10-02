@@ -19,7 +19,7 @@ class GradientPaintingModule(PaintingModule):
     start_color: Color = Field(lambda: Color(0.0, 0.0, 0.0), name = "Start color", channels = 4)
     end_color: Color = Field(lambda: Color(1.0, 1.0, 1.0), name = "End color", channels = 4)
 
-    def draw(self, size: tuple[int, int], general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
+    def draw(self, size: tuple[int, int], general: GeneralData) -> NumpyImage:
         return self._generate((size[1], size[0], 4))
 
     def _generate(self, shape: tuple[int, ...], show_points: bool = False) -> FloatArray:

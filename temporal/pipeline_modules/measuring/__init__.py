@@ -9,6 +9,7 @@ from matplotlib.ticker import MaxNLocator
 from temporal.general_data import GeneralData
 from temporal.object import Field, Static
 from temporal.pipeline_module import PipelineModule
+from temporal.pipeline_state import PipelineResult, PipelineState
 from temporal.utils.fs import ensure_directory_exists
 from temporal.utils.image import NumpyImage, PILImage, save_image
 from temporal.utils.matplotlib import get_figure_as_image
@@ -23,12 +24,14 @@ class MeasuringModule(PipelineModule, abstract = True):
     channels: list[tuple[str, str]] = Static([], flags = {"private"})
 
     plot_every_nth_iteration: int = Field(10, name = "Plot every N-th iteration", minimum = 1, step = 1, display = "box")
-    data: Optional[FloatArray] = Field(None, flags = {"private"})
-    count: int = Field(0, flags = {"private"})
+    iteration: int = Field(0, flags = {"runtime"})
+    data: Optional[FloatArray] = Field(None, flags = {"runtime"})
+    count: int = Field(0, flags = {"runtime"})
 
-    def forward(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> Optional[NumpyImage]:
-        if iter_index % self.plot_every_nth_iteration != 0:
-            return image
+    def forward(self, image: NumpyImage, general: GeneralData) -> PipelineResult:
+        if self.iteration % self.plot_every_nth_iteration != 0:
+            self.iteration += 1
+            return
 
         if self.data is None:
             self.data = np.zeros((1, 1 + len(self.channels)))
@@ -38,18 +41,16 @@ class MeasuringModule(PipelineModule, abstract = True):
             self.data = np.concatenate([self.data, np.zeros_like(self.data)], axis = 0)
 
         iter_data = self.data[self.count]
-        iter_data[0] = iter_index
+        iter_data[0] = self.iteration
         iter_data[1:] = self.measure(image)
 
         self.count += 1
 
         save_image(self.plot(), ensure_directory_exists(general.path / "metrics") / f"{self.file_name}.png")
 
-        return image
+        self.iteration += 1
 
-    def reset(self, general: GeneralData) -> None:
-        self.data = None
-        self.count = 0
+        yield PipelineState.finish(image = image, preview = self.preview)
 
     def visualize(self, general: GeneralData) -> PILImage:
         return self.plot()

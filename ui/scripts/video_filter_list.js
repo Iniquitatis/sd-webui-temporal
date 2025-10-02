@@ -50,10 +50,7 @@ class VideoFilterEditor extends ReorderableAccordion {
                     e.label = "\u{f0c5} Duplicate";
                     e.style.width = "100%";
                     e.onClick.connect(() => {
-                        let newValue = deepCopy(this.value);
-                        // FIXME: Doesn't "deep drop", though
-                        delete newValue.__id__;
-                        this.onDuplicateRequest.fire(newValue);
+                        this.onDuplicateRequest.fire(deepCopy(this.value));
                     });
                 });
 

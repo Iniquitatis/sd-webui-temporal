@@ -11,9 +11,14 @@ class ColorCorrectionFilter(ImageFilter):
     name = "Color correction"
 
     source: ImageSource = Field(ImageSource, name = "Image source", channels = 3, display = "group")
+    iteration: int = Field(0, flags = {"runtime"})
 
-    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
-        if (source := self.source.get_image(general.initial_image, iter_index - 1)) is not None:
-            return skimage.exposure.match_histograms(image, match_image(source, image, size = False), channel_axis = -1)
+    def process(self, image: NumpyImage, general: GeneralData) -> NumpyImage:
+        if (source := self.source.get_image(general.initial_image, self.iteration)) is not None:
+            result = skimage.exposure.match_histograms(image, match_image(source, image, size = False), channel_axis = -1)
         else:
-            return image
+            result = image
+
+        self.iteration += 1
+
+        return result

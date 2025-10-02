@@ -16,10 +16,10 @@ class AveragingModule(TemporalModule):
     trimming: float = Field(0.0, name = "Trimming", minimum = 0.0, maximum = 0.5, step = 0.01, display = "slider")
     easing: float = Field(0.0, name = "Easing", minimum = 0.0, maximum = 16.0, step = 0.1, display = "slider")
     preference: float = Field(0.0, name = "Preference", minimum = -2.0, maximum = 2.0, step = 0.1, display = "slider")
-    buffer: Optional[FloatArray] = Field(None, flags = {"private"})
-    last_index: int = Field(0, flags = {"private"})
+    buffer: Optional[FloatArray] = Field(None, flags = {"runtime"})
+    last_index: int = Field(0, flags = {"runtime"})
 
-    def forward(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> Optional[NumpyImage]:
+    def process(self, image: NumpyImage, general: GeneralData) -> NumpyImage:
         if self.buffer is None:
             self.buffer = np.repeat(
                 ensure_image_dims(image, (general.image_size.x, general.image_size.y), 3)[np.newaxis, ...],
@@ -40,7 +40,3 @@ class AveragingModule(TemporalModule):
             power = self.preference + 1.0,
             weights = np.roll(make_eased_weight_array(self.sample_count, self.easing), self.last_index),
         ))
-
-    def reset(self, general: GeneralData) -> None:
-        self.buffer = None
-        self.last_index = 0

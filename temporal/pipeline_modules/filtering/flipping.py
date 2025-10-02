@@ -12,7 +12,7 @@ class FlippingFilter(ImageFilter):
     horizontal: bool = Field(False, name = "Horizontal")
     vertical: bool = Field(False, name = "Vertical")
 
-    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
+    def process(self, image: NumpyImage, general: GeneralData) -> NumpyImage:
         image = image.copy()
 
         if self.horizontal:

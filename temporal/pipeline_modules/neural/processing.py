@@ -3,12 +3,12 @@ from math import floor
 from temporal.general_data import GeneralData
 from temporal.object import Field
 from temporal.pipeline_modules.neural import NeuralModule
+from temporal.pipeline_state import PipelineResult, PipelineState
 from temporal.processing_params import ProcessingParams
 from temporal.seed import Seed
 from temporal.shared import shared
 from temporal.utils.collection import get_first_element
 from temporal.utils.image import NumpyImage, ensure_image_dims
-from temporal.utils.logging import log
 from temporal.utils.math import quantize
 from temporal.utils.prompt import evaluate_prompt
 
@@ -28,24 +28,24 @@ class ProcessingModule(NeuralModule):
     strength: float = Field(0.5, name = "Strength", minimum = 0.0, maximum = 1.0, step = 0.01, display = "slider")
     use_global_seed: bool = Field(True, name = "Use global seed")
     seed: Seed = Field(Seed, name = "Seed", dependencies = {"use_global_seed": False})
+    advance_seed: bool = Field(False, name = "Advance seed")
     scale: float = Field(1.0, name = "Scale", minimum = 0.25, maximum = 4.0, step = 0.25, display = "slider")
+    iteration: int = Field(0, flags = {"runtime"})
 
-    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
-        seed = seed if self.use_global_seed else self.seed.fixed_value
+    def forward(self, image: NumpyImage, general: GeneralData) -> PipelineResult:
+        seed = (general.seed if self.use_global_seed else self.seed).fixed_value
 
-        # FIXME: Should throw something like `BackendInterrupted`... maybe? But
-        # using exceptions for control flow is far from the most obvious/
-        # convenient thing to do.
-        # Anyway, as of now, it _does_ return an image (an unchanged one),
-        # making the engine "think" that the step was completed successfully.
+        if self.advance_seed:
+            seed += self.iteration
+
         if (result := shared.backend.image_to_image(
             image,
             ProcessingParams(
                 model = self.model,
                 vae = self.vae,
                 clip_skip = self.clip_skip,
-                positive_prompt = evaluate_prompt(self.positive_prompt, iter_index - 1, seed),
-                negative_prompt = evaluate_prompt(self.negative_prompt, iter_index - 1, seed),
+                positive_prompt = evaluate_prompt(self.positive_prompt, self.iteration, seed),
+                negative_prompt = evaluate_prompt(self.negative_prompt, self.iteration, seed),
                 sampler = self.sampler,
                 scheduler = self.scheduler,
                 steps = self.steps,
@@ -56,7 +56,12 @@ class ProcessingModule(NeuralModule):
             int(quantize(floor(general.image_size.x * self.scale), 8)),
             int(quantize(floor(general.image_size.y * self.scale), 8)),
         )) is not None:
-            return ensure_image_dims(result, (general.image_size.x, general.image_size.y), 3)
+            self.iteration += 1
+
+            yield PipelineState.finish(image = self._blend(image, ensure_image_dims(result, (general.image_size.x, general.image_size.y), 3)), preview = self.preview)
+
         else:
-            log.warning("Couldn't process an image for some reason")
-            return image
+            yield PipelineState.fail()
+
+    def interrupt(self, general: GeneralData) -> None:
+        shared.backend.interrupt()

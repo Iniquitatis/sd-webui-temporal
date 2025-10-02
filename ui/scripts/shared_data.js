@@ -1,13 +1,5 @@
 import {getRequest} from "../scripts/utils/requests.js";
 
-export class SharedData {
-    constructor() {
-        this.projectName = "";
-    }
-}
-
-export let shared = new SharedData();
-
 export let objectTypes = {};
 
 export let blendModes = {};

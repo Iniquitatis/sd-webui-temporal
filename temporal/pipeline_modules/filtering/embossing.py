@@ -18,7 +18,7 @@ class EmbossingFilter(ImageFilter):
     rotation: float = Field(0.0, name = "Rotation", minimum = 0.0, maximum = 360.0, step = 1.0, suffix = "°", display = "slider")
     radius: int = Field(1, name = "Radius", minimum = 1, maximum = 5, display = "slider")
 
-    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
+    def process(self, image: NumpyImage, general: GeneralData) -> NumpyImage:
         def iter_edge(m: FloatArray) -> Iterator[tuple[int, int]]:
             r, c = m.shape
 

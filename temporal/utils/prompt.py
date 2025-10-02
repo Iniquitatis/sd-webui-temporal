@@ -2,7 +2,7 @@ import re
 from random import Random
 
 from temporal.utils.collection import cartesian_product_at
-from temporal.utils.math import clamp, product
+from temporal.utils.math import clamp, mirror, product, repeat
 
 
 def evaluate_prompt(prompt: str, iteration: int, seed: int = -1) -> str:
@@ -56,9 +56,9 @@ def _calc_index(bounds: str, current: int, total: int) -> int:
     if bounds == "clamp":
         return clamp(current, 0, last)
     elif bounds == "repeat":
-        return current % total
+        return repeat(current, 0, last)
     elif bounds == "mirror":
-        return last - abs(current % (last * 2) - last)
+        return mirror(current, 0, last)
     else:
         raise ValueError
 

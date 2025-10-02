@@ -12,5 +12,5 @@ class ColorPaintingModule(PaintingModule):
 
     color: Color = Field(Color, name = "Color", channels = 4)
 
-    def draw(self, size: tuple[int, int], general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
+    def draw(self, size: tuple[int, int], general: GeneralData) -> NumpyImage:
         return np.full((size[1], size[0], 4), self.color.to_numpy(4))

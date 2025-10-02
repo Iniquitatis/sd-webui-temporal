@@ -8,7 +8,7 @@ from typing_extensions import Self
 from uuid import uuid4
 from weakref import WeakValueDictionary
 
-from temporal.serialization import JSONValue, SerializationDataFlag, SerializationParams, Serializer, deserialize, serialize
+from temporal.serialization import JSONValue, SerializationDataFlag, SerializationParams, Serializer, deserialize, serialize, validate
 from temporal.utils.fs import recreate_directory
 from temporal.utils.logging import log
 from temporal.utils.typing import get_full_type_name, get_optional_type, is_optional, safe_get_origin
@@ -53,7 +53,7 @@ class Static(Generic[T]):
 
 Choices = list[str] | dict[str, str]
 Dependency = bool | int | float | str | list[bool | int | float | str]
-Display = Literal["accordion", "area", "box", "code", "group", "menu", "radio", "slider", "tab"]
+Display = Literal["accordion", "area", "box", "code", "group", "menu", "radio", "slider", "tab", "unpack"]
 
 
 class Field(Generic[T]):
@@ -184,6 +184,14 @@ class Field(Generic[T]):
             **({"display": self.display} if self.display is not None else {}),
         }
 
+    @property
+    def criteria(self) -> dict[str, Any]:
+        return {
+            **({"minimum": self.minimum} if self.minimum is not None else {}),
+            **({"maximum": self.maximum} if self.maximum is not None else {}),
+            **({"channels": self.channels} if self.channels is not None else {}),
+        }
+
 
 class Object:
     __type_name__: str
@@ -202,6 +210,10 @@ class Object:
             @classmethod
             def write_json(cls, obj, params):
                 return obj.to_json(params)
+
+            @classmethod
+            def validate(cls, obj, criteria):
+                return obj.validate(criteria)
 
         cls.__type_name__ = get_full_type_name(cls)
         cls.__statics__ = {
@@ -241,6 +253,9 @@ class Object:
         initialized_keys = set()
 
         for key, value in chain(zip(self.__fields__.keys(), args), kwargs.items()):
+            if (field := self.__fields__.get(key)) is not None:
+                value = validate(field.type, value, field.criteria)
+
             setattr(self, key, value)
             initialized_keys.add(key)
 
@@ -252,6 +267,9 @@ class Object:
             self.__id__ = str(uuid4())
 
         object_registry[self.__id__] = self
+
+    def __hash__(self) -> int:
+        return hash(self.__id__)
 
     def __repr__(self) -> str:
         args = ", ".join(f"{key} = {repr(getattr(self, key))}" for key in self.__fields__.keys())
@@ -269,7 +287,7 @@ class Object:
             "fields": {
                 key: field.schema
                 for key, field in cls.__fields__.items()
-                if "private" not in field.flags
+                if "private" not in field.flags and "runtime" not in field.flags
             },
         }
 
@@ -285,17 +303,23 @@ class Object:
             actual_cls = cls
 
         return actual_cls(__id__ = data.pop("__id__", None), **{
-            key: deserialize(field.type, data[key], params)
+            key: validate(field.type, deserialize(field.type, data[key], params), field.criteria)
             for key, field in actual_cls.__fields__.items()
             if key in data and field.flags.issubset(params.flags)
         })
 
     def to_json(self, params: SerializationParams = SerializationParams()) -> JSONValue:
-        return {"__type__": self.__type_name__, "__id__": self.__id__} | {
+        return {"__type__": self.__type_name__} | ({"__id__": self.__id__} if "private" in params.flags else {}) | {
             key: serialize(field.type, getattr(self, key), params)
             for key, field in self.__fields__.items()
             if field.flags.issubset(params.flags)
         }
+
+    def validate(self, criteria: dict[str, Any]) -> Self:
+        for key, field in self.__fields__.items():
+            setattr(self, key, validate(field.type, getattr(self, key), field.criteria))
+
+        return self
 
     @classmethod
     def load(cls, dir: Path) -> Self:

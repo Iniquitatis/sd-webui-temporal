@@ -11,7 +11,7 @@ class PixelizationFilter(ImageFilter):
 
     pixel_size: int = Field(1, name = "Pixel size", minimum = 1, step = 1, suffix = " px", display = "box")
 
-    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
+    def process(self, image: NumpyImage, general: GeneralData) -> NumpyImage:
         height, width = image.shape[:2]
 
         y, x = np.indices((height, width))

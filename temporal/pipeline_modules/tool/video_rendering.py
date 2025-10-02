@@ -7,7 +7,7 @@ from temporal.general_data import GeneralData
 from temporal.object import Field
 from temporal.pipeline_modules.tool import ToolModule
 from temporal.thread_queue import ThreadQueue
-from temporal.utils.fs import ensure_directory_exists, remove_entry, save_text
+from temporal.utils.fs import ensure_directory_exists, save_text
 from temporal.utils.image import NumpyImage
 from temporal.utils.time import wait_until
 from temporal.video import Video
@@ -29,16 +29,16 @@ class VideoRenderingModule(ToolModule):
     render_every_nth_iteration: int = Field(100, name = "Render every N-th iteration", minimum = 1, step = 1, display = "box")
     archive_mode: bool = Field(False, name = "Archive mode")
     filters: list[VideoFilter] = Field(list, name = "Filters")
+    iteration: int = Field(0, flags = {"runtime"})
 
-    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> None:
-        if iter_index % self.render_every_nth_iteration == 0:
+    def process(self, image: NumpyImage, general: GeneralData) -> None:
+        if self.iteration % self.render_every_nth_iteration == 0:
             self._render(general, True)
 
-    def finalize(self, image: NumpyImage, general: GeneralData) -> None:
-        wait_until(lambda: not _render_queue.busy)
+        self.iteration += 1
 
-    def reset(self, general: GeneralData) -> None:
-        remove_entry(general.path / "videos" / f"{self.file_name}.mp4")
+    def finalize(self, general: GeneralData) -> None:
+        wait_until(lambda: not _render_queue.busy)
 
     def visualize(self, general: GeneralData) -> Video:
         return self._render(general, False)

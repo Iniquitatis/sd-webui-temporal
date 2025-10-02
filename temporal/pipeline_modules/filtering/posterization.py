@@ -12,5 +12,5 @@ class PosterizationFilter(ImageFilter):
 
     levels: int = Field(16, name = "Levels", minimum = 1, maximum = 256, step = 1, display = "slider")
 
-    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
+    def process(self, image: NumpyImage, general: GeneralData) -> NumpyImage:
         return quantize(image, 1.0 / self.levels, np.round)

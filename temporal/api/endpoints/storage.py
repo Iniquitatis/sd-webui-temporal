@@ -5,7 +5,7 @@ from temporal.fs_store import FSStore
 from temporal.shared import shared
 
 
-StoreType = Literal["presets", "projects"]
+StoreType = Literal["projects"]
 
 
 class _(Endpoint):
@@ -66,9 +66,7 @@ class _(Endpoint):
 
 
 def _get_store(name: StoreType) -> FSStore[Any]:
-    if name == "presets":
-        return shared.preset_store
-    elif name == "projects":
+    if name == "projects":
         return shared.project_store
     else:
         raise ValueError

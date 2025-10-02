@@ -17,7 +17,7 @@ class MorphologyFilter(ImageFilter):
     }, display = "radio")
     radius: int = Field(0, name = "Radius", minimum = 0, maximum = 50, step = 1, display = "slider")
 
-    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
+    def process(self, image: NumpyImage, general: GeneralData) -> NumpyImage:
         func = _MODES[self.mode]
         footprint = skimage.morphology.disk(self.radius)
         return apply_channelwise(image, lambda x: func(x, footprint))

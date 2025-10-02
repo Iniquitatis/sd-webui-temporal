@@ -14,9 +14,9 @@ class LimitingModule(TemporalModule):
 
     mode: str = Field("clamp", name = "Mode", choices = {"clamp": "Clamp", "compress": "Compress"}, display = "radio")
     max_difference: float = Field(1.0, name = "Maximum difference", minimum = 0.001, maximum = 1.0, step = 0.001, display = "slider")
-    buffer: Optional[FloatArray] = Field(None, flags = {"private"})
+    buffer: Optional[FloatArray] = Field(None, flags = {"runtime"})
 
-    def forward(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> Optional[NumpyImage]:
+    def process(self, image: NumpyImage, general: GeneralData) -> NumpyImage:
         if self.buffer is None:
             self.buffer = ensure_image_dims(image.copy(), (general.image_size.x, general.image_size.y), 3)
 
@@ -36,6 +36,3 @@ class LimitingModule(TemporalModule):
         self.buffer[:] = saturate_array(a + diff)
 
         return self.buffer.copy()
-
-    def reset(self, general: GeneralData) -> None:
-        self.buffer = None

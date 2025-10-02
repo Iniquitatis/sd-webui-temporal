@@ -13,7 +13,7 @@ class MedianFilter(ImageFilter):
     radius: int = Field(0, name = "Radius", minimum = 0, maximum = 50, step = 1, display = "slider")
     percentile: float = Field(50.0, name = "Percentile", minimum = 0.0, maximum = 100.0, step = 0.1, suffix = "%", display = "slider")
 
-    def process(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> NumpyImage:
+    def process(self, image: NumpyImage, general: GeneralData) -> NumpyImage:
         footprint = skimage.morphology.disk(self.radius)
 
         if self.percentile == 50.0:

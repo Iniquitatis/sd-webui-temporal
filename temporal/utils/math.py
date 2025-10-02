@@ -18,6 +18,10 @@ def lerp(a: U, b: U, x: Any) -> U:
     return a * (1.0 - x) + b * x
 
 
+def mirror(value: int, min: int, max: int) -> int:
+    return max - abs((value - min) % ((max - min) * 2) - (max - min))
+
+
 def normalize(value: U, min: Any, max: Any) -> U:
     return (value - min) / (max - min)
 
@@ -39,3 +43,7 @@ def ratio(values: Iterable[float | int]) -> tuple[float, ...]:
 
 def remap_range(value: U, old_min: Any, old_max: Any, new_min: Any, new_max: Any) -> U:
     return new_min + (value - old_min) / (old_max - old_min) * (new_max - new_min)
+
+
+def repeat(value: int, min: int, max: int) -> int:
+    return min + (value - min) % (max - min + 1)

@@ -5,8 +5,8 @@ from typing import Literal, Optional
 
 import numpy as np
 
+from temporal.pipeline_state import PipelineState
 from temporal.project import Project
-from temporal.shared import shared
 from temporal.utils.image import NumpyImage, ensure_image_dims
 from temporal.utils.logging import log
 
@@ -24,15 +24,15 @@ class Engine:
     def __init__(self) -> None:
         self.state = ExecutionState()
         self.state_lock = Lock()
+        self.project: Optional[Project] = None
 
-    def start(self, project: Project, iter_count: int) -> None:
+    def start(self, project: Project, iterations: int) -> None:
+        self.project = project
+
         if project.general.initial_image is None:
             project.general.initial_image = np.full((512, 512, 3), 0.5)
 
-        if project.iteration.image is None:
-            project.iteration.image = project.general.initial_image.copy()
-
-        project.iteration.image = ensure_image_dims(project.iteration.image, (project.general.image_size.x, project.general.image_size.y), 3)
+        last_image = ensure_image_dims(project.general.initial_image.copy(), channels = 3)
 
         with self.state_lock:
             self.state = replace(
@@ -40,62 +40,57 @@ class Engine:
                 running = True,
                 state = "active",
                 current_iteration = 0,
-                total_iterations = iter_count,
-                preview = project.iteration.image,
+                total_iterations = iterations,
+                preview = last_image,
             )
 
-        for i in range(iter_count):
+        for i in range(iterations):
             with self.state_lock:
                 if not self.state.running:
                     self.state.state = "stopping"
                     break
 
-            log.info(f"Iteration {i + 1} / {iter_count}")
+            log.info(f"Iteration {i + 1} / {iterations}")
 
             with self.state_lock:
                 self.state.current_iteration = i
 
             start_time = perf_counter()
 
-            if project.general.mode == "loop":
-                unprocessed_image = project.general.initial_image
-            elif project.general.mode == "recursion":
-                unprocessed_image = project.iteration.image
-            else:
-                raise ValueError
-
             success = True
 
-            for j, image, preview in project.pipeline.run(unprocessed_image, project.general, project.iteration.index):
-                if j < project.iteration.step:
-                    continue
-
-                if not self.state.running or image is None:
+            for state in project.pipeline.run(last_image, project.general):
+                if not self.state.running:
                     success = False
                     break
 
-                project.iteration.image = image
-                project.iteration.step += 1
+                match state:
+                    case PipelineState.progress():
+                        if state.preview:
+                            self.state.preview = state.image
 
-                if preview:
-                    self.state.preview = project.iteration.image
+                    case PipelineState.finish():
+                        if state.preview:
+                            self.state.preview = state.image
+
+                        if project.general.mode == "recursion":
+                            last_image = state.image
+
+                    case PipelineState.fail():
+                        log.warning(state.message)
+                        success = False
+                        break
 
             if not success:
                 break
-
-            project.iteration.index += 1
-            project.iteration.step = 0
-
-            if i % shared.settings.execution.autosave_every_nth_iteration == 0:
-                project.save(project.general.path)
 
             end_time = perf_counter()
 
             log.info(f"Iteration took {end_time - start_time:.6f} second(s)")
 
-        project.pipeline.finalize(project.iteration.image, project.general)
+        project.pipeline.finalize(project.general)
 
-        project.save(project.general.path)
+        self.project = None
 
         with self.state_lock:
             self.state = replace(
@@ -108,7 +103,8 @@ class Engine:
             )
 
     def stop(self) -> None:
-        shared.backend.interrupt()
+        if self.project is not None:
+            self.project.pipeline.interrupt(self.project.general)
 
         with self.state_lock:
             self.state.running = False

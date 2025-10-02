@@ -18,7 +18,7 @@ import {getRequest, postRequest} from "./scripts/utils/requests.js";
 import {FSStoreBox} from "./scripts/fs_store_box.js";
 import {ObjectForm} from "./scripts/object_form.js";
 import {SettingsEditor} from "./scripts/settings_editor.js";
-import {initializeData, pipelineModules, shared} from "./scripts/shared_data.js";
+import {initializeData, pipelineModules} from "./scripts/shared_data.js";
 
 CANVAS_TOOLS.filter = class extends CanvasTool {
     static name = "Filter";
@@ -78,7 +78,6 @@ export class MainUI extends Widget {
 
         this.onValueChange = new Signal();
         this.onProjectLoad = new Signal();
-        this.onProjectChange = new Signal();
         this.onGenerationStart = new Signal();
         this.onGenerationStop = new Signal();
         this.onStateCheck = new Signal();
@@ -172,38 +171,18 @@ export class MainUI extends Widget {
 
         this.createChild(DockGroup, (e) => {
             e.createDock("\u{f53f}", "Project", Form, (e) => {
-                e.createField("Preset", FSStoreBox, (e) => {
-                    e.saveCallback = () => ({"data": this._manager.value});
-                    e.onLoad.connect((value) => {
-                        this._image.value = value.data.project.general.initial_image;
-                    });
-                }, "presets", ["refresh", "load", "save", "rename", "delete"]);
-
                 e.createField("Project", FSStoreBox, (e) => {
+                    e.saveCallback = () => this._manager.value.project;
                     e.onLoad.connect(async (value) => {
-                        this._image.value = await getRequest(`/temporal/project/${e.value}/last_image`);
-
                         this.onProjectLoad.fire(value);
                     });
-                }, "projects", ["refresh", "load", "rename", "delete"]);
+                }, "projects", ["refresh", "load", "save", "rename", "delete"]);
 
                 e.createField("Iteration count", NumberBox, (e) => {
                     e.minimum = 1;
                     e.step = 1;
                     e.value = 10;
-                    this._manager.manage(e, "iter_count");
-                });
-
-                e.createRow((e) => {
-                    e.createField("Load parameters", Checkbox, (e) => {
-                        e.value = true;
-                        this._manager.manage(e, "load_parameters");
-                    });
-
-                    e.createField("Continue from last iteration", Checkbox, (e) => {
-                        e.value = true;
-                        this._manager.manage(e, "continue_from_last_iteration");
-                    });
+                    this._manager.manage(e, "iterations");
                 });
 
                 // TODO
@@ -213,11 +192,6 @@ export class MainUI extends Widget {
 
                 e.createChild(ObjectForm, (e) => {
                     e.manageAll();
-                    e.onValueChange.connect(async (value) => {
-                        shared.projectName = value.general.name;
-
-                        this.onProjectChange.fire(value);
-                    });
                     this.onProjectLoad.connect((project) => {
                         e.value = project;
                     });

@@ -5,6 +5,7 @@ import numpy as np
 from temporal.general_data import GeneralData
 from temporal.object import Field
 from temporal.pipeline_modules.temporal import TemporalModule
+from temporal.seed import Seed
 from temporal.utils.image import NumpyImage, ensure_image_dims
 from temporal.utils.math import clamp, lerp
 from temporal.utils.numpy import FloatArray, random_array
@@ -15,13 +16,17 @@ class RandomSamplingModule(TemporalModule):
 
     chance: float = Field(1.0, name = "Chance", minimum = 0.0, maximum = 1.0, step = 0.001, display = "slider")
     opacity: float = Field(1.0, name = "Opacity", minimum = 0.0, maximum = 1.0, step = 0.001, display = "slider")
-    buffer: Optional[FloatArray] = Field(None, flags = {"private"})
+    use_global_seed: bool = Field(False, name = "Use global seed")
+    seed: Seed = Field(Seed, name = "Seed", dependencies = {"use_global_seed": False})
+    iteration: int = Field(0, flags = {"runtime"})
+    buffer: Optional[FloatArray] = Field(None, flags = {"runtime"})
 
-    def forward(self, image: NumpyImage, general: GeneralData, iter_index: int, seed: int) -> Optional[NumpyImage]:
+    def process(self, image: NumpyImage, general: GeneralData) -> NumpyImage:
         if self.buffer is None:
             self.buffer = ensure_image_dims(image.copy(), (general.image_size.x, general.image_size.y), 3)
 
         size = self.buffer.shape[:2]
+        seed = (general.seed if self.use_global_seed else self.seed).fixed_value + self.iteration
 
         chance_mask = random_array(size, seed = seed) <= self.chance
         opacity_mask = random_array(
@@ -33,7 +38,6 @@ class RandomSamplingModule(TemporalModule):
 
         self.buffer[:] = lerp(self.buffer, np.where(chance_mask[..., np.newaxis], image, self.buffer), opacity_mask[..., np.newaxis])
 
-        return self.buffer.copy()
+        self.iteration += 1
 
-    def reset(self, general: GeneralData) -> None:
-        self.buffer = None
+        return self.buffer.copy()

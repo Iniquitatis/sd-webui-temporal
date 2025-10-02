@@ -1,16 +1,17 @@
-from abc import abstractmethod
+from time import sleep
 
 from temporal.general_data import GeneralData
-from temporal.pipeline_module import PipelineModule
+from temporal.object import Field
+from temporal.pipeline_modules.control import ControlModule
 from temporal.pipeline_state import PipelineResult, PipelineState
 from temporal.utils.image import NumpyImage
 
 
-class ToolModule(PipelineModule, abstract = True):
-    def forward(self, image: NumpyImage, general: GeneralData) -> PipelineResult:
-        self.process(image, general)
-        yield PipelineState.finish(image = image, preview = self.preview)
+class DelayModule(ControlModule):
+    name = "Delay"
 
-    @abstractmethod
-    def process(self, image: NumpyImage, general: GeneralData) -> None:
-        raise NotImplementedError
+    time: float = Field(1.0, name = "Time", minimum = 0.0, step = 0.1, suffix = " seconds", display = "box")
+
+    def forward(self, image: NumpyImage, general: GeneralData) -> PipelineResult:
+        sleep(self.time)
+        yield PipelineState.finish(image = image, preview = self.preview)
