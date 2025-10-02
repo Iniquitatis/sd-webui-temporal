@@ -1,5 +1,5 @@
-import {Block} from "../../scripts/base/block.js";
-import {Signal} from "../../scripts/core/signal.js";
+import {Block} from "/scripts/base/block.js";
+import {Signal} from "/scripts/core/signal.js";
 
 export class ImageWidget extends Block {
     constructor() {

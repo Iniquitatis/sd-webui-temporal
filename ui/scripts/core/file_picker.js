@@ -1,5 +1,5 @@
-import {Signal} from "../../scripts/core/signal.js";
-import {createElement} from "../../scripts/utils/dom.js";
+import {Signal} from "/scripts/core/signal.js";
+import {createElement} from "/scripts/utils/dom.js";
 
 export class FilePicker {
     constructor() {

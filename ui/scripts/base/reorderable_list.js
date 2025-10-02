@@ -1,9 +1,9 @@
-import {Accordion} from "../../scripts/base/accordion.js";
-import {Block} from "../../scripts/base/block.js";
-import {Column} from "../../scripts/base/column.js";
-import {Row} from "../../scripts/base/row.js";
-import {DragController} from "../../scripts/core/drag_controller.js";
-import {Signal} from "../../scripts/core/signal.js";
+import {Accordion} from "/scripts/base/accordion.js";
+import {Block} from "/scripts/base/block.js";
+import {Column} from "/scripts/base/column.js";
+import {Row} from "/scripts/base/row.js";
+import {DragController} from "/scripts/core/drag_controller.js";
+import {Signal} from "/scripts/core/signal.js";
 
 let drag = new DragController();
 drag.onStart.connect((element) => {

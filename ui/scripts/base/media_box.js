@@ -1,11 +1,11 @@
-import {Block} from "../../scripts/base/block.js";
-import {Overlay} from "../../scripts/base/overlay.js";
-import {Row} from "../../scripts/base/row.js";
-import {ToolButton} from "../../scripts/base/tool_button.js";
-import {FileDownloader} from "../../scripts/core/file_downloader.js";
-import {FilePicker} from "../../scripts/core/file_picker.js";
-import {Signal} from "../../scripts/core/signal.js";
-import {createElement} from "../../scripts/utils/dom.js";
+import {Block} from "/scripts/base/block.js";
+import {Overlay} from "/scripts/base/overlay.js";
+import {Row} from "/scripts/base/row.js";
+import {ToolButton} from "/scripts/base/tool_button.js";
+import {FileDownloader} from "/scripts/core/file_downloader.js";
+import {FilePicker} from "/scripts/core/file_picker.js";
+import {Signal} from "/scripts/core/signal.js";
+import {createElement} from "/scripts/utils/dom.js";
 
 class MediaViewer extends Overlay {
     constructor(element) {

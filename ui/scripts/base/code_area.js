@@ -1,5 +1,5 @@
-import {Signal} from "../../scripts/core/signal.js";
-import {Widget} from "../../scripts/core/widget.js";
+import {Signal} from "/scripts/core/signal.js";
+import {Widget} from "/scripts/core/widget.js";
 
 export class CodeArea extends Widget {
     constructor() {

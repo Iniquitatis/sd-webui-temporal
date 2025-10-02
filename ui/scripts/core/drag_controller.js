@@ -1,4 +1,4 @@
-import {Signal} from "../../scripts/core/signal.js";
+import {Signal} from "/scripts/core/signal.js";
 
 export class DragController {
     constructor() {

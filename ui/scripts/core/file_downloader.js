@@ -1,4 +1,4 @@
-import {createElement} from "../../scripts/utils/dom.js";
+import {createElement} from "/scripts/utils/dom.js";
 
 export class FileDownloader {
     constructor() {

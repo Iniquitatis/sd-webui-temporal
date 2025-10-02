@@ -1,12 +1,12 @@
-import {Button} from "../../scripts/base/button.js";
-import {Column} from "../../scripts/base/column.js";
-import {Dropdown} from "../../scripts/base/dropdown.js";
-import {ReorderableList} from "../../scripts/base/reorderable_list.js";
-import {Row} from "../../scripts/base/row.js";
-import {ToolButton} from "../../scripts/base/tool_button.js";
-import {Signal} from "../../scripts/core/signal.js";
-import {clearElement, createElement} from "../../scripts/utils/dom.js";
-import {deepCopy} from "../../scripts/utils/object.js";
+import {Button} from "/scripts/base/button.js";
+import {Column} from "/scripts/base/column.js";
+import {Dropdown} from "/scripts/base/dropdown.js";
+import {ReorderableList} from "/scripts/base/reorderable_list.js";
+import {Row} from "/scripts/base/row.js";
+import {ToolButton} from "/scripts/base/tool_button.js";
+import {Signal} from "/scripts/core/signal.js";
+import {clearElement, createElement} from "/scripts/utils/dom.js";
+import {deepCopy} from "/scripts/utils/object.js";
 
 class ListEditorBase extends Column {
     constructor(elementClass) {

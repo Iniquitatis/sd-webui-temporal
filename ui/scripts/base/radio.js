@@ -1,8 +1,8 @@
-import {Block} from "../../scripts/base/block.js";
-import {Signal} from "../../scripts/core/signal.js";
-import {StateManager} from "../../scripts/core/state_manager.js";
-import {Widget} from "../../scripts/core/widget.js";
-import {clearElement} from "../../scripts/utils/dom.js";
+import {Block} from "/scripts/base/block.js";
+import {Signal} from "/scripts/core/signal.js";
+import {StateManager} from "/scripts/core/state_manager.js";
+import {Widget} from "/scripts/core/widget.js";
+import {clearElement} from "/scripts/utils/dom.js";
 
 export class Radio extends Widget {
     constructor() {

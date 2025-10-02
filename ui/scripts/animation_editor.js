@@ -1,18 +1,18 @@
-import {Button} from "../scripts/base/button.js";
-import {Checkbox} from "../scripts/base/checkbox.js";
-import {ColorPicker} from "../scripts/base/color_picker.js";
-import {Column} from "../scripts/base/column.js";
-import {Dropdown} from "../scripts/base/dropdown.js";
-import {Form} from "../scripts/base/form.js";
-import {ChoiceListEditor, ListEditor} from "../scripts/base/list_editor.js";
-import {NumberBox} from "../scripts/base/number_box.js";
-import {ReorderableAccordion, ReorderableElement} from "../scripts/base/reorderable_list.js";
-import {Row} from "../scripts/base/row.js";
-import {TextBox} from "../scripts/base/text_box.js";
-import {ToolButton} from "../scripts/base/tool_button.js";
-import {FieldManager} from "../scripts/core/field_manager.js";
-import {Signal} from "../scripts/core/signal.js";
-import {deepCopy, mapValues} from "../scripts/utils/object.js";
+import {Button} from "/scripts/base/button.js";
+import {Checkbox} from "/scripts/base/checkbox.js";
+import {ColorPicker} from "/scripts/base/color_picker.js";
+import {Column} from "/scripts/base/column.js";
+import {Dropdown} from "/scripts/base/dropdown.js";
+import {Form} from "/scripts/base/form.js";
+import {ChoiceListEditor, ListEditor} from "/scripts/base/list_editor.js";
+import {NumberBox} from "/scripts/base/number_box.js";
+import {ReorderableAccordion, ReorderableElement} from "/scripts/base/reorderable_list.js";
+import {Row} from "/scripts/base/row.js";
+import {TextBox} from "/scripts/base/text_box.js";
+import {ToolButton} from "/scripts/base/tool_button.js";
+import {FieldManager} from "/scripts/core/field_manager.js";
+import {Signal} from "/scripts/core/signal.js";
+import {deepCopy, mapValues} from "/scripts/utils/object.js";
 
 class KeyframeEditor extends ReorderableElement {
     constructor(schema) {

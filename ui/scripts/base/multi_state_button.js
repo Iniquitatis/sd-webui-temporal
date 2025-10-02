@@ -1,6 +1,6 @@
-import {Button} from "../../scripts/base/button.js";
-import {Signal} from "../../scripts/core/signal.js";
-import {StateManager} from "../../scripts/core/state_manager.js";
+import {Button} from "/scripts/base/button.js";
+import {Signal} from "/scripts/core/signal.js";
+import {StateManager} from "/scripts/core/state_manager.js";
 
 export class MultiStateButton extends Button {
     constructor() {

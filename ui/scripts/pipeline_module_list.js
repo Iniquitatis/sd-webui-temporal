@@ -1,21 +1,21 @@
-import {Button} from "../scripts/base/button.js";
-import {Checkbox} from "../scripts/base/checkbox.js";
-import {Column} from "../scripts/base/column.js";
-import {ImageBox} from "../scripts/base/image_box.js";
-import {ChoiceListEditor} from "../scripts/base/list_editor.js";
-import {MultiStateToggle} from "../scripts/base/multi_state_toggle.js";
-import {ReorderableAccordion} from "../scripts/base/reorderable_list.js";
-import {Row} from "../scripts/base/row.js";
-import {Tabs} from "../scripts/base/tabs.js";
-import {VideoBox} from "../scripts/base/video_box.js";
-import {FieldManager} from "../scripts/core/field_manager.js";
-import {Signal} from "../scripts/core/signal.js";
-import {deepCopy, mapValues} from "../scripts/utils/object.js";
-import {postRequest} from "../scripts/utils/requests.js";
-import {boolToString, stringToBool} from "../scripts/utils/types.js";
-import {AnimationEditor} from "../scripts/animation_editor.js";
-import {ObjectForm} from "../scripts/object_form.js";
-import {pipelineModules, pipelineModuleIcons} from "../scripts/shared_data.js";
+import {Button} from "/scripts/base/button.js";
+import {Checkbox} from "/scripts/base/checkbox.js";
+import {Column} from "/scripts/base/column.js";
+import {ImageBox} from "/scripts/base/image_box.js";
+import {ChoiceListEditor} from "/scripts/base/list_editor.js";
+import {MultiStateToggle} from "/scripts/base/multi_state_toggle.js";
+import {ReorderableAccordion} from "/scripts/base/reorderable_list.js";
+import {Row} from "/scripts/base/row.js";
+import {Tabs} from "/scripts/base/tabs.js";
+import {VideoBox} from "/scripts/base/video_box.js";
+import {FieldManager} from "/scripts/core/field_manager.js";
+import {Signal} from "/scripts/core/signal.js";
+import {deepCopy, mapValues} from "/scripts/utils/object.js";
+import {postRequest} from "/scripts/utils/requests.js";
+import {boolToString, stringToBool} from "/scripts/utils/types.js";
+import {AnimationEditor} from "/scripts/animation_editor.js";
+import {ObjectForm} from "/scripts/object_form.js";
+import {pipelineModules, pipelineModuleIcons} from "/scripts/shared_data.js";
 
 class PipelineModuleEditor extends ReorderableAccordion {
     constructor(type) {

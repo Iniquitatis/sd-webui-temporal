@@ -1,6 +1,6 @@
-import {Block} from "../../scripts/base/block.js";
-import {Widget} from "../../scripts/core/widget.js";
-import {toggleClass} from "../../scripts/utils/dom.js";
+import {Block} from "/scripts/base/block.js";
+import {Widget} from "/scripts/core/widget.js";
+import {toggleClass} from "/scripts/utils/dom.js";
 
 class Tab extends Widget {
     constructor() {

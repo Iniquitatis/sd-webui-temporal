@@ -1,8 +1,8 @@
-import {Dropdown} from "../scripts/base/dropdown.js";
-import {Row} from "../scripts/base/row.js";
-import {ToolButton} from "../scripts/base/tool_button.js";
-import {Signal} from "../scripts/core/signal.js";
-import {postRequest} from "../scripts/utils/requests.js";
+import {Dropdown} from "/scripts/base/dropdown.js";
+import {Row} from "/scripts/base/row.js";
+import {ToolButton} from "/scripts/base/tool_button.js";
+import {Signal} from "/scripts/core/signal.js";
+import {postRequest} from "/scripts/utils/requests.js";
 
 export class FSStoreBox extends Row {
     constructor(type, features) {

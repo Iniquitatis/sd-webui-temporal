@@ -1,8 +1,8 @@
-import {Block} from "../../scripts/base/block.js";
-import {Column} from "../../scripts/base/column.js";
-import {Row} from "../../scripts/base/row.js";
-import {ToolButton} from "../../scripts/base/tool_button.js";
-import {Widget} from "../../scripts/core/widget.js";
+import {Block} from "/scripts/base/block.js";
+import {Column} from "/scripts/base/column.js";
+import {Row} from "/scripts/base/row.js";
+import {ToolButton} from "/scripts/base/tool_button.js";
+import {Widget} from "/scripts/core/widget.js";
 
 class Dock extends Column {
     constructor() {

@@ -1,7 +1,7 @@
-import {Block} from "../../scripts/base/block.js";
-import {GroupBox} from "../../scripts/base/group_box.js";
-import {Widget} from "../../scripts/core/widget.js";
-import {createElement} from "../../scripts/utils/dom.js";
+import {Block} from "/scripts/base/block.js";
+import {GroupBox} from "/scripts/base/group_box.js";
+import {Widget} from "/scripts/core/widget.js";
+import {createElement} from "/scripts/utils/dom.js";
 
 export class Form extends Widget {
     constructor(isRow = false) {

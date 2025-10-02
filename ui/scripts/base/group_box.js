@@ -1,5 +1,5 @@
-import {Block} from "../../scripts/base/block.js";
-import {createElement} from "../../scripts/utils/dom.js";
+import {Block} from "/scripts/base/block.js";
+import {createElement} from "/scripts/utils/dom.js";
 
 export class GroupBox extends Block {
     constructor() {

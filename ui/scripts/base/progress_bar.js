@@ -1,5 +1,5 @@
-import {Block} from "../../scripts/base/block.js";
-import {clamp, normalize} from "../../scripts/utils/math.js";
+import {Block} from "/scripts/base/block.js";
+import {clamp, normalize} from "/scripts/utils/math.js";
 
 export class ProgressBar extends Block {
     constructor() {

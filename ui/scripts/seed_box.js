@@ -1,7 +1,7 @@
-import {NumberBox} from "../scripts/base/number_box.js";
-import {Row} from "../scripts/base/row.js";
-import {ToolButton} from "../scripts/base/tool_button.js";
-import {Signal} from "../scripts/core/signal.js";
+import {NumberBox} from "/scripts/base/number_box.js";
+import {Row} from "/scripts/base/row.js";
+import {ToolButton} from "/scripts/base/tool_button.js";
+import {Signal} from "/scripts/core/signal.js";
 
 export class SeedBox extends Row {
     constructor() {

@@ -1,7 +1,7 @@
-import {Block} from "../../scripts/base/block.js";
-import {MultiStateToggle} from "../../scripts/base/multi_state_toggle.js";
-import {Widget} from "../../scripts/core/widget.js";
-import {createElement} from "../../scripts/utils/dom.js";
+import {Block} from "/scripts/base/block.js";
+import {MultiStateToggle} from "/scripts/base/multi_state_toggle.js";
+import {Widget} from "/scripts/core/widget.js";
+import {createElement} from "/scripts/utils/dom.js";
 
 export class Accordion extends Widget {
     constructor() {

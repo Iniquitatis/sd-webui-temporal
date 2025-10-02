@@ -1,4 +1,4 @@
-import {createElement, toggleClass} from "../../scripts/utils/dom.js";
+import {createElement, toggleClass} from "/scripts/utils/dom.js";
 
 export class Widget extends HTMLElement {
     get enabled() {

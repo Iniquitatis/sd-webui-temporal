@@ -31,12 +31,12 @@
 
 @font-face {
     font-family: "Main";
-    src: url("../fonts/roboto_variable_width.ttf") format("truetype");
+    src: url("/fonts/roboto_variable_width.ttf") format("truetype");
 }
 
 @font-face {
     font-family: "Main";
-    src: url("../fonts/icons.ttf") format("truetype");
+    src: url("/fonts/icons.ttf") format("truetype");
     unicode-range: U+e000-f8ff;
 }
 

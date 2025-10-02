@@ -1,7 +1,7 @@
-import {Block} from "../../scripts/base/block.js";
-import {DragController} from "../../scripts/core/drag_controller.js";
-import {Signal} from "../../scripts/core/signal.js";
-import {clamp, countFractionDigits, lerp, normalize, quantize} from "../../scripts/utils/math.js";
+import {Block} from "/scripts/base/block.js";
+import {DragController} from "/scripts/core/drag_controller.js";
+import {Signal} from "/scripts/core/signal.js";
+import {clamp, countFractionDigits, lerp, normalize, quantize} from "/scripts/utils/math.js";
 
 let drag = new DragController();
 drag.onMove.connect((element, event) => {

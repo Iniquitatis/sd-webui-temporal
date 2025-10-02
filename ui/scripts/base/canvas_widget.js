@@ -1,10 +1,10 @@
-import {Block} from "../../scripts/base/block.js";
-import {Checkbox} from "../../scripts/base/checkbox.js";
-import {ColorPicker} from "../../scripts/base/color_picker.js";
-import {Slider} from "../../scripts/base/slider.js";
-import {VectorEditor} from "../../scripts/base/vector_editor.js";
-import {Signal} from "../../scripts/core/signal.js";
-import {colorToHex} from "../../scripts/utils/color.js";
+import {Block} from "/scripts/base/block.js";
+import {Checkbox} from "/scripts/base/checkbox.js";
+import {ColorPicker} from "/scripts/base/color_picker.js";
+import {Slider} from "/scripts/base/slider.js";
+import {VectorEditor} from "/scripts/base/vector_editor.js";
+import {Signal} from "/scripts/core/signal.js";
+import {colorToHex} from "/scripts/utils/color.js";
 
 export const CANVAS_TOOLS = {};
 

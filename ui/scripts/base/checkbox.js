@@ -1,6 +1,6 @@
-import {Block} from "../../scripts/base/block.js";
-import {Signal} from "../../scripts/core/signal.js";
-import {Widget} from "../../scripts/core/widget.js";
+import {Block} from "/scripts/base/block.js";
+import {Signal} from "/scripts/core/signal.js";
+import {Widget} from "/scripts/core/widget.js";
 
 export class Checkbox extends Widget {
     constructor() {

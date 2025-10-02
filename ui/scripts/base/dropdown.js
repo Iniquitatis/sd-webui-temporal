@@ -1,7 +1,7 @@
-import {Signal} from "../../scripts/core/signal.js";
-import {StateManager} from "../../scripts/core/state_manager.js";
-import {Widget} from "../../scripts/core/widget.js";
-import {clearElement, createElement} from "../../scripts/utils/dom.js";
+import {Signal} from "/scripts/core/signal.js";
+import {StateManager} from "/scripts/core/state_manager.js";
+import {Widget} from "/scripts/core/widget.js";
+import {clearElement, createElement} from "/scripts/utils/dom.js";
 
 export class Dropdown extends Widget {
     constructor() {

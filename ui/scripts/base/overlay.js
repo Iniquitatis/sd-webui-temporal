@@ -1,7 +1,7 @@
-import {Block} from "../../scripts/base/block.js";
-import {Row} from "../../scripts/base/row.js";
-import {Signal} from "../../scripts/core/signal.js";
-import {Widget} from "../../scripts/core/widget.js";
+import {Block} from "/scripts/base/block.js";
+import {Row} from "/scripts/base/row.js";
+import {Signal} from "/scripts/core/signal.js";
+import {Widget} from "/scripts/core/widget.js";
 
 export class Overlay extends Widget {
     constructor() {

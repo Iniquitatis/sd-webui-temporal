@@ -1,14 +1,14 @@
-import {Button} from "../../scripts/base/button.js";
-import {CANVAS_TOOLS, CanvasWidget} from "../../scripts/base/canvas_widget.js";
-import {DockGroup} from "../../scripts/base/dock_group.js";
-import {Form} from "../../scripts/base/form.js";
-import {ImageWidget} from "../../scripts/base/image_widget.js";
-import {MediaBox} from "../../scripts/base/media_box.js";
-import {Overlay} from "../../scripts/base/overlay.js";
-import {Radio} from "../../scripts/base/radio.js";
-import {Signal} from "../../scripts/core/signal.js";
-import {clearElement, createElement} from "../../scripts/utils/dom.js";
-import {mapValues} from "../../scripts/utils/object.js";
+import {Button} from "/scripts/base/button.js";
+import {CANVAS_TOOLS, CanvasWidget} from "/scripts/base/canvas_widget.js";
+import {DockGroup} from "/scripts/base/dock_group.js";
+import {Form} from "/scripts/base/form.js";
+import {ImageWidget} from "/scripts/base/image_widget.js";
+import {MediaBox} from "/scripts/base/media_box.js";
+import {Overlay} from "/scripts/base/overlay.js";
+import {Radio} from "/scripts/base/radio.js";
+import {Signal} from "/scripts/core/signal.js";
+import {clearElement, createElement} from "/scripts/utils/dom.js";
+import {mapValues} from "/scripts/utils/object.js";
 
 class ImageEditor extends Overlay {
     constructor() {

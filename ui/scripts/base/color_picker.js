@@ -1,10 +1,10 @@
-import {Block} from "../../scripts/base/block.js";
-import {Column} from "../../scripts/base/column.js";
-import {Row} from "../../scripts/base/row.js";
-import {Slider} from "../../scripts/base/slider.js";
-import {FieldManager} from "../../scripts/core/field_manager.js";
-import {Signal} from "../../scripts/core/signal.js";
-import {colorToHex} from "../../scripts/utils/color.js";
+import {Block} from "/scripts/base/block.js";
+import {Column} from "/scripts/base/column.js";
+import {Row} from "/scripts/base/row.js";
+import {Slider} from "/scripts/base/slider.js";
+import {FieldManager} from "/scripts/core/field_manager.js";
+import {Signal} from "/scripts/core/signal.js";
+import {colorToHex} from "/scripts/utils/color.js";
 
 export class ColorPicker extends Row {
     constructor(channels) {

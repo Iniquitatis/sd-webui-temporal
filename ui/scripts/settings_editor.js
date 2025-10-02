@@ -1,7 +1,7 @@
-import {Button} from "../scripts/base/button.js";
-import {Column} from "../scripts/base/column.js";
-import {Signal} from "../scripts/core/signal.js";
-import {ObjectForm} from "../scripts/object_form.js";
+import {Button} from "/scripts/base/button.js";
+import {Column} from "/scripts/base/column.js";
+import {Signal} from "/scripts/core/signal.js";
+import {ObjectForm} from "/scripts/object_form.js";
 
 export class SettingsEditor extends Column {
     constructor() {

@@ -1,4 +1,4 @@
-import {Button} from "../../scripts/base/button.js";
+import {Button} from "/scripts/base/button.js";
 
 export class ToolButton extends Button {
     constructor() {

@@ -1,4 +1,4 @@
-import {Widget} from "../../scripts/core/widget.js";
+import {Widget} from "/scripts/core/widget.js";
 
 export class Row extends Widget {
     constructor() {

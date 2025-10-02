@@ -1,4 +1,4 @@
-import {getRequest} from "../scripts/utils/requests.js";
+import {getRequest} from "/scripts/utils/requests.js";
 
 export let objectTypes = {};
 

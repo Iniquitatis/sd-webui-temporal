@@ -1,7 +1,7 @@
-import {Block} from "../../scripts/base/block.js";
-import {Row} from "../../scripts/base/row.js";
-import {FieldManager} from "../../scripts/core/field_manager.js";
-import {Signal} from "../../scripts/core/signal.js";
+import {Block} from "/scripts/base/block.js";
+import {Row} from "/scripts/base/row.js";
+import {FieldManager} from "/scripts/core/field_manager.js";
+import {Signal} from "/scripts/core/signal.js";
 
 export class VectorEditor extends Row {
     constructor(cls, axes) {
