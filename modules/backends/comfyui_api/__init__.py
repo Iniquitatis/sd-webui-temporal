@@ -1,10 +1,13 @@
+import json
 from io import BytesIO
 from math import floor
-from time import sleep
 from typing import Any, Iterator, Literal, Optional
+from urllib.parse import urlsplit, urlunsplit
+from uuid import uuid4
 
 import requests
 from PIL import Image
+from websocket import WebSocket
 
 from modules.backend import Backend
 from modules.processing_params import ProcessingParams
@@ -15,6 +18,7 @@ class ComfyUIAPIBackend(Backend):
     def __init__(self, host: str, port: int) -> None:
         self.host = host
         self.port = port
+        self.client_id = str(uuid4())
 
     @property
     def url(self):
@@ -117,13 +121,12 @@ class ComfyUIAPIBackend(Backend):
                 },
             },
             "image_saver": {
-                "class_type": "PreviewImage",
+                "class_type": "SaveImageWebsocket",
                 "inputs": {
-                    "filename_prefix": "_temporal",
                     "images": ["vae_decoder", 0],
                 },
             },
-        }))
+        }), "image_saver")
 
     def upscale_image(self, image: NumpyImage, upscaler: str, scale: float) -> Optional[NumpyImage]:
         self._clear_queue()
@@ -159,13 +162,12 @@ class ComfyUIAPIBackend(Backend):
                 },
             },
             "image_saver": {
-                "class_type": "PreviewImage",
+                "class_type": "SaveImageWebsocket",
                 "inputs": {
-                    "filename_prefix": "_temporal",
                     "images": ["final_scaler", 0],
                 },
             },
-        }))
+        }), "image_saver")
 
     def interrupt(self) -> None:
         _safe_request("POST", f"{self.url}/interrupt")
@@ -173,21 +175,43 @@ class ComfyUIAPIBackend(Backend):
     def _clear_queue(self) -> None:
         _safe_request("POST", f"{self.url}/queue", json = {"clear": "true"})
 
-    def _get_image(self, prompt_id: str) -> Optional[NumpyImage]:
+    def _get_image(self, prompt_id: str, target_node_id: str) -> Optional[NumpyImage]:
+        result = None
+
+        url = urlunsplit(urlsplit(self.url)._replace(scheme = "ws"))
+
+        ws = WebSocket()
+        ws.connect(f"{url}/ws?clientId={self.client_id}")
+
+        current_node = ""
+
         while True:
-            if history_data := _safe_request("GET", f"{self.url}/history/{prompt_id}").json():
-                break
+            if isinstance(chunk := ws.recv(), str):
+                message = json.loads(chunk)
 
-            sleep(1.0)
+                if message["type"] != "executing":
+                    continue
 
-        if history_data[prompt_id]["status"]["status_str"] != "success":
-            return None
+                data = message["data"]
 
-        with BytesIO(_safe_request("GET", f"{self.url}/view", params = history_data[prompt_id]["outputs"]["image_saver"]["images"][0]).content) as stream:
-            return pil_to_np(Image.open(stream))
+                if data["prompt_id"] != prompt_id:
+                    continue
+
+                if data["node"] is None:
+                    break
+
+                current_node = data["node"]
+
+            elif current_node == target_node_id:
+                with BytesIO(chunk[8:]) as stream:
+                    result = pil_to_np(Image.open(stream))
+
+        ws.close()
+
+        return result
 
     def _prompt(self, nodes: dict[str, Any]) -> str:
-        return _safe_request("POST", f"{self.url}/prompt", json = {"prompt": nodes}).json()["prompt_id"]
+        return _safe_request("POST", f"{self.url}/prompt", json = {"client_id": self.client_id, "prompt": nodes}).json()["prompt_id"]
 
     def _upload_image(self, file_name: str, image: NumpyImage) -> str:
         with BytesIO() as stream:
