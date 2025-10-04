@@ -25,25 +25,25 @@ class ComfyUIAPIBackend(Backend):
         return f"{self.host}:{self.port}"
 
     def list_models(self) -> Iterator[tuple[str, str]]:
-        for name in _safe_request("GET", f"{self.url}/models/checkpoints").json():
+        for name in self._get_node_schema("CheckpointLoaderSimple")["input"]["required"]["ckpt_name"][0]:
             yield name, name
 
     def list_vaes(self) -> Iterator[tuple[str, str]]:
         yield "auto", "Automatic"
 
-        for name in _safe_request("GET", f"{self.url}/models/vae").json():
+        for name in self._get_node_schema("VAELoader")["input"]["required"]["vae_name"][0]:
             yield name, name
 
     def list_upscalers(self) -> Iterator[tuple[str, str]]:
-        for name in _safe_request("GET", f"{self.url}/models/upscale_models").json():
+        for name in self._get_node_schema("UpscaleModelLoader")["input"]["required"]["model_name"][0]:
             yield name, name
 
     def list_samplers(self) -> Iterator[tuple[str, str]]:
-        for name in _safe_request("GET", f"{self.url}/object_info").json()["KSampler"]["input"]["required"]["sampler_name"][0]:
+        for name in self._get_node_schema("KSamplerSelect")["input"]["required"]["sampler_name"][0]:
             yield name, name
 
     def list_schedulers(self) -> Iterator[tuple[str, str]]:
-        for name in _safe_request("GET", f"{self.url}/object_info").json()["KSampler"]["input"]["required"]["scheduler"][0]:
+        for name in self._get_node_schema("BasicScheduler")["input"]["required"]["scheduler"][0]:
             yield name, name
 
     def image_to_image(self, image: NumpyImage, params: ProcessingParams, width: int, height: int) -> Optional[NumpyImage]:
@@ -230,6 +230,9 @@ class ComfyUIAPIBackend(Backend):
         ws.close()
 
         return result
+
+    def _get_node_schema(self, node_class: str) -> dict[str, Any]:
+        return _safe_request("GET", f"{self.url}/object_info").json()[node_class]
 
     def _prompt(self, nodes: dict[str, Any]) -> str:
         return _safe_request("POST", f"{self.url}/prompt", json = {"client_id": self.client_id, "prompt": nodes}).json()["prompt_id"]
