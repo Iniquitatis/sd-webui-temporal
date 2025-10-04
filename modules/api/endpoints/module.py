@@ -5,9 +5,7 @@ from typing import Any, Optional
 from pydantic import BaseModel
 
 from modules.api.endpoint import Endpoint
-from modules.general_data import GeneralData
 from modules.pipeline_module import PipelineModule
-from modules.seed import Seed
 from modules.shared import shared
 from modules.utils.image import NumpyImage, base64_to_image, ensure_image_dims, image_to_base64
 
@@ -22,12 +20,9 @@ class _(Endpoint):
 
     async def do(self, request: Request) -> Optional[str]:
         def render() -> Optional[str]:
-            image = base64_to_image(request.image)
             module = PipelineModule.from_json(request.data)
-
-            for result in module.forward(image, GeneralData(initial_image = image, seed = Seed(31337))):
-                if result.final:
-                    return image_to_base64(result.image, True, "fast")
+            image = base64_to_image(request.image)
+            return image_to_base64(module.execute(image), True, "fast")
 
         return await get_event_loop().run_in_executor(None, render)
 
@@ -43,7 +38,8 @@ class _(Endpoint):
     async def do(self, request: Request) -> Optional[str]:
         def render() -> Optional[str]:
             module = PipelineModule.from_json(request.data)
-            return image_to_base64(module.sample(self._get_scaled_sample_image(request.size)), True, "fast")
+            image = self._get_scaled_sample_image(request.size)
+            return image_to_base64(module.sample(image), True, "fast")
 
         return await get_event_loop().run_in_executor(None, render)
 

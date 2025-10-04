@@ -57,19 +57,24 @@ class PipelineModule(Object, abstract = True):
     def visualize(self, general: GeneralData) -> VisualizableType:
         raise NotImplementedError
 
+    def execute(self, image: NumpyImage) -> NumpyImage:
+        for state in self.forward(image, GeneralData(initial_image = image, seed = Seed(31337))):
+            match state:
+                case PipelineState.progress():
+                    pass
+                case PipelineState.finish():
+                    return state.image
+                case PipelineState.fail():
+                    log.warning("Couldn't execute a module:", state.message)
+                    break
+
+        return image
+
     def sample(self, image: NumpyImage) -> NumpyImage:
         last_image = image.copy()
 
         for i in range(self.sample_iterations):
-            for state in self.forward(last_image, GeneralData(initial_image = image, seed = Seed(31337))):
-                match state:
-                    case PipelineState.progress():
-                        pass
-                    case PipelineState.finish():
-                        last_image = state.image
-                    case PipelineState.fail():
-                        log.warning("Couldn't make a sample:", state.message)
-                        return last_image
+            last_image = self.execute(last_image)
 
             if (i + 1) != self.sample_iterations:
                 last_image = skimage.transform.warp(last_image, make_trs_transform(
