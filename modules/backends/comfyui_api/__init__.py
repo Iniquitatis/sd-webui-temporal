@@ -64,31 +64,52 @@ class ComfyUIAPIBackend(Backend):
                     "vae_name": params.vae,
                 },
             }} if is_vae_defined else {}),
+            "sampler_selector": {
+                "class_type": "KSamplerSelect",
+                "inputs": {
+                    "sampler_name": params.sampler,
+                },
+            },
+            "scheduler_selector": {
+                "class_type": "BasicScheduler",
+                "inputs": {
+                    "model": ["checkpoint_loader", 0],
+                    "scheduler": params.scheduler,
+                    "steps": params.steps,
+                    "denoise": 1.0,
+                },
+            },
+            "sigma_splitter": {
+                "class_type": "SplitSigmasDenoise",
+                "inputs": {
+                    "sigmas": ["scheduler_selector", 0],
+                    "denoise": params.strength,
+                },
+            },
             "sampler": {
-                "class_type": "KSampler",
+                "class_type": "SamplerCustom",
                 "inputs": {
                     "model": ["checkpoint_loader", 0],
                     "positive": ["positive_encoder", 0],
                     "negative": ["negative_encoder", 0],
-                    "latent_image": ["latent_image", 0],
-                    "seed": params.seed,
-                    "steps": params.steps,
+                    "sampler": ["sampler_selector", 0],
+                    "sigmas": ["sigma_splitter", 1],
+                    "latent_image": ["vae_encoder", 0],
+                    "add_noise": True,
+                    "noise_seed": params.seed,
                     "cfg": params.cfg,
-                    "sampler_name": params.sampler,
-                    "scheduler": params.scheduler,
-                    "denoise": params.strength,
                 },
             },
-            "image": {
+            "image_loader": {
                 "class_type": "LoadImage",
                 "inputs": {
                     "image": self._upload_image("_temporal_image_to_image.png", ensure_image_dims(image, (width, height))),
                 },
             },
-            "latent_image": {
+            "vae_encoder": {
                 "class_type": "VAEEncode",
                 "inputs": {
-                    "pixels": ["image", 0],
+                    "pixels": ["image_loader", 0],
                     "vae": ["vae_loader", 0] if is_vae_defined else ["checkpoint_loader", 2],
                 },
             },
