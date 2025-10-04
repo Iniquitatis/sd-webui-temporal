@@ -23,8 +23,5 @@ class BranchModule(ControlModule):
                     yield state
                     return
 
-    def finalize(self, general: GeneralData) -> None:
-        self.pipeline.finalize(general)
-
     def interrupt(self, general: GeneralData) -> None:
         self.pipeline.interrupt(general)

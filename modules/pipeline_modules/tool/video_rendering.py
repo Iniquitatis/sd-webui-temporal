@@ -1,15 +1,11 @@
-from collections.abc import Sequence
 from itertools import chain
-from pathlib import Path
 from subprocess import run
 
 from modules.general_data import GeneralData
 from modules.object import Field
 from modules.pipeline_modules.tool import ToolModule
-from modules.thread_queue import ThreadQueue
 from modules.utils.fs import ensure_directory_exists, save_text
 from modules.utils.image import NumpyImage
-from modules.utils.time import wait_until
 from modules.video import Video
 from modules.video_filter import VideoFilter
 
@@ -26,24 +22,17 @@ class VideoRenderingModule(ToolModule):
     last_frame: int = Field(0, name = "Last frame", minimum = 0, step = 1, display = "box")
     frame_stride: int = Field(1, name = "Frame stride", minimum = 1, step = 1, display = "box")
     looping: bool = Field(False, name = "Looping")
-    render_every_nth_iteration: int = Field(100, name = "Render every N-th iteration", minimum = 1, step = 1, display = "box")
     archive_mode: bool = Field(False, name = "Archive mode")
     filters: list[VideoFilter] = Field(list, name = "Filters")
     iteration: int = Field(0, flags = {"runtime"})
 
     def process(self, image: NumpyImage, general: GeneralData) -> None:
-        if self.iteration % self.render_every_nth_iteration == 0:
-            self._render(general, True)
-
-        self.iteration += 1
-
-    def finalize(self, general: GeneralData) -> None:
-        wait_until(lambda: not _render_queue.busy)
+        self._render(general)
 
     def visualize(self, general: GeneralData) -> Video:
-        return self._render(general, False)
+        return self._render(general)
 
-    def _render(self, general: GeneralData, enqueue: bool) -> Video:
+    def _render(self, general: GeneralData) -> Video:
         path = ensure_directory_exists(general.path / "videos") / f"{self.file_name}.mp4"
 
         frame_paths = sorted(
@@ -51,14 +40,6 @@ class VideoRenderingModule(ToolModule):
             key = lambda x: x.name,
         )
 
-        if enqueue:
-            _render_queue.enqueue(self._inner, path, frame_paths)
-        else:
-            self._inner(path, frame_paths)
-
-        return Video(path = path, format = "mp4")
-
-    def _inner(self, path: Path, frame_paths: Sequence[Path]) -> None:
         frame_paths = frame_paths[self.first_frame - 1:self.last_frame or int(1e9):self.frame_stride]
 
         if self.looping:
@@ -90,5 +71,4 @@ class VideoRenderingModule(ToolModule):
         ])
         frame_list_path.unlink()
 
-
-_render_queue = ThreadQueue()
+        return Video(path = path, format = "mp4")

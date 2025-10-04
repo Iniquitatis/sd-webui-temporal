@@ -42,8 +42,5 @@ class ParallelModule(ControlModule):
             weights = make_eased_weight_array(self.count, self.easing),
         )), preview = self.preview)
 
-    def finalize(self, general: GeneralData) -> None:
-        self.pipeline.finalize(general)
-
     def interrupt(self, general: GeneralData) -> None:
         self.pipeline.interrupt(general)

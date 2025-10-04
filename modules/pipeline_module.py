@@ -48,9 +48,6 @@ class PipelineModule(Object, abstract = True):
     def forward(self, image: NumpyImage, general: GeneralData) -> PipelineResult:
         yield PipelineState.finish(image = image, preview = self.preview)
 
-    def finalize(self, general: GeneralData) -> None:
-        pass
-
     def interrupt(self, general: GeneralData) -> None:
         pass
 

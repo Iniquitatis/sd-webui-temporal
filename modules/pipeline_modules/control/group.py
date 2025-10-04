@@ -14,8 +14,5 @@ class GroupModule(ControlModule):
     def forward(self, image: NumpyImage, general: GeneralData) -> PipelineResult:
         yield from self.pipeline.run(image, general)
 
-    def finalize(self, general: GeneralData) -> None:
-        self.pipeline.finalize(general)
-
     def interrupt(self, general: GeneralData) -> None:
         self.pipeline.interrupt(general)

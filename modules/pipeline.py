@@ -36,11 +36,6 @@ class Pipeline(Object):
 
         yield result
 
-    def finalize(self, general: GeneralData) -> None:
-        for module in self.modules:
-            if module.enabled:
-                module.finalize(general)
-
     def interrupt(self, general: GeneralData) -> None:
         for module in self.modules:
             module.interrupt(general)

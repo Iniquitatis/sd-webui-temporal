@@ -88,8 +88,6 @@ class Engine:
 
             log.info(f"Iteration took {end_time - start_time:.6f} second(s)")
 
-        project.pipeline.finalize(project.general)
-
         self.project = None
 
         with self.state_lock:

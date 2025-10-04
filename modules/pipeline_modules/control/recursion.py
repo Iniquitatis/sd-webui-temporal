@@ -31,8 +31,5 @@ class RecursionModule(ControlModule):
 
         yield result
 
-    def finalize(self, general: GeneralData) -> None:
-        self.pipeline.finalize(general)
-
     def interrupt(self, general: GeneralData) -> None:
         self.pipeline.interrupt(general)
