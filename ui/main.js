@@ -1,24 +1,25 @@
-import {Block} from "./scripts/base/block.js";
-import {Checkbox} from "./scripts/base/checkbox.js";
-import {Column} from "./scripts/base/column.js";
-import {CANVAS_TOOLS, CanvasTool} from "./scripts/base/canvas_widget.js";
-import {DockGroup} from "./scripts/base/dock_group.js";
-import {Dropdown} from "./scripts/base/dropdown.js";
-import {Form} from "./scripts/base/form.js";
-import {ImageBox} from "./scripts/base/image_box.js";
-import {MultiStateButton} from "./scripts/base/multi_state_button.js";
-import {NumberBox} from "./scripts/base/number_box.js";
-import {ProgressBar} from "./scripts/base/progress_bar.js";
-import {Tabs} from "./scripts/base/tabs.js";
-import {FieldManager} from "./scripts/core/field_manager.js";
-import {Signal} from "./scripts/core/signal.js";
-import {Timer} from "./scripts/core/timer.js";
-import {Widget} from "./scripts/core/widget.js";
-import {getRequest, postRequest} from "./scripts/utils/requests.js";
-import {FSStoreBox} from "./scripts/fs_store_box.js";
-import {ObjectForm} from "./scripts/object_form.js";
-import {SettingsEditor} from "./scripts/settings_editor.js";
-import {initializeData, pipelineModules} from "./scripts/shared_data.js";
+import {Block} from "/scripts/base/block.js";
+import {Checkbox} from "/scripts/base/checkbox.js";
+import {Column} from "/scripts/base/column.js";
+import {CANVAS_TOOLS, CanvasTool} from "/scripts/base/canvas_widget.js";
+import {DockGroup} from "/scripts/base/dock_group.js";
+import {Dropdown} from "/scripts/base/dropdown.js";
+import {Form} from "/scripts/base/form.js";
+import {ImageBox} from "/scripts/base/image_box.js";
+import {MultiStateButton} from "/scripts/base/multi_state_button.js";
+import {NumberBox} from "/scripts/base/number_box.js";
+import {ProgressBar} from "/scripts/base/progress_bar.js";
+import {Tabs} from "/scripts/base/tabs.js";
+import {FieldManager} from "/scripts/core/field_manager.js";
+import {Signal} from "/scripts/core/signal.js";
+import {Timer} from "/scripts/core/timer.js";
+import {Widget} from "/scripts/core/widget.js";
+import {getRequest, postRequest} from "/scripts/utils/requests.js";
+import {secondsToHHMMSS} from "/scripts/utils/time.js";
+import {FSStoreBox} from "/scripts/fs_store_box.js";
+import {ObjectForm} from "/scripts/object_form.js";
+import {SettingsEditor} from "/scripts/settings_editor.js";
+import {initializeData, pipelineModules} from "/scripts/shared_data.js";
 
 CANVAS_TOOLS.filter = class extends CanvasTool {
     static name = "Filter";
@@ -105,27 +106,20 @@ export class MainUI extends Widget {
                 e.style.minHeight = "calc(var(--widget-height) * 2)";
                 e.onStateChange.connect(async (state) => {
                     if (state == "active") {
-                        // FIXME: Kinda ugly, as it makes UI's responsiveness
-                        // dependent on the server state, but we shouldn't start
-                        // the state-changing timer until this call returns.
-                        // ...
-                        // (Yes, I hate all those "deferred" things that make
-                        // my UX feel sluggish.)
                         await postRequest("/api/execution/generate", this._manager.value);
 
                         this.onGenerationStart.fire();
                     } else if (state == "stopped") {
-                        this.onGenerationStop.fire();
-
                         await postRequest("/api/execution/interrupt");
+
+                        this.onGenerationStop.fire();
                     }
                 });
                 this.onStateCheck.connect((state) => {
-                    if (state.state == "stopping") {
-                        e.enabled = false;
-                    } else if (state.state == "stopped") {
+                    if (state.state == "stopped") {
+                        // FIXME: Actually makes the button send the
+                        // interruption signal for the second time
                         e.state = "stopped";
-                        e.enabled = true;
                     }
                 });
             });
@@ -144,11 +138,11 @@ export class MainUI extends Widget {
                 this.onStateCheck.connect((state) => {
                     e.value = state.current_iteration;
                     e.total = state.total_iterations;
-                    e.text = `${e.value} / ${e.total}`;
+                    e.text = `${e.value} / ${e.total} (${secondsToHHMMSS(state.eta)})`;
                 });
             });
 
-            this._image = e.createChild(ImageBox, (e) => {
+            e.createChild(ImageBox, (e) => {
                 this.onStateCheck.connect((state) => {
                     if (state.preview) {
                         e.value = state.preview;

@@ -1,32 +1,31 @@
-from dataclasses import dataclass, replace
-from threading import Lock
-from time import perf_counter
+import asyncio
 from typing import Literal, Optional
 
 import numpy as np
 
 from modules.pipeline_state import PipelineState
 from modules.project import Project
+from modules.stopwatch import Stopwatch
 from modules.utils.image import NumpyImage, ensure_image_dims
 from modules.utils.logging import log
 
 
-@dataclass
-class ExecutionState:
-    running: bool = False
-    state: Literal["active", "stopping", "stopped"] = "stopped"
-    current_iteration: int = 0
-    total_iterations: int = 0
-    preview: Optional[NumpyImage] = None
-
-
 class Engine:
     def __init__(self) -> None:
-        self.state = ExecutionState()
-        self.state_lock = Lock()
+        self.running = False
+        self.state: Literal["active", "stopped"] = "stopped"
+        self.current_iteration = 0
+        self.total_iterations = 0
+        self.stopwatch = Stopwatch()
         self.project: Optional[Project] = None
+        self.preview: Optional[NumpyImage] = None
 
-    def start(self, project: Project, iterations: int) -> None:
+    async def start(self, project: Project, iterations: int) -> None:
+        self.running = True
+        self.state = "active"
+        self.current_iteration = 0
+        self.total_iterations = iterations
+        self.stopwatch.reset()
         self.project = project
 
         if project.general.initial_image is None:
@@ -34,75 +33,55 @@ class Engine:
 
         last_image = ensure_image_dims(project.general.initial_image.copy(), channels = 3)
 
-        with self.state_lock:
-            self.state = replace(
-                self.state,
-                running = True,
-                state = "active",
-                current_iteration = 0,
-                total_iterations = iterations,
-                preview = last_image,
-            )
+        self.preview = last_image
 
         for i in range(iterations):
-            with self.state_lock:
-                if not self.state.running:
-                    self.state.state = "stopping"
-                    break
+            if not self.running:
+                break
 
             log.info(f"Iteration {i + 1} / {iterations}")
 
-            with self.state_lock:
-                self.state.current_iteration = i
+            self.current_iteration = i
 
-            start_time = perf_counter()
-
-            success = True
-
-            for state in project.pipeline.run(last_image, project.general):
-                if not self.state.running:
-                    success = False
+            with self.stopwatch:
+                if (result := await asyncio.to_thread(self._run_pipeline, last_image, project)) is None:
                     break
 
-                match state:
-                    case PipelineState.progress():
-                        if state.preview:
-                            self.state.preview = state.image
+                if project.general.mode == "recursion":
+                    last_image = result
 
-                    case PipelineState.finish():
-                        if state.preview:
-                            self.state.preview = state.image
+            log.info(f"Iteration took {self.stopwatch.last:.6f} second(s)")
 
-                        if project.general.mode == "recursion":
-                            last_image = state.image
-
-                    case PipelineState.fail():
-                        log.warning(state.message)
-                        success = False
-                        break
-
-            if not success:
-                break
-
-            end_time = perf_counter()
-
-            log.info(f"Iteration took {end_time - start_time:.6f} second(s)")
-
+        self.running = False
+        self.state = "stopped"
+        self.current_iteration = 0
+        self.total_iterations = 0
+        self.stopwatch.reset()
         self.project = None
-
-        with self.state_lock:
-            self.state = replace(
-                self.state,
-                running = False,
-                state = "stopped",
-                current_iteration = 0,
-                total_iterations = 0,
-                preview = None,
-            )
+        self.preview = None
 
     def stop(self) -> None:
+        self.running = False
+
         if self.project is not None:
             self.project.pipeline.interrupt(self.project.general)
 
-        with self.state_lock:
-            self.state.running = False
+    def _run_pipeline(self, image: NumpyImage, project: Project) -> Optional[NumpyImage]:
+        for state in project.pipeline.run(image, project.general):
+            if not self.running:
+                return
+
+            match state:
+                case PipelineState.progress():
+                    if state.preview:
+                        self.preview = state.image
+
+                case PipelineState.finish():
+                    if state.preview:
+                        self.preview = state.image
+
+                    return state.image
+
+                case PipelineState.fail():
+                    log.warning(state.message)
+                    return

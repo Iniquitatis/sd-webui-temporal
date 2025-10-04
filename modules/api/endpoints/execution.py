@@ -1,4 +1,4 @@
-from asyncio import get_event_loop
+import asyncio
 from typing import Any, Optional
 
 from pydantic import BaseModel
@@ -9,6 +9,7 @@ from modules.project import Project
 from modules.shared import shared
 from modules.utils.fs import remove_directory
 from modules.utils.image import image_to_base64
+from modules.utils.logging import log
 
 
 class _(Endpoint):
@@ -20,11 +21,16 @@ class _(Endpoint):
         project: dict[str, Any] = {}
 
     async def do(self, request: Request) -> None:
+        if global_session.task is not None and not global_session.task.done():
+            log.warning("Generation is already started")
+            return
+
         project = Project.from_json(request.project)
         project.general.path = shared.settings.fs.project_dir / project.general.name
         remove_directory(project.general.path)
         project.save(project.general.path)
-        get_event_loop().run_in_executor(None, global_session.engine.start, project, request.iterations)
+
+        global_session.task = asyncio.create_task(global_session.engine.start(project, request.iterations))
 
 
 class _(Endpoint):
@@ -43,6 +49,7 @@ class _(Endpoint):
         state: str
         current_iteration: int
         total_iterations: int
+        eta: float
         preview: Optional[str] = None
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -50,21 +57,18 @@ class _(Endpoint):
         self.last_preview = None
 
     async def do(self) -> Response:
-        with global_session.engine.state_lock:
-            # FIXME: After starting the Engine in a _different_ thread, this
-            # thing might not even be "initialized", providing false information
-            # to the frontend
-            state = global_session.engine.state
+        engine = global_session.engine
 
-            if (preview := state.preview) is not None and preview is not self.last_preview:
-                self.last_preview = preview
-                sent_preview = preview
-            else:
-                sent_preview = None
+        if (preview := engine.preview) is not None and preview is not self.last_preview:
+            self.last_preview = preview
+            sent_preview = preview
+        else:
+            sent_preview = None
 
-            return self.Response(
-                state = state.state,
-                current_iteration = state.current_iteration,
-                total_iterations = state.total_iterations,
-                preview = image_to_base64(sent_preview, True, "fast") if sent_preview is not None else None,
-            )
+        return self.Response(
+            state = engine.state,
+            current_iteration = engine.current_iteration,
+            total_iterations = engine.total_iterations,
+            eta = engine.stopwatch.eta(engine.current_iteration, engine.total_iterations),
+            preview = image_to_base64(sent_preview, True, "fast") if sent_preview is not None else None,
+        )

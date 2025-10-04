@@ -1,4 +1,4 @@
-from asyncio import get_event_loop
+import asyncio
 from functools import lru_cache
 from typing import Any, Optional
 
@@ -24,7 +24,7 @@ class _(Endpoint):
             image = base64_to_image(request.image)
             return image_to_base64(module.execute(image), True, "fast")
 
-        return await get_event_loop().run_in_executor(None, render)
+        return await asyncio.to_thread(render)
 
 
 class _(Endpoint):
@@ -41,7 +41,7 @@ class _(Endpoint):
             image = self._get_scaled_sample_image(request.size)
             return image_to_base64(module.sample(image), True, "fast")
 
-        return await get_event_loop().run_in_executor(None, render)
+        return await asyncio.to_thread(render)
 
     @staticmethod
     @lru_cache
@@ -76,4 +76,4 @@ class _(Endpoint):
 
             return None
 
-        return await get_event_loop().run_in_executor(None, render)
+        return await asyncio.to_thread(render)
