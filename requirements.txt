@@ -1,5 +1,6 @@
 fastapi[standard]
 matplotlib
+numba
 numpy==1.26.4
 pillow
 pybase64

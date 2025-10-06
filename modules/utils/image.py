@@ -142,6 +142,22 @@ def np_to_pil(image: NumpyImage) -> PILImage:
 
 
 def pil_to_np(image: PILImage) -> NumpyImage:
+    match image.mode:
+        case "RGB":
+            pass
+        case "RGBA":
+            pass
+        case "P":
+            image = image.convert("RGB")
+        case "PA":
+            image = image.convert("RGBA")
+        case "L":
+            image = image.convert("RGB")
+        case "LA":
+            image = image.convert("RGBA")
+        case _:
+            raise Exception(f"Unsupported image mode {image.mode}")
+
     return skimage.util.img_as_float(image)
 
 
