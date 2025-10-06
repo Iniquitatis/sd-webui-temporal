@@ -106,13 +106,21 @@ export class MainUI extends Widget {
                 e.style.minHeight = "calc(var(--widget-height) * 2)";
                 e.onStateChange.connect(async (state) => {
                     if (state == "active") {
+                        e.enabled = false;
+
                         await postRequest("/api/execution/generate", this._manager.value);
 
                         this.onGenerationStart.fire();
+
+                        e.enabled = true;
                     } else if (state == "stopped") {
+                        e.enabled = false;
+
                         await postRequest("/api/execution/interrupt");
 
                         this.onGenerationStop.fire();
+
+                        e.enabled = true;
                     }
                 });
                 this.onStateCheck.connect((state) => {
@@ -167,7 +175,7 @@ export class MainUI extends Widget {
             e.createDock("\u{f53f}", "Project", Form, (e) => {
                 e.createField("Project", FSStoreBox, (e) => {
                     e.saveCallback = () => this._manager.value.project;
-                    e.onLoad.connect(async (value) => {
+                    e.onLoad.connect((value) => {
                         this.onProjectLoad.fire(value);
                     });
                 }, "projects", ["refresh", "load", "save", "rename", "delete"]);

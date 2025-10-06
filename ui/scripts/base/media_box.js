@@ -109,7 +109,7 @@ export class MediaBox extends Block {
                     e.value = this.value;
 
                     if (features.includes("download")) {
-                        e.addTool("\u{f019}", async () => {
+                        e.addTool("\u{f019}", () => {
                             this._fileDownloader.download(this.value, getDownloadFileName());
                         });
                     }
@@ -169,7 +169,7 @@ export class MediaBox extends Block {
         }
 
         if (features.includes("download")) {
-            this.addTool("\u{f019}", async () => {
+            this.addTool("\u{f019}", () => {
                 this._fileDownloader.download(this.value, getDownloadFileName());
             });
         }
