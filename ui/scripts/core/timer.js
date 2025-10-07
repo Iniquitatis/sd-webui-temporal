@@ -6,6 +6,8 @@ export class Timer {
     }
 
     start() {
+        if (this._instance) return;
+
         this._instance = window.setInterval(this._callback, this._interval * 1000.0);
     }
 

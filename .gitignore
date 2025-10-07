@@ -5,4 +5,4 @@ outputs/**
 settings/**
 tmp/**
 venv/**
-commit.txt
+jsconfig.json

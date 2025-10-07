@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel
 
@@ -21,7 +21,7 @@ class _(Endpoint):
         project: dict[str, Any] = {}
 
     async def do(self, request: Request) -> None:
-        if global_session.task is not None and not global_session.task.done():
+        if global_session.is_task_active:
             log.warning("Generation is already started")
             return
 
@@ -40,13 +40,16 @@ class _(Endpoint):
     async def do(self) -> None:
         global_session.engine.stop()
 
+        if global_session.task is not None:
+            await global_session.task
+
 
 class _(Endpoint):
     method = "GET"
     path = "/api/execution/state"
 
     class Response(BaseModel):
-        state: str
+        state: Literal["active", "stopped"]
         current_iteration: int
         total_iterations: int
         eta: float
@@ -66,7 +69,7 @@ class _(Endpoint):
             sent_preview = None
 
         return self.Response(
-            state = engine.state,
+            state = "active" if global_session.is_task_active else "stopped",
             current_iteration = engine.current_iteration,
             total_iterations = engine.total_iterations,
             eta = engine.stopwatch.eta(engine.current_iteration, engine.total_iterations),

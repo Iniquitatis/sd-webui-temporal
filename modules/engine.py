@@ -1,5 +1,5 @@
 import asyncio
-from typing import Literal, Optional
+from typing import Optional
 
 import numpy as np
 
@@ -13,7 +13,6 @@ from modules.utils.logging import log
 class Engine:
     def __init__(self) -> None:
         self.running = False
-        self.state: Literal["active", "stopped"] = "stopped"
         self.current_iteration = 0
         self.total_iterations = 0
         self.stopwatch = Stopwatch()
@@ -22,7 +21,6 @@ class Engine:
 
     async def start(self, project: Project, iterations: int) -> None:
         self.running = True
-        self.state = "active"
         self.current_iteration = 0
         self.total_iterations = iterations
         self.stopwatch.reset()
@@ -53,7 +51,6 @@ class Engine:
             log.info(f"Iteration took {self.stopwatch.last:.6f} second(s)")
 
         self.running = False
-        self.state = "stopped"
         self.current_iteration = 0
         self.total_iterations = 0
         self.stopwatch.reset()

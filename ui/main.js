@@ -79,17 +79,19 @@ export class MainUI extends Widget {
 
         this.onValueChange = new Signal();
         this.onProjectLoad = new Signal();
-        this.onGenerationStart = new Signal();
-        this.onGenerationStop = new Signal();
         this.onStateCheck = new Signal();
 
         this._manager = new FieldManager(this.onValueChange);
 
         this._stateTimer = new Timer(async () => {
-            this.onStateCheck.fire(await getRequest("/api/execution/state"));
+            let state = await getRequest("/api/execution/state");
+
+            if (state.state == "stopped") {
+                this._stateTimer.stop();
+            }
+
+            this.onStateCheck.fire(state);
         }, 1.0);
-        this.onGenerationStart.connect(() => this._stateTimer.start());
-        this.onGenerationStop.connect(() => this._stateTimer.stop());
 
         this.style.height = "100%";
         this.style.position = "fixed";
@@ -100,53 +102,39 @@ export class MainUI extends Widget {
             e.style.padding = "var(--layout-padding)";
             e.style.position = "absolute";
 
-            e.createChild(MultiStateButton, (e) => {
+            this._stateButton = e.createChild(MultiStateButton, (e) => {
                 e.states = {stopped: "Generate", active: "Stop"};
                 e.state = "stopped";
                 e.style.minHeight = "calc(var(--widget-height) * 2)";
-                e.onStateChange.connect(async (state) => {
-                    if (state == "active") {
-                        e.enabled = false;
-
-                        await postRequest("/api/execution/generate", this._manager.value);
-
-                        this.onGenerationStart.fire();
-
-                        e.enabled = true;
-                    } else if (state == "stopped") {
-                        e.enabled = false;
-
-                        await postRequest("/api/execution/interrupt");
-
-                        this.onGenerationStop.fire();
-
-                        e.enabled = true;
+                e.onClick.connect(async () => {
+                    switch (e.state) {
+                        case "active": await this._start(); break;
+                        case "stopped": await this._stop(); break;
                     }
                 });
                 this.onStateCheck.connect((state) => {
-                    if (state.state == "stopped") {
-                        // FIXME: Actually makes the button send the
-                        // interruption signal for the second time
-                        e.state = "stopped";
+                    switch (state.state) {
+                        case "active": e.state = "active"; break;
+                        case "stopped": e.state = "stopped"; break;
                     }
                 });
             });
 
             e.createChild(ProgressBar, (e) => {
                 e.visible = false;
-                this.onGenerationStart.connect(() => {
-                    e.value = 0;
-                    e.total = 0;
-                    e.text = "(Indeterminate)";
-                    e.visible = true;
-                });
-                this.onGenerationStop.connect(() => {
-                    e.visible = false;
-                });
                 this.onStateCheck.connect((state) => {
-                    e.value = state.current_iteration;
-                    e.total = state.total_iterations;
-                    e.text = `${e.value} / ${e.total} (${secondsToHHMMSS(state.eta)})`;
+                    switch (state.state) {
+                        case "active": {
+                            e.value = state.current_iteration;
+                            e.total = state.total_iterations;
+                            e.text = `${e.value} / ${e.total} (${secondsToHHMMSS(state.eta)})`;
+                            e.visible = true;
+                        } break;
+
+                        case "stopped": {
+                            e.visible = false;
+                        } break;
+                    }
                 });
             });
 
@@ -184,10 +172,10 @@ export class MainUI extends Widget {
                     e.minimum = 1;
                     e.step = 1;
                     e.value = 10;
+                    this._attachToHotReload(e);
                     this._manager.manage(e, "iterations");
                 });
 
-                // TODO
                 this._hotReload = e.createField("Hot reload", Checkbox, (e) => {
                     e.value = false;
                 });
@@ -197,6 +185,7 @@ export class MainUI extends Widget {
                     this.onProjectLoad.connect((project) => {
                         e.value = project;
                     });
+                    this._attachToHotReload(e);
                     this._manager.manage(e, "project");
                 }, "modules.project.Project");
             });
@@ -216,6 +205,40 @@ export class MainUI extends Widget {
                 });
             });
         });
+    }
+
+    _attachToHotReload(widget) {
+        widget.onValueChange.connect(async () => {
+            // NOTE: Might be called multiple times in parallel because of async
+            // nature (for example, when user spams some toggle), but there's
+            // no clean way to cancel the current "await". Every other solution
+            // (queueing, early return based on a state flag, etc.) would lead
+            // to worse UX.
+            if (!this._hotReload.value) return;
+
+            await this._stop();
+            await this._start();
+        });
+    }
+
+    async _start() {
+        this._stateButton.enabled = false;
+
+        await postRequest("/api/execution/generate", this._manager.value);
+
+        this._stateTimer.start();
+
+        this._stateButton.enabled = true;
+    }
+
+    async _stop() {
+        this._stateButton.enabled = false;
+
+        await postRequest("/api/execution/interrupt");
+
+        this._stateTimer.stop();
+
+        this._stateButton.enabled = true;
     }
 }
 customElements.define("main-ui", MainUI);
