@@ -33,4 +33,4 @@ export class SettingsEditor extends Column {
         this._editor.value = value;
     }
 }
-customElements.define("settings-editor", SettingsEditor);
+customElements.define("ce-settings-editor", SettingsEditor);

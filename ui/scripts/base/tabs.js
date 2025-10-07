@@ -9,7 +9,7 @@ class Tab extends Widget {
         this.name = "Untitled";
     }
 }
-customElements.define("layout-tab", Tab);
+customElements.define("ce-tab", Tab);
 
 export class Tabs extends Widget {
     constructor() {
@@ -64,4 +64,4 @@ export class Tabs extends Widget {
         }
     }
 }
-customElements.define("layout-tabs", Tabs);
+customElements.define("ce-tabs", Tabs);

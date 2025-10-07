@@ -241,7 +241,7 @@ export class MainUI extends Widget {
         this._stateButton.enabled = true;
     }
 }
-customElements.define("main-ui", MainUI);
+customElements.define("ce-main-ui", MainUI);
 
 window.onload = async () => {
     await initializeData();

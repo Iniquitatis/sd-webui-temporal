@@ -160,4 +160,4 @@ export class FSStoreBox extends Row {
         this.onValueChange.fire(value);
     }
 }
-customElements.define("fs-store-box", FSStoreBox);
+customElements.define("ce-fs-store-box", FSStoreBox);

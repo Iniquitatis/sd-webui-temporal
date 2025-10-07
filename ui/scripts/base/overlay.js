@@ -57,4 +57,4 @@ export class Overlay extends Widget {
         return this._content.createChild(tagOrClass, initializer, ...args);
     }
 }
-customElements.define("overlay-widget", Overlay);
+customElements.define("ce-overlay", Overlay);

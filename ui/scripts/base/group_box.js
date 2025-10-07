@@ -29,4 +29,4 @@ export class GroupBox extends Block {
         return createElement(this._fieldset, tagOrClass, initializer, ...args);
     }
 }
-customElements.define("group-box", GroupBox);
+customElements.define("ce-group-box", GroupBox);

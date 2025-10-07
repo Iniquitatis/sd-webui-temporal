@@ -22,7 +22,7 @@ class MediaViewer extends Overlay {
         this._element.value = value;
     }
 }
-customElements.define("media-viewer", MediaViewer);
+customElements.define("ce-media-viewer", MediaViewer);
 
 export class MediaBox extends Block {
     constructor(cls, mimeType = "*/*", features = []) {
@@ -200,7 +200,7 @@ export class MediaBox extends Block {
         });
     }
 }
-customElements.define("media-box", MediaBox);
+customElements.define("ce-media-box", MediaBox);
 
 function getDownloadFileName() {
     return `temporal_${new Date(Date.now()).toISOString()}`;

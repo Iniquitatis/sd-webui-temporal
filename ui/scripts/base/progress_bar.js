@@ -66,4 +66,4 @@ export class ProgressBar extends Block {
         this._fill.style.width = `${clamp(normalize(this._value, 0.0, this._total), 0.0, 1.0) * 100.0}%`;
     }
 }
-customElements.define("progress-bar", ProgressBar);
+customElements.define("ce-progress-bar", ProgressBar);

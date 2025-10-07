@@ -48,7 +48,7 @@ class Dock extends Column {
         return this._content.createChild(tagOrClass, initializer, ...args);
     }
 }
-customElements.define("dock-widget", Dock);
+customElements.define("ce-dock", Dock);
 
 export class DockGroup extends Widget {
     constructor() {
@@ -100,4 +100,4 @@ export class DockGroup extends Widget {
         }
     }
 }
-customElements.define("dock-group", DockGroup);
+customElements.define("ce-dock-group", DockGroup);

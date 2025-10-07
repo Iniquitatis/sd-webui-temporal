@@ -654,7 +654,7 @@ export class CanvasWidget extends Block {
         currentWidget = null;
     }
 }
-customElements.define("canvas-widget", CanvasWidget);
+customElements.define("ce-canvas-widget", CanvasWidget);
 
 let currentWidget = null;
 

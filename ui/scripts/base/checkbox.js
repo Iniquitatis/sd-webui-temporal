@@ -55,4 +55,4 @@ export class Checkbox extends Widget {
         return true;
     }
 }
-customElements.define("custom-checkbox", Checkbox);
+customElements.define("ce-checkbox", Checkbox);

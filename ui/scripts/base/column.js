@@ -10,4 +10,4 @@ export class Column extends Widget {
         this.style.width = "100%";
     }
 }
-customElements.define("layout-column", Column);
+customElements.define("ce-column", Column);

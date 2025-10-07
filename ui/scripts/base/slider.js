@@ -198,4 +198,4 @@ export class Slider extends Block {
         this._caption.innerText = `${this._fixedValueString}${this._suffix}`;
     }
 }
-customElements.define("custom-slider", Slider);
+customElements.define("ce-slider", Slider);

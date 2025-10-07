@@ -103,7 +103,7 @@ export class ObjectForm extends Form {
         this._manager.value = value;
     }
 }
-customElements.define("object-form", ObjectForm);
+customElements.define("ce-object-form", ObjectForm);
 
 function areDependenciesSatisfied(formValue, dependencies) {
     for (let [depKey, depValue] of Object.entries(dependencies)) {

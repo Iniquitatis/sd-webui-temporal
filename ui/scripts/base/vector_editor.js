@@ -77,4 +77,4 @@ export class VectorEditor extends Row {
         this._manager.value = value;
     }
 }
-customElements.define("vector-editor", VectorEditor);
+customElements.define("ce-vector-editor", VectorEditor);

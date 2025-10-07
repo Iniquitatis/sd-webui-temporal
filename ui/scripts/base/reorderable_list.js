@@ -53,7 +53,7 @@ export class ReorderableList extends Column {
         this._mo.observe(this, {childList: true, subtree: false});
     }
 }
-customElements.define("reorderable-list", ReorderableList);
+customElements.define("ce-reorderable-list", ReorderableList);
 
 export class ReorderableAccordion extends Accordion {
     constructor() {
@@ -74,7 +74,7 @@ export class ReorderableAccordion extends Accordion {
         });
     }
 }
-customElements.define("reorderable-accordion", ReorderableAccordion);
+customElements.define("ce-reorderable-accordion", ReorderableAccordion);
 
 export class ReorderableElement extends Row {
     constructor() {
@@ -98,4 +98,4 @@ export class ReorderableElement extends Row {
         });
     }
 }
-customElements.define("reorderable-element", ReorderableElement);
+customElements.define("ce-reorderable-element", ReorderableElement);

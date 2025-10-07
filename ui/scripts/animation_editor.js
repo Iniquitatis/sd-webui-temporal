@@ -61,7 +61,7 @@ class KeyframeEditor extends ReorderableElement {
         this._manager.value = value;
     }
 }
-customElements.define("animation-keyframe-editor", KeyframeEditor);
+customElements.define("ce-keyframe-editor", KeyframeEditor);
 
 class KeyframeList extends ListEditor {
     constructor(schema) {
@@ -78,7 +78,7 @@ class KeyframeList extends ListEditor {
         return [this._schema];
     }
 }
-customElements.define("animation-keyframe-list", KeyframeList);
+customElements.define("ce-keyframe-list", KeyframeList);
 
 class TrackEditor extends ReorderableAccordion {
     constructor(key, schema) {
@@ -152,7 +152,7 @@ class TrackEditor extends ReorderableAccordion {
         this._manager.value = value;
     }
 }
-customElements.define("animation-track-editor", TrackEditor);
+customElements.define("ce-track-editor", TrackEditor);
 
 class TrackList extends ChoiceListEditor {
     constructor(schema) {
@@ -169,7 +169,7 @@ class TrackList extends ChoiceListEditor {
         return [choice, this._schema.fields[choice]];
     }
 }
-customElements.define("animation-track-list", TrackList);
+customElements.define("ce-track-list", TrackList);
 
 export class AnimationEditor extends Column {
     constructor(schema) {
@@ -193,4 +193,4 @@ export class AnimationEditor extends Column {
         this._manager.value = value;
     }
 }
-customElements.define("animation-editor", AnimationEditor);
+customElements.define("ce-animation-editor", AnimationEditor);

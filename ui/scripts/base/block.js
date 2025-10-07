@@ -7,4 +7,4 @@ export class Block extends Widget {
         this.style.display = "block";
     }
 }
-customElements.define("custom-block", Block);
+customElements.define("ce-block", Block);

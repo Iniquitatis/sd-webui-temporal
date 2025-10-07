@@ -9,4 +9,4 @@ export class Row extends Widget {
         this.style.gap = "var(--layout-gap)";
     }
 }
-customElements.define("layout-row", Row);
+customElements.define("ce-row", Row);

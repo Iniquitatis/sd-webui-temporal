@@ -26,4 +26,4 @@ export class TextBox extends Widget {
         this.onValueChange.fire(this.value);
     }
 }
-customElements.define("text-box", TextBox);
+customElements.define("ce-text-box", TextBox);

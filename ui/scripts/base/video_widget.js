@@ -39,4 +39,4 @@ export class VideoWidget extends Block {
         this.onValueChange.fire(this.value);
     }
 }
-customElements.define("video-widget", VideoWidget);
+customElements.define("ce-video-widget", VideoWidget);

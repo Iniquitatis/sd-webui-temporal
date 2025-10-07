@@ -50,4 +50,4 @@ export class NumberBox extends Widget {
         this.onValueChange.fire(this.value);
     }
 }
-customElements.define("number-box", NumberBox);
+customElements.define("ce-number-box", NumberBox);

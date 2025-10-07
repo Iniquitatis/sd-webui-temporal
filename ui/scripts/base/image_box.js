@@ -66,7 +66,7 @@ class ImageEditor extends Overlay {
         this._canvas.value = value;
     }
 }
-customElements.define("image-editor", ImageEditor);
+customElements.define("ce-image-editor", ImageEditor);
 
 export class ImageBox extends MediaBox {
     constructor(features = []) {
@@ -84,4 +84,4 @@ export class ImageBox extends MediaBox {
         }
     }
 }
-customElements.define("image-box", ImageBox);
+customElements.define("ce-image-box", ImageBox);

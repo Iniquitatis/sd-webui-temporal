@@ -6,4 +6,4 @@ export class VideoBox extends MediaBox {
         super(VideoWidget, "video/*", features);
     }
 }
-customElements.define("video-box", VideoBox);
+customElements.define("ce-video-box", VideoBox);

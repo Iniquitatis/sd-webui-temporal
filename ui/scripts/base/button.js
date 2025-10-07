@@ -26,4 +26,4 @@ export class Button extends Widget {
         this._button.innerText = value;
     }
 }
-customElements.define("custom-button", Button);
+customElements.define("ce-button", Button);

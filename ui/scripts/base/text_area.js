@@ -28,4 +28,4 @@ export class TextArea extends Widget {
         this.onValueChange.fire(this.value);
     }
 }
-customElements.define("text-area", TextArea);
+customElements.define("ce-text-area", TextArea);

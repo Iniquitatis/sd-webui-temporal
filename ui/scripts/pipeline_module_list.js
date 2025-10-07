@@ -149,7 +149,7 @@ class PipelineModuleEditor extends ReorderableAccordion {
         });
     }
 }
-customElements.define("pipeline-module-editor", PipelineModuleEditor);
+customElements.define("ce-pipeline-module-editor", PipelineModuleEditor);
 
 export class PipelineModuleList extends ChoiceListEditor {
     constructor() {
@@ -166,4 +166,4 @@ export class PipelineModuleList extends ChoiceListEditor {
         return [choice];
     }
 }
-customElements.define("pipeline-module-list", PipelineModuleList);
+customElements.define("ce-pipeline-module-list", PipelineModuleList);

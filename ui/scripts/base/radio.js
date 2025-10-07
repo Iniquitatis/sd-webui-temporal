@@ -78,4 +78,4 @@ export class Radio extends Widget {
         this._stateManager.value = value;
     }
 }
-customElements.define("custom-radio", Radio);
+customElements.define("ce-radio", Radio);

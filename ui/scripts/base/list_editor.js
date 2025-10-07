@@ -111,7 +111,7 @@ export class ListEditor extends ListEditorBase {
         return [];
     }
 }
-customElements.define("list-editor", ListEditor);
+customElements.define("ce-list-editor", ListEditor);
 
 export class ChoiceListEditor extends ListEditorBase {
     constructor(elementClass, choices) {
@@ -138,4 +138,4 @@ export class ChoiceListEditor extends ListEditorBase {
         return [];
     }
 }
-customElements.define("typed-list-editor", ChoiceListEditor);
+customElements.define("ce-choice-list-editor", ChoiceListEditor);

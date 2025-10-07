@@ -61,4 +61,4 @@ export class Dropdown extends Widget {
         this._stateManager.value = value;
     }
 }
-customElements.define("custom-dropdown", Dropdown);
+customElements.define("ce-dropdown", Dropdown);

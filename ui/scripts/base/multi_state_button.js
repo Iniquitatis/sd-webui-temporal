@@ -40,4 +40,4 @@ export class MultiStateButton extends Button {
         this._stateManager.nextState();
     }
 }
-customElements.define("multi-state-button", MultiStateButton);
+customElements.define("ce-multi-state-button", MultiStateButton);

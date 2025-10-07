@@ -38,4 +38,4 @@ export class SeedBox extends Row {
         this._box.value = value;
     }
 }
-customElements.define("seed-box", SeedBox);
+customElements.define("ce-seed-box", SeedBox);

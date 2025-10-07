@@ -48,4 +48,4 @@ export class MultiStateToggle extends Widget {
         this._stateManager.nextState();
     }
 }
-customElements.define("multi-state-toggle", MultiStateToggle);
+customElements.define("ce-multi-state-toggle", MultiStateToggle);

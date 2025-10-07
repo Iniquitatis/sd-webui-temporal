@@ -44,4 +44,4 @@ export class CodeArea extends Widget {
         this.onValueChange.fire(this.value);
     }
 }
-customElements.define("code-area", CodeArea);
+customElements.define("ce-code-area", CodeArea);

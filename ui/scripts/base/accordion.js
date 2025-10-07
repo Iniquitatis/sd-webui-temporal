@@ -63,4 +63,4 @@ export class Accordion extends Widget {
         return this._content.createChild(tagOrClass, initializer, ...args);
     }
 }
-customElements.define("layout-accordion", Accordion);
+customElements.define("ce-accordion", Accordion);

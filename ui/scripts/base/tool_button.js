@@ -11,4 +11,4 @@ export class ToolButton extends Button {
         this._button.style.padding = "unset";
     }
 }
-customElements.define("tool-button", ToolButton);
+customElements.define("ce-tool-button", ToolButton);

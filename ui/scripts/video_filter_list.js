@@ -73,7 +73,7 @@ class VideoFilterEditor extends ReorderableAccordion {
         this._manager.value = value;
     }
 }
-customElements.define("video-filter-editor", VideoFilterEditor);
+customElements.define("ce-video-filter-editor", VideoFilterEditor);
 
 export class VideoFilterList extends ChoiceListEditor {
     constructor() {
@@ -88,4 +88,4 @@ export class VideoFilterList extends ChoiceListEditor {
         return [choice];
     }
 }
-customElements.define("video-filter-list", VideoFilterList);
+customElements.define("ce-video-filter-list", VideoFilterList);

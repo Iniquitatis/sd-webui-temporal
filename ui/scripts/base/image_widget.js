@@ -38,4 +38,4 @@ export class ImageWidget extends Block {
         this.onValueChange.fire(this.value);
     }
 }
-customElements.define("image-widget", ImageWidget);
+customElements.define("ce-image-widget", ImageWidget);

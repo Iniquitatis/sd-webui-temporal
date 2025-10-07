@@ -62,4 +62,4 @@ export class Form extends Widget {
         return this.createChild(Form, initializer, true);
     }
 }
-customElements.define("custom-form", Form);
+customElements.define("ce-form", Form);

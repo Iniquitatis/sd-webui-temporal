@@ -76,4 +76,4 @@ export class ColorPicker extends Row {
         return true;
     }
 }
-customElements.define("color-picker", ColorPicker);
+customElements.define("ce-color-picker", ColorPicker);
