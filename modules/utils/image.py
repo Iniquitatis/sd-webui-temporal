@@ -5,7 +5,7 @@ from typing import Annotated, Callable, Literal, Optional
 import numpy as np
 import skimage
 from PIL import Image
-from skimage.transform import AffineTransform as Transform
+from skimage.transform import AffineTransform as Transform, resize
 
 from modules.utils.base64 import decode, decode_with_mime_type, encode, encode_with_mime_type
 from modules.utils.math import lerp
@@ -57,15 +57,8 @@ def ensure_image_dims(image: NumpyImage, size: Optional[tuple[int, int]] = None,
     target_height = size[1] if size is not None else image_height
     target_channels = channels if channels is not None else image_channels
 
-    if image_width == target_width and image_height == target_height and image_channels == target_channels:
-        return image
-
-    pil_image = np_to_pil(image)
-
     if image_width != target_width or image_height != target_height:
-        pil_image = pil_image.resize((target_width, target_height), Image.Resampling.LANCZOS)
-
-    image = pil_to_np(pil_image)
+        image = resize(image, (target_height, target_width), order = 3, preserve_range = True, anti_aliasing = False)
 
     if image_channels != target_channels:
         image = image[..., :target_channels]
