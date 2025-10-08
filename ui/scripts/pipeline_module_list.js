@@ -83,6 +83,8 @@ class PipelineModuleEditor extends ReorderableAccordion {
                     }
 
                     // TODO: Filter out animatable fields
+                    // FIXME: Shown based on a wrong assumption that only
+                    // filters or visualizables are animatable
                     e.createTab("Animation", AnimationEditor, (e) => {
                         this._manager.manage(e, "animation");
                     }, schema);
