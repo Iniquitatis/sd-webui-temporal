@@ -74,7 +74,6 @@ export class ReorderableElement extends Row {
     static css = `
         <self> {
             gap: var(--layout-small-gap);
-            width: 100%;
         }
     `;
 

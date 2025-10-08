@@ -35,7 +35,7 @@ export class Form extends Widget {
     constructor(isRow = false) {
         super();
 
-        this.className = isRow ? "row" : "column";
+        this.classList.add(isRow ? "row" : "column");
     }
 
     createField(name, tagOrClass, initializer, ...args) {
@@ -54,7 +54,7 @@ export class Form extends Widget {
             });
         } else {
             this.createChild(Block, (e) => {
-                e.className = "field";
+                e.classList.add("field");
 
                 e.createChild(Block, (e) => {
                     e.innerText = name;

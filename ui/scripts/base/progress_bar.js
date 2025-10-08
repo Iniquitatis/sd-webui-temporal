@@ -37,12 +37,12 @@ export class ProgressBar extends Block {
         this._value = 0;
 
         this._fill = this.createChild(Block, (e) => {
-            e.className = "fill";
+            e.classList.add("fill");
             e.style.width = "0%";
         });
 
         this._caption = this.createChild(Block, (e) => {
-            e.className = "caption";
+            e.classList.add("caption");
         });
     }
 

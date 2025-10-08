@@ -14,10 +14,6 @@ export class VectorEditor extends Row {
             height: var(--widget-height);
             width: 1rem;
         }
-
-        <self> > .editor {
-            width: 100%;
-        }
     `;
 
     constructor(cls, axes) {
@@ -30,12 +26,11 @@ export class VectorEditor extends Row {
 
         for (let [key, label] of Object.entries(axes)) {
             this.createChild(Block, (e) => {
-                e.className = "label";
+                e.classList.add("label");
                 e.innerText = label;
             });
 
             this._editors.push(this.createChild(cls, (e) => {
-                e.className = "editor";
                 this._manager.manage(e, key);
             }));
         }

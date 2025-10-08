@@ -40,7 +40,6 @@ CANVAS_TOOLS.filter = class extends CanvasTool {
             }
 
             e.choices = names;
-            e.style.width = "100%";
             e.onValueChange.connect((value) => {
                 if (this._params) {
                     this._body.removeChild(this._params);

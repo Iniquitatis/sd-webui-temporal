@@ -10,10 +10,6 @@ export class SeedBox extends Row {
         <self> {
             gap: var(--layout-small-gap);
         }
-
-        <self> > ce-number-box {
-            width: 100%;
-        }
     `;
 
     constructor() {

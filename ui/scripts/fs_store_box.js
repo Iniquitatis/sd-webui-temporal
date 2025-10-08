@@ -11,10 +11,6 @@ export class FSStoreBox extends Row {
         <self> {
             gap: var(--layout-small-gap);
         }
-
-        <self> > ce-dropdown {
-            width: 100%;
-        }
     `;
 
     constructor(type, features) {

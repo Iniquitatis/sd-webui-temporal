@@ -21,12 +21,8 @@ import {pipelineModules, pipelineModuleIcons} from "/scripts/shared_data.js";
 class PipelineModuleEditor extends ReorderableAccordion {
     static tag = "ce-pipeline-module-editor";
     static css = `
-        <self> > ce-column > ce-image-box {
+        <self> .sample {
             height: 12rem;
-        }
-
-        <self> > ce-column > ce-row > ce-button {
-            width: 100%;
         }
     `;
 
@@ -58,6 +54,7 @@ class PipelineModuleEditor extends ReorderableAccordion {
         this.createChild(Column, (e) => {
             if (schema.is_sampleable) {
                 this._sampleBox = e.createChild(ImageBox, (e) => {
+                    e.classList.add("sample");
                     this.onValueChange.connect(async () => {
                         await this._updateSample();
                     });

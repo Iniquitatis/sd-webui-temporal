@@ -113,12 +113,12 @@ export class Slider extends Block {
         drag.register(this);
 
         this._fill = this.createChild(Block, (e) => {
-            e.className = "fill";
+            e.classList.add("fill");
             e.style.width = "0%";
         });
 
         this._caption = this.createChild(Block, (e) => {
-            e.className = "caption";
+            e.classList.add("caption");
         });
 
         this._input = this.createChild("input", (e) => {

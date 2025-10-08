@@ -22,10 +22,6 @@ export class ColorPicker extends Row {
             width: 1rem;
         }
 
-        <self> > ce-column > ce-row > ce-slider {
-            width: 100%;
-        }
-
         <self> > ce-column > ce-row:nth-of-type(1) > ce-slider > .fill {
             background: oklch(from var(--fill-color) l 25% 30deg);
         }

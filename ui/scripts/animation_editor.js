@@ -15,15 +15,6 @@ import {getFieldDefinition} from "/scripts/object_field.js";
 
 class KeyframeEditor extends ReorderableElement {
     static tag = "ce-keyframe-editor";
-    static css = `
-        <self> > .frame {
-            width: 100%;
-        }
-
-        <self> > .value {
-            width: 100%;
-        }
-    `;
 
     constructor(schema) {
         super();
@@ -35,7 +26,6 @@ class KeyframeEditor extends ReorderableElement {
         this._manager = new FieldManager(this.onValueChange);
 
         this.createChild(NumberBox, (e) => {
-            e.className = "frame";
             e.minimum = 1;
             e.step = 1;
             e.value = 1;
@@ -46,7 +36,6 @@ class KeyframeEditor extends ReorderableElement {
 
         this.createChild(cls, (e) => {
             initializer(e);
-            e.classList.add("value");
             this._manager.manage(e, "value", reader, writer);
         }, ...(args ?? []));
 
@@ -112,7 +101,6 @@ class TrackEditor extends ReorderableAccordion {
         this.createChild(Form, (e) => {
             e.createRow((e) => {
                 e.createField("Interpolation", Dropdown, (e) => {
-                    e.style.width = "100%";
                     e.choices = {
                         "linear": "Linear",
                         "smoothstep": "Smoothstep",
@@ -125,7 +113,6 @@ class TrackEditor extends ReorderableAccordion {
                 });
 
                 e.createField("Bounds", Dropdown, (e) => {
-                    e.style.width = "100%";
                     e.choices = {
                         "clamp": "Clamp",
                         "repeat": "Repeat",
@@ -143,7 +130,6 @@ class TrackEditor extends ReorderableAccordion {
             e.createChild(Row, (e) => {
                 e.createChild(Button, (e) => {
                     e.label = "\u{f0c5} Duplicate";
-                    e.style.width = "100%";
                     e.onClick.connect(() => {
                         this.onDuplicateRequest.fire(deepCopy(this.value));
                     });
@@ -151,7 +137,6 @@ class TrackEditor extends ReorderableAccordion {
 
                 e.createChild(Button, (e) => {
                     e.label = "\u{f2ed} Remove";
-                    e.style.width = "100%";
                     e.onClick.connect(() => {
                         this.onRemoveRequest.fire();
                     });

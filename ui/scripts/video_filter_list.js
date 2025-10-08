@@ -13,11 +13,6 @@ import {videoFilters} from "/scripts/shared_data.js";
 
 class VideoFilterEditor extends ReorderableAccordion {
     static tag = "ce-video-filter-editor";
-    static css = `
-        <self> > ce-column > ce-row > ce-button {
-            width: 100%;
-        }
-    `;
 
     constructor(type) {
         super();

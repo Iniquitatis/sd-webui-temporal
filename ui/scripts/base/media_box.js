@@ -47,7 +47,7 @@ export class MediaBox extends Block {
             user-select: none;
         }
 
-        <self> > .upload-image {
+        <self> > .upload-background {
             align-content: center;
             color: var(--hint-color);
             font-size: 96px;
@@ -85,7 +85,7 @@ export class MediaBox extends Block {
 
         if (features.includes("upload")) {
             this.createChild(Block, (e) => {
-                e.className = "upload-image";
+                e.classList.add("upload-background");
                 e.innerText = "\u{f093}";
                 e.addEventListener("click", () => {
                     if (!this.value) {
@@ -99,7 +99,7 @@ export class MediaBox extends Block {
         }
 
         this._element = this.createChild(cls, (e) => {
-            e.className = "element";
+            e.classList.add("element");
             e.visible = false;
             e.onValueChange.connect((value) => {
                 if (this._viewer) {
@@ -114,7 +114,7 @@ export class MediaBox extends Block {
         });
 
         this._tools = this.createChild(Row, (e) => {
-            e.className = "tools";
+            e.classList.add("tools");
             e.visible = false;
             this.onValueChange.connect((value) => {
                 e.visible = !!value;

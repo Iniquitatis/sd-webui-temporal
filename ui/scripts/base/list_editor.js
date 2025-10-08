@@ -121,10 +121,6 @@ export class ChoiceListEditor extends ListEditorBase {
         <self> > ce-row {
             gap: var(--layout-small-gap);
         }
-
-        <self> > ce-row > ce-dropdown {
-            width: 100%;
-        }
     `;
 
     constructor(elementClass, choices) {

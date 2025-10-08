@@ -8,6 +8,9 @@ export class Column extends Widget {
             display: flex;
             flex-direction: column;
             gap: var(--layout-gap);
+        }
+
+        <self> > * {
             width: 100%;
         }
     `;
