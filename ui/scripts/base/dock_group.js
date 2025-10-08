@@ -20,7 +20,7 @@ class Dock extends Column {
         <self> > ce-row > ce-block {
             align-content: center;
             color: var(--hint-color);
-            font-size: 1.2rem;
+            font-size: var(--title-size);
         }
 
         <self> > ce-block {

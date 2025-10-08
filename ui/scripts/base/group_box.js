@@ -12,7 +12,7 @@ export class GroupBox extends Block {
 
         <self> > fieldset > legend {
             color: var(--hint-color);
-            font-size: 0.9rem;
+            font-size: var(--hint-size);
         }
     `;
 

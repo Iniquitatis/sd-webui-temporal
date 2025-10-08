@@ -20,7 +20,7 @@ export class Checkbox extends Widget {
         <self>.with-title > ce-block {
             align-content: center;
             color: var(--hint-color);
-            font-size: 0.9rem;
+            font-size: var(--hint-size);
             height: var(--widget-height);
             user-select: none;
         }

@@ -10,6 +10,8 @@
     --active-color: light-dark(hsl(var(--accent-hs) 90%), hsl(var(--accent-hs) 24%));
     --fill-color: light-dark(hsl(var(--global-hs) 90%), hsl(var(--global-hs) 24%));
     --line-height: 1.2rem;
+    --title-size: 1.2rem;
+    --hint-size: 0.9rem;
     --layout-padding: 0.5rem;
     --layout-gap: calc(var(--line-height) / 2);
     --layout-small-gap: calc(var(--layout-gap) / 2);
@@ -38,7 +40,7 @@
 
 @media (max-width: 576px) {
     :root {
-        --line-height: 1.6rem;
+        --line-height: calc(var(--line-height) * 1.25);
     }
 }
 

@@ -7,10 +7,14 @@ import {defineElement} from "/scripts/utils/dom.js";
 export class VectorEditor extends Row {
     static tag = "ce-vector-editor";
     static css = `
-        <self> > .label {
+        <self> > ce-row {
+            gap: var(--layout-small-gap);
+        }
+
+        <self> > ce-row > .label {
             align-content: center;
             color: var(--hint-color);
-            font-size: 0.9rem;
+            font-size: var(--hint-size);
             height: var(--widget-height);
             width: 1rem;
         }
@@ -25,14 +29,16 @@ export class VectorEditor extends Row {
         this._editors = [];
 
         for (let [key, label] of Object.entries(axes)) {
-            this.createChild(Block, (e) => {
-                e.classList.add("label");
-                e.innerText = label;
-            });
+            this.createChild(Row, (e) => {
+                e.createChild(Block, (e) => {
+                    e.classList.add("label");
+                    e.innerText = label;
+                });
 
-            this._editors.push(this.createChild(cls, (e) => {
-                this._manager.manage(e, key);
-            }));
+                this._editors.push(e.createChild(cls, (e) => {
+                    this._manager.manage(e, key);
+                }));
+            });
         }
     }
 

@@ -27,7 +27,7 @@ export class Form extends Widget {
         <self> > .field > ce-block {
             align-content: center;
             color: var(--hint-color);
-            font-size: 0.9rem;
+            font-size: var(--hint-size);
             margin-bottom: var(--layout-small-gap);
         }
     `;

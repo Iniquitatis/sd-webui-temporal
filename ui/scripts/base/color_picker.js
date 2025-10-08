@@ -14,10 +14,14 @@ export class ColorPicker extends Row {
             gap: var(--layout-small-gap);
         }
 
+        <self> > ce-column > ce-row {
+            gap: var(--layout-small-gap);
+        }
+
         <self> > ce-column > ce-row > ce-block {
             align-content: center;
             color: var(--hint-color);
-            font-size: 0.9rem;
+            font-size: var(--hint-size);
             height: var(--widget-height);
             width: 1rem;
         }
