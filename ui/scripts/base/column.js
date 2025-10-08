@@ -1,13 +1,15 @@
 import {Widget} from "/scripts/core/widget.js";
+import {defineElement} from "/scripts/utils/dom.js";
 
 export class Column extends Widget {
-    constructor() {
-        super();
-
-        this.style.display = "flex";
-        this.style.flexDirection = "column";
-        this.style.gap = "var(--layout-gap)";
-        this.style.width = "100%";
-    }
+    static tag = "ce-column";
+    static css = `
+        <self> {
+            display: flex;
+            flex-direction: column;
+            gap: var(--layout-gap);
+            width: 100%;
+        }
+    `;
 }
-customElements.define("ce-column", Column);
+defineElement(Column);

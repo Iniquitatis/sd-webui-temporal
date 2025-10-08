@@ -2,31 +2,52 @@ import {Block} from "/scripts/base/block.js";
 import {Row} from "/scripts/base/row.js";
 import {Signal} from "/scripts/core/signal.js";
 import {Widget} from "/scripts/core/widget.js";
+import {defineElement} from "/scripts/utils/dom.js";
 
 export class Overlay extends Widget {
+    static tag = "ce-overlay";
+    static css = `
+        <self> {
+            align-content: center;
+            background: hsla(0 0% 0% / 75%);
+            inset: 0;
+            position: fixed;
+            z-index: 1;
+        }
+
+        <self> > ce-block {
+            inset: 0;
+            position: absolute;
+        }
+
+        <self> > ce-row {
+            flex-direction: row-reverse;
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: auto;
+        }
+
+        <self> > ce-row > ce-block {
+            align-content: center;
+            color: white;
+            cursor: pointer;
+            font-size: 3rem;
+            font-weight: bold;
+            height: 3rem;
+            text-align: center;
+            width: 3rem;
+        }
+    `;
+
     constructor() {
         super();
 
         this.onClose = new Signal();
 
-        this.style.alignContent = "center";
-        this.style.background = "hsla(0 0% 0% / 75%)";
-        this.style.inset = "0";
-        this.style.position = "fixed";
-        this.style.zIndex = "1";
+        this._content = super.createChild(Block);
 
-        this._content = super.createChild(Block, (e) => {
-            e.style.inset = "0";
-            e.style.position = "absolute";
-        });
-
-        this._tools = super.createChild(Row, (e) => {
-            e.style.flexDirection = "row-reverse";
-            e.style.position = "absolute";
-            e.style.right = "0";
-            e.style.top = "0";
-            e.style.width = "auto";
-        });
+        this._tools = super.createChild(Row);
 
         this.addTool("\u{f00d}", () => this.close());
     }
@@ -35,14 +56,6 @@ export class Overlay extends Widget {
         this._tools.createChild(Block, (e) => {
             e.classList.add("transhover");
             e.innerText = icon;
-            e.style.alignContent = "center";
-            e.style.color = "white";
-            e.style.cursor = "pointer";
-            e.style.fontSize = "3rem";
-            e.style.fontWeight = "bold";
-            e.style.height = "3rem";
-            e.style.textAlign = "center";
-            e.style.width = "3rem";
             e.addEventListener("click", callback);
         });
     }
@@ -57,4 +70,4 @@ export class Overlay extends Widget {
         return this._content.createChild(tagOrClass, initializer, ...args);
     }
 }
-customElements.define("ce-overlay", Overlay);
+defineElement(Overlay);

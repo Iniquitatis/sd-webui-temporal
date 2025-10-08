@@ -1,8 +1,22 @@
 import {Signal} from "/scripts/core/signal.js";
 import {StateManager} from "/scripts/core/state_manager.js";
 import {Widget} from "/scripts/core/widget.js";
+import {defineElement} from "/scripts/utils/dom.js";
 
 export class MultiStateToggle extends Widget {
+    static tag = "ce-multi-state-toggle";
+    static css = `
+        <self> {
+            align-content: center;
+            cursor: pointer;
+            height: var(--widget-height);
+            max-width: var(--widget-height);
+            min-width: var(--widget-height);
+            text-align: center;
+            user-select: none;
+        }
+    `;
+
     constructor() {
         super();
 
@@ -16,13 +30,6 @@ export class MultiStateToggle extends Widget {
         });
 
         this.tabIndex = 0;
-        this.style.alignContent = "center";
-        this.style.cursor = "pointer";
-        this.style.height = "var(--widget-height)";
-        this.style.maxWidth = "var(--widget-height)";
-        this.style.minWidth = "var(--widget-height)";
-        this.style.textAlign = "center";
-        this.style.userSelect = "none";
         this.addEventListener("click", () => {
             this._stateManager.nextState();
         });
@@ -48,4 +55,4 @@ export class MultiStateToggle extends Widget {
         this._stateManager.nextState();
     }
 }
-customElements.define("ce-multi-state-toggle", MultiStateToggle);
+defineElement(MultiStateToggle);

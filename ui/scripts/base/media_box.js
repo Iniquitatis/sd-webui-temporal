@@ -5,9 +5,16 @@ import {ToolButton} from "/scripts/base/tool_button.js";
 import {FileDownloader} from "/scripts/core/file_downloader.js";
 import {FilePicker} from "/scripts/core/file_picker.js";
 import {Signal} from "/scripts/core/signal.js";
-import {createElement} from "/scripts/utils/dom.js";
+import {createElement, defineElement} from "/scripts/utils/dom.js";
 
 class MediaViewer extends Overlay {
+    static tag = "ce-media-viewer";
+    static css = `
+        <self> > ce-block > .element {
+            height: 100%;
+        }
+    `;
+
     constructor(element) {
         super();
 
@@ -22,9 +29,47 @@ class MediaViewer extends Overlay {
         this._element.value = value;
     }
 }
-customElements.define("ce-media-viewer", MediaViewer);
+defineElement(MediaViewer);
 
 export class MediaBox extends Block {
+    static tag = "ce-media-box";
+    static css = `
+        <self> {
+            align-content: center;
+            background: var(--input-color);
+            border: var(--thin-border);
+            border-radius: var(--corners);
+            height: 100%;
+            min-height: 150px;
+            overflow: hidden;
+            position: relative;
+            text-align: center;
+            user-select: none;
+        }
+
+        <self> > .upload-image {
+            align-content: center;
+            color: var(--hint-color);
+            font-size: 96px;
+            inset: 0;
+            opacity: 0.25;
+            position: absolute;
+        }
+
+        <self> > .element {
+            height: 100%;
+        }
+
+        <self> > .tools {
+            flex-direction: row-reverse;
+            gap: var(--layout-small-gap);
+            position: absolute;
+            right: var(--layout-padding);
+            top: var(--layout-padding);
+            width: auto;
+        }
+    `;
+
     constructor(cls, mimeType = "*/*", features = []) {
         super();
 
@@ -38,26 +83,10 @@ export class MediaBox extends Block {
 
         this._fileDownloader = new FileDownloader();
 
-        this.style.alignContent = "center";
-        this.style.background = "var(--input-color)";
-        this.style.border = "var(--thin-border)";
-        this.style.borderRadius = "var(--corners)";
-        this.style.height = "100%";
-        this.style.minHeight = "150px";
-        this.style.overflow = "hidden";
-        this.style.position = "relative";
-        this.style.textAlign = "center";
-        this.style.userSelect = "none";
-
         if (features.includes("upload")) {
             this.createChild(Block, (e) => {
+                e.className = "upload-image";
                 e.innerText = "\u{f093}";
-                e.style.alignContent = "center";
-                e.style.color = "var(--hint-color)";
-                e.style.fontSize = "96px";
-                e.style.inset = "0";
-                e.style.opacity = "0.25";
-                e.style.position = "absolute";
                 e.addEventListener("click", () => {
                     if (!this.value) {
                         this._filePicker.open();
@@ -70,8 +99,8 @@ export class MediaBox extends Block {
         }
 
         this._element = this.createChild(cls, (e) => {
+            e.className = "element";
             e.visible = false;
-            e.style.height = "100%";
             e.onValueChange.connect((value) => {
                 if (this._viewer) {
                     this._viewer.value = value;
@@ -85,13 +114,8 @@ export class MediaBox extends Block {
         });
 
         this._tools = this.createChild(Row, (e) => {
+            e.className = "tools";
             e.visible = false;
-            e.style.flexDirection = "row-reverse";
-            e.style.gap = "var(--layout-small-gap)";
-            e.style.position = "absolute";
-            e.style.right = "var(--layout-padding)";
-            e.style.top = "var(--layout-padding)";
-            e.style.width = "auto";
             this.onValueChange.connect((value) => {
                 e.visible = !!value;
             });
@@ -200,7 +224,7 @@ export class MediaBox extends Block {
         });
     }
 }
-customElements.define("ce-media-box", MediaBox);
+defineElement(MediaBox);
 
 function getDownloadFileName() {
     return `temporal_${new Date(Date.now()).toISOString()}`;

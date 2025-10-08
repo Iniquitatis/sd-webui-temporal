@@ -6,11 +6,19 @@ import {ReorderableAccordion} from "/scripts/base/reorderable_list.js";
 import {Row} from "/scripts/base/row.js";
 import {FieldManager} from "/scripts/core/field_manager.js";
 import {Signal} from "/scripts/core/signal.js";
+import {defineElement} from "/scripts/utils/dom.js";
 import {deepCopy, mapValues} from "/scripts/utils/object.js";
 import {ObjectForm} from "/scripts/object_form.js";
 import {videoFilters} from "/scripts/shared_data.js";
 
 class VideoFilterEditor extends ReorderableAccordion {
+    static tag = "ce-video-filter-editor";
+    static css = `
+        <self> > ce-column > ce-row > ce-button {
+            width: 100%;
+        }
+    `;
+
     constructor(type) {
         super();
 
@@ -48,7 +56,6 @@ class VideoFilterEditor extends ReorderableAccordion {
             e.createChild(Row, (e) => {
                 e.createChild(Button, (e) => {
                     e.label = "\u{f0c5} Duplicate";
-                    e.style.width = "100%";
                     e.onClick.connect(() => {
                         this.onDuplicateRequest.fire(deepCopy(this.value));
                     });
@@ -56,7 +63,6 @@ class VideoFilterEditor extends ReorderableAccordion {
 
                 e.createChild(Button, (e) => {
                     e.label = "\u{f2ed} Remove";
-                    e.style.width = "100%";
                     e.onClick.connect(() => {
                         this.onRemoveRequest.fire();
                     });
@@ -73,9 +79,11 @@ class VideoFilterEditor extends ReorderableAccordion {
         this._manager.value = value;
     }
 }
-customElements.define("ce-video-filter-editor", VideoFilterEditor);
+defineElement(VideoFilterEditor);
 
 export class VideoFilterList extends ChoiceListEditor {
+    static tag = "ce-video-filter-list";
+
     constructor() {
         super(VideoFilterEditor, mapValues(videoFilters, (_, schema) => schema.name));
     }
@@ -88,4 +96,4 @@ export class VideoFilterList extends ChoiceListEditor {
         return [choice];
     }
 }
-customElements.define("ce-video-filter-list", VideoFilterList);
+defineElement(VideoFilterList);

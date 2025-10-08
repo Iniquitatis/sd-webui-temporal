@@ -4,6 +4,7 @@ import {Column} from "/scripts/base/column.js";
 import {Row} from "/scripts/base/row.js";
 import {DragController} from "/scripts/core/drag_controller.js";
 import {Signal} from "/scripts/core/signal.js";
+import {defineElement} from "/scripts/utils/dom.js";
 
 let drag = new DragController();
 drag.onStart.connect((element) => {
@@ -38,6 +39,8 @@ drag.onEnd.connect((element) => {
 });
 
 export class ReorderableList extends Column {
+    static tag = "ce-reorderable-list";
+
     constructor() {
         super();
 
@@ -53,49 +56,57 @@ export class ReorderableList extends Column {
         this._mo.observe(this, {childList: true, subtree: false});
     }
 }
-customElements.define("ce-reorderable-list", ReorderableList);
+defineElement(ReorderableList);
 
 export class ReorderableAccordion extends Accordion {
+    static tag = "ce-reorderable-accordion";
+
     constructor() {
         super();
 
-        this.createBeforeLabel(Block, (e) => {
-            e.dragRoot = this;
-            e.innerText = "\u{e410}";
-            e.style.alignContent = "center";
-            e.style.color = "var(--hint-color)";
-            e.style.cursor = "move";
-            e.style.height = "var(--widget-height)";
-            e.style.maxWidth = "var(--widget-height)";
-            e.style.minWidth = "var(--widget-height)";
-            e.style.textAlign = "center";
-            e.style.userSelect = "none";
-            drag.register(e);
-        });
+        this.createBeforeLabel(Dragger, null, this);
     }
 }
-customElements.define("ce-reorderable-accordion", ReorderableAccordion);
+defineElement(ReorderableAccordion);
 
 export class ReorderableElement extends Row {
+    static tag = "ce-reorderable-element";
+    static css = `
+        <self> {
+            gap: var(--layout-small-gap);
+            width: 100%;
+        }
+    `;
+
     constructor() {
         super();
 
-        this.style.gap = "var(--layout-small-gap)";
-        this.style.width = "100%";
-
-        this.createChild(Block, (e) => {
-            e.dragRoot = this;
-            e.innerText = "\u{e410}";
-            e.style.alignContent = "center";
-            e.style.color = "var(--hint-color)";
-            e.style.cursor = "move";
-            e.style.height = "var(--widget-height)";
-            e.style.maxWidth = "var(--widget-height)";
-            e.style.minWidth = "var(--widget-height)";
-            e.style.textAlign = "center";
-            e.style.userSelect = "none";
-            drag.register(e);
-        });
+        this.createChild(Dragger, null, this);
     }
 }
-customElements.define("ce-reorderable-element", ReorderableElement);
+defineElement(ReorderableElement);
+
+class Dragger extends Block {
+    static tag = "ce-dragger";
+    static css = `
+        <self> {
+            align-content: center;
+            color: var(--hint-color);
+            cursor: move;
+            height: var(--widget-height);
+            max-width: var(--widget-height);
+            min-width: var(--widget-height);
+            text-align: center;
+            user-select: none;
+        }
+    `;
+
+    constructor(root) {
+        super();
+
+        this.dragRoot = root;
+        this.innerText = "\u{e410}";
+        drag.register(this);
+    }
+}
+defineElement(Dragger);

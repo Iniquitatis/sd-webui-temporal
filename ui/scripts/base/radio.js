@@ -2,9 +2,30 @@ import {Block} from "/scripts/base/block.js";
 import {Signal} from "/scripts/core/signal.js";
 import {StateManager} from "/scripts/core/state_manager.js";
 import {Widget} from "/scripts/core/widget.js";
-import {clearElement} from "/scripts/utils/dom.js";
+import {clearElement, defineElement} from "/scripts/utils/dom.js";
 
 export class Radio extends Widget {
+    static tag = "ce-radio";
+    static css = `
+        <self> {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--layout-gap);
+        }
+
+        <self> > ce-block {
+            align-items: center;
+            background: var(--input-color);
+            border: var(--thin-border);
+            border-radius: var(--corners);
+            display: flex;
+            flex-direction: row;
+            gap: calc(var(--horizontal-padding));
+            height: var(--widget-height);
+            padding: 0 var(--horizontal-padding);
+        }
+    `;
+
     constructor() {
         super();
 
@@ -12,24 +33,15 @@ export class Radio extends Widget {
 
         this._stateManager = new StateManager();
         this._stateManager.onStatesChange.connect((states, _names, _data) => {
-            clearElement(this._buttons);
+            clearElement(this);
 
             for (let [value, name] of Object.entries(states)) {
                 let callback = (event) => {
                     this._stateManager.value = event.target.value;
                 };
 
-                this._buttons.createChild(Block, (e) => {
+                this.createChild(Block, (e) => {
                     e.value = value;
-                    e.style.alignItems = "center";
-                    e.style.background = "var(--input-color)";
-                    e.style.border = "var(--thin-border)";
-                    e.style.borderRadius = "var(--corners)";
-                    e.style.display = "flex";
-                    e.style.flexDirection = "row";
-                    e.style.gap = "calc(var(--horizontal-padding))";
-                    e.style.height = "var(--widget-height)";
-                    e.style.padding = "0 var(--horizontal-padding)";
                     e.addEventListener("click", callback);
 
                     e.input = e.createChild("input", (e) => {
@@ -48,17 +60,11 @@ export class Radio extends Widget {
             }
         });
         this._stateManager.onValueChange.connect((value, _) => {
-            for (let button of this._buttons.childNodes) {
+            for (let button of this.childNodes) {
                 button.input.checked = button.value == value;
             }
 
             this.onValueChange.fire(value);
-        });
-
-        this._buttons = this.createChild(Block, (e) => {
-            e.style.display = "flex";
-            e.style.flexWrap = "wrap";
-            e.style.gap = "var(--layout-gap)";
         });
     }
 
@@ -78,4 +84,4 @@ export class Radio extends Widget {
         this._stateManager.value = value;
     }
 }
-customElements.define("ce-radio", Radio);
+defineElement(Radio);

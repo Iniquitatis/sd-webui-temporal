@@ -3,25 +3,37 @@ import {Column} from "/scripts/base/column.js";
 import {Row} from "/scripts/base/row.js";
 import {ToolButton} from "/scripts/base/tool_button.js";
 import {Widget} from "/scripts/core/widget.js";
+import {defineElement} from "/scripts/utils/dom.js";
 
 class Dock extends Column {
+    static tag = "ce-dock";
+    static css = `
+        <self> {
+            background: var(--background-color);
+            border-right: var(--thin-border);
+            height: 100%;
+            max-width: 100%;
+            padding: var(--layout-padding);
+            width: 40rem;
+        }
+
+        <self> > ce-row > ce-block {
+            align-content: center;
+            color: var(--hint-color);
+            font-size: 1.2rem;
+            width: 100%;
+        }
+
+        <self> > ce-block {
+            overflow-y: auto;
+        }
+    `;
+
     constructor() {
         super();
 
-        this.style.background = "var(--background-color)";
-        this.style.borderRight = "var(--thin-border)";
-        this.style.height = "100%";
-        this.style.maxWidth = "100%";
-        this.style.padding = "var(--layout-padding)";
-        this.style.width = "40rem";
-
         super.createChild(Row, (e) => {
-            this._label = e.createChild(Block, (e) => {
-                e.style.alignContent = "center";
-                e.style.color = "var(--hint-color)";
-                e.style.fontSize = "1.2rem";
-                e.style.width = "100%";
-            });
+            this._label = e.createChild(Block);
 
             e.createChild(ToolButton, (e) => {
                 e.label = "\u{f323}";
@@ -31,9 +43,7 @@ class Dock extends Column {
             });
         });
 
-        this._content = super.createChild(Block, (e) => {
-            e.style.overflowY = "auto";
-        });
+        this._content = super.createChild(Block);
     }
 
     get label() {
@@ -48,44 +58,59 @@ class Dock extends Column {
         return this._content.createChild(tagOrClass, initializer, ...args);
     }
 }
-customElements.define("ce-dock", Dock);
+defineElement(Dock);
 
 export class DockGroup extends Widget {
+    static tag = "ce-dock-group";
+    static css = `
+        <self> {
+            display: flex;
+            flex-direction: row;
+            inset: 0;
+            max-width: 100%;
+            pointer-events: none;
+            position: absolute;
+            z-index: 1;
+        }
+
+        <self> > ce-block {
+            max-width: 100%;
+        }
+
+        <self> > ce-block > ce-dock {
+            pointer-events: auto;
+        }
+
+        <self> > ce-column {
+            gap: var(--layout-small-gap);
+            margin: var(--layout-small-gap) 0;
+        }
+
+        <self> > ce-column > ce-tool-button {
+            border-bottom-left-radius: unset;
+            border-left: unset;
+            border-top-left-radius: unset;
+            height: calc(var(--widget-height) * 1.5);
+            pointer-events: auto;
+        }
+    `;
+
     constructor() {
         super();
 
-        this.style.display = "flex";
-        this.style.flexDirection = "row";
-        this.style.inset = "0";
-        this.style.maxWidth = "100%";
-        this.style.pointerEvents = "none";
-        this.style.position = "absolute";
-        this.style.zIndex = "1";
+        this._content = this.createChild(Block);
 
-        this._content = this.createChild(Block, (e) => {
-            e.style.maxWidth = "100%";
-        });
-
-        this._buttons = this.createChild(Column, (e) => {
-            e.style.gap = "var(--layout-small-gap)";
-            e.style.margin = "var(--layout-small-gap) 0";
-        });
+        this._buttons = this.createChild(Column);
     }
 
     createDock(icon, label, tagOrClass, initializer, ...args) {
         let dock = this._content.createChild(Dock, (e) => {
             e.label = label;
             e.visible = false;
-            e.style.pointerEvents = "auto";
         });
 
         this._buttons.createChild(ToolButton, (e) => {
             e.label = icon;
-            e.style.height = "calc(var(--widget-height) * 1.5)";
-            e.style.pointerEvents = "auto";
-            e._button.style.borderBottomLeftRadius = "unset";
-            e._button.style.borderLeft = "unset";
-            e._button.style.borderTopLeftRadius = "unset";
             e.onClick.connect(() => {
                 this.setActiveDock(label);
             });
@@ -100,4 +125,4 @@ export class DockGroup extends Widget {
         }
     }
 }
-customElements.define("ce-dock-group", DockGroup);
+defineElement(DockGroup);

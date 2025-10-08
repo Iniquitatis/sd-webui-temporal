@@ -1,12 +1,18 @@
 import {Widget} from "/scripts/core/widget.js";
+import {defineElement} from "/scripts/utils/dom.js";
 
 export class Row extends Widget {
-    constructor() {
-        super();
+    static tag = "ce-row";
+    static css = `
+        <self> {
+            display: flex;
+            flex-direction: row;
+            gap: var(--layout-gap);
+        }
 
-        this.style.display = "flex";
-        this.style.flexDirection = "row";
-        this.style.gap = "var(--layout-gap)";
-    }
+        <self> > * {
+            width: 100%;
+        }
+    `;
 }
-customElements.define("ce-row", Row);
+defineElement(Row);

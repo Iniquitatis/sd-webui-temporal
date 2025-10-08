@@ -5,7 +5,7 @@ import {ReorderableList} from "/scripts/base/reorderable_list.js";
 import {Row} from "/scripts/base/row.js";
 import {ToolButton} from "/scripts/base/tool_button.js";
 import {Signal} from "/scripts/core/signal.js";
-import {clearElement, createElement} from "/scripts/utils/dom.js";
+import {clearElement, createElement, defineElement} from "/scripts/utils/dom.js";
 import {deepCopy} from "/scripts/utils/object.js";
 
 class ListEditorBase extends Column {
@@ -88,6 +88,8 @@ class ListEditorBase extends Column {
 }
 
 export class ListEditor extends ListEditorBase {
+    static tag = "ce-list-editor";
+
     constructor(elementClass) {
         super(elementClass);
 
@@ -111,18 +113,26 @@ export class ListEditor extends ListEditorBase {
         return [];
     }
 }
-customElements.define("ce-list-editor", ListEditor);
+defineElement(ListEditor);
 
 export class ChoiceListEditor extends ListEditorBase {
+    static tag = "ce-choice-list-editor";
+    static css = `
+        <self> > ce-row {
+            gap: var(--layout-small-gap);
+        }
+
+        <self> > ce-row > ce-dropdown {
+            width: 100%;
+        }
+    `;
+
     constructor(elementClass, choices) {
         super(elementClass);
 
         this.insertBefore(createElement(null, Row, (e) => {
-            e.style.gap = "var(--layout-small-gap)";
-
             let choice = e.createChild(Dropdown, (e) => {
                 e.choices = choices;
-                e.style.width = "100%";
             });
 
             e.createChild(ToolButton, (e) => {
@@ -138,4 +148,4 @@ export class ChoiceListEditor extends ListEditorBase {
         return [];
     }
 }
-customElements.define("ce-choice-list-editor", ChoiceListEditor);
+defineElement(ChoiceListEditor);

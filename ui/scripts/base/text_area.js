@@ -1,7 +1,17 @@
 import {Signal} from "/scripts/core/signal.js";
 import {Widget} from "/scripts/core/widget.js";
+import {defineElement} from "/scripts/utils/dom.js";
 
 export class TextArea extends Widget {
+    static tag = "ce-text-area";
+    static css = `
+        <self> > textarea {
+            display: block;
+            resize: vertical;
+            width: 100%;
+        }
+    `;
+
     constructor() {
         super();
 
@@ -9,9 +19,6 @@ export class TextArea extends Widget {
 
         this._textArea = this.createChild("textarea", (e) => {
             e.rows = 5;
-            e.style.display = "block";
-            e.style.resize = "vertical";
-            e.style.width = "100%";
             e.addEventListener("change", () => {
                 this.onValueChange.fire(e.value);
             });
@@ -28,4 +35,4 @@ export class TextArea extends Widget {
         this.onValueChange.fire(this.value);
     }
 }
-customElements.define("ce-text-area", TextArea);
+defineElement(TextArea);

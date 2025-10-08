@@ -2,21 +2,30 @@ import {NumberBox} from "/scripts/base/number_box.js";
 import {Row} from "/scripts/base/row.js";
 import {ToolButton} from "/scripts/base/tool_button.js";
 import {Signal} from "/scripts/core/signal.js";
+import {defineElement} from "/scripts/utils/dom.js";
 
 export class SeedBox extends Row {
+    static tag = "ce-seed-box";
+    static css = `
+        <self> {
+            gap: var(--layout-small-gap);
+        }
+
+        <self> > ce-number-box {
+            width: 100%;
+        }
+    `;
+
     constructor() {
         super();
 
         this.onValueChange = new Signal();
-
-        this.style.gap = "var(--layout-small-gap)";
 
         this._box = this.createChild(NumberBox, (e) => {
             e.minimum = -1;
             e.maximum = 0x7fffffff;
             e.step = 1;
             e.value = -1;
-            e.style.width = "100%";
             e.onValueChange.connect((value) => {
                 this.onValueChange.fire(value);
             });
@@ -38,4 +47,4 @@ export class SeedBox extends Row {
         this._box.value = value;
     }
 }
-customElements.define("ce-seed-box", SeedBox);
+defineElement(SeedBox);

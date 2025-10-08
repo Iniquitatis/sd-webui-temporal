@@ -1,19 +1,26 @@
 import {Block} from "/scripts/base/block.js";
-import {createElement} from "/scripts/utils/dom.js";
+import {createElement, defineElement} from "/scripts/utils/dom.js";
 
 export class GroupBox extends Block {
+    static tag = "ce-group-box";
+    static css = `
+        <self> > fieldset {
+            border: var(--thin-border);
+            border-radius: var(--corners);
+            padding: var(--layout-padding);
+        }
+
+        <self> > fieldset > legend {
+            color: var(--hint-color);
+            font-size: 0.9rem;
+        }
+    `;
+
     constructor() {
         super();
 
         this._fieldset = super.createChild("fieldset", (e) => {
-            e.style.border = "var(--thin-border)";
-            e.style.borderRadius = "var(--corners)";
-            e.style.padding = "var(--layout-padding)";
-
-            this._legend = createElement(e, "legend", (e) => {
-                e.style.color = "var(--hint-color)";
-                e.style.fontSize = "0.9rem";
-            });
+            this._legend = createElement(e, "legend");
         });
     }
 
@@ -29,4 +36,4 @@ export class GroupBox extends Block {
         return createElement(this._fieldset, tagOrClass, initializer, ...args);
     }
 }
-customElements.define("ce-group-box", GroupBox);
+defineElement(GroupBox);

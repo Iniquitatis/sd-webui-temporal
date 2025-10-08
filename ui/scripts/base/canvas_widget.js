@@ -5,6 +5,7 @@ import {Slider} from "/scripts/base/slider.js";
 import {VectorEditor} from "/scripts/base/vector_editor.js";
 import {Signal} from "/scripts/core/signal.js";
 import {colorToHex} from "/scripts/utils/color.js";
+import {defineElement} from "/scripts/utils/dom.js";
 
 export const CANVAS_TOOLS = {};
 
@@ -511,6 +512,43 @@ CANVAS_TOOLS.resize = class extends CanvasTool {
 }
 
 export class CanvasWidget extends Block {
+    static tag = "ce-canvas-widget";
+    static css = `
+        <self> {
+            align-items: center;
+            display: flex;
+            inset: 0;
+            justify-content: center;
+            position: absolute;
+            user-select: none;
+        }
+
+        <self> > ce-block {
+            height: 100%;
+            position: relative;
+        }
+
+        <self> > ce-block > canvas:nth-of-type(1) {
+            height: 100%;
+            max-width: 100%;
+            object-fit: contain;
+            vertical-align: middle;
+            width: auto;
+        }
+
+        <self> > ce-block > canvas:nth-of-type(2) {
+            height: 100%;
+            left: 0;
+            max-width: 100%;
+            object-fit: contain;
+            opacity: 1.0;
+            position: absolute;
+            top: 0;
+            vertical-align: middle;
+            width: auto;
+        }
+    `;
+
     constructor() {
         super();
 
@@ -519,26 +557,12 @@ export class CanvasWidget extends Block {
         this._value = null;
         this._tool = null;
 
-        this.style.alignItems = "center";
-        this.style.display = "flex";
-        this.style.inset = "0";
-        this.style.justifyContent = "center";
-        this.style.position = "absolute";
-        this.style.userSelect = "none";
-
         this.createChild(Block, (e) => {
             e.classList.add("checkerboard-bg");
-            e.style.height = "100%";
-            e.style.position = "relative";
 
             this._mainCanvas = e.createChild("canvas", (e) => {
                 e.height = 300;
                 e.width = 400;
-                e.style.height = "100%";
-                e.style.maxWidth = "100%";
-                e.style.objectFit = "contain";
-                e.style.verticalAlign = "middle";
-                e.style.width = "auto";
 
                 this._mainCtx = e.getContext("2d", {willReadFrequently: true});
             });
@@ -546,15 +570,6 @@ export class CanvasWidget extends Block {
             this._overlayCanvas = e.createChild("canvas", (e) => {
                 e.height = this.height;
                 e.width = this.width;
-                e.style.height = "100%";
-                e.style.left = "0";
-                e.style.maxWidth = "100%";
-                e.style.objectFit = "contain";
-                e.style.opacity = "1.0";
-                e.style.position = "absolute";
-                e.style.top = "0";
-                e.style.verticalAlign = "middle";
-                e.style.width = "auto";
                 e.addEventListener("pointerdown", (event) => this._onMouseDown(event));
 
                 this._overlayCtx = e.getContext("2d");
@@ -654,7 +669,7 @@ export class CanvasWidget extends Block {
         currentWidget = null;
     }
 }
-customElements.define("ce-canvas-widget", CanvasWidget);
+defineElement(CanvasWidget);
 
 let currentWidget = null;
 

@@ -1,34 +1,48 @@
 import {Block} from "/scripts/base/block.js";
+import {defineElement} from "/scripts/utils/dom.js";
 import {clamp, normalize} from "/scripts/utils/math.js";
 
 export class ProgressBar extends Block {
+    static tag = "ce-progress-bar";
+    static css = `
+        <self> {
+            background-color: var(--input-color);
+            border: var(--thin-border);
+            border-radius: var(--corners);
+            height: var(--widget-height);
+            overflow: hidden;
+            position: relative;
+        }
+
+        <self> > .fill {
+            background-color: var(--fill-color);
+            height: 100%;
+            inset: 0;
+            position: relative;
+        }
+
+        <self> > .caption {
+            align-content: center;
+            inset: 0;
+            padding: 0 var(--horizontal-padding);
+            position: absolute;
+            text-align: center;
+        }
+    `;
+
     constructor() {
         super();
 
         this._total = 1;
         this._value = 0;
 
-        this.style.backgroundColor = "var(--input-color)";
-        this.style.border = "var(--thin-border)";
-        this.style.borderRadius = "var(--corners)";
-        this.style.height = "var(--widget-height)";
-        this.style.overflow = "hidden";
-        this.style.position = "relative";
-
         this._fill = this.createChild(Block, (e) => {
-            e.style.backgroundColor = "var(--fill-color)";
-            e.style.height = "100%";
-            e.style.inset = "0";
-            e.style.position = "relative";
+            e.className = "fill";
             e.style.width = "0%";
         });
 
         this._caption = this.createChild(Block, (e) => {
-            e.style.alignContent = "center";
-            e.style.inset = "0";
-            e.style.padding = "0 var(--horizontal-padding)";
-            e.style.position = "absolute";
-            e.style.textAlign = "center";
+            e.className = "caption";
         });
     }
 
@@ -42,10 +56,6 @@ export class ProgressBar extends Block {
 
     get value() {
         return this._value;
-    }
-
-    set fillColor(value) {
-        this._fill.style.backgroundColor = value;
     }
 
     set text(value) {
@@ -66,4 +76,4 @@ export class ProgressBar extends Block {
         this._fill.style.width = `${clamp(normalize(this._value, 0.0, this._total), 0.0, 1.0) * 100.0}%`;
     }
 }
-customElements.define("ce-progress-bar", ProgressBar);
+defineElement(ProgressBar);

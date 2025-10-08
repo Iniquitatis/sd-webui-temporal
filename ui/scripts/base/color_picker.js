@@ -5,8 +5,56 @@ import {Slider} from "/scripts/base/slider.js";
 import {FieldManager} from "/scripts/core/field_manager.js";
 import {Signal} from "/scripts/core/signal.js";
 import {colorToHex} from "/scripts/utils/color.js";
+import {defineElement} from "/scripts/utils/dom.js";
 
 export class ColorPicker extends Row {
+    static tag = "ce-color-picker";
+    static css = `
+        <self> > ce-column {
+            gap: var(--layout-small-gap);
+        }
+
+        <self> > ce-column > ce-row > ce-block {
+            align-content: center;
+            color: var(--hint-color);
+            font-size: 0.9rem;
+            height: var(--widget-height);
+            width: 1rem;
+        }
+
+        <self> > ce-column > ce-row > ce-slider {
+            width: 100%;
+        }
+
+        <self> > ce-column > ce-row:nth-of-type(1) > ce-slider > .fill {
+            background: oklch(from var(--fill-color) l 25% 30deg);
+        }
+
+        <self> > ce-column > ce-row:nth-of-type(2) > ce-slider > .fill {
+            background: oklch(from var(--fill-color) l 25% 150deg);
+        }
+
+        <self> > ce-column > ce-row:nth-of-type(3) > ce-slider > .fill {
+            background: oklch(from var(--fill-color) l 25% 270deg);
+        }
+
+        <self> > ce-column > ce-row:nth-of-type(4) > ce-slider > .fill {
+            background: oklch(from var(--fill-color) l 0% 0deg);
+        }
+
+        <self> > ce-block {
+            border: var(--thin-border);
+            border-radius: var(--corners);
+            overflow: hidden;
+            width: var(--small-input-width);
+        }
+
+        <self> > ce-block > ce-block {
+            height: 100%;
+            width: 100%;
+        }
+    `;
+
     constructor(channels) {
         super();
 
@@ -16,47 +64,28 @@ export class ColorPicker extends Row {
         this._manager._value = {r: 0.0, g: 0.0, b: 0.0, a: 1.0};
 
         this.createChild(Column, (e) => {
-            e.style.gap = "var(--layout-small-gap)";
-
-            let i = 1;
-
             for (let channel of Object.keys(this._manager._value).slice(0, channels)) {
                 e.createChild(Row, (e) => {
                     e.createChild(Block, (e) => {
                         e.innerText = channel.toUpperCase();
-                        e.style.alignContent = "center";
-                        e.style.color = "var(--hint-color)";
-                        e.style.fontSize = "0.9rem";
-                        e.style.height = "var(--widget-height)";
-                        e.style.width = "1rem";
                     });
 
                     e.createChild(Slider, (e) => {
-                        e.fillColor = `oklch(from var(--fill-color) l var(--channel-${i}-ch))`;
                         e.minimum = 0.0;
                         e.maximum = 1.0;
                         e.step = 0.01;
                         e.value = 0.0;
-                        e.style.width = "100%";
                         this._manager.manage(e, channel);
                     });
                 });
-
-                i++;
             }
         });
 
         this.createChild(Block, (e) => {
             e.classList.add("checkerboard-bg");
-            e.style.border = "var(--thin-border)";
-            e.style.borderRadius = "var(--corners)";
-            e.style.overflow = "hidden";
-            e.style.width = "var(--small-input-width)";
 
             this._preview = e.createChild(Block, (e) => {
                 e.style.backgroundColor = "transparent";
-                e.style.height = "100%";
-                e.style.width = "100%";
                 this.onValueChange.connect((value) => {
                     e.style.backgroundColor = colorToHex(value);
                 });
@@ -76,4 +105,4 @@ export class ColorPicker extends Row {
         return true;
     }
 }
-customElements.define("ce-color-picker", ColorPicker);
+defineElement(ColorPicker);

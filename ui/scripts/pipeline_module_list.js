@@ -10,6 +10,7 @@ import {Tabs} from "/scripts/base/tabs.js";
 import {VideoBox} from "/scripts/base/video_box.js";
 import {FieldManager} from "/scripts/core/field_manager.js";
 import {Signal} from "/scripts/core/signal.js";
+import {defineElement} from "/scripts/utils/dom.js";
 import {deepCopy, mapValues} from "/scripts/utils/object.js";
 import {postRequest} from "/scripts/utils/requests.js";
 import {boolToString, stringToBool} from "/scripts/utils/types.js";
@@ -18,6 +19,17 @@ import {ObjectForm} from "/scripts/object_form.js";
 import {pipelineModules, pipelineModuleIcons} from "/scripts/shared_data.js";
 
 class PipelineModuleEditor extends ReorderableAccordion {
+    static tag = "ce-pipeline-module-editor";
+    static css = `
+        <self> > ce-column > ce-image-box {
+            height: 12rem;
+        }
+
+        <self> > ce-column > ce-row > ce-button {
+            width: 100%;
+        }
+    `;
+
     constructor(type) {
         super();
 
@@ -46,7 +58,6 @@ class PipelineModuleEditor extends ReorderableAccordion {
         this.createChild(Column, (e) => {
             if (schema.is_sampleable) {
                 this._sampleBox = e.createChild(ImageBox, (e) => {
-                    e.style.height = "12rem";
                     this.onValueChange.connect(async () => {
                         await this._updateSample();
                     });
@@ -113,7 +124,6 @@ class PipelineModuleEditor extends ReorderableAccordion {
             e.createChild(Row, (e) => {
                 e.createChild(Button, (e) => {
                     e.label = "\u{f0c5} Duplicate";
-                    e.style.width = "100%";
                     e.onClick.connect(() => {
                         this.onDuplicateRequest.fire(deepCopy(this.value));
                     });
@@ -121,7 +131,6 @@ class PipelineModuleEditor extends ReorderableAccordion {
 
                 e.createChild(Button, (e) => {
                     e.label = "\u{f2ed} Remove";
-                    e.style.width = "100%";
                     e.onClick.connect(() => {
                         this.onRemoveRequest.fire();
                     });
@@ -149,9 +158,11 @@ class PipelineModuleEditor extends ReorderableAccordion {
         });
     }
 }
-customElements.define("ce-pipeline-module-editor", PipelineModuleEditor);
+defineElement(PipelineModuleEditor);
 
 export class PipelineModuleList extends ChoiceListEditor {
+    static tag = "ce-pipeline-module-list";
+
     constructor() {
         super(PipelineModuleEditor, mapValues(pipelineModules, (_, schema) => {
             return `${pipelineModuleIcons[schema.type]} ${schema.name}`;
@@ -166,4 +177,4 @@ export class PipelineModuleList extends ChoiceListEditor {
         return [choice];
     }
 }
-customElements.define("ce-pipeline-module-list", PipelineModuleList);
+defineElement(PipelineModuleList);

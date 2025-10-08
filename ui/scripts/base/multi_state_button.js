@@ -1,8 +1,11 @@
 import {Button} from "/scripts/base/button.js";
 import {Signal} from "/scripts/core/signal.js";
 import {StateManager} from "/scripts/core/state_manager.js";
+import {defineElement} from "/scripts/utils/dom.js";
 
 export class MultiStateButton extends Button {
+    static tag = "ce-multi-state-button";
+
     constructor() {
         super();
 
@@ -10,7 +13,7 @@ export class MultiStateButton extends Button {
 
         this._stateManager = new StateManager();
         this._stateManager.onValueChange.connect((value, data) => {
-            this._button.innerText = data;
+            this.label = data;
 
             this.onStateChange.fire(value);
         });
@@ -40,4 +43,4 @@ export class MultiStateButton extends Button {
         this._stateManager.nextState();
     }
 }
-customElements.define("ce-multi-state-button", MultiStateButton);
+defineElement(MultiStateButton);

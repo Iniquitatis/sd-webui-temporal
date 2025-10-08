@@ -1,9 +1,16 @@
 import {Signal} from "/scripts/core/signal.js";
 import {StateManager} from "/scripts/core/state_manager.js";
 import {Widget} from "/scripts/core/widget.js";
-import {clearElement, createElement} from "/scripts/utils/dom.js";
+import {clearElement, createElement, defineElement} from "/scripts/utils/dom.js";
 
 export class Dropdown extends Widget {
+    static tag = "ce-dropdown";
+    static css = `
+        <self> > select {
+            width: 100%;
+        }
+    `;
+
     constructor() {
         super();
 
@@ -28,7 +35,6 @@ export class Dropdown extends Widget {
         });
 
         this._select = this.createChild("select", (e) => {
-            e.style.width = "100%";
             e.addEventListener("change", () => {
                 this._stateManager.index = e.selectedIndex;
             });
@@ -61,4 +67,4 @@ export class Dropdown extends Widget {
         this._stateManager.value = value;
     }
 }
-customElements.define("ce-dropdown", Dropdown);
+defineElement(Dropdown);

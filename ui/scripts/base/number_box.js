@@ -1,7 +1,15 @@
 import {Signal} from "/scripts/core/signal.js";
 import {Widget} from "/scripts/core/widget.js";
+import {defineElement} from "/scripts/utils/dom.js";
 
 export class NumberBox extends Widget {
+    static tag = "ce-number-box";
+    static css = `
+        <self> > input {
+            width: 100%;
+        }
+    `;
+
     constructor() {
         super();
 
@@ -9,7 +17,6 @@ export class NumberBox extends Widget {
 
         this._input = this.createChild("input", (e) => {
             e.type = "number";
-            e.style.width = "100%";
             e.addEventListener("change", () => {
                 this.onValueChange.fire(e.valueAsNumber);
             });
@@ -50,4 +57,4 @@ export class NumberBox extends Widget {
         this.onValueChange.fire(this.value);
     }
 }
-customElements.define("ce-number-box", NumberBox);
+defineElement(NumberBox);

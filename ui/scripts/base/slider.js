@@ -1,6 +1,7 @@
 import {Block} from "/scripts/base/block.js";
 import {DragController} from "/scripts/core/drag_controller.js";
 import {Signal} from "/scripts/core/signal.js";
+import {defineElement} from "/scripts/utils/dom.js";
 import {clamp, countFractionDigits, lerp, normalize, quantize} from "/scripts/utils/math.js";
 
 let drag = new DragController();
@@ -18,6 +19,47 @@ drag.onEnd.connect((element) => {
 });
 
 export class Slider extends Block {
+    static tag = "ce-slider";
+    static css = `
+        <self> {
+            background-color: var(--input-color);
+            border: var(--thin-border);
+            border-radius: var(--corners);
+            cursor: pointer;
+            height: var(--widget-height);
+            overflow: hidden;
+            position: relative;
+            user-select: none;
+        }
+
+        <self> > .fill {
+            background-color: var(--fill-color);
+            height: 100%;
+            inset: 0;
+            pointer-events: none;
+            position: relative;
+        }
+
+        <self> > .caption {
+            align-content: center;
+            inset: 0;
+            padding: 0 var(--horizontal-padding);
+            pointer-events: none;
+            position: absolute;
+        }
+
+        <self> > input {
+            align-content: center;
+            background: none;
+            border: none;
+            height: 100%;
+            inset: 0;
+            padding: 0 var(--horizontal-padding);
+            position: absolute;
+            text-align: left;
+        }
+    `;
+
     constructor() {
         super();
 
@@ -48,14 +90,6 @@ export class Slider extends Block {
         };
 
         this.tabIndex = 0;
-        this.style.backgroundColor = "var(--input-color)";
-        this.style.border = "var(--thin-border)";
-        this.style.borderRadius = "var(--corners)";
-        this.style.cursor = "pointer";
-        this.style.height = "var(--widget-height)";
-        this.style.overflow = "hidden";
-        this.style.position = "relative";
-        this.style.userSelect = "none";
         this.addEventListener("dblclick", activateInput);
         this.addEventListener("keydown", (event) => {
             switch (event.key) {
@@ -79,33 +113,17 @@ export class Slider extends Block {
         drag.register(this);
 
         this._fill = this.createChild(Block, (e) => {
-            e.style.backgroundColor = "var(--fill-color)";
-            e.style.height = "100%";
-            e.style.inset = "0";
-            e.style.pointerEvents = "none";
-            e.style.position = "relative";
+            e.className = "fill";
             e.style.width = "0%";
         });
 
         this._caption = this.createChild(Block, (e) => {
-            e.style.alignContent = "center";
-            e.style.inset = "0";
-            e.style.padding = "0 var(--horizontal-padding)";
-            e.style.pointerEvents = "none";
-            e.style.position = "absolute";
+            e.className = "caption";
         });
 
         this._input = this.createChild("input", (e) => {
             e.type = "number";
-            e.style.alignContent = "center";
-            e.style.background = "none";
-            e.style.border = "none";
             e.style.display = "none";
-            e.style.height = "100%";
-            e.style.inset = "0";
-            e.style.padding = "0 var(--horizontal-padding)";
-            e.style.position = "absolute";
-            e.style.textAlign = "left";
             e.addEventListener("input", () => {
                 this._quantizedValue = e.valueAsNumber;
                 this._updateElements();
@@ -147,10 +165,6 @@ export class Slider extends Block {
 
     get value() {
         return this._value;
-    }
-
-    set fillColor(value) {
-        this._fill.style.backgroundColor = value;
     }
 
     set maximum(value) {
@@ -198,4 +212,4 @@ export class Slider extends Block {
         this._caption.innerText = `${this._fixedValueString}${this._suffix}`;
     }
 }
-customElements.define("ce-slider", Slider);
+defineElement(Slider);

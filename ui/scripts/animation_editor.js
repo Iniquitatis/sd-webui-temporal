@@ -9,10 +9,22 @@ import {Row} from "/scripts/base/row.js";
 import {ToolButton} from "/scripts/base/tool_button.js";
 import {FieldManager} from "/scripts/core/field_manager.js";
 import {Signal} from "/scripts/core/signal.js";
+import {defineElement} from "/scripts/utils/dom.js";
 import {deepCopy, mapValues} from "/scripts/utils/object.js";
 import {getFieldDefinition} from "/scripts/object_field.js";
 
 class KeyframeEditor extends ReorderableElement {
+    static tag = "ce-keyframe-editor";
+    static css = `
+        <self> > .frame {
+            width: 100%;
+        }
+
+        <self> > .value {
+            width: 100%;
+        }
+    `;
+
     constructor(schema) {
         super();
 
@@ -23,7 +35,7 @@ class KeyframeEditor extends ReorderableElement {
         this._manager = new FieldManager(this.onValueChange);
 
         this.createChild(NumberBox, (e) => {
-            e.style.width = "100%";
+            e.className = "frame";
             e.minimum = 1;
             e.step = 1;
             e.value = 1;
@@ -34,7 +46,7 @@ class KeyframeEditor extends ReorderableElement {
 
         this.createChild(cls, (e) => {
             initializer(e);
-            e.style.width = "100%";
+            e.classList.add("value");
             this._manager.manage(e, "value", reader, writer);
         }, ...(args ?? []));
 
@@ -61,9 +73,11 @@ class KeyframeEditor extends ReorderableElement {
         this._manager.value = value;
     }
 }
-customElements.define("ce-keyframe-editor", KeyframeEditor);
+defineElement(KeyframeEditor);
 
 class KeyframeList extends ListEditor {
+    static tag = "ce-keyframe-list";
+
     constructor(schema) {
         super(KeyframeEditor);
 
@@ -78,9 +92,11 @@ class KeyframeList extends ListEditor {
         return [this._schema];
     }
 }
-customElements.define("ce-keyframe-list", KeyframeList);
+defineElement(KeyframeList);
 
 class TrackEditor extends ReorderableAccordion {
+    static tag = "ce-track-editor";
+
     constructor(key, schema) {
         super();
 
@@ -152,9 +168,11 @@ class TrackEditor extends ReorderableAccordion {
         this._manager.value = value;
     }
 }
-customElements.define("ce-track-editor", TrackEditor);
+defineElement(TrackEditor);
 
 class TrackList extends ChoiceListEditor {
+    static tag = "ce-track-list";
+
     constructor(schema) {
         super(TrackEditor, mapValues(schema.fields, (_, schema) => schema.name));
 
@@ -169,9 +187,11 @@ class TrackList extends ChoiceListEditor {
         return [choice, this._schema.fields[choice]];
     }
 }
-customElements.define("ce-track-list", TrackList);
+defineElement(TrackList);
 
 export class AnimationEditor extends Column {
+    static tag = "ce-animation-editor";
+
     constructor(schema) {
         super();
 
@@ -193,4 +213,4 @@ export class AnimationEditor extends Column {
         this._manager.value = value;
     }
 }
-customElements.define("ce-animation-editor", AnimationEditor);
+defineElement(AnimationEditor);

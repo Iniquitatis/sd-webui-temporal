@@ -1,15 +1,36 @@
 import {Block} from "/scripts/base/block.js";
 import {Signal} from "/scripts/core/signal.js";
 import {Widget} from "/scripts/core/widget.js";
+import {defineElement} from "/scripts/utils/dom.js";
 
 export class Checkbox extends Widget {
+    static tag = "ce-checkbox";
+    static css = `
+        <self> {
+            display: block;
+            height: var(--widget-height);
+        }
+
+        <self>.with-title {
+            display: flex;
+            flex-direction: row;
+            gap: var(--layout-small-gap);
+        }
+
+        <self>.with-title > ce-block {
+            align-content: center;
+            color: var(--hint-color);
+            font-size: 0.9rem;
+            height: var(--widget-height);
+            user-select: none;
+        }
+    `;
+
     constructor() {
         super();
 
         this.onValueChange = new Signal();
 
-        this.style.display = "block";
-        this.style.height = "var(--widget-height)";
         this.addEventListener("click", () => {
             this._input.checked = !this._input.checked;
 
@@ -37,17 +58,10 @@ export class Checkbox extends Widget {
     }
 
     attachTitle(title) {
-        this.style.display = "flex";
-        this.style.flexDirection = "row";
-        this.style.gap = "var(--layout-small-gap)";
+        this.classList.add("with-title");
 
         this.createChild(Block, (e) => {
             e.innerText = title;
-            e.style.alignContent = "center";
-            e.style.color = "var(--hint-color)";
-            e.style.fontSize = "0.9rem";
-            e.style.height = "var(--widget-height)";
-            e.style.userSelect = "none";
         });
     }
 
@@ -55,4 +69,4 @@ export class Checkbox extends Widget {
         return true;
     }
 }
-customElements.define("ce-checkbox", Checkbox);
+defineElement(Checkbox);

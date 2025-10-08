@@ -1,24 +1,33 @@
 import {Block} from "/scripts/base/block.js";
 import {Signal} from "/scripts/core/signal.js";
+import {defineElement} from "/scripts/utils/dom.js";
 
 export class ImageWidget extends Block {
+    static tag = "ce-image-widget";
+    static css = `
+        <self> {
+            align-content: center;
+            position: relative;
+            text-align: center;
+            user-select: none;
+        }
+
+        <self> > img {
+            height: 100%;
+            max-width: 100%;
+            object-fit: contain;
+            vertical-align: middle;
+            width: auto;
+        }
+    `;
+
     constructor() {
         super();
 
         this.onValueChange = new Signal();
 
-        this.style.alignContent = "center";
-        this.style.position = "relative";
-        this.style.textAlign = "center";
-        this.style.userSelect = "none";
-
         this._img = this.createChild("img", (e) => {
             e.style.display = "none";
-            e.style.height = "100%";
-            e.style.maxWidth = "100%";
-            e.style.objectFit = "contain";
-            e.style.verticalAlign = "middle";
-            e.style.width = "auto";
         });
     }
 
@@ -38,4 +47,4 @@ export class ImageWidget extends Block {
         this.onValueChange.fire(this.value);
     }
 }
-customElements.define("ce-image-widget", ImageWidget);
+defineElement(ImageWidget);

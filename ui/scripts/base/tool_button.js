@@ -1,14 +1,13 @@
 import {Button} from "/scripts/base/button.js";
+import {defineElement} from "/scripts/utils/dom.js";
 
 export class ToolButton extends Button {
-    constructor() {
-        super();
-
-        this.style.height = "var(--widget-height)";
-        this.style.maxWidth = "var(--widget-height)";
-        this.style.minWidth = "var(--widget-height)";
-
-        this._button.style.padding = "unset";
-    }
+    static tag = "ce-tool-button";
+    static css = `
+        <self> {
+            max-width: var(--widget-height);
+            min-width: var(--widget-height);
+        }
+    `;
 }
-customElements.define("ce-tool-button", ToolButton);
+defineElement(ToolButton);

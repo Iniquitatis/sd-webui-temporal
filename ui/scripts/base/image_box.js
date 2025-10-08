@@ -7,10 +7,17 @@ import {MediaBox} from "/scripts/base/media_box.js";
 import {Overlay} from "/scripts/base/overlay.js";
 import {Radio} from "/scripts/base/radio.js";
 import {Signal} from "/scripts/core/signal.js";
-import {clearElement, createElement} from "/scripts/utils/dom.js";
+import {clearElement, createElement, defineElement} from "/scripts/utils/dom.js";
 import {mapValues} from "/scripts/utils/object.js";
 
 class ImageEditor extends Overlay {
+    static tag = "ce-image-editor";
+    static css = `
+        <self> > ce-dock-group {
+            text-align: initial;
+        }
+    `;
+
     constructor() {
         super();
 
@@ -19,8 +26,6 @@ class ImageEditor extends Overlay {
         this._canvas = this.createChild(CanvasWidget);
 
         this.createChild(DockGroup, (e) => {
-            e.style.textAlign = "initial";
-
             e.createDock("\u{f1fc}", "Tools", Form, (e) => {
                 e.createField("Tool", Radio, (e) => {
                     e.choices = mapValues(CANVAS_TOOLS, (key, tool) => `${tool.icon} ${tool.name}`);
@@ -66,9 +71,11 @@ class ImageEditor extends Overlay {
         this._canvas.value = value;
     }
 }
-customElements.define("ce-image-editor", ImageEditor);
+defineElement(ImageEditor);
 
 export class ImageBox extends MediaBox {
+    static tag = "ce-image-box";
+
     constructor(features = []) {
         super(ImageWidget, "image/*", features);
 
@@ -84,4 +91,4 @@ export class ImageBox extends MediaBox {
         }
     }
 }
-customElements.define("ce-image-box", ImageBox);
+defineElement(ImageBox);

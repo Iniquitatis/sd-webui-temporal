@@ -1,7 +1,17 @@
 import {Signal} from "/scripts/core/signal.js";
 import {Widget} from "/scripts/core/widget.js";
+import {defineElement} from "/scripts/utils/dom.js";
 
 export class CodeArea extends Widget {
+    static tag = "ce-code-area";
+    static css = `
+        <self> > textarea {
+            display: block;
+            font-family: monospace;
+            width: 100%;
+        }
+    `;
+
     constructor() {
         super();
 
@@ -9,9 +19,6 @@ export class CodeArea extends Widget {
 
         this._textArea = this.createChild("textarea", (e) => {
             e.rows = 5;
-            e.style.display = "block";
-            e.style.fontFamily = "monospace";
-            e.style.width = "100%";
             e.addEventListener("change", () => {
                 this.onValueChange.fire(e.value);
             });
@@ -44,4 +51,4 @@ export class CodeArea extends Widget {
         this.onValueChange.fire(this.value);
     }
 }
-customElements.define("ce-code-area", CodeArea);
+defineElement(CodeArea);

@@ -14,6 +14,7 @@ import {FieldManager} from "/scripts/core/field_manager.js";
 import {Signal} from "/scripts/core/signal.js";
 import {Timer} from "/scripts/core/timer.js";
 import {Widget} from "/scripts/core/widget.js";
+import {defineElement} from "/scripts/utils/dom.js";
 import {getRequest, postRequest} from "/scripts/utils/requests.js";
 import {secondsToHHMMSS} from "/scripts/utils/time.js";
 import {FSStoreBox} from "/scripts/fs_store_box.js";
@@ -74,6 +75,25 @@ CANVAS_TOOLS.filter = class extends CanvasTool {
 }
 
 export class MainUI extends Widget {
+    static tag = "ce-main-ui";
+    static css = `
+        <self> {
+            height: 100%;
+            position: fixed;
+            width: 100%;
+        }
+
+        <self> > ce-column {
+            inset: 0;
+            padding: var(--layout-padding);
+            position: absolute;
+        }
+
+        <self> > ce-column > ce-multi-state-button:nth-of-type(1) {
+            min-height: calc(var(--widget-height) * 2);
+        }
+    `;
+
     constructor() {
         super();
 
@@ -93,19 +113,10 @@ export class MainUI extends Widget {
             this.onStateCheck.fire(state);
         }, 1.0);
 
-        this.style.height = "100%";
-        this.style.position = "fixed";
-        this.style.width = "100%";
-
         this.createChild(Column, (e) => {
-            e.style.inset = "0";
-            e.style.padding = "var(--layout-padding)";
-            e.style.position = "absolute";
-
             this._stateButton = e.createChild(MultiStateButton, (e) => {
                 e.states = {stopped: "Generate", active: "Stop"};
                 e.state = "stopped";
-                e.style.minHeight = "calc(var(--widget-height) * 2)";
                 e.onClick.connect(async () => {
                     switch (e.state) {
                         case "active": await this._start(); break;
@@ -241,7 +252,7 @@ export class MainUI extends Widget {
         this._stateButton.enabled = true;
     }
 }
-customElements.define("ce-main-ui", MainUI);
+defineElement(MainUI);
 
 window.onload = async () => {
     await initializeData();

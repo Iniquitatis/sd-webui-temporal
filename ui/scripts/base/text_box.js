@@ -1,7 +1,15 @@
 import {Signal} from "/scripts/core/signal.js";
 import {Widget} from "/scripts/core/widget.js";
+import {defineElement} from "/scripts/utils/dom.js";
 
 export class TextBox extends Widget {
+    static tag = "ce-text-box";
+    static css = `
+        <self> > input {
+            width: 100%;
+        }
+    `;
+
     constructor() {
         super();
 
@@ -9,7 +17,6 @@ export class TextBox extends Widget {
 
         this._input = this.createChild("input", (e) => {
             e.type = "text";
-            e.style.width = "100%";
             e.addEventListener("change", () => {
                 this.onValueChange.fire(e.value);
             });
@@ -26,4 +33,4 @@ export class TextBox extends Widget {
         this.onValueChange.fire(this.value);
     }
 }
-customElements.define("ce-text-box", TextBox);
+defineElement(TextBox);

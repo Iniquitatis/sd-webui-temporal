@@ -1,27 +1,42 @@
 import {Block} from "/scripts/base/block.js";
 import {MultiStateToggle} from "/scripts/base/multi_state_toggle.js";
 import {Widget} from "/scripts/core/widget.js";
-import {createElement} from "/scripts/utils/dom.js";
+import {createElement, defineElement} from "/scripts/utils/dom.js";
 
 export class Accordion extends Widget {
+    static tag = "ce-accordion";
+    static css = `
+        <self> {
+            border: var(--thin-border);
+            border-radius: var(--corners);
+        }
+
+        <self> > ce-block:nth-of-type(1) {
+            align-items: center;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+        }
+
+        <self> > ce-block:nth-of-type(1) > ce-block {
+            align-content: center;
+            height: var(--widget-height);
+            padding: 0 var(--horizontal-padding);
+            user-select: none;
+            width: 100%;
+        }
+
+        <self> > ce-block:nth-of-type(2) {
+            padding: var(--layout-padding);
+            padding-top: 0;
+        }
+    `;
+
     constructor() {
         super();
 
-        this.style.border = "var(--thin-border)";
-        this.style.borderRadius = "var(--corners)";
-
         this._header = super.createChild(Block, (e) => {
-            e.style.alignItems = "center";
-            e.style.display = "flex"
-            e.style.flexDirection = "row";
-            e.style.justifyContent = "space-between";
-
             this._label = e.createChild(Block, (e) => {
-                e.style.alignContent = "center";
-                e.style.height = "var(--widget-height)";
-                e.style.padding = "0 var(--horizontal-padding)";
-                e.style.userSelect = "none";
-                e.style.width = "100%";
                 e.addEventListener("click", () => {
                     this._openToggle.nextState();
                 });
@@ -38,8 +53,6 @@ export class Accordion extends Widget {
 
         this._content = super.createChild(Block, (e) => {
             e.visible = false;
-            e.style.padding = "var(--layout-padding)";
-            e.style.paddingTop = "0";
         });
     }
 
@@ -63,4 +76,4 @@ export class Accordion extends Widget {
         return this._content.createChild(tagOrClass, initializer, ...args);
     }
 }
-customElements.define("ce-accordion", Accordion);
+defineElement(Accordion);

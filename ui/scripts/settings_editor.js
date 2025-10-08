@@ -1,9 +1,12 @@
 import {Button} from "/scripts/base/button.js";
 import {Column} from "/scripts/base/column.js";
 import {Signal} from "/scripts/core/signal.js";
+import {defineElement} from "/scripts/utils/dom.js";
 import {ObjectForm} from "/scripts/object_form.js";
 
 export class SettingsEditor extends Column {
+    static tag = "ce-settings-editor";
+
     constructor() {
         super();
 
@@ -33,4 +36,4 @@ export class SettingsEditor extends Column {
         this._editor.value = value;
     }
 }
-customElements.define("ce-settings-editor", SettingsEditor);
+defineElement(SettingsEditor);

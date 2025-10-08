@@ -1,6 +1,9 @@
 import {createElement, toggleClass} from "/scripts/utils/dom.js";
 
 export class Widget extends HTMLElement {
+    static tag = undefined;
+    static css = undefined;
+
     get enabled() {
         return !this.classList.contains("disabled");
     }

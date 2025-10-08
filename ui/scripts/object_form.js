@@ -4,11 +4,14 @@ import {GroupBox} from "/scripts/base/group_box.js";
 import {Tabs} from "/scripts/base/tabs.js";
 import {FieldManager} from "/scripts/core/field_manager.js";
 import {Signal} from "/scripts/core/signal.js";
+import {defineElement} from "/scripts/utils/dom.js";
 import {deepCopy} from "/scripts/utils/object.js";
 import {getFieldDefinition} from "/scripts/object_field.js";
 import {objectTypes} from "/scripts/shared_data.js";
 
 export class ObjectForm extends Form {
+    static tag = "ce-object-form";
+
     constructor(type, manager = null) {
         super(false);
 
@@ -103,7 +106,7 @@ export class ObjectForm extends Form {
         this._manager.value = value;
     }
 }
-customElements.define("ce-object-form", ObjectForm);
+defineElement(ObjectForm);
 
 function areDependenciesSatisfied(formValue, dependencies) {
     for (let [depKey, depValue] of Object.entries(dependencies)) {
