@@ -60,7 +60,10 @@ def ensure_image_dims(image: NumpyImage, size: Optional[tuple[int, int]] = None,
     if image_width != target_width or image_height != target_height:
         image = resize(image, (target_height, target_width), order = 3, preserve_range = True, anti_aliasing = False)
 
-    if image_channels != target_channels:
+    if image_channels < target_channels:
+        image = np.concatenate((image, np.zeros((target_height, target_width, target_channels - image_channels))), axis = -1)
+
+    if image_channels > target_channels:
         image = image[..., :target_channels]
 
     return image
@@ -131,6 +134,9 @@ def match_image(image: NumpyImage, reference: NumpyImage, size: bool = True, cha
 
 
 def np_to_pil(image: NumpyImage) -> PILImage:
+    if image.shape[-1] < 3:
+        image = ensure_image_dims(image, channels = 3)
+
     return Image.fromarray(skimage.util.img_as_ubyte(image))
 
 

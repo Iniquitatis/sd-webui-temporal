@@ -24,7 +24,7 @@ class ConvolutionFilter(ImageFilter):
             kernel = self.kernel
 
             if kernel is None:
-                kernel = np.ones((diameter, diameter), dtype = FloatType)
+                kernel = np.ones((diameter, diameter, 1), dtype = FloatType)
 
             kernel = ensure_image_dims(kernel, (diameter, diameter))
             kernel = kernel[..., 0]
